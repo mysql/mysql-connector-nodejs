@@ -1,0 +1,19 @@
+{
+  "name": "mysql-njs",
+  "version": "1.0.0",
+  "description": "A node.js driver for MySQL.",
+  "author": "Reggie Burnett <reggie.burnett@oracle.com>",
+  "license": "GPLv2",
+  "files": [
+    "lib/",
+    "COPYING",
+    "CHANGES",
+    "index.js"
+  ],
+  "scripts": {
+    "test": "test/run.js"
+  },
+  "dependencies": {
+    "mocha": "^2.2.1"
+  }
+}

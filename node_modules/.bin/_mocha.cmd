@@ -1,0 +1,1 @@
+"%~dp0\..\mocha\bin\_mocha"   %*
