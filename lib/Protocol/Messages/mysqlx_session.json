@@ -1,4 +1,7 @@
 {
+  "options": {
+    "java_package": "com.mysql.cj.mysqlx.protobuf"
+  },
   "messages": {
     "AuthenticateStart": {
       "fields": {

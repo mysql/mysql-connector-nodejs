@@ -1,4 +1,15 @@
 {
+  "imports": [
+    "mysqlx_sql.proto",
+    "mysqlx_crud.proto",
+    "mysqlx_session.proto",
+    "mysqlx_connection.proto",
+    "mysqlx_expect.proto",
+    "mysqlx_notice.proto"
+  ],
+  "options": {
+    "java_package": "com.mysql.cj.mysqlx.protobuf"
+  },
   "messages": {
     "ClientMessages": {
       "enums": {
@@ -8,24 +19,13 @@
           "CON_CLOSE": 3,
           "SESS_AUTHENTICATE_START": 4,
           "SESS_AUTHENTICATE_CONTINUE": 5,
-          "SQL_PREPARE_STMT": 6,
-          "SQL_PREPARED_STMT_EXECUTE": 7,
-          "SQL_CURSOR_FETCH_ROWS": 8,
-          "SQL_CURSOR_FETCH_META_DATA": 9,
-          "SQL_CURSOR_CLOSE": 10,
-          "SQL_CURSORS_POLL": 11,
+          "SESS_RESET": 6,
+          "SESS_CLOSE": 7,
           "SQL_STMT_EXECUTE": 12,
-          "CRUD_PREPARE_FIND": 13,
-          "CRUD_PREPARE_INSERT": 14,
-          "CRUD_PREPARE_UPDATE": 15,
-          "CRUD_PREPARE_DELETE": 16,
           "CRUD_FIND": 17,
           "CRUD_INSERT": 18,
           "CRUD_UPDATE": 19,
           "CRUD_DELETE": 20,
-          "SQL_PREPARED_STMT_CLOSE": 21,
-          "SESS_RESET": 22,
-          "SESS_CLOSE": 23,
           "EXPECT_OPEN": 24,
           "EXPECT_CLOSE": 25
         }
@@ -35,24 +35,19 @@
     "ServerMessages": {
       "enums": {
         "Type": {
-          "OK": 1,
-          "ERROR": 2,
-          "NOTICE": 3,
-          "PARAMETER_CHANGED_NOTIFICATION": 4,
-          "CONN_CAPABILITIES": 5,
-          "SESS_AUTHENTICATE_CONTINUE": 6,
-          "SESS_AUTHENTICATE_OK": 7,
-          "SQL_PREPARE_STMT_OK": 8,
-          "SQL_PREPARED_STMT_EXECUTE_OK": 9,
-          "SQL_COLUMN_META_DATA": 10,
-          "SQL_ROW": 11,
-          "SQL_CURSOR_FETCH_DONE": 12,
-          "SQL_CURSOR_FETCH_SUSPENDED": 13,
-          "SQL_CURSORS_POLL": 14,
-          "SQL_CURSOR_CLOSE_OK": 15,
-          "SQL_CURSOR_FETCH_DONE_MORE_RESULTSETS": 16,
-          "SESS_AUTHENTICATE_FAIL": 17,
-          "SQL_STMT_EXECUTE_OK": 18
+          "OK": 0,
+          "ERROR": 1,
+          "CONN_CAPABILITIES": 2,
+          "SESS_AUTHENTICATE_CONTINUE": 3,
+          "SESS_AUTHENTICATE_OK": 4,
+          "SESS_AUTHENTICATE_FAIL": 5,
+          "NOTICE": 11,
+          "SQL_COLUMN_META_DATA": 12,
+          "SQL_ROW": 13,
+          "SQL_RESULT_FETCH_DONE": 14,
+          "SQL_RESULT_FETCH_SUSPENDED": 15,
+          "SQL_RESULT_FETCH_DONE_MORE_RESULTSETS": 16,
+          "SQL_STMT_EXECUTE_OK": 17
         }
       },
       "fields": {}
@@ -69,19 +64,22 @@
     "Error": {
       "enums": {
         "Severity": {
-          "ERROR": 1,
-          "FATAL": 2
+          "ERROR": 0,
+          "FATAL": 1
         }
       },
       "fields": {
         "severity": {
-          "rule": "required",
+          "rule": "optional",
           "type": "Severity",
-          "tag": 1
+          "tag": 1,
+          "options": {
+            "default": "ERROR"
+          }
         },
         "code": {
           "rule": "required",
-          "type": "int32",
+          "type": "uint32",
           "tag": 2
         },
         "sql_state": {
@@ -93,51 +91,6 @@
           "rule": "required",
           "type": "string",
           "tag": 3
-        }
-      }
-    },
-    "Notice": {
-      "enums": {
-        "Severity": {
-          "WARNING": 1,
-          "INFO": 2,
-          "LOG": 3
-        }
-      },
-      "fields": {
-        "severity": {
-          "rule": "required",
-          "type": "Severity",
-          "tag": 1
-        },
-        "code": {
-          "rule": "required",
-          "type": "int32",
-          "tag": 2
-        },
-        "sql_state": {
-          "rule": "required",
-          "type": "string",
-          "tag": 4
-        },
-        "msg": {
-          "rule": "required",
-          "type": "string",
-          "tag": 3
-        }
-      }
-    },
-    "ParameterChangedNotification": {
-      "fields": {
-        "param": {
-          "rule": "required",
-          "type": "string",
-          "tag": 1
-        },
-        "value": {
-          "rule": "required",
-          "type": "int32",
-          "tag": 2
         }
       }
     }

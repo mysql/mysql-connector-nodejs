@@ -1,4 +1,10 @@
 {
+  "imports": [
+    "mysqlx_datatypes.proto"
+  ],
+  "options": {
+    "java_package": "com.mysql.cj.mysqlx.protobuf"
+  },
   "messages": {
     "Capability": {
       "fields": {

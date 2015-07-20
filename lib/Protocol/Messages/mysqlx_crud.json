@@ -325,6 +325,11 @@
           "rule": "optional",
           "type": "Mysqlx.Expr.Expr",
           "tag": 9
+        },
+        "compact_metadata": {
+          "rule": "optional",
+          "type": "bool",
+          "tag": 10
         }
       }
     },
@@ -338,23 +343,6 @@
       }
     },
     "Insert": {
-      "enums": {
-        "DataModel": {
-          "DOCUMENT": 1,
-          "TABLE": 2
-        }
-      },
-      "messages": {
-        "TypedRow": {
-          "fields": {
-            "field": {
-              "rule": "repeated",
-              "type": "Mysqlx.Datatypes.Any",
-              "tag": 1
-            }
-          }
-        }
-      },
       "fields": {
         "collection": {
           "rule": "required",
