@@ -9,11 +9,12 @@ describe('Basic Property Tests', function () {
     var client = new MySQLClient(connStr);
     assert.equal(client.ConnectionString, connStr);
   })
-  
-  it('Bad protocol', function () {
+  /*
+  it('Bad Protocol', function () {
     var connStr = "xxx://host";
       assert.throw(function () {
         var client = MySQLClient(connStr);
       }, MySQLException);
     })
+    */
 })

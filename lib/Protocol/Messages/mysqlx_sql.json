@@ -1,0 +1,287 @@
+{
+  "imports": [
+    "mysqlx_datatypes.proto"
+  ],
+  "options": {
+    "java_package": "com.mysql.cj.mysqlx.protobuf"
+  },
+  "messages": {
+    "Row": {
+      "fields": {
+        "field": {
+          "rule": "repeated",
+          "type": "Mysqlx.Datatypes.Any",
+          "tag": 1
+        }
+      }
+    },
+    "StmtExecute": {
+      "fields": {
+        "namespace": {
+          "rule": "optional",
+          "type": "string",
+          "tag": 3,
+          "options": {
+            "default": "sql"
+          }
+        },
+        "stmt": {
+          "rule": "required",
+          "type": "string",
+          "tag": 1
+        },
+        "args": {
+          "rule": "repeated",
+          "type": "Mysqlx.Datatypes.Any",
+          "tag": 2
+        },
+        "compact_metadata": {
+          "rule": "optional",
+          "type": "bool",
+          "tag": 4
+        }
+      }
+    },
+    "StmtExecuteOk": {
+      "fields": {
+        "rows_affected": {
+          "rule": "optional",
+          "type": "uint64",
+          "tag": 1
+        },
+        "last_insert_id": {
+          "rule": "optional",
+          "type": "uint64",
+          "tag": 2
+        }
+      }
+    },
+    "PrepareStmt": {
+      "fields": {
+        "stmt_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        },
+        "stmt": {
+          "rule": "required",
+          "type": "string",
+          "tag": 2
+        }
+      }
+    },
+    "PrepareStmtOk": {
+      "fields": {}
+    },
+    "PreparedStmtExecute": {
+      "fields": {
+        "stmt_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        },
+        "cursor_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 2
+        },
+        "row": {
+          "rule": "optional",
+          "type": "Row",
+          "tag": 3
+        }
+      }
+    },
+    "PreparedStmtExecuteOk": {
+      "fields": {
+        "rows_affected": {
+          "rule": "optional",
+          "type": "uint64",
+          "tag": 1
+        },
+        "last_insert_id": {
+          "rule": "optional",
+          "type": "uint64",
+          "tag": 2
+        },
+        "cursor_created": {
+          "rule": "required",
+          "type": "bool",
+          "tag": 3
+        }
+      }
+    },
+    "CursorsPollInfo": {
+      "enums": {
+        "Event": {
+          "META_READY": 1,
+          "DATA_READY": 2
+        }
+      },
+      "fields": {
+        "cursor_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        },
+        "event": {
+          "rule": "required",
+          "type": "Event",
+          "tag": 2
+        }
+      }
+    },
+    "CursorsPoll": {
+      "fields": {
+        "pollinfo": {
+          "rule": "repeated",
+          "type": "CursorsPollInfo",
+          "tag": 1
+        },
+        "timeout_ms": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 2
+        }
+      }
+    },
+    "CursorFetchRows": {
+      "fields": {
+        "cursor_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        },
+        "fetch_limit": {
+          "rule": "optional",
+          "type": "uint32",
+          "tag": 2
+        },
+        "compact_metadata": {
+          "rule": "optional",
+          "type": "bool",
+          "tag": 3
+        }
+      }
+    },
+    "CursorFetchDoneMoreResultsets": {
+      "fields": {}
+    },
+    "CursorFetchDone": {
+      "fields": {}
+    },
+    "CursorFetchSuspended": {
+      "fields": {}
+    },
+    "CursorFetchMetaData": {
+      "fields": {
+        "cursor_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        }
+      }
+    },
+    "ColumnMetaData": {
+      "enums": {
+        "FieldType": {
+          "SINT": 1,
+          "UINT": 2,
+          "DOUBLE": 5,
+          "FLOAT": 6,
+          "BYTES": 7,
+          "TIME": 10,
+          "DATETIME": 12,
+          "SET": 15,
+          "ENUM": 16,
+          "BIT": 17,
+          "DECIMAL": 18
+        }
+      },
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "FieldType",
+          "tag": 1
+        },
+        "name": {
+          "rule": "required",
+          "type": "bytes",
+          "tag": 2
+        },
+        "original_name": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 3
+        },
+        "table": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 4
+        },
+        "original_table": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 5
+        },
+        "schema": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 6
+        },
+        "catalog": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 7
+        },
+        "charset": {
+          "rule": "optional",
+          "type": "string",
+          "tag": 8
+        },
+        "fractional_digits": {
+          "rule": "optional",
+          "type": "uint32",
+          "tag": 9
+        },
+        "length": {
+          "rule": "optional",
+          "type": "uint32",
+          "tag": 10
+        },
+        "flags": {
+          "rule": "optional",
+          "type": "uint32",
+          "tag": 11
+        },
+        "content_type": {
+          "rule": "optional",
+          "type": "uint32",
+          "tag": 12
+        }
+      }
+    },
+    "CursorClose": {
+      "fields": {
+        "cursor_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 2
+        }
+      }
+    },
+    "CursorCloseOk": {
+      "fields": {}
+    },
+    "PreparedStmtClose": {
+      "fields": {
+        "stmt_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        }
+      }
+    }
+  },
+  "package": "Mysqlx.Sql"
+}

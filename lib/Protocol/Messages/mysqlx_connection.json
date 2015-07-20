@@ -1,0 +1,43 @@
+{
+  "messages": {
+    "Capability": {
+      "fields": {
+        "name": {
+          "rule": "required",
+          "type": "string",
+          "tag": 1
+        },
+        "value": {
+          "rule": "required",
+          "type": "Mysqlx.Datatypes.Any",
+          "tag": 2
+        }
+      }
+    },
+    "Capabilities": {
+      "fields": {
+        "capabilities": {
+          "rule": "repeated",
+          "type": "Mysqlx.Connection.Capability",
+          "tag": 1
+        }
+      }
+    },
+    "CapabilitiesGet": {
+      "fields": {}
+    },
+    "CapabilitiesSet": {
+      "fields": {
+        "capabilities": {
+          "rule": "required",
+          "type": "Capabilities",
+          "tag": 1
+        }
+      }
+    },
+    "Close": {
+      "fields": {}
+    }
+  },
+  "package": "Mysqlx.Connection"
+}

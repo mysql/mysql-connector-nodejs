@@ -1,0 +1,141 @@
+{
+  "options": {
+    "java_package": "com.mysql.cj.mysqlx.protobuf"
+  },
+  "messages": {
+    "Scalar.String": {
+      "fields": {
+        "value": {
+          "rule": "required",
+          "type": "bytes",
+          "tag": 1
+        },
+        "charset": {
+          "rule": "optional",
+          "type": "string",
+          "tag": 2
+        }
+      }
+    },
+    "Scalar": {
+      "enums": {
+        "Type": {
+          "V_SINT": 1,
+          "V_UINT": 2,
+          "V_NULL": 3,
+          "V_OCTETS": 4,
+          "V_DOUBLE": 5,
+          "V_FLOAT": 6,
+          "V_BOOL": 7,
+          "V_STRING": 8
+        }
+      },
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "Type",
+          "tag": 1
+        },
+        "v_signed_int": {
+          "rule": "optional",
+          "type": "sint64",
+          "tag": 2
+        },
+        "v_unsigned_int": {
+          "rule": "optional",
+          "type": "uint64",
+          "tag": 3
+        },
+        "v_opaque": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 5
+        },
+        "v_double": {
+          "rule": "optional",
+          "type": "double",
+          "tag": 6
+        },
+        "v_float": {
+          "rule": "optional",
+          "type": "float",
+          "tag": 7
+        },
+        "v_bool": {
+          "rule": "optional",
+          "type": "bool",
+          "tag": 8
+        },
+        "v_string": {
+          "rule": "optional",
+          "type": "Mysqlx.Datatypes.Scalar.String",
+          "tag": 9
+        }
+      }
+    },
+    "Object.ObjectField": {
+      "fields": {
+        "key": {
+          "rule": "required",
+          "type": "string",
+          "tag": 1
+        },
+        "value": {
+          "rule": "required",
+          "type": "Mysqlx.Datatypes.Any",
+          "tag": 2
+        }
+      }
+    },
+    "Object": {
+      "fields": {
+        "fld": {
+          "rule": "repeated",
+          "type": "Mysqlx.Datatypes.Object.ObjectField",
+          "tag": 1
+        }
+      }
+    },
+    "Array": {
+      "fields": {
+        "value": {
+          "rule": "repeated",
+          "type": "Mysqlx.Datatypes.Any",
+          "tag": 1
+        }
+      }
+    },
+    "Any": {
+      "enums": {
+        "Type": {
+          "SCALAR": 1,
+          "OBJECT": 2,
+          "ARRAY": 3
+        }
+      },
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "Type",
+          "tag": 1
+        },
+        "scalar": {
+          "rule": "optional",
+          "type": "Mysqlx.Datatypes.Scalar",
+          "tag": 2
+        },
+        "obj": {
+          "rule": "optional",
+          "type": "Mysqlx.Datatypes.Object",
+          "tag": 3
+        },
+        "array": {
+          "rule": "optional",
+          "type": "Mysqlx.Datatypes.Array",
+          "tag": 4
+        }
+      }
+    }
+  },
+  "package": "Mysqlx.Datatypes"
+}

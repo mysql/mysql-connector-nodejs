@@ -1,0 +1,446 @@
+{
+  "imports": [
+    "mysqlx_expr.proto",
+    "mysqlx_datatypes.proto"
+  ],
+  "options": {
+    "java_package": "com.mysql.cj.mysqlx.protobuf"
+  },
+  "enums": {
+    "DataModel": {
+      "DOCUMENT": 1,
+      "TABLE": 2
+    }
+  },
+  "messages": {
+    "Column": {
+      "fields": {
+        "name": {
+          "rule": "optional",
+          "type": "string",
+          "tag": 1
+        },
+        "alias": {
+          "rule": "optional",
+          "type": "string",
+          "tag": 2
+        },
+        "document_path": {
+          "rule": "repeated",
+          "type": "Mysqlx.Expr.DocumentPathItem",
+          "tag": 3
+        }
+      }
+    },
+    "Projection": {
+      "fields": {
+        "source": {
+          "rule": "required",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 1
+        },
+        "target_alias": {
+          "rule": "optional",
+          "type": "string",
+          "tag": 2
+        },
+        "target_path": {
+          "rule": "repeated",
+          "type": "Mysqlx.Expr.DocumentPathItem",
+          "tag": 3
+        }
+      }
+    },
+    "Collection": {
+      "fields": {
+        "name": {
+          "rule": "required",
+          "type": "string",
+          "tag": 1
+        },
+        "schema": {
+          "rule": "optional",
+          "type": "string",
+          "tag": 2
+        }
+      }
+    },
+    "Limit": {
+      "fields": {
+        "row_count": {
+          "rule": "required",
+          "type": "uint64",
+          "tag": 1
+        },
+        "offset": {
+          "rule": "optional",
+          "type": "uint64",
+          "tag": 2
+        }
+      }
+    },
+    "Order": {
+      "enums": {
+        "Direction": {
+          "ASC": 1,
+          "DESC": 2
+        }
+      },
+      "fields": {
+        "field": {
+          "rule": "required",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 1
+        },
+        "direction": {
+          "rule": "optional",
+          "type": "Direction",
+          "tag": 2,
+          "options": {
+            "default": "ASC"
+          }
+        }
+      }
+    },
+    "UpdateOperation": {
+      "enums": {
+        "UpdateType": {
+          "SET": 1,
+          "ITEM_REMOVE": 2,
+          "ITEM_SET": 3,
+          "ITEM_REPLACE": 4,
+          "ITEM_MERGE": 5,
+          "ARRAY_INSERT": 6,
+          "ARRAY_APPEND": 7
+        }
+      },
+      "fields": {
+        "source": {
+          "rule": "required",
+          "type": "Mysqlx.Expr.ColumnIdentifier",
+          "tag": 1
+        },
+        "operation": {
+          "rule": "required",
+          "type": "UpdateType",
+          "tag": 2
+        },
+        "value": {
+          "rule": "optional",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 3
+        }
+      }
+    },
+    "PrepareFind": {
+      "fields": {
+        "stmt_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        },
+        "collection": {
+          "rule": "required",
+          "type": "Mysqlx.Crud.Collection",
+          "tag": 2
+        },
+        "data_model": {
+          "rule": "optional",
+          "type": "DataModel",
+          "tag": 3
+        },
+        "projection": {
+          "rule": "repeated",
+          "type": "Mysqlx.Crud.Projection",
+          "tag": 4
+        },
+        "criteria": {
+          "rule": "optional",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 5
+        },
+        "limit": {
+          "rule": "optional",
+          "type": "Mysqlx.Crud.Limit",
+          "tag": 6
+        },
+        "order": {
+          "rule": "repeated",
+          "type": "Mysqlx.Crud.Order",
+          "tag": 7
+        },
+        "grouping": {
+          "rule": "repeated",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 8
+        },
+        "grouping_criteria": {
+          "rule": "optional",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 9
+        }
+      }
+    },
+    "PrepareInsert": {
+      "fields": {
+        "stmt_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        },
+        "collection": {
+          "rule": "required",
+          "type": "Collection",
+          "tag": 2
+        },
+        "data_model": {
+          "rule": "optional",
+          "type": "DataModel",
+          "tag": 3
+        },
+        "projection": {
+          "rule": "repeated",
+          "type": "Column",
+          "tag": 4
+        }
+      }
+    },
+    "PrepareUpdate": {
+      "fields": {
+        "stmt_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        },
+        "collection": {
+          "rule": "required",
+          "type": "Collection",
+          "tag": 2
+        },
+        "data_model": {
+          "rule": "optional",
+          "type": "DataModel",
+          "tag": 3
+        },
+        "criteria": {
+          "rule": "required",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 4
+        },
+        "limit": {
+          "rule": "optional",
+          "type": "Limit",
+          "tag": 5
+        },
+        "order": {
+          "rule": "repeated",
+          "type": "Order",
+          "tag": 6
+        },
+        "operation": {
+          "rule": "repeated",
+          "type": "UpdateOperation",
+          "tag": 7
+        }
+      }
+    },
+    "PrepareDelete": {
+      "fields": {
+        "stmt_id": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        },
+        "collection": {
+          "rule": "required",
+          "type": "Collection",
+          "tag": 2
+        },
+        "data_model": {
+          "rule": "optional",
+          "type": "DataModel",
+          "tag": 3
+        },
+        "criteria": {
+          "rule": "optional",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 4
+        },
+        "limit": {
+          "rule": "optional",
+          "type": "Limit",
+          "tag": 5
+        },
+        "order": {
+          "rule": "repeated",
+          "type": "Order",
+          "tag": 6
+        }
+      }
+    },
+    "Find": {
+      "enums": {
+        "DataModel": {
+          "DOCUMENT": 1,
+          "TABLE": 2
+        }
+      },
+      "fields": {
+        "collection": {
+          "rule": "required",
+          "type": "Mysqlx.Crud.Collection",
+          "tag": 2
+        },
+        "data_model": {
+          "rule": "optional",
+          "type": "DataModel",
+          "tag": 3
+        },
+        "projection": {
+          "rule": "repeated",
+          "type": "Mysqlx.Crud.Projection",
+          "tag": 4
+        },
+        "criteria": {
+          "rule": "optional",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 5
+        },
+        "limit": {
+          "rule": "optional",
+          "type": "Mysqlx.Crud.Limit",
+          "tag": 6
+        },
+        "order": {
+          "rule": "repeated",
+          "type": "Mysqlx.Crud.Order",
+          "tag": 7
+        },
+        "grouping": {
+          "rule": "repeated",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 8
+        },
+        "grouping_criteria": {
+          "rule": "optional",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 9
+        }
+      }
+    },
+    "Insert.TypedRow": {
+      "fields": {
+        "field": {
+          "rule": "repeated",
+          "type": "Mysqlx.Datatypes.Any",
+          "tag": 1
+        }
+      }
+    },
+    "Insert": {
+      "enums": {
+        "DataModel": {
+          "DOCUMENT": 1,
+          "TABLE": 2
+        }
+      },
+      "messages": {
+        "TypedRow": {
+          "fields": {
+            "field": {
+              "rule": "repeated",
+              "type": "Mysqlx.Datatypes.Any",
+              "tag": 1
+            }
+          }
+        }
+      },
+      "fields": {
+        "collection": {
+          "rule": "required",
+          "type": "Mysqlx.Crud.Collection",
+          "tag": 1
+        },
+        "data_model": {
+          "rule": "optional",
+          "type": "DataModel",
+          "tag": 2
+        },
+        "projection": {
+          "rule": "repeated",
+          "type": "Mysqlx.Crud.Column",
+          "tag": 3
+        },
+        "row": {
+          "rule": "repeated",
+          "type": "Mysqlx.Crud.Insert.TypedRow",
+          "tag": 4
+        }
+      }
+    },
+    "Update": {
+      "fields": {
+        "collection": {
+          "rule": "required",
+          "type": "Collection",
+          "tag": 2
+        },
+        "data_model": {
+          "rule": "optional",
+          "type": "DataModel",
+          "tag": 3
+        },
+        "criteria": {
+          "rule": "optional",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 4
+        },
+        "limit": {
+          "rule": "optional",
+          "type": "Limit",
+          "tag": 5
+        },
+        "order": {
+          "rule": "repeated",
+          "type": "Order",
+          "tag": 6
+        },
+        "operation": {
+          "rule": "repeated",
+          "type": "UpdateOperation",
+          "tag": 7
+        }
+      }
+    },
+    "Delete": {
+      "fields": {
+        "collection": {
+          "rule": "required",
+          "type": "Collection",
+          "tag": 1
+        },
+        "data_model": {
+          "rule": "optional",
+          "type": "DataModel",
+          "tag": 2
+        },
+        "criteria": {
+          "rule": "optional",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 3
+        },
+        "limit": {
+          "rule": "optional",
+          "type": "Limit",
+          "tag": 4
+        },
+        "order": {
+          "rule": "repeated",
+          "type": "Order",
+          "tag": 5
+        }
+      }
+    }
+  },
+  "package": "Mysqlx.Crud"
+}

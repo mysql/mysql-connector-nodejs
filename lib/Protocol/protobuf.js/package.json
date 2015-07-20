@@ -1,0 +1,29 @@
+{
+  "name": "protobuf.js",
+  "version": "1.1.2",
+  "description": "a pure javascript protocol buffer encoding implementation, written specifically for riak",
+  "main": "index.js",
+  "dependencies": {
+    "long": "~1.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nlf/protobuf.js"
+  },
+  "keywords": [
+    "protobuf",
+    "protocol",
+    "buffer",
+    "encode"
+  ],
+  "author": "Nathan LaFreniere <quitlahok@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "mocha": "~1.17.0",
+    "chai": "~1.8.1",
+    "precommit-hook": "~0.3.9"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha test"
+  }
+}
