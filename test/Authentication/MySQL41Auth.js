@@ -69,29 +69,17 @@ describe('MySQL41Auth', function () {
         var exp = "*950d944626109ab5bce8bc56a4e78a296e34271d";
         assert.equal(result.slice(6).toString(), exp);
     });
-    it('should return a buffer of length = username + 3 if no password is given', function () {
+    it('should return a buffer of length = username + 2 if no password is given', function () {
         var auth = new MySQL41Auth({user: username});
         var result = auth.getNextAuthData(new Buffer([0x7a, 0x59, 0x6b, 0x6e, 0x19, 0x7f, 0x44, 0x1, 0x6f, 0x4a, 0xf, 0xf, 0x3e, 0x19, 0x50, 0x4c, 0x4f, 0x47, 0x53, 0x5b]));
 
-        assert.equal(result.length, username.length + 3);
+        assert.equal(result.length, username.length + 2);
     });
     it('should return a buffer of length = username + 3 if empty password is given', function () {
         var auth = new MySQL41Auth({user: username, password: ''});
         var result = auth.getNextAuthData(new Buffer([0x7a, 0x59, 0x6b, 0x6e, 0x19, 0x7f, 0x44, 0x1, 0x6f, 0x4a, 0xf, 0xf, 0x3e, 0x19, 0x50, 0x4c, 0x4f, 0x47, 0x53, 0x5b]));
 
-        assert.equal(result.length, username.length + 3);
-    });
-    it('should contain a single \\0 if no password was provided', function () {
-        var auth = new MySQL41Auth({user: username});
-        var result = auth.getNextAuthData(new Buffer([0x7a, 0x59, 0x6b, 0x6e, 0x19, 0x7f, 0x44, 0x1, 0x6f, 0x4a, 0xf, 0xf, 0x3e, 0x19, 0x50, 0x4c, 0x4f, 0x47, 0x53, 0x5b]));
-
-        assert.equal(result[username.length + 2], 0);
-    });
-    it('should contain a single \\0 if an empty password was provided', function () {
-        var auth = new MySQL41Auth({user: username, password: ''});
-        var result = auth.getNextAuthData(new Buffer([0x7a, 0x59, 0x6b, 0x6e, 0x19, 0x7f, 0x44, 0x1, 0x6f, 0x4a, 0xf, 0xf, 0x3e, 0x19, 0x50, 0x4c, 0x4f, 0x47, 0x53, 0x5b]));
-
-        assert.equal(result[username.length + 2], 0);
+        assert.equal(result.length, username.length + 2);
     });
 });
 
