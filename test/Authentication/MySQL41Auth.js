@@ -66,5 +66,12 @@ describe('MySQL41Auth', function () {
         var exp = "*af1ef523d254181abb1155c1fbc933b80c2ec853";
         assert.equal(result.slice(6).toString(), exp);
     });
+    it('crypted password should properly hash the password fff with yet another given hash', function () {
+        var auth = new MySQL41Auth({user: 'toor', password: 'fff'});
+        var result = auth.getNextAuthData(new Buffer([0x7a, 0x59, 0x6b, 0x6e, 0x19, 0x7f, 0x44, 0x1, 0x6f, 0x4a, 0xf, 0xf, 0x3e, 0x19, 0x50, 0x4c, 0x4f, 0x47, 0x53, 0x5b]));
+
+        var exp = "*950d944626109ab5bce8bc56a4e78a296e34271d";
+        assert.equal(result.slice(6).toString(), exp);
+    });
 });
 
