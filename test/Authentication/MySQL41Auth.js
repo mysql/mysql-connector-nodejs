@@ -3,7 +3,27 @@
 var assert = require("assert");
 var MySQL41Auth = require("../../lib/Authentication/MySQL41Auth");
 
-describe('MySQL41Auth', function() {
+describe('MySQL41Auth', function () {
+    it('should throw if the server sends less than 20 bytes', function () {
+        var username = 'root';
+        var auth = new MySQL41Auth({user: username, password: 'fff'});
+        assert.throws(
+            function () {
+                auth.getNextAuthData(new Buffer(19));
+            },
+            /Scramble buffer had invalid length/
+        );
+    });
+    it('should throw if the server sends more than 20 bytes', function () {
+        var username = 'root';
+        var auth = new MySQL41Auth({user: username, password: 'fff'});
+        assert.throws(
+            function () {
+                auth.getNextAuthData(new Buffer(22));
+            },
+            /Scramble buffer had invalid length/
+        );
+    });
     it('crypted password string should be long enough for 2*\\0 + username length + 1 yte for \'*\' +20 bytes for hash', function () {
         var username = 'root';
         var auth = new MySQL41Auth({user: username, password: 'fff'});
@@ -25,7 +45,7 @@ describe('MySQL41Auth', function() {
 
         assert.equal(result.slice(1, username.length + 1).toString(), username);
     });
-    it('crypted password string should start with a \\0 byte', function () {
+    it('crypted password string should have a \\0 byte after username', function () {
         var username = 'root';
         var auth = new MySQL41Auth({user: username, password: 'fff'});
         var result = auth.getNextAuthData(new Buffer([0xa, 0x35, 0x42, 0x1a, 0x43, 0x47, 0x6d, 0x65, 0x1, 0x4a, 0xf, 0x4c, 0x9, 0x5c, 0x32, 0x61, 0x64, 0x3c, 0x13, 0x6]));
