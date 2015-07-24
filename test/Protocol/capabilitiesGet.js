@@ -39,7 +39,7 @@ describe('Protocol', function () {
             var protocol = new Protocol(nullStream);
             var promise = protocol.capabilitiesGet();
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
-            return promise.should.eventually.deep.equal({}); // be.fulfilled;
+            return promise.should.eventually.deep.equal({});
         });
     });
 });
