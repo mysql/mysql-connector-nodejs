@@ -161,6 +161,27 @@ describe('Protocol', function () {
                 var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
                 assert.strictEqual(data.decoded.auth_data.toString(), (new Buffer([6, 7, 8, 9])).toString());
             });
+            it('should fail if handler doesn\'t expect continuation', function () {
+                var sentData = null;
+
+                var mockedStream = {
+                    on: function () {
+                    },
+                    write: function (data) {
+                        sentData = data;
+                    }
+                };
+                var mockedAuthenticator = {
+                    name: 'mock',
+                    getInitialAuthData: function () {
+                    },
+                };
+
+                var protocol = new Protocol(mockedStream);
+                var promise = protocol.authenticate(mockedAuthenticator);
+                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
+                return promise.should.be.rejected;
+            });
             it('should resolve Promise if Authentication succeeds after Auth Continue', function () {
                 var protocol = new Protocol(nullStream);
                 var mockedAuthenticator = {
