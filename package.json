@@ -15,10 +15,11 @@
     "test": "mocha",
     "coverage": "istanbul cover _mocha"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
-    "mocha": "^2.2.1",
-    "chai-as-promised": "^5.1.0"
+    "chai-as-promised": "^5.1.0",
+    "istanbul": "^0.3.17",
+    "jsdoc": "^3.3.2",
+    "mocha": "^2.2.1"
   }
 }
