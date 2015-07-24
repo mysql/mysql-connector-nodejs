@@ -102,6 +102,34 @@ describe('Protocol', function () {
                 protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_FAIL, {msg: message}, protocol.serverMessages));
                 return promise.should.be.rejectedWith(Error, message);
             });
+            it('should empty queue if auth succeeds after Auth Start', function () {
+                var protocol = new Protocol(nullStream);
+                var mockedAuthenticator = {
+                    name: 'mock',
+                    getInitialAuthData: function () {
+                    }
+                };
+                var promise = protocol.authenticate(mockedAuthenticator);
+                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
+                return promise.then(function () {
+                    assert.equal(protocol._workQueue.hasMore(), false);
+                    return true;
+                });
+            });
+            it('should allow Failing with empty reason after Auth Start', function () {
+                var protocol = new Protocol(nullStream);
+                var mockedAuthenticator = {
+                    name: 'mock',
+                    getInitialAuthData: function () {
+                    }
+                };
+                var promise = protocol.authenticate(mockedAuthenticator);
+                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_FAIL), {}, protocol.serverMessages);
+                return promise.catch(function () {
+                    assert.equal(protocol._workQueue.hasMore(), false);
+                    return true;
+                });
+            });
         });
         describe('multi-pass', function () {
             it('should put the additional data into the Authentication Continue message', function () {
