@@ -41,5 +41,73 @@ describe('Protocol', function () {
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
             return promise.should.eventually.deep.equal({});
         });
+        it('should return Promise with empty capabilities from server', function () {
+            var protocol = new Protocol(nullStream);
+            var promise = protocol.capabilitiesGet();
+            var caps = { /* TODO - Use an encoder for this so we can share input here with the expected below and make this readable */
+                capabilities: [
+                    {
+                        name: "some.capability",
+                        value: {
+                            type: 1, /* scalar */
+                            scalar: {
+                                type: 8, /* string */
+                                v_string: {
+                                    value: "foobar"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        name: "some.other.capability",
+                        value: {
+                            type: 3, /* array */
+                            array: {
+                                value: [
+                                    {
+                                        type: 1, /* scalar */
+                                        scalar: {
+                                            type: 8, /* string */
+                                            v_string: {
+                                                value: "1st item"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        type: 1, /* scalar */
+                                        scalar: {
+                                            type: 8, /* string */
+                                            v_string: {
+                                                value: "2nd item"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            };
+            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, caps, protocol.serverMessages));
+            return promise.should.eventually.deep.equal({
+                "some.capability": "foobar",
+                "some.other.capability": [
+                    "1st item",
+                    "2nd item"
+                ]
+            });
+        });
+        it('should throw an error when receiving multiple messages', function () {
+            var protocol = new Protocol(nullStream);
+            var promise = protocol.capabilitiesGet();
+            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
+            assert.throws(
+                function () {
+                    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
+                },
+                /Queue is empty/
+            );
+            return promise.should.eventually.deep.equal({});
+        });
     });
 });
