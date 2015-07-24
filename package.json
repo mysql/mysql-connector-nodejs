@@ -11,7 +11,8 @@
     "index.js"
   ],
   "scripts": {
-    "test": "test/run.js"
+    "test": "mocha",
+    "coverage": "istanbul cover _mocha"
   },
   "dependencies": {
     "mocha": "^2.2.1"

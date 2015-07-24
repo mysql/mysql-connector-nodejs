@@ -1,0 +1,4 @@
+-R spec
+--recursive
+--throw-deprecation
+--check-leaks
