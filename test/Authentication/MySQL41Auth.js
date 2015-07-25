@@ -6,6 +6,14 @@ var MySQL41Auth = require("../../lib/Authentication/MySQL41Auth");
 var username = "root";
 
 describe('MySQL41Auth', function () {
+    it('should throw if no username was provided', function () {
+        assert.throws(
+            function () {
+                new MySQL41Auth({});
+            },
+            /No username given/
+        );
+    });
     it('should throw if the server sends less than 20 bytes', function () {
         var auth = new MySQL41Auth({dbUser: username, dbPassword: 'fff'});
         assert.throws(
