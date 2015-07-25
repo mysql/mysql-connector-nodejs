@@ -19,7 +19,7 @@ module.exports = (function () {
     globals.getSocketFactory = function () { return socketFactory; };
 
     return {
-        createSession: function (properties) {
+        getSession: function (properties) {
             var session = new Session(properties, globals);
             return session.connect();
         },
