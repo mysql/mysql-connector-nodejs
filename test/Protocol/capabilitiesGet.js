@@ -41,6 +41,22 @@ describe('Protocol', function () {
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
             return promise.should.eventually.deep.equal({});
         });
+        it('should resolve multiple Promises with multiple responses in one network package', function () {
+            var protocol = new Protocol(nullStream),
+                promises = [
+                    protocol.capabilitiesGet(),
+                    protocol.capabilitiesGet(),
+                    protocol.capabilitiesGet()
+                ],
+                all = Promise.all(promises),
+                singleResponse = protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages),
+                result = new Buffer(singleResponse.length * promises.length);
+            for (var i = 0; i < promises.length; ++i) {
+                singleResponse.copy(result, i * singleResponse.length);
+            }
+            protocol.handleServerMessage(result);
+            return all.should.be.fulfilled;
+        })
         it('should return Promise with empty capabilities from server', function () {
             var protocol = new Protocol(nullStream);
             var promise = protocol.capabilitiesGet();
