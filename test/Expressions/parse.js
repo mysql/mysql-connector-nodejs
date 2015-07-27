@@ -7,6 +7,12 @@ require('chai').should();
 describe('MySQLx Expression parsing', function () {
     [
         {
+            should: 'return empty tree for empty string',
+            in: '',
+            exp: {}
+        },
+        {
+            should: 'return operator tree for comparison',
             in: '@name == "Johannes"',
             exp: {
                 type: 5,
@@ -40,7 +46,7 @@ describe('MySQLx Expression parsing', function () {
             }
         }
     ].forEach(function (expression) {
-            it('parses ' + expression.in, function () {
+            it('should ' + expression.should + ' (' + expression.in + ')', function () {
                 parse(expression.in).should.deep.equal(expression.exp);
             });
         });
