@@ -60,34 +60,34 @@ describe('Data encoding', function () {
             exp: {
                 type: 3,
                 array: [
-                    {
-                        type: 1,
-                        scalar: {
-                            type: 8,
-                            v_string: {
-                                value: "aaa"
-                            }
-                        }
-                    },
-                    {
-                        type: 1,
-                        scalar: {
-                            type: 8,
-                            v_string: {
-                                value: "bbb"
-                            }
-                        }
-                    },
-                    {
-                        type: 1,
-                        scalar: {
-                            type: 8,
-                            v_string: {
-                                value: "ccc"
-                            }
-                        }
-                    }
+                    /* Don't trust string encoding enough? - Add more tests above! */
+                    encode("aaa"),
+                    encode("bbb"),
+                    encode("ccc")
                 ]
+            }
+        },
+        {
+            should: "encode an object of strings",
+            in: { "1": "aaa", "b": "bbb", "weird\"key": "ccc" },
+            exp: {
+                type: 2,
+                obj: {
+                    fld: [
+                        {
+                            key: "1",
+                            value: encode("aaa")
+                        },
+                        {
+                            key: "b",
+                            value: encode("bbb")
+                        },
+                        {
+                            key: "weird\"key",
+                            value: encode("ccc")
+                        }
+                    ]
+                }
             }
         }
     ].forEach(function (input) {
