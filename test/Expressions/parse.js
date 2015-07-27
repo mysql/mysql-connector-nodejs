@@ -1,5 +1,6 @@
 "use strict";
 
+var Datatype = require('../../lib/Protocol/Datatype');
 var parse = require('../../lib/Expressions').parse;
 require('chai').should();
 
@@ -31,15 +32,7 @@ describe('MySQLx Expression parsing', function () {
                         },
                         {
                             type: 2,
-                            constant: {
-                                type: 1,
-                                scalar: {
-                                    type: 8,
-                                    v_string: {
-                                        value: "Johannes"
-                                    }
-                                }
-                            }
+                            constant: Datatype.encode("Johannes")
                         }
                     ]
                 }
