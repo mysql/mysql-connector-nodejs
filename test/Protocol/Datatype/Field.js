@@ -7,10 +7,7 @@ var contentTypes = {
     JSON: 2,
     XML:  3
 }
-var chai = require('chai');
-chai.config.includeStack = true;
-var expect = chai.expect;
-var should = require('chai').should()
+var should = require('chai').should();
 
 var emptyBuffer = new Buffer(0);
 
