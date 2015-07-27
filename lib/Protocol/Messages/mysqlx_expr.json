@@ -25,7 +25,7 @@
         },
         "identifier": {
           "rule": "optional",
-          "type": "ColumnIdentifier",
+          "type": "Mysqlx.Expr.ColumnIdentifier",
           "tag": 2
         },
         "variable": {
@@ -45,7 +45,7 @@
         },
         "operator": {
           "rule": "optional",
-          "type": "Operator",
+          "type": "Mysqlx.Expr.Operator",
           "tag": 6
         }
       }
@@ -125,7 +125,7 @@
         },
         "param": {
           "rule": "repeated",
-          "type": "Expr",
+          "type": "Mysqlx.Expr.Expr",
           "tag": 2
         }
       }
@@ -139,7 +139,7 @@
         },
         "param": {
           "rule": "repeated",
-          "type": "Expr",
+          "type": "Mysqlx.Expr.Expr",
           "tag": 2
         }
       }
