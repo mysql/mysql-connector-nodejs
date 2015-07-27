@@ -1,6 +1,6 @@
 "use strict";
 
-var Session = require('./lib/Session');
+var Session = require('./lib/DevAPI/Session');
 var SocketFactory = require('./lib/StreamFactory');
 
 function NullLogger() {}

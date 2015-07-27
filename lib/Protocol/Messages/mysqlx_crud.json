@@ -343,6 +343,12 @@
       }
     },
     "Insert": {
+      "enums": {
+        "DataModel": {
+          "DOCUMENT": 1,
+          "TABLE": 2
+        }
+      },
       "fields": {
         "collection": {
           "rule": "required",
