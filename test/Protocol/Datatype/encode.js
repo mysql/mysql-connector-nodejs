@@ -16,6 +16,28 @@ describe('Data encoding', function () {
             }
         },
         {
+            should: "encode zero",
+            in: 0,
+            exp: {
+                type: 1,
+                scalar: {
+                    type: 1,
+                    v_signed_int: 0
+                }
+            }
+        },
+        {
+            should: "encode small positive number",
+            in: 1,
+            exp: {
+                type: 1,
+                scalar: {
+                    type: 1,
+                    v_signed_int: 1
+                }
+            }
+        },
+        {
             should: "encode a simple string",
             in: "some string",
             exp: {
