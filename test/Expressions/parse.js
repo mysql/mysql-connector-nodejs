@@ -14,7 +14,7 @@ describe('MySQLx Expression parsing', function () {
         },
         {
             should: 'return operator tree for comparison',
-            in: '@name == "Johannes"',
+            in: '@.name == "Johannes"',
             exp: {
                 type: 5,
                 operator: {
