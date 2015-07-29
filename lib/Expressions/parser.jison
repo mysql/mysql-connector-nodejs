@@ -117,9 +117,11 @@ FunctionCall
     $$ = {
       type: 4,
       function_call: {
-        name: $1,
-        param: $3
+        name: $1
       }
+    };
+    if ($3) {
+      $$.function_call.param = $3;
     }
   }%
   ;

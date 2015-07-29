@@ -45,8 +45,7 @@ describe('MySQLx Expression parsing', function () {
                 function_call: {
                     name: {
                         name: "concat"
-                    },
-                    param: []
+                    }
                 }
             }
         },
