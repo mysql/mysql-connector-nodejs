@@ -23,10 +23,43 @@ describe('MySQLx Expression parsing', function () {
                         {
                             type: 1,
                             identifier: {
-                                document_path: {
-                                    type: 1,
-                                    value: "name"
-                                }
+                                document_path: [
+                                    {
+                                        type: 1,
+                                        value: "name"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            type: 2,
+                            constant: Datatype.encode("Johannes")
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            should: 'return operator tree for comparison',
+            in: '@.name.first == "Johannes"',
+            exp: {
+                type: 5,
+                operator: {
+                    name: '==',
+                    param: [
+                        {
+                            type: 1,
+                            identifier: {
+                                document_path: [
+                                    {
+                                        type: 1,
+                                        value: "name"
+                                    },
+                                    {
+                                        type: 1,
+                                        value: "first"
+                                    }
+                                ]
                             }
                         },
                         {

@@ -42,7 +42,9 @@ non_escaped   ([^\0\n])
 
 <*>'==' return '==';
 
-<*>'@.' return '@.';
+<*>'@' return '@';
+
+<*>'.' return '.';
 
 <*>"/*"(.|\r|\n)*?"*/" %{
     if (yytext.match(/\r|\n/) && parser.restricted) {
@@ -137,15 +139,21 @@ FunctionArgs
   | FunctionArgs ',' Expression { $$ = $1; $$.push($3); }
   ;
 
+DocPathElement
+  : '.' StringLiteral { $$ = { type: 1, value: $2 } }
+  ;
+
+DocPathElements
+  : DocPathElement { $$ = [ $1 ]; }
+  | DocPathElements DocPathElement { $$ = $1; console.log($$); $$.push($2); }
+  ;
+
 DocPath
-  : '@.' StringLiteral %{
+  : '@' DocPathElements %{
     $$ = {
       type: 1,
       identifier: {
-        document_path: {
-          type: 1,
-          value: $2
-        }
+        document_path: $2
       }
     }
   }%
