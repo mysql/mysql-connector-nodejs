@@ -19,34 +19,77 @@ oct_escape    (\\0?[0-7]{1,3})
 char_escape   (\\[abfnrtv\\/'"])
 non_escaped   ([^\0\n])
 
+%{
+parser.charUnescape = function (chr) {
+  if (chr[0] !== "\\") {
+    return chr;
+  }
+
+  chr = chr.substr(1);
+
+  var quotes = {
+    '"':  '"',
+    '\'': '\''
+  };
+
+  if (quotes[chr]) {
+    if (chr === parser.charUnescapeCurrentQuote) {
+      return quotes[chr];
+    } else {
+      return '\\' + quotes[chr];
+    }
+  }
+
+  var escapee = {
+    '\\': '\\',
+    '/':  '/',
+    b:    '\b',
+    f:    '\f',
+    n:    '\n',
+    r:    '\r',
+    t:    '\t',
+    v:    '\v'
+  };
+
+  if (escapee[chr]) {
+    return escapee[chr];
+  }
+
+  chr = String.fromCharCode(chr);
+
+  return chr;
+};
+%}
+
 %x INITIAL
+%x string_quoted_content
 
 %%
 
 // End of file match
-<*><<EOF>>          return 'EOF';
+<INITIAL><<EOF>>          return 'EOF';
 
-<*>'('  return '(';
-<*>')' return ')';
+<INITIAL>'('  return '(';
+<INITIAL>')' return ')';
 
-<*>{dec}  return 'Number';
+<INITIAL>{dec}  return 'Number';
 
-<*>"true" return 'true';
-<*>"false" return 'false';
+<INITIAL>"true" return 'true';
+<INITIAL>"false" return 'false';
 
-<*>{name}  return 'StringLiteral';
+<INITIAL>{name}  return 'StringLiteral';
 
-<*>',' return ',';
+<INITIAL>',' return ',';
 
-<*>'"' return '"';
+<INITIAL>{quote} this.begin('string_quoted_content'); parser.charUnescapeCurrentQuote = this.match; return 'QUOTE';
 
-<*>'==' return '==';
+<INITIAL>'==' return '==';
 
-<*>'@' return '@';
+<INITIAL>'@' return '@';
 
-<*>'.' return '.';
+<INITIAL>'.' return '.';
 
-<*>"/*"(.|\r|\n)*?"*/" %{
+<INITIAL>"/*"(.|\r|\n)*?"*/" %{
     if (yytext.match(/\r|\n/) && parser.restricted) {
         parser.restricted = false;
         this.unput(yytext);
@@ -54,20 +97,28 @@ non_escaped   ([^\0\n])
     }
 %}
 
-<*>"//".*($|\r|\n) %{
+<INITIAL>"//".*($|\r|\n) %{
     if (yytext.match(/\r|\n/) && parser.restricted) {
         parser.restricted = false;
         this.unput(yytext);
         return ";";
     }
 %}
+
+<string_quoted_content>\s+             return 'NON_ESCAPED';
+<string_quoted_content>{hex_escape}    return 'HEX_ESCAPE';
+<string_quoted_content>{oct_escape}    return 'OCT_ESCAPE';
+<string_quoted_content>{char_escape}   return 'CHAR_ESCAPE';
+<string_quoted_content>{quote}         if (parser.charUnescapeCurrentQuote === this.match) { this.popState(); return 'QUOTE'; } else { return 'NON_ESCAPED'; }
+<string_quoted_content>{non_escaped}   return 'NON_ESCAPED';
+
 
 
 // Skip whitespaces in other states
-<*>\s+  /* skip whitespaces */
+<INITIAL>\s+  /* skip whitespaces */
 
 // All other matches are invalid
-<*>.    return 'INVALID'
+<INITIAL>.    return 'INVALID'
 
 /lex
 
@@ -83,8 +134,7 @@ Input
   ;
 
 Literal
-   : '"' StringLiteral '"' { $$ = { type: 2, constant: Datatype.encode($2) } }
-   | '"' '"' { $$ = { type: 2, constant: Datatype.encode("") } }
+   : string { $$ = { type: 2, constant: Datatype.encode($1) } }
    | Number { $$ = { type: 2, constant: Datatype.encode(parseInt($1)) } }
    | true { $$ = { type: 2, constant: Datatype.encode(true) } }
    | false { $$ = { type: 2, constant: Datatype.encode(false) } }
@@ -145,7 +195,7 @@ DocPathElement
 
 DocPathElements
   : DocPathElement { $$ = [ $1 ]; }
-  | DocPathElements DocPathElement { $$ = $1; console.log($$); $$.push($2); }
+  | DocPathElements DocPathElement { $$ = $1; $$.push($2); }
   ;
 
 DocPath
@@ -184,9 +234,9 @@ string_quoted
   ;
 
 string_quoted_char
-  : HEX_ESCAPE   { $$ = parser.protobufCharUnescape($1); }
-  | OCT_ESCAPE   { $$ = parser.protobufCharUnescape($1); }
-  | CHAR_ESCAPE  { $$ = parser.protobufCharUnescape($1); }
+  : HEX_ESCAPE   { $$ = parser.charUnescape($1); }
+  | OCT_ESCAPE   { $$ = parser.charUnescape($1); }
+  | CHAR_ESCAPE  { $$ = parser.charUnescape($1); }
   | NON_ESCAPED  { $$ = $1; }
   | NAME         { $$ = $1; }
   ;

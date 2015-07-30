@@ -8,9 +8,45 @@ require('chai').should();
 describe('MySQLx Expression parsing', function () {
     [
         {
-            should: 'return empty tree for empty string',
+            should: 'return empty tree for empty input',
             in: '',
             exp: {}
+        },
+        {
+            should: 'allow whitespaces within strings',
+            in: '"foo bar"',
+            exp: {
+
+                type: 2,
+                constant: Datatype.encode("foo bar")
+            }
+        },
+        {
+            should: 'allow tabs within strings',
+            in: '"foo\\tbar"',
+            exp: {
+
+                type: 2,
+                constant: Datatype.encode("foo\tbar")
+            }
+        },
+        {
+            should: 'allow single quoted strings',
+            in: "'foo bar'",
+            exp: {
+
+                type: 2,
+                constant: Datatype.encode("foo bar")
+            }
+        },
+        {
+            should: 'allow escaped quotes within strings',
+            in: '"foo\\\"bar"',
+            exp: {
+
+                type: 2,
+                constant: Datatype.encode("foo\"bar")
+            }
         },
         {
             should: 'return operator tree for comparison',
