@@ -1,5 +1,5 @@
 var expect = require('chai').expect;
-var Session = require('../../lib/DevAPI/Session');
+var Session = require('../../lib/DevAPI/BaseSession');
 var Schema = require('../../lib/DevAPI/Schema');
 
 describe('Session', function () {

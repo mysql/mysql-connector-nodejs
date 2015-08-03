@@ -2,7 +2,7 @@ var chai = require('chai'),
     should = chai.should(),
     spies = require('chai-spies');
 var Protocol = require('../../lib/Protocol');
-var Session = require('../../lib/DevAPI/Session');
+var Session = require('../../lib/DevAPI/BaseSession');
 var Schema = require('../../lib/DevAPI/Schema');
 
 chai.use(spies);
