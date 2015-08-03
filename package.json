@@ -19,6 +19,7 @@
   "dependencies": {},
   "devDependencies": {
     "chai-as-promised": "^5.1.0",
+    "chai-spies": "^0.7.0",
     "istanbul": "^0.3.17",
     "jsdoc": "^3.3.2",
     "mocha": "^2.2.1"
