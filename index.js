@@ -1,6 +1,7 @@
 "use strict";
 
-var Session = require('./lib/DevAPI/BaseSession'),
+var Session = require('./lib/DevAPI/Session'),
+    NodeSession = require('./lib/DevAPI/NodeSession'),
     SocketFactory = require('./lib/StreamFactory');
 
 module.exports = (function () {
@@ -12,6 +13,10 @@ module.exports = (function () {
     return {
         getSession: function (properties) {
             var session = new Session(properties, globals);
+            return session.connect();
+        },
+        getNodeSession: function (properties) {
+            var session = new NodeSession(properties, globals);
             return session.connect();
         }
     };
