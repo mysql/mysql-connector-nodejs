@@ -33,7 +33,6 @@ describe('DevAPI Collection Add', function () {
         Protocol.prototype.crudInsert = spy;
 
         return getTestSession().then(function (session) {
-            var session = new Session({});
             session.getSchema("schema").getCollection("collection").add({_id: 12}).execute();
 
             spy.should.be.called.once.with("schema", "collection", [{_id: 12}]);
