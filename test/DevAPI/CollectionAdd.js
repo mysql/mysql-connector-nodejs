@@ -20,15 +20,19 @@ var NullStreamFactory = {
     }
 };
 
+function getTestSession() {
+    return mysqlx.getSession({
+        auth_method: "NullAuth",
+        socket_factory: NullStreamFactory
+    });
+}
+
 describe('DevAPI Collection Add', function () {
     it('should request protocol to add one item', function () {
         var spy = chai.spy(Protocol.prototype.crudInsert);
         Protocol.prototype.crudInsert = spy;
 
-        return mysqlx.getSession({
-            auth_method: "NullAuth",
-            socket_factory: NullStreamFactory
-        }).then(function (session) {
+        return getTestSession().then(function (session) {
             var session = new Session({});
             session.getSchema("schema").getCollection("collection").add({_id: 12}).execute();
 
@@ -41,10 +45,7 @@ describe('DevAPI Collection Add', function () {
         var spy = chai.spy(Protocol.prototype.crudInsert);
         Protocol.prototype.crudInsert = spy;
 
-        return mysqlx.getSession({
-            auth_method: "NullAuth",
-            socket_factory: NullStreamFactory
-        }).then(function (session) {
+        return getTestSession().then(function (session) {
             session.getSchema("schema").getCollection("collection").add([{_id: 12}, {_id: 34}]).execute();
 
             spy.should.be.called.once.with("schema", "collection", [{_id: 12}, {_id: 34}]);
@@ -54,10 +55,7 @@ describe('DevAPI Collection Add', function () {
         var spy = chai.spy(Protocol.prototype.crudInsert);
         Protocol.prototype.crudInsert = spy;
 
-        return mysqlx.getSession({
-            auth_method: "NullAuth",
-            socket_factory: NullStreamFactory
-        }).then(function (session) {
+        return getTestSession().then(function (session) {
             session.getSchema("schema").getCollection("collection").add({_id: 12}, {_id: 34}).execute();
 
             spy.should.be.called.once.with("schema", "collection", [{_id: 12}, {_id: 34}]);
@@ -69,11 +67,8 @@ describe('DevAPI Collection Add', function () {
 
         var doc = { foo: 12 };
 
-        return mysqlx.getSession({
-            auth_method: "NullAuth",
-            socket_factory: NullStreamFactory
-        }).then(function (session) {
-           session.getSchema("schema").getCollection("collection").add(doc).execute();
+        return getTestSession().then(function (session) {
+            session.getSchema("schema").getCollection("collection").add(doc).execute();
 
             spy.should.be.called.once();
             should.exist(doc._id);
