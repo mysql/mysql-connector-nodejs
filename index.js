@@ -1,8 +1,7 @@
 "use strict";
 
 var Session = require('./lib/DevAPI/Session'),
-    NodeSession = require('./lib/DevAPI/NodeSession'),
-    SocketFactory = require('./lib/StreamFactory');
+    NodeSession = require('./lib/DevAPI/NodeSession');
 
 /**
  * MySQL X module
