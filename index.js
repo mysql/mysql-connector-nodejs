@@ -5,18 +5,13 @@ var Session = require('./lib/DevAPI/Session'),
     SocketFactory = require('./lib/StreamFactory');
 
 module.exports = (function () {
-    var globals = {};
-
-    var socketFactory = new SocketFactory(globals);
-    globals.getSocketFactory = function () { return socketFactory; };
-
     return {
         getSession: function (properties) {
-            var session = new Session(properties, globals);
+            var session = new Session(properties);
             return session.connect();
         },
         getNodeSession: function (properties) {
-            var session = new NodeSession(properties, globals);
+            var session = new NodeSession(properties);
             return session.connect();
         }
     };
