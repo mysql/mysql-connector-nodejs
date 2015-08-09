@@ -14,7 +14,8 @@
   "scripts": {
     "test": "mocha",
     "generate-parser": "jison -o lib/Expressions/parser.js  ./lib/Expressions/parser.jison",
-    "coverage": "istanbul cover _mocha"
+    "coverage": "istanbul cover _mocha",
+    "doc": "jsdoc -d doc/ -r index.js lib/"
   },
   "dependencies": {},
   "devDependencies": {
