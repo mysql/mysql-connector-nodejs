@@ -4,13 +4,28 @@ var Session = require('./lib/DevAPI/Session'),
     NodeSession = require('./lib/DevAPI/NodeSession'),
     SocketFactory = require('./lib/StreamFactory');
 
-var mysqlx = module.exports;
+/**
+ * MySQL X module
+ *
+ * @module mysqlx
+ */
 
-mysqlx.getSession = function (properties) {
+/**
+ *
+ * @param {Properties} properties
+ * @returns {Promise.<Session>}
+ */
+exports.getSession = function (properties) {
     var session = new Session(properties);
     return session.connect();
 };
-mysqlx.getNodeSession = function (properties) {
+
+/**
+ *
+ * @param {Properties} properties
+ * @returns {Promise.<NodeSession>}
+ */
+exports.getNodeSession = function (properties) {
     var session = new NodeSession(properties);
     return session.connect();
 };
