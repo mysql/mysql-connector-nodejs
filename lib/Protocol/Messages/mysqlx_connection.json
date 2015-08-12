@@ -24,7 +24,7 @@
       "fields": {
         "capabilities": {
           "rule": "repeated",
-          "type": "Mysqlx.Connection.Capability",
+          "type": "Capability",
           "tag": 1
         }
       }

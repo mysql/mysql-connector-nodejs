@@ -25,7 +25,7 @@
         },
         "identifier": {
           "rule": "optional",
-          "type": "Mysqlx.Expr.ColumnIdentifier",
+          "type": "ColumnIdentifier",
           "tag": 2
         },
         "variable": {
@@ -40,13 +40,18 @@
         },
         "function_call": {
           "rule": "optional",
-          "type": "Mysqlx.Expr.FunctionCall",
+          "type": "FunctionCall",
           "tag": 5
         },
         "operator": {
           "rule": "optional",
-          "type": "Mysqlx.Expr.Operator",
+          "type": "Operator",
           "tag": 6
+        },
+        "position": {
+          "rule": "optional",
+          "type": "uint32",
+          "tag": 7
         }
       }
     },
@@ -120,12 +125,12 @@
       "fields": {
         "name": {
           "rule": "required",
-          "type": "Mysqlx.Expr.Identifier",
+          "type": "Identifier",
           "tag": 1
         },
         "param": {
           "rule": "repeated",
-          "type": "Mysqlx.Expr.Expr",
+          "type": "Expr",
           "tag": 2
         }
       }
@@ -139,7 +144,7 @@
         },
         "param": {
           "rule": "repeated",
-          "type": "Mysqlx.Expr.Expr",
+          "type": "Expr",
           "tag": 2
         }
       }

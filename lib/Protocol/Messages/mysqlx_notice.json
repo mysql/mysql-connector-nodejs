@@ -1,0 +1,105 @@
+{
+  "imports": [
+    "mysqlx_datatypes.proto"
+  ],
+  "messages": {
+    "Frame": {
+      "enums": {
+        "Scope": {
+          "GLOBAL": 1,
+          "LOCAL": 2
+        }
+      },
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 1
+        },
+        "scope": {
+          "rule": "optional",
+          "type": "Scope",
+          "tag": 2,
+          "options": {
+            "default": "GLOBAL"
+          }
+        },
+        "payload": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 3
+        }
+      }
+    },
+    "Warning": {
+      "enums": {
+        "Level": {
+          "NOTE": 1,
+          "WARNING": 2
+        }
+      },
+      "fields": {
+        "level": {
+          "rule": "optional",
+          "type": "Level",
+          "tag": 1,
+          "options": {
+            "default": "WARNING"
+          }
+        },
+        "code": {
+          "rule": "required",
+          "type": "uint32",
+          "tag": 2
+        },
+        "msg": {
+          "rule": "required",
+          "type": "string",
+          "tag": 3
+        }
+      }
+    },
+    "SessionVariableChanged": {
+      "fields": {
+        "param": {
+          "rule": "required",
+          "type": "string",
+          "tag": 1
+        },
+        "value": {
+          "rule": "optional",
+          "type": "Mysqlx.Datatypes.Scalar",
+          "tag": 2
+        }
+      }
+    },
+    "SessionStateChanged": {
+      "enums": {
+        "Parameter": {
+          "CURRENT_SCHEMA": 1,
+          "ACCOUNT_EXPIRED": 2,
+          "GENERATED_INSERT_ID": 3,
+          "ROWS_AFFECTED": 4,
+          "ROWS_FOUND": 5,
+          "ROWS_MATCHED": 6,
+          "TRX_COMMITTED": 7,
+          "TRX_ROLLEDBACK": 9,
+          "PRODUCED_MESSAGE": 10
+        }
+      },
+      "fields": {
+        "param": {
+          "rule": "required",
+          "type": "Parameter",
+          "tag": 1
+        },
+        "value": {
+          "rule": "optional",
+          "type": "Mysqlx.Datatypes.Scalar",
+          "tag": 2
+        }
+      }
+    }
+  },
+  "package": "Mysqlx.Notice"
+}

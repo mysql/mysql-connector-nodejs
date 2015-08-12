@@ -40,15 +40,6 @@
         }
       }
     },
-    "AuthenticateFail": {
-      "fields": {
-        "msg": {
-          "rule": "optional",
-          "type": "string",
-          "tag": 1
-        }
-      }
-    },
     "Reset": {
       "fields": {}
     },

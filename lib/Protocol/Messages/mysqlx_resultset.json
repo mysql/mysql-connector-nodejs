@@ -1,0 +1,105 @@
+{
+  "options": {
+    "java_package": "com.mysql.cj.mysqlx.protobuf"
+  },
+  "messages": {
+    "FetchDoneMoreOutParams": {
+      "fields": {}
+    },
+    "FetchDoneMoreResultsets": {
+      "fields": {}
+    },
+    "FetchDone": {
+      "fields": {}
+    },
+    "ColumnMetaData": {
+      "enums": {
+        "FieldType": {
+          "SINT": 1,
+          "UINT": 2,
+          "DOUBLE": 5,
+          "FLOAT": 6,
+          "BYTES": 7,
+          "TIME": 10,
+          "DATETIME": 12,
+          "SET": 15,
+          "ENUM": 16,
+          "BIT": 17,
+          "DECIMAL": 18
+        }
+      },
+      "fields": {
+        "type": {
+          "rule": "required",
+          "type": "FieldType",
+          "tag": 1
+        },
+        "name": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 2
+        },
+        "original_name": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 3
+        },
+        "table": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 4
+        },
+        "original_table": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 5
+        },
+        "schema": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 6
+        },
+        "catalog": {
+          "rule": "optional",
+          "type": "bytes",
+          "tag": 7
+        },
+        "collation": {
+          "rule": "optional",
+          "type": "uint64",
+          "tag": 8
+        },
+        "fractional_digits": {
+          "rule": "optional",
+          "type": "uint32",
+          "tag": 9
+        },
+        "length": {
+          "rule": "optional",
+          "type": "uint32",
+          "tag": 10
+        },
+        "flags": {
+          "rule": "optional",
+          "type": "uint32",
+          "tag": 11
+        },
+        "content_type": {
+          "rule": "optional",
+          "type": "uint32",
+          "tag": 12
+        }
+      }
+    },
+    "Row": {
+      "fields": {
+        "field": {
+          "rule": "repeated",
+          "type": "bytes",
+          "tag": 1
+        }
+      }
+    }
+  },
+  "package": "Mysqlx.Resultset"
+}

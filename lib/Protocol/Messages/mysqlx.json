@@ -1,6 +1,7 @@
 {
   "imports": [
     "mysqlx_sql.proto",
+    "mysqlx_resultset.proto",
     "mysqlx_crud.proto",
     "mysqlx_session.proto",
     "mysqlx_connection.proto",
@@ -40,14 +41,14 @@
           "CONN_CAPABILITIES": 2,
           "SESS_AUTHENTICATE_CONTINUE": 3,
           "SESS_AUTHENTICATE_OK": 4,
-          "SESS_AUTHENTICATE_FAIL": 5,
           "NOTICE": 11,
-          "SQL_COLUMN_META_DATA": 12,
-          "SQL_ROW": 13,
-          "SQL_RESULT_FETCH_DONE": 14,
-          "SQL_RESULT_FETCH_SUSPENDED": 15,
-          "SQL_RESULT_FETCH_DONE_MORE_RESULTSETS": 16,
-          "SQL_STMT_EXECUTE_OK": 17
+          "RESULTSET_COLUMN_META_DATA": 12,
+          "RESULTSET_ROW": 13,
+          "RESULTSET_FETCH_DONE": 14,
+          "RESULTSET_FETCH_SUSPENDED": 15,
+          "RESULTSET_FETCH_DONE_MORE_RESULTSETS": 16,
+          "SQL_STMT_EXECUTE_OK": 17,
+          "RESULTSET_FETCH_DONE_MORE_OUT_PARAMS": 18
         }
       },
       "fields": {}

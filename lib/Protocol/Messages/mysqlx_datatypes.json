@@ -3,20 +3,6 @@
     "java_package": "com.mysql.cj.mysqlx.protobuf"
   },
   "messages": {
-    "Scalar.String": {
-      "fields": {
-        "value": {
-          "rule": "required",
-          "type": "bytes",
-          "tag": 1
-        },
-        "charset": {
-          "rule": "optional",
-          "type": "string",
-          "tag": 2
-        }
-      }
-    },
     "Scalar": {
       "enums": {
         "Type": {
@@ -28,6 +14,22 @@
           "V_FLOAT": 6,
           "V_BOOL": 7,
           "V_STRING": 8
+        }
+      },
+      "messages": {
+        "String": {
+          "fields": {
+            "value": {
+              "rule": "required",
+              "type": "bytes",
+              "tag": 1
+            },
+            "collation": {
+              "rule": "optional",
+              "type": "uint64",
+              "tag": 2
+            }
+          }
         }
       },
       "fields": {
@@ -68,30 +70,32 @@
         },
         "v_string": {
           "rule": "optional",
-          "type": "Mysqlx.Datatypes.Scalar.String",
+          "type": "String",
           "tag": 9
         }
       }
     },
-    "Object.ObjectField": {
-      "fields": {
-        "key": {
-          "rule": "required",
-          "type": "string",
-          "tag": 1
-        },
-        "value": {
-          "rule": "required",
-          "type": "Mysqlx.Datatypes.Any",
-          "tag": 2
-        }
-      }
-    },
     "Object": {
+      "messages": {
+        "ObjectField": {
+          "fields": {
+            "key": {
+              "rule": "required",
+              "type": "string",
+              "tag": 1
+            },
+            "value": {
+              "rule": "required",
+              "type": "Any",
+              "tag": 2
+            }
+          }
+        }
+      },
       "fields": {
         "fld": {
           "rule": "repeated",
-          "type": "Mysqlx.Datatypes.Object.ObjectField",
+          "type": "ObjectField",
           "tag": 1
         }
       }
@@ -100,7 +104,7 @@
       "fields": {
         "value": {
           "rule": "repeated",
-          "type": "Mysqlx.Datatypes.Any",
+          "type": "Any",
           "tag": 1
         }
       }
@@ -121,17 +125,17 @@
         },
         "scalar": {
           "rule": "optional",
-          "type": "Mysqlx.Datatypes.Scalar",
+          "type": "Scalar",
           "tag": 2
         },
         "obj": {
           "rule": "optional",
-          "type": "Mysqlx.Datatypes.Object",
+          "type": "Object",
           "tag": 3
         },
         "array": {
           "rule": "optional",
-          "type": "Mysqlx.Datatypes.Array",
+          "type": "Array",
           "tag": 4
         }
       }

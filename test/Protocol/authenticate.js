@@ -84,8 +84,8 @@ describe('Protocol', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_FAIL), {}, protocol.serverMessages);
-                return promise.should.be.rejectedWith(Error, /unknown reason/);
+                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR), {}, protocol.serverMessages);
+                return promise.should.be.rejected;
             });
             it('should allow to provide a reason, when Failing after Auth Start', function () {
                 var protocol = new Protocol(nullStream);
@@ -96,8 +96,8 @@ describe('Protocol', function () {
                 };
                 var message = "This is a test!";
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_FAIL, {msg: message}, protocol.serverMessages));
-                return promise.should.be.rejectedWith(Error, message);
+                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, {msg: message}, protocol.serverMessages));
+                return promise.should.be.rejected;
             });
             it('should empty queue if auth succeeds after Auth Start', function () {
                 var protocol = new Protocol(nullStream);
@@ -121,7 +121,7 @@ describe('Protocol', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_FAIL), {}, protocol.serverMessages);
+                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR), {}, protocol.serverMessages);
                 return promise.catch(function () {
                     assert.equal(protocol._workQueue.hasMore(), false);
                     return true;
@@ -208,7 +208,7 @@ describe('Protocol', function () {
                 protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
                 protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
                 protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_FAIL, {}, protocol.serverMessages));
+                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, {}, protocol.serverMessages));
                 return promise.should.be.rejected;
             });
         });
