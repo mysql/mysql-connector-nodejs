@@ -75,7 +75,7 @@ describe('Protocol', function () {
             var protocol = new Protocol(nullStream);
             var promise = protocol.crudInsert("schema", "collection", [{ _id: 123 }, { _id: 456 }]);
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
-            return promise.should.eventually.deep.equal({});
+            return promise.should.eventually.deep.equal([]);
         });
         it('should report affected rows (once we handle int64 properly)');
 
@@ -89,7 +89,7 @@ describe('Protocol', function () {
                 },
                 /Queue is empty/
             );
-            return promise.should.eventually.deep.equal({});
+            return promise.should.eventually.deep.equal([]);
         });
         it('should throw an error when receiving multiple messages', function () {
             var protocol = new Protocol(nullStream);
@@ -101,7 +101,7 @@ describe('Protocol', function () {
                 },
                 /Queue is empty/
             );
-            return promise.should.eventually.deep.equal({});
+            return promise.should.eventually.deep.equal([]);
         });
         it('should fail if error is received', function () {
             var protocol = new Protocol(nullStream);
