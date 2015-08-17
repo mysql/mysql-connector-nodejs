@@ -69,7 +69,7 @@ parser.charUnescape = function (chr) {
 // End of file match
 <INITIAL><<EOF>>          return 'EOF';
 
-<INITIAL>'('  return '(';
+<INITIAL>'(' return '(';
 <INITIAL>')' return ')';
 
 <INITIAL>{dec}  return 'Number';
@@ -82,6 +82,24 @@ parser.charUnescape = function (chr) {
 <INITIAL>',' return ',';
 
 <INITIAL>{quote} this.begin('string_quoted_content'); parser.charUnescapeCurrentQuote = this.match; return 'QUOTE';
+
+<INITIAL>'||' return '||';
+
+<INITIAL>'&&' return '&&';
+
+<INITIAL>'==' return '==';
+
+<INITIAL>'+' return '+';
+
+<INITIAL>'-' return '-';
+
+<INITIAL>'*' return '*';
+
+<INITIAL>'/' return '/';
+
+<INITIAL>'%' return '%';
+
+<INITIAL>'!' return '!';
 
 <INITIAL>'==' return '==';
 
@@ -124,7 +142,12 @@ parser.charUnescape = function (chr) {
 
 //%start file
 
-%left '=='
+%left '||'
+%left '&&'
+%nonassoc '=='
+%left '+' '-'
+%left '*' '/' '%'
+%right '!'
 
 %%
 
@@ -146,8 +169,7 @@ Expression
   | FunctionCall
   | ':' PlaceholderName
   | '@' SQLVariable
-//  | Expression Operator Expression
-  | Expression '==' Expression %{
+  | Expression BinaryOperator Expression %{
     $$ = {
       type: 5,
       operator: {
@@ -158,6 +180,18 @@ Expression
   }%
   | DocPath
   | JSONExpression
+  | '(' Expression ')' { $$ = $2; }
+  ;
+
+BinaryOperator
+  : '||'
+  | '&&'
+  | '=='
+  | '+'
+  | '-'
+  | '*'
+  | '/'
+  | '%'
   ;
 
 Field
