@@ -151,7 +151,7 @@
         },
         "args": {
           "rule": "repeated",
-          "type": "Mysqlx.Datatypes.Any",
+          "type": "Mysqlx.Datatypes.Scalar",
           "tag": 11
         },
         "limit": {
@@ -230,7 +230,7 @@
         },
         "args": {
           "rule": "repeated",
-          "type": "Mysqlx.Datatypes.Any",
+          "type": "Mysqlx.Datatypes.Scalar",
           "tag": 8
         },
         "limit": {
@@ -269,7 +269,7 @@
         },
         "args": {
           "rule": "repeated",
-          "type": "Mysqlx.Datatypes.Any",
+          "type": "Mysqlx.Datatypes.Scalar",
           "tag": 6
         },
         "limit": {

@@ -35,7 +35,8 @@
       "enums": {
         "Level": {
           "NOTE": 1,
-          "WARNING": 2
+          "WARNING": 2,
+          "ERROR": 3
         }
       },
       "fields": {

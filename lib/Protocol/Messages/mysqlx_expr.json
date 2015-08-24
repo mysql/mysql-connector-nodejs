@@ -14,7 +14,9 @@
           "VARIABLE": 3,
           "FUNC_CALL": 4,
           "OPERATOR": 5,
-          "PLACEHOLDER": 6
+          "PLACEHOLDER": 6,
+          "OBJECT": 7,
+          "ARRAY": 8
         }
       },
       "fields": {
@@ -33,9 +35,9 @@
           "type": "string",
           "tag": 3
         },
-        "constant": {
+        "literal": {
           "rule": "optional",
-          "type": "Mysqlx.Datatypes.Any",
+          "type": "Mysqlx.Datatypes.Scalar",
           "tag": 4
         },
         "function_call": {
@@ -52,6 +54,16 @@
           "rule": "optional",
           "type": "uint32",
           "tag": 7
+        },
+        "object": {
+          "rule": "optional",
+          "type": "Object",
+          "tag": 8
+        },
+        "array": {
+          "rule": "optional",
+          "type": "Array",
+          "tag": 9
         }
       }
     },
@@ -146,6 +158,40 @@
           "rule": "repeated",
           "type": "Expr",
           "tag": 2
+        }
+      }
+    },
+    "Object": {
+      "messages": {
+        "ObjectField": {
+          "fields": {
+            "key": {
+              "rule": "required",
+              "type": "string",
+              "tag": 1
+            },
+            "value": {
+              "rule": "required",
+              "type": "Expr",
+              "tag": 2
+            }
+          }
+        }
+      },
+      "fields": {
+        "fld": {
+          "rule": "repeated",
+          "type": "ObjectField",
+          "tag": 1
+        }
+      }
+    },
+    "Array": {
+      "fields": {
+        "value": {
+          "rule": "repeated",
+          "type": "Expr",
+          "tag": 1
         }
       }
     }
