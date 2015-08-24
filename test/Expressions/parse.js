@@ -18,7 +18,7 @@ describe('MySQLx Expression parsing', function () {
             exp: {
 
                 type: 2,
-                constant: Datatype.encode("foo bar")
+                literal: Datatype.encodeScalar("foo bar")
             }
         },
         {
@@ -27,7 +27,7 @@ describe('MySQLx Expression parsing', function () {
             exp: {
 
                 type: 2,
-                constant: Datatype.encode("foo\tbar")
+                literal: Datatype.encodeScalar("foo\tbar")
             }
         },
         {
@@ -36,7 +36,7 @@ describe('MySQLx Expression parsing', function () {
             exp: {
 
                 type: 2,
-                constant: Datatype.encode("foo bar")
+                literal: Datatype.encodeScalar("foo bar")
             }
         },
         {
@@ -45,7 +45,7 @@ describe('MySQLx Expression parsing', function () {
             exp: {
 
                 type: 2,
-                constant: Datatype.encode("foo\"bar")
+                literal: Datatype.encodeScalar("foo\"bar")
             }
         },
         {
@@ -69,7 +69,7 @@ describe('MySQLx Expression parsing', function () {
                         },
                         {
                             type: 2,
-                            constant: Datatype.encode("Johannes")
+                            literal: Datatype.encodeScalar("Johannes")
                         }
                     ]
                 }
@@ -100,7 +100,7 @@ describe('MySQLx Expression parsing', function () {
                         },
                         {
                             type: 2,
-                            constant: Datatype.encode("Johannes")
+                            literal: Datatype.encodeScalar("Johannes")
                         }
                     ]
                 }
@@ -130,7 +130,7 @@ describe('MySQLx Expression parsing', function () {
                     param: [
                         {
                             type: 2,
-                            constant: Datatype.encode("foo")
+                            literal: Datatype.encodeScalar("foo")
                         }
                     ]
                 }
@@ -148,11 +148,11 @@ describe('MySQLx Expression parsing', function () {
                     param: [
                         {
                             type: 2,
-                            constant: Datatype.encode("foo")
+                            literal: Datatype.encodeScalar("foo")
                         },
                         {
                             type: 2,
-                            constant: Datatype.encode("bar")
+                            literal: Datatype.encodeScalar("bar")
                         }
                     ]
                 }
@@ -170,7 +170,7 @@ describe('MySQLx Expression parsing', function () {
                     param: [
                         {
                             type: 2,
-                            constant: Datatype.encode("foo")
+                            literal: Datatype.encodeScalar("foo")
                         },
                         {
                             type: 4,
@@ -181,7 +181,7 @@ describe('MySQLx Expression parsing', function () {
                                 param: [
                                     {
                                         type: 2,
-                                        constant: Datatype.encode("bar")
+                                        literal: Datatype.encodeScalar("bar")
                                     }
                                 ]
                             }

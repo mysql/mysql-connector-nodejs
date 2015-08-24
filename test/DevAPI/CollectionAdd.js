@@ -1,5 +1,8 @@
 "use strict";
 
+/*global
+  describe, beforeEach, afterEach, it
+ */
 var chai = require('chai'),
     should = chai.should(),
     spies = require('chai-spies');
@@ -8,7 +11,6 @@ var mysqlx = require('../../');
 var NullAuth = require('../../lib/Authentication/NullAuth');
 
 chai.use(spies);
-
 
 describe('DevAPI Collection Add', function () {
     var collection, spy, origInsert;
@@ -27,7 +29,7 @@ describe('DevAPI Collection Add', function () {
     };
 
     beforeEach('get Session', function (done) {
-        mysqlx.getSession({
+        return mysqlx.getSession({
             auth_method: "NULL",
             socket_factory: NullStreamFactory
         }).then(function (session) {
@@ -45,7 +47,9 @@ describe('DevAPI Collection Add', function () {
     });
 
     afterEach('reset spy', function () {
-        Protocol.prototype.crudInsert = origInsert;
+        if (origInsert) {
+            Protocol.prototype.crudInsert = origInsert;
+        }
     });
 
 

@@ -157,10 +157,10 @@ Input
   ;
 
 Literal
-   : string { $$ = { type: 2, constant: Datatype.encode($1) } }
-   | Number { $$ = { type: 2, constant: Datatype.encode(parseInt($1)) } }
-   | true { $$ = { type: 2, constant: Datatype.encode(true) } }
-   | false { $$ = { type: 2, constant: Datatype.encode(false) } }
+   : string { $$ = { type: 2, literal: Datatype.encodeScalar($1) } }
+   | Number { $$ = { type: 2, literal: Datatype.encodeScalar(parseInt($1)) } }
+   | true { $$ = { type: 2, literal: Datatype.encodeScalar(true) } }
+   | false { $$ = { type: 2, literal: Datatype.encodeScalar(false) } }
    ;
 
 Expression

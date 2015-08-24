@@ -45,7 +45,7 @@ describe('Protocol', function () {
             data.decoded.collection.name.should.equal("collection");
             data.decoded.row.length.should.equal(1);
             data.decoded.row[0].field.length.should.equal(1);
-            JSON.parse(DataType.decodeAny(data.decoded.row[0].field[0].constant)).should.deep.equal({ _id: 123 });
+            JSON.parse(DataType.decodeScalar(data.decoded.row[0].field[0].literal)).should.deep.equal({ _id: 123 });
         });
         it('should send multiple documents in one message', function () {
             var sentData = null;
@@ -68,8 +68,8 @@ describe('Protocol', function () {
             data.decoded.row.length.should.equal(2);
             data.decoded.row[0].field.length.should.equal(1);
             data.decoded.row[1].field.length.should.equal(1);
-            JSON.parse(DataType.decodeAny(data.decoded.row[0].field[0].constant)).should.deep.equal({ _id: 123 });
-            JSON.parse(DataType.decodeAny(data.decoded.row[1].field[0].constant)).should.deep.equal({ _id: 456 });
+            JSON.parse(DataType.decodeScalar(data.decoded.row[0].field[0].literal)).should.deep.equal({ _id: 123 });
+            JSON.parse(DataType.decodeScalar(data.decoded.row[1].field[0].literal)).should.deep.equal({ _id: 456 });
         });
         it('should resolve Promise after inserting multiple documents', function () {
             var protocol = new Protocol(nullStream);
