@@ -30,8 +30,8 @@ describe('DevAPI Collection Add', function () {
 
     beforeEach('get Session', function (done) {
         return mysqlx.getSession({
-            auth_method: "NULL",
-            socket_factory: NullStreamFactory
+            authMethod: "NULL",
+            socketFactory: NullStreamFactory
         }).then(function (session) {
             collection = session.getSchema("schema").getCollection("collection");
             done();
