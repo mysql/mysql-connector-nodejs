@@ -85,7 +85,8 @@
           "ROWS_MATCHED": 6,
           "TRX_COMMITTED": 7,
           "TRX_ROLLEDBACK": 9,
-          "PRODUCED_MESSAGE": 10
+          "PRODUCED_MESSAGE": 10,
+          "CLIENT_ID_ASSIGNED": 11
         }
       },
       "fields": {
