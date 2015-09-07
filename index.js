@@ -1,6 +1,6 @@
 "use strict";
 
-var Session = require('./lib/DevAPI/Session'),
+var Session = require('./lib/DevAPI/XSession'),
     NodeSession = require('./lib/DevAPI/NodeSession');
 
 /**
@@ -12,7 +12,7 @@ var Session = require('./lib/DevAPI/Session'),
 /**
  *
  * @param {Properties} properties
- * @returns {Promise.<Session>}
+ * @returns {Promise.<XSession>}
  */
 exports.getSession = function (properties) {
     var session = new Session(properties);
