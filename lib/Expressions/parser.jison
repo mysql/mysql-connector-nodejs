@@ -121,7 +121,7 @@ parser.charUnescape = function (chr) {
 
 <INITIAL>'==' return '==';
 
-<INITIAL>'@' return '@';
+<INITIAL>'$' return '$';
 
 <INITIAL>'.' return '.';
 
@@ -183,7 +183,9 @@ Literal
 
 Expression
   : Literal
-  | Field
+  | Field BinaryOperator Expression
+  | Expression BinaryOperator Field
+  | Field BinaryOperator Field
   | FunctionCall
   | ':' PlaceholderName
   | '@' SQLVariable
@@ -251,7 +253,7 @@ DocPathElements
   ;
 
 DocPath
-  : '@' DocPathElements %{
+  : '$' DocPathElements %{
     $$ = {
       type: 1,
       identifier: {

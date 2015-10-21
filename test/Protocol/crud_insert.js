@@ -19,7 +19,7 @@ describe('Protocol', function () {
             var protocol = new Protocol(nullStream);
             assert.throws(
                 function () {
-                    protocol.crudInsert("schema", "collection", {});
+                    protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, {});
                 },
                 /No document provided/
             );
@@ -37,7 +37,7 @@ describe('Protocol', function () {
 
             var protocol = new Protocol(mockedStream);
             assert.strictEqual(sentData, null, "There was data sent too early");
-            protocol.crudInsert("schema", "collection", [{ _id: 123 }]);
+            protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }]]);
             assert.notEqual(sentData, null, "There wasn't any data sent");
             var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
             data.messageId.should.equal(Messages.ClientMessages.CRUD_INSERT);
@@ -59,7 +59,7 @@ describe('Protocol', function () {
             };
 
             var protocol = new Protocol(mockedStream);
-            protocol.crudInsert("schema", "collection", [{ _id: 123 }, { _id: 456 }]);
+            protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             assert.notEqual(sentData, null, "There wasn't any data sent");
             var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
             data.messageId.should.equal(Messages.ClientMessages.CRUD_INSERT);
@@ -73,7 +73,7 @@ describe('Protocol', function () {
         });
         it('should resolve Promise after inserting multiple documents', function () {
             var protocol = new Protocol(nullStream);
-            var promise = protocol.crudInsert("schema", "collection", [{ _id: 123 }, { _id: 456 }]);
+            var promise = protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
             return promise.should.eventually.deep.equal([]);
         });
@@ -81,7 +81,7 @@ describe('Protocol', function () {
 
         it('should throw an error when receiving multiple messages', function () {
             var protocol = new Protocol(nullStream);
-            var promise = protocol.crudInsert("schema", "collection", [{ _id: 123 }, { _id: 456 }]);
+            var promise = protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
             assert.throws(
                 function () {
@@ -93,7 +93,7 @@ describe('Protocol', function () {
         });
         it('should throw an error when receiving multiple messages', function () {
             var protocol = new Protocol(nullStream);
-            var promise = protocol.crudInsert("schema", "collection", [{ _id: 123 }, { _id: 456 }]);
+            var promise = protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
             assert.throws(
                 function () {
@@ -105,7 +105,7 @@ describe('Protocol', function () {
         });
         it('should fail if error is received', function () {
             var protocol = new Protocol(nullStream);
-            var promise = protocol.crudInsert("schema", "collection", [{ _id: 123 }, { _id: 456 }]);
+            var promise = protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, {
                 code: 1,
                 sql_state: "0000",

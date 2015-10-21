@@ -55,20 +55,20 @@ describe('DevAPI Collection Add', function () {
 
     it('should request protocol to add one item', function () {
         collection.add({_id: 12}).execute();
-        spy.should.be.called.once.with("schema", "collection", [{_id: 12}]);
+        spy.should.be.called.once.with("schema", "collection", [[{_id: 12}]]);
     });
 
     it('should request protocol to add one item', function () {
         collection.add({_id: 12}).execute();
-        spy.should.be.called.once.with("schema", "collection", [{_id: 12}]);
+        spy.should.be.called.once.with("schema", "collection", [[{_id: 12}]]);
     });
     it('should request protocol to add an array of items', function () {
         collection.add([{_id: 12}, {_id: 34}]).execute();
-        spy.should.be.called.once.with("schema", "collection", [{_id: 12}, {_id: 34}]);
+        spy.should.be.called.once.with("schema", "collection", [[{_id: 12}], [{_id: 34}]]);
     });
     it('should request protocol to add items passed via varargs', function () {
         collection.add({_id: 12}, {_id: 34}).execute();
-        spy.should.be.called.once.with("schema", "collection", [{_id: 12}, {_id: 34}]);
+        spy.should.be.called.once.with("schema", "collection", [[{_id: 12}], [{_id: 34}]]);
     });
     it('should create an _id field if none was provided', function () {
         var doc = { foo: 12 };

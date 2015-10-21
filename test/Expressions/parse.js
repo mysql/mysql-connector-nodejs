@@ -50,7 +50,7 @@ describe('MySQLx Expression parsing', function () {
         },
         {
             should: 'return operator tree for comparison',
-            in: '@.name == "Johannes"',
+            in: '$.name == "Johannes"',
             exp: {
                 type: 5,
                 operator: {
@@ -77,7 +77,7 @@ describe('MySQLx Expression parsing', function () {
         },
         {
             should: 'return operator tree for comparison',
-            in: '@.name.first == "Johannes"',
+            in: '$.name.first == "Johannes"',
             exp: {
                 type: 5,
                 operator: {
