@@ -126,6 +126,10 @@ parser.charUnescape = function (chr) {
 
 <INITIAL>'.' return '.';
 
+<INITIAL>'[' return '[';
+
+<INITIAL>']' return ']';
+
 <INITIAL>"/*"(.|\r|\n)*?"*/" %{
     if (yytext.match(/\r|\n/) && parser.restricted) {
         parser.restricted = false;
@@ -179,9 +183,13 @@ Input
   | Expression EOF { return $$ }
   ;
 
-Literal
-   : string { $$ = { type: 2, literal: Datatype.encodeScalar($1) } }
+StringOrNumber
+   : string { $$ = { type: 2, literal: Datatype.encodeScalar($1) }; }
    | Number { $$ = { type: 2, literal: Datatype.encodeScalar(parseInt($1)) } }
+   ;
+
+Literal
+   : StringOrNumber
    | true { $$ = { type: 2, literal: Datatype.encodeScalar(true) } }
    | false { $$ = { type: 2, literal: Datatype.encodeScalar(false) } }
    ;
@@ -275,6 +283,8 @@ FunctionArgs
 
 DocPathElement
   : '.' StringLiteral { $$ = { type: 1, value: $2 } }
+  | '[' Number ']'           { $$ = { type: 3, index: parseInt($2) }; }
+  | '[' '*' ']'       { $$ = { type: 4 } }
   ;
 
 DocPathElements
