@@ -81,6 +81,7 @@ parser.charUnescape = function (chr) {
 
 %x INITIAL
 %x string_quoted_content
+%x backtick
 
 %%
 
@@ -98,8 +99,6 @@ parser.charUnescape = function (chr) {
 <INITIAL>{name}  return 'StringLiteral';
 
 <INITIAL>',' return ',';
-
-<INITIAL>{quote} this.begin('string_quoted_content'); parser.charUnescapeCurrentQuote = this.match; return 'QUOTE';
 
 <INITIAL>'||' return '||';
 
@@ -141,6 +140,7 @@ parser.charUnescape = function (chr) {
     }
 %}
 
+<INITIAL>{quote} this.begin('string_quoted_content'); parser.charUnescapeCurrentQuote = this.match; return 'QUOTE';
 <string_quoted_content>\s+             return 'NON_ESCAPED';
 <string_quoted_content>{hex_escape}    return 'HEX_ESCAPE';
 <string_quoted_content>{oct_escape}    return 'OCT_ESCAPE';
@@ -148,7 +148,10 @@ parser.charUnescape = function (chr) {
 <string_quoted_content>{quote}         if (parser.charUnescapeCurrentQuote === this.match) { this.popState(); return 'QUOTE'; } else { return 'NON_ESCAPED'; }
 <string_quoted_content>{non_escaped}   return 'NON_ESCAPED';
 
-
+<INITIAL>"`" this.begin('backtick'); return '`';
+<backtick>\s+ return 'NON_ESCAPED';
+<backtick>[^`]   return 'NON_ESCAPED';
+<backtick>"`" this.popState(); return '`';
 
 // Skip whitespaces in other states
 <INITIAL>\s+  /* skip whitespaces */
@@ -183,12 +186,36 @@ Literal
 
 Expression
   : Literal
-  | Field BinaryOperator Expression
-  | Expression BinaryOperator Field
-  | Field BinaryOperator Field
   | FunctionCall
   | ':' PlaceholderName
   | '@' SQLVariable
+  | column %{
+    $$ = {
+      type: 1,
+      identifier: {
+        name: $1
+      }
+    }
+  }%
+  | column '.' column %{
+    $$ = {
+      type: 1,
+      identifier: {
+        name: $3,
+        table_name: $1
+      }
+    }
+  }%
+  | column '.' column '.' column %{
+    $$ = {
+      type: 1,
+      identifier: {
+        name: $5,
+        table_name: $3,
+        schema_name: $1
+      }
+    }
+  }%
   | Expression BinaryOperator Expression %{
     $$ = {
       type: 5,
@@ -276,6 +303,15 @@ int
   : DEC
   | HEX
   | OCT
+  ;
+
+column
+  : '`' column_quoted '`' { $$ = $2 }
+  ;
+
+column_quoted
+  : NON_ESCAPED { $$ = $1; }
+  | column_quoted NON_ESCAPED { $$ = $1 + $2; }
   ;
 
 string
