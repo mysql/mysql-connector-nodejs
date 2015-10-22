@@ -1,7 +1,8 @@
 "use strict";
 
 var Session = require('./lib/DevAPI/XSession'),
-    NodeSession = require('./lib/DevAPI/NodeSession');
+    NodeSession = require('./lib/DevAPI/NodeSession'),
+    Expressions = require('./lib/Expressions');
 
 /**
  * MySQL X module
@@ -27,4 +28,13 @@ exports.getSession = function (properties) {
 exports.getNodeSession = function (properties) {
     var session = new NodeSession(properties);
     return session.connect();
+};
+
+/**
+ * Parse an expression into parse tree
+ * @param {String} exp Expression
+ * @eturn {Expression}
+ */
+exports.expr = function (exp) {
+    return Expressions.parse(exp);
 };
