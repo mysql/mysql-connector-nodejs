@@ -116,9 +116,11 @@ parser.charUnescape = function (chr) {
 
 <INITIAL>'%' return '%';
 
-<INITIAL>'!' return '!';
-
 <INITIAL>'==' return '==';
+
+<INITIAL>'!=' return '!=';
+
+<INITIAL>'!' return '!';
 
 <INITIAL>'$' return '$';
 
@@ -165,7 +167,7 @@ parser.charUnescape = function (chr) {
 
 %left '||'
 %left '&&'
-%nonassoc '=='
+%nonassoc '==' '!='
 %left '+' '-'
 %left '*' '/' '%'
 %right '!'
@@ -234,6 +236,7 @@ BinaryOperator
   : '||'
   | '&&'
   | '=='
+  | '!='
   | '+'
   | '-'
   | '*'
