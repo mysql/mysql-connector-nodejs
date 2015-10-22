@@ -20,20 +20,21 @@ Installation
 ============
 This library is organized in a way that it can be installed using Node.js's npm
 tool into your project:
-  npm install mysqlx-1.0.0.tar.gz
+  npm install mysqlx-1.0.0.tgz
 Please refer to onformation on http://npmjs.com for more information on npm.
 
 Getting Started
 ===============
 A simple JavaScript file using this library follows:
 
+
     var mysqlx = require('mysqlx');
 
     mysqlx.getSession({
         host: 'localhost',
         port: 33060,
-        dbUser: 'username',
-        dbPassword: 'password'
+        dbUser: 'root',
+        dbPassword: ''
     }).then(function (session) {
         return session.createSchema("test_schema").then(function (schema) {
             return schema.createCollection("myCollection");
@@ -43,24 +44,26 @@ A simple JavaScript file using this library follows:
                     {baz: { foo: "bar"}},
                     {foo: { bar: "baz"}}
                 ).execute(),
-                collection.find("@.baz.foo == 'baz'").execute(function (row) {
-                    console.log(row);
+                collection.find("$.baz.foo == 'bar'").execute(function (row) {
+                    console.log("Row: %j", row);
                 }).then(function (res) {
-                    console.log("done!");
+                    console.log("Collection find done!");
                 }),
-                collection.remove("(@.foo.bar) == 'baz'").execute().then(function () {
-                    console.log("deleted);
+                collection.remove("($.foo.bar) == 'baz'").execute().then(function () {
+                    console.log("Document deleted");
                 }),
                 collection.drop()
             ]);
-	});
-    }).then(function () {
-        return session.dropSchema("foo");
-    }).then(function () {
-        return session.close();
+        }).then(function () {
+            return session.dropSchema("test_schema");
+        }).then(function () {
+            return session.close();
+        });
     }).catch(function (err) {
         console.log(err.stack);
+        process.exit();
     });
+
 
 License
 =======
