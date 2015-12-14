@@ -89,7 +89,15 @@ describe('MySQL Field encoding', function () {
             });
         });
 
-        it('should decode DECIMAL fields');
+        [
+            { in: new Buffer([0x04, 0x12, 0x34, 0x01, 0xd0]), exp: "-12.3401"},
+            { in: new Buffer([0x0f, 0x12, 0x34, 0x56, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c]), exp: "1234.567800000000000"},
+            { in: new Buffer([0x0f, 0x12, 0x34, 0x56, 0x78, 0x98, 0x76, 0x54, 0x32, 0x10, 0x1c]), exp: "1234.567898765432101"}
+        ].forEach(function (test) {
+            it('should decode DECIMAL ' + test.exp, function () {
+                decode(test.in, {type: fieldtypes.DECIMAL}).should.equal(test.exp);
+            });
+        });
         it('should decode SET fields');
 
         it('should decode a zero-length string', function () {
