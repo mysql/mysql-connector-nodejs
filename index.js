@@ -38,3 +38,5 @@ exports.getNodeSession = function (properties) {
 exports.expr = function (exp) {
     return Expressions.parse(exp);
 };
+
+exports.mysqlx = exports;
