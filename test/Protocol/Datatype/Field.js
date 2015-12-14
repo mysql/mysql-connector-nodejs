@@ -54,8 +54,41 @@ describe('MySQL Field encoding', function () {
             });
         });
 
-        it('should decode TIME fields');
-        it('should decode DATETIME fields');
+        [
+            { in: new Buffer([0x00]), exp: "", type: fieldtypes.TIME, description: "empty positive time" },
+            { in: new Buffer([0x01]), exp: "-", type: fieldtypes.TIME, description: "empty negative time" },
+            { in: new Buffer([0x00, 0x02]), exp: "02", type: fieldtypes.TIME, description: "prefix hours <10" },
+            { in: new Buffer([0x00, 0x0A]), exp: "10", type: fieldtypes.TIME, description: "not prefix hours >=10"},
+            { in: new Buffer([0x00, 0x02, 0x02]), exp: "02:02", type: fieldtypes.TIME, description: "prefix minutes <10" },
+            { in: new Buffer([0x00, 0x02, 0x0A]), exp: "02:10", type: fieldtypes.TIME, description: "not prefix minutes >=10"},
+            { in: new Buffer([0x00, 0x02, 0x02, 0x02]), exp: "02:02:02", type: fieldtypes.TIME, description: "prefix seconds <10" },
+            { in: new Buffer([0x00, 0x02, 0x02, 0x0A]), exp: "02:02:10", type: fieldtypes.TIME, description: "not prefix seconds >=10"},
+            { in: new Buffer([0x00, 0x02, 0x02, 0x02, 0xA0, 0x9c, 0x01]), exp: "02:02:02.020000", type: fieldtypes.TIME, description: "handle optional useconds" },
+            { in: new Buffer([0x01, 0x02, 0x02, 0x02, 0xA0, 0x9c, 0x01]), exp: "-02:02:02.020000", type: fieldtypes.TIME, description: "handle negative time with useconds" }
+        ].forEach(function (test) {
+            it('should decode TIME: ' + test.description + "(" + test.exp + ")", function () {
+                decode(test.in, {type: test.type}).should.equal(test.exp);
+            });
+        });
+        [
+            { in: new Buffer([0xDF, 0x0F]), exp: "2015", type: fieldtypes.DATETIME, description: "year only" },
+            { in: new Buffer([0xDF, 0x0F, 0x02]), exp: "2015-02", type: fieldtypes.DATETIME, description: "year and month < 10" },
+            { in: new Buffer([0xDF, 0x0F, 0x0A]), exp: "2015-10", type: fieldtypes.DATETIME, description: "year and month = 10" },
+            { in: new Buffer([0xDF, 0x0F, 0x02, 0x02]), exp: "2015-02-02", type: fieldtypes.DATETIME, description: "year, month and day < 10" },
+            { in: new Buffer([0xDF, 0x0F, 0x02, 0x0A]), exp: "2015-02-10", type: fieldtypes.DATETIME, description: "year, month and day = 10" },
+            { in: new Buffer([0xDF, 0x0F, 0x02, 0x02, 0x02]), exp: "2015-02-02 02", type: fieldtypes.DATETIME, description: "date with hour < 10" },
+            { in: new Buffer([0xDF, 0x0F, 0x02, 0x02, 0x0A]), exp: "2015-02-02 10", type: fieldtypes.DATETIME, description: "date with hour = 10" },
+            { in: new Buffer([0xDF, 0x0F, 0x02, 0x02, 0x02, 0x02]), exp: "2015-02-02 02:02", type: fieldtypes.DATETIME, description: "date with minute < 10" },
+            { in: new Buffer([0xDF, 0x0F, 0x02, 0x02, 0x02, 0x0A]), exp: "2015-02-02 02:10", type: fieldtypes.DATETIME, description: "date with minute = 10" },
+            { in: new Buffer([0xDF, 0x0F, 0x02, 0x02, 0x02, 0x02, 0x02]), exp: "2015-02-02 02:02:02", type: fieldtypes.DATETIME, description: "date with second < 10" },
+            { in: new Buffer([0xDF, 0x0F, 0x02, 0x02, 0x02, 0x02, 0x0A]), exp: "2015-02-02 02:02:10", type: fieldtypes.DATETIME, description: "date with second = 10" },
+            { in: new Buffer([0xDF, 0x0F, 0x02, 0x02, 0x02, 0x02, 0x02, 0xA0, 0x9c, 0x01]), exp: "2015-02-02 02:02:02.020000", type: fieldtypes.DATETIME, description: "datetime with useconds" }
+        ].forEach(function (test) {
+            it('should decode DATETIME: ' + test.description + "(" + test.exp + ")", function () {
+                decode(test.in, {type: test.type}).should.equal(test.exp);
+            });
+        });
+
         it('should decode DECIMAL fields');
         it('should decode SET fields');
 
