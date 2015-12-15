@@ -12,7 +12,7 @@
     "index.js"
   ],
   "scripts": {
-    "test": "mocha",
+    "test": "mocha --recursive -R xunit test/ > test-reports.xml",
     "generate-parser": "jison -o lib/Expressions/parser.js  ./lib/Expressions/parser.jison",
     "coverage": "istanbul cover _mocha",
     "doc": "jsdoc -d doc/ -u tut -r index.js lib/"
