@@ -6,7 +6,8 @@ var contentTypes = {
     GEOMETRY: 1,
     JSON: 2,
     XML:  3
-}
+};
+
 var should = require('chai').should();
 
 var emptyBuffer = new Buffer(0);
