@@ -1,6 +1,6 @@
 "use strict";
 
-const Session = require('./lib/DevAPI/XSession'),
+const XSession = require('./lib/DevAPI/XSession'),
     NodeSession = require('./lib/DevAPI/NodeSession'),
     Expressions = require('./lib/Expressions');
 
@@ -16,7 +16,7 @@ const Session = require('./lib/DevAPI/XSession'),
  * @returns {Promise.<XSession>}
  */
 exports.getSession = function (properties) {
-    const session = new Session(properties);
+    const session = new XSession(properties);
     return session.connect();
 };
 
