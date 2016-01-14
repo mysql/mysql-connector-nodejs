@@ -15,7 +15,7 @@
   "scripts": {
     "test": "mocha --recursive -R xunit test/ > test-reports.xml",
     "generate-parser": "jison -o lib/Expressions/parser.js  ./lib/Expressions/parser.jison",
-    "coverage": "istanbul cover _mocha",
+    "coverage": "istanbul cover --report cobertura --report lcov _mocha --recursive test/",
     "doc": "jsdoc -d doc/ -u tut -r index.js lib/"
   },
   "dependencies": {},
