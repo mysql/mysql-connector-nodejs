@@ -146,5 +146,19 @@ describe('Protocol', function () {
                 return promise.should.be.fulfilled;
             });
         }
+        it('should accept arguments', function () {
+            const protocol = new Protocol(nullStream),
+                promise = protocol.sqlStmtExecute("SELECT * FROM t", ["a", 23]);
+
+            produceResultSet(protocol, 1, 1);
+            return promise.should.be.fulfilled;
+        });
+
+        // for those we hae to inspect the sent message:
+        it('should verify bound parameters');
+        it('should handle queries wihout result set');
+        it('should handle multiple result sets');
+        it('should verify default namespace (sql)');
+        it('should allow custom namespace');
     });
 });
