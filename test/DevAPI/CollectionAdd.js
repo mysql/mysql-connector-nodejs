@@ -78,4 +78,22 @@ describe('DevAPI Collection Add', function () {
         spy.should.be.called.once();
         should.exist(doc._id);
     });
+    it('should use a provided generator to create _id field if needed', function (done) {
+        return mysqlx.getSession({
+            authMethod: "NULL",
+            socketFactory: NullStreamFactory,
+            idGenerator: function () { return "GENERATED"; }
+        }).then(function (session) {
+            collection = session.getSchema("schema").getCollection("collection");
+            var doc = { foo: 12 };
+
+            collection.add(doc).execute();
+
+            spy.should.be.called.once();
+            doc._id.should.equal("GENERATED");
+            done();
+        }).catch(function (err) {
+            done(err);
+        });
+    });
 });
