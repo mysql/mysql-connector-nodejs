@@ -8,14 +8,15 @@ chai.use(spies);
 var assert = require("assert");
 var Protocol = require("../../lib/Protocol");
 var Datatype = require("../../lib/Protocol/Datatype");
-var Messages = require('../../lib/Protocol/Messages');
+var Messages = require('../../lib/Protocol/Messages'),
+    protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
 
 var nullStream = {
     on: function () {},
     write: function () {}
 };
 
-function produceResultSet(protocol, columnCount, rowCount) {
+function produceResultSet(protocol, columnCount, rowCount, warnings) {
     for (let i = 0; i < columnCount; ++i) {
         protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
             type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
@@ -34,6 +35,15 @@ function produceResultSet(protocol, columnCount, rowCount) {
         protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: fields }, protocol.serverMessages));
     }
     protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, protocol.serverMessages));
+    if (warnings && warnings.length) {
+        warnings.forEach(warning => {
+            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.NOTICE, {
+                type: 1,
+                scope: 2,
+                payload: protobuf.encode('Mysqlx.Notice.Warning', warning)
+            }, protocol.serverMessages))
+        });
+    }
     protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
 }
 
@@ -70,6 +80,18 @@ describe('Protocol', function () {
             produceResultSet(protocol, 1, 1);
             metacb.should.have.been.called.once;
             return promise.should.be.fulfilled;
+        });
+        it('should handle warning', function () {
+            const protocol = new Protocol(nullStream),
+                promise = protocol.sqlStmtExecute("SELECT CAST('a' AS UNSIGNED)", [], () => {}),
+                warning = {
+                    level: 2,
+                    code: 1292,
+                    msg: 'Truncated incorrect INTEGER value: \'a\''
+                };
+
+            produceResultSet(protocol, 1, 1, [warning]);
+            return promise.should.eventually.deep.equal({warnings: [ warning ]});
         });
         for (let count = 0; count < 3; ++count) {
             it('should call row callback for each row data ('+count+' rows)', function () {
