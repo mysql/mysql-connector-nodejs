@@ -61,15 +61,57 @@ describe('Protocol', function () {
                 protocol.sqlStmtExecute("invalid SQL", [], ()=>{}, "this is not a function");
             }).should.throw(/.*has to be a function.*/);
         });
-        it('should fail the promise on error', function () {
+        it('should reject the promise on error', function () {
             const protocol = new Protocol(nullStream),
-                  promise = protocol.sqlStmtExecute("invalid SQL", [], () => {});
+                  promise = protocol.sqlStmtExecute("invalid SQL", []);
 
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, {
                 code: 1064,
                 sql_state: "42000",
                 msg: 'You have an error in your SQL syntax'
             }, protocol.serverMessages));
+            return promise.should.be.rejected;
+        });
+        it('should reject the promise on invalid message', function () {
+            const protocol = new Protocol(nullStream),
+                promise = protocol.sqlStmtExecute("SELECT 1", []);
+
+            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
+            return promise.should.be.rejected;
+        });
+        it('should reject the promise on invalid message', function () {
+            const protocol = new Protocol(nullStream),
+                promise = protocol.sqlStmtExecute("SELECT 1", []);
+
+            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
+            return promise.should.be.rejected;
+        });
+        it('should reject the promise on invalid message and allow further requests', function () {
+            const protocol = new Protocol(nullStream),
+                promise1 = protocol.sqlStmtExecute("SELECT 1", []),
+                promise2 = protocol.sqlStmtExecute("SELECT 1", []);
+
+            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
+            produceResultSet(protocol, 1, 1);
+            return Promise.all([
+                promise1.should.be.rejected,
+                promise2.should.be.fullfilled
+            ]);
+        });
+        it('should reject the promise on hard stream close', function () {
+            let closeStream = {
+                closefunc: undefined,
+                on: function (what, cb) {
+                    if (what === 'close') {
+                        this.closefunc = cb;
+                    }
+                },
+                write: function () {}
+            };
+            const protocol = new Protocol(closeStream),
+                promise = protocol.sqlStmtExecute("SELECT 1", []);
+
+            closeStream.closefunc();
             return promise.should.be.rejected;
         });
         it('should report on meta data', function () {
@@ -83,7 +125,7 @@ describe('Protocol', function () {
         });
         it('should handle warning', function () {
             const protocol = new Protocol(nullStream),
-                promise = protocol.sqlStmtExecute("SELECT CAST('a' AS UNSIGNED)", [], () => {}),
+                promise = protocol.sqlStmtExecute("SELECT CAST('a' AS UNSIGNED)", []),
                 warning = {
                     level: 2,
                     code: 1292,
