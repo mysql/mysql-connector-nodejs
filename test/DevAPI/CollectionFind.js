@@ -7,6 +7,7 @@ var chai = require('chai'),
     should = chai.should(),
     spies = require('chai-spies');
 var Client = require('../../lib/Protocol/Client'),
+    Server = require('../../lib/Protocol/Server'),
     Messages = require('../../lib/Protocol/Messages'),
     Encoding = require('../../lib/Protocol/Encoding');
 var mysqlx = require('../../');
@@ -27,8 +28,9 @@ var NullStreamFactory = {
     }
 };
 
-function produceResultSet(protocol, rowcount) {
-    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
+function produceResultSet(protocol, rowCount) {
+    const result = new Server.ResultSet(data => protocol.handleServerMessage(data));
+    result.beginResult([{
         type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
         name: "_doc",
         original_name: "_doc",
@@ -36,22 +38,20 @@ function produceResultSet(protocol, rowcount) {
         original_table: "original_table",
         schema: "schema",
         content_type: 2 /* JSON */
-    }, Encoding.serverMessages));
-    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
+    }, {
         type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
         name: "_doc",
         original_name: "_doc",
         table: "table",
         original_table: "original_table",
         schema: "schema"
-    }, Encoding.serverMessages));
+    }]);
 
-    let fields = ["{\"foo\":\"bar\"}\0", "\x02"];
-    for (let i = 0; i < rowcount; ++i) {
-        protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, {field: fields}, Encoding.serverMessages));
+    const fields = ["{\"foo\":\"bar\"}\0", "\x02"];
+    for (let r = 0; r < rowCount; ++r) {
+        result.row(fields);
     }
-    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, Encoding.serverMessages));
-    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
+    result.finalize();
 }
 
 describe('DevAPI Collection Find', function () {
