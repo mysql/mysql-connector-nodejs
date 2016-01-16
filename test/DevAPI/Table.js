@@ -50,6 +50,9 @@ describe('DevAPI', function () {
         it('Should provide access to the schema', function () {
             table.getSchema().getName().should.equal("schema");
         });
+        it('Should provide access to the session', function () {
+            table.getSession().should.deep.equal(session);
+        });
 
         function createResponse(protocol, row) {
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
