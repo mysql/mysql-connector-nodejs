@@ -7,6 +7,7 @@ chai.use(spies);
 
 var assert = require("assert");
 var Client = require("../../lib/Protocol/Client");
+var Encoding = require("../../lib/Protocol/Encoding");
 var Messages = require('../../lib/Protocol/Messages');
 
 var nullStream = {
@@ -19,7 +20,7 @@ describe('Client', function () {
             const protocol = new Client(nullStream),
                 promise = protocol.close();
 
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.OK, {}, protocol.serverMessages));
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.OK, {}, Encoding.serverMessages));
 
             return promise.should.be.fullfilled;
         });

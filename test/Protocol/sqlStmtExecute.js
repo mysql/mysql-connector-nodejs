@@ -7,6 +7,7 @@ chai.use(spies);
 
 var assert = require("assert");
 var Client = require("../../lib/Protocol/Client");
+var Encoding = require("../../lib/Protocol/Encoding");
 var Datatype = require("../../lib/Protocol/Datatype");
 var Messages = require('../../lib/Protocol/Messages'),
     protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
@@ -18,30 +19,30 @@ var nullStream = {
 
 function produceResultSet(protocol, columnCount, rowCount, warnings) {
     for (let i = 0; i < columnCount; ++i) {
-        protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
+        protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
             type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
             name: "column" + i,
             original_name: "original_column" + i,
             table: "table",
             original_table: "original_table",
             schema: "schema"
-        }, protocol.serverMessages));
+        }, Encoding.serverMessages));
     }
     for (let r = 0; r < rowCount; ++r) {
         let fields = [];
         for (let c = 0; c < columnCount; ++c) {
             fields.push("\x01");
         }
-        protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: fields }, protocol.serverMessages));
+        protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: fields }, Encoding.serverMessages));
     }
-    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, protocol.serverMessages));
+    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, Encoding.serverMessages));
     if (warnings && warnings.length) {
         warnings.forEach(warning => {
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.NOTICE, {
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.NOTICE, {
                 type: 1,
                 scope: 2,
                 payload: protobuf.encode('Mysqlx.Notice.Warning', warning)
-            }, protocol.serverMessages))
+            }, Encoding.serverMessages))
         });
     }
     protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
@@ -65,25 +66,25 @@ describe('Client', function () {
             const protocol = new Client(nullStream),
                   promise = protocol.sqlStmtExecute("invalid SQL", []);
 
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, {
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {
                 code: 1064,
                 sql_state: "42000",
                 msg: 'You have an error in your SQL syntax'
-            }, protocol.serverMessages));
+            }, Encoding.serverMessages));
             return promise.should.be.rejected;
         });
         it('should reject the promise on invalid message', function () {
             const protocol = new Client(nullStream),
                 promise = protocol.sqlStmtExecute("SELECT 1", []);
 
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
             return promise.should.be.rejected;
         });
         it('should reject the promise on invalid message', function () {
             const protocol = new Client(nullStream),
                 promise = protocol.sqlStmtExecute("SELECT 1", []);
 
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
             return promise.should.be.rejected;
         });
         it('should reject the promise on invalid message and allow further requests', function () {
@@ -91,7 +92,7 @@ describe('Client', function () {
                 promise1 = protocol.sqlStmtExecute("SELECT 1", []),
                 promise2 = protocol.sqlStmtExecute("SELECT 1", []);
 
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
             produceResultSet(protocol, 1, 1);
             return Promise.all([
                 promise1.should.be.rejected,

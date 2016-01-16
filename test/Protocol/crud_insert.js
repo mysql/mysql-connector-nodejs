@@ -5,6 +5,7 @@ chai.should();
 
 var assert = require("assert");
 var Client = require("../../lib/Protocol/Client");
+var Encoding = require("../../lib/Protocol/Encoding");
 var Messages = require('../../lib/Protocol/Messages');
 var DataType = require('../../lib/Protocol/Datatype');
 
@@ -39,7 +40,7 @@ describe('Client', function () {
             assert.strictEqual(sentData, null, "There was data sent too early");
             protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }]]);
             assert.notEqual(sentData, null, "There wasn't any data sent");
-            var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
+            var data = Encoding.decodeMessage(sentData, 0, Encoding.clientMessages);
             data.messageId.should.equal(Messages.ClientMessages.CRUD_INSERT);
             data.decoded.collection.schema.should.equal("schema");
             data.decoded.collection.name.should.equal("collection");
@@ -61,7 +62,7 @@ describe('Client', function () {
             var protocol = new Client(mockedStream);
             protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             assert.notEqual(sentData, null, "There wasn't any data sent");
-            var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
+            var data = Encoding.decodeMessage(sentData, 0, Encoding.clientMessages);
             data.messageId.should.equal(Messages.ClientMessages.CRUD_INSERT);
             data.decoded.collection.schema.should.equal("schema");
             data.decoded.collection.name.should.equal("collection");
@@ -74,7 +75,7 @@ describe('Client', function () {
         it('should resolve Promise after inserting multiple documents', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
             return promise.should.eventually.deep.equal([]);
         });
         it('should report affected rows (once we handle int64 properly)');
@@ -82,10 +83,10 @@ describe('Client', function () {
         it('should throw an error when receiving multiple messages', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
             assert.throws(
                 function () {
-                    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
+                    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
                 },
                 /Queue is empty/
             );
@@ -94,7 +95,7 @@ describe('Client', function () {
         it('should throw an error when receiving multiple messages', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
             assert.throws(
                 function () {
                     protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
@@ -106,11 +107,11 @@ describe('Client', function () {
         it('should fail if error is received', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, {
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {
                 code: 1,
                 sql_state: "0000",
                 msg: "Unknown error"
-            }, protocol.serverMessages));
+            }, Encoding.serverMessages));
             return promise.should.be.rejected;
         });
     });

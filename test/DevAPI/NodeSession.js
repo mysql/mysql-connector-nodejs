@@ -10,6 +10,7 @@ var mysqlx = require("../../");
 var Client = require("../../lib/Protocol/Client");
 var Datatype = require("../../lib/Protocol/Datatype");
 var Messages = require('../../lib/Protocol/Messages'),
+    Encoding = require('../../lib/Protocol/Encoding'),
     protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
 
 var nullStream = {
@@ -26,18 +27,18 @@ var NullStreamFactory = {
 };
 
 function produceResultSet(protocol) {
-    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
+    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
         type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
         name: "column",
         original_name: "original_column",
         table: "table",
         original_table: "original_table",
         schema: "schema"
-    }, protocol.serverMessages));
-    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: ["\x01"] }, protocol.serverMessages));
-    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: ["\x01"] }, protocol.serverMessages));
-    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, protocol.serverMessages));
-    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
+    }, Encoding.serverMessages));
+    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: ["\x01"] }, Encoding.serverMessages));
+    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: ["\x01"] }, Encoding.serverMessages));
+    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, Encoding.serverMessages));
+    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
 }
 
 describe('DevAPI', function () {

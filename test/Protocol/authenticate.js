@@ -5,6 +5,7 @@ chai.should();
 
 var assert = require("assert");
 var Client = require("../../lib/Protocol/Client");
+var Encoding = require("../../lib/Protocol/Encoding");
 var Messages = require('../../lib/Protocol/Messages');
 
 var nullStream = {
@@ -37,7 +38,7 @@ describe('Client', function () {
                 assert.strictEqual(sentData, null, "There was data sent too early");
                 protocol.authenticate(mockedAuthenticator);
                 assert.notEqual(sentData, null, "There was no data sent");
-                var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
+                var data = Encoding.decodeMessage(sentData, 0, Encoding.clientMessages);
                 assert.strictEqual(data.decoded.auth_data.length, testBuffer.length);
                 assert.strictEqual(data.decoded.auth_data.toString(), testBuffer.toString());
             });
@@ -62,7 +63,7 @@ describe('Client', function () {
                 assert.equal(sentData, null, "There was data sent too early");
                 protocol.authenticate(mockedAuthenticator);
                 assert.notEqual(sentData, null, "There was no data sent");
-                var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
+                var data = Encoding.decodeMessage(sentData, 0, Encoding.clientMessages);
                 assert.strictEqual(data.decoded.mech_name, 'mock');
             });
             it('should resolve Promise if Authentication succeeds after Auth Start', function () {
@@ -73,7 +74,7 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
                 return promise.should.be.fulfilled;
             });
             it('should allow Failing with empty reason after Auth Start', function () {
@@ -84,7 +85,7 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR), {}, protocol.serverMessages);
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {}, Encoding.serverMessages));
                 return promise.should.be.rejected;
             });
             it('should allow to provide a reason, when Failing after Auth Start', function () {
@@ -96,7 +97,7 @@ describe('Client', function () {
                 };
                 var message = "This is a test!";
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, {msg: message}, protocol.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {msg: message}, Encoding.serverMessages));
                 return promise.should.be.rejected;
             });
             it('should empty queue if auth succeeds after Auth Start', function () {
@@ -107,7 +108,7 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
                 return promise.then(function () {
                     assert.equal(protocol._workQueue.hasMore(), false);
                     return true;
@@ -121,7 +122,7 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR), {}, protocol.serverMessages);
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {}, Encoding.serverMessages));
                 return promise.catch(function () {
                     assert.equal(protocol._workQueue.hasMore(), false);
                     return true;
@@ -151,11 +152,11 @@ describe('Client', function () {
 
                 var protocol = new Client(mockedStream);
                 protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
-                var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                var data = Encoding.decodeMessage(sentData, 0, Encoding.clientMessages);
                 assert.strictEqual(data.decoded.auth_data.toString(), (new Buffer([0, 1, 2, 3, 4, 5])).toString());
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
-                var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                var data = Encoding.decodeMessage(sentData, 0, Encoding.clientMessages);
                 assert.strictEqual(data.decoded.auth_data.toString(), (new Buffer([6, 7, 8, 9])).toString());
             });
             it('should fail if handler doesn\'t expect continuation', function () {
@@ -176,7 +177,7 @@ describe('Client', function () {
 
                 var protocol = new Client(mockedStream);
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
                 return promise.should.be.rejected;
             });
             it('should resolve Promise if Authentication succeeds after Auth Continue', function () {
@@ -189,10 +190,10 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
                 return promise.should.be.fulfilled;
             });
             it('should fail if Authentication fails after Auth Continue', function () {
@@ -205,10 +206,10 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, {}, protocol.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {}, Encoding.serverMessages));
                 return promise.should.be.rejected;
             });
         });

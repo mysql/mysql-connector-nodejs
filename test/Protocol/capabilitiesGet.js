@@ -6,6 +6,7 @@ chai.should();
 var assert = require("assert");
 var Client = require("../../lib/Protocol/Client");
 var Messages = require('../../lib/Protocol/Messages');
+var Encoding = require('../../lib/Protocol/Encoding');
 
 var nullStream = {
     on: function () {},
@@ -101,7 +102,7 @@ describe('Client', function () {
                     }
                 ]
             };
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, caps, protocol.serverMessages));
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, caps, Encoding.serverMessages));
             return promise.should.eventually.deep.equal({
                 "some.capability": "foobar",
                 "some.other.capability": [

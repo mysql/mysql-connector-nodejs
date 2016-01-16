@@ -7,6 +7,7 @@ var chai = require('chai'),
     should = chai.should(),
     spies = require('chai-spies');
 var Client = require('../../lib/Protocol/Client'),
+    Encoding = require('../../lib/Protocol/Encoding'),
     Messages = require('../../lib/Protocol/Messages');
 var mysqlx = require('../../');
 var NullAuth = require('../../lib/Authentication/NullAuth');
@@ -55,17 +56,17 @@ describe('DevAPI', function () {
         });
 
         function createResponse(protocol, row) {
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
                 type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
                 name: "_doc",
                 table: "table",
                 schema: "schema"
-            }, protocol.serverMessages));
+            }, Encoding.serverMessages));
             if (row) {
-                protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, {field: ["\x01"]}, protocol.serverMessages));
+                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, {field: ["\x01"]}, Encoding.serverMessages));
             }
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, protocol.serverMessages));
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, Encoding.serverMessages));
+            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
         }
 
         it('should return true if exists in database', function () {
