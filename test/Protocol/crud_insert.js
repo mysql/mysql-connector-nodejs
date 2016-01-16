@@ -4,7 +4,7 @@ var chai = require("chai");
 chai.should();
 
 var assert = require("assert");
-var Protocol = require("../../lib/Protocol");
+var Client = require("../../lib/Protocol/Client");
 var Messages = require('../../lib/Protocol/Messages');
 var DataType = require('../../lib/Protocol/Datatype');
 
@@ -13,13 +13,13 @@ var nullStream = {
     write: function () {}
 };
 
-describe('Protocol', function () {
+describe('Client', function () {
     describe('crudInsert', function () {
         it('should not allow to send no documents', function () {
-            var protocol = new Protocol(nullStream);
+            var protocol = new Client(nullStream);
             assert.throws(
                 function () {
-                    protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, {});
+                    protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, {});
                 },
                 /No document provided/
             );
@@ -35,9 +35,9 @@ describe('Protocol', function () {
                 }
             };
 
-            var protocol = new Protocol(mockedStream);
+            var protocol = new Client(mockedStream);
             assert.strictEqual(sentData, null, "There was data sent too early");
-            protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }]]);
+            protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }]]);
             assert.notEqual(sentData, null, "There wasn't any data sent");
             var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
             data.messageId.should.equal(Messages.ClientMessages.CRUD_INSERT);
@@ -58,8 +58,8 @@ describe('Protocol', function () {
                 }
             };
 
-            var protocol = new Protocol(mockedStream);
-            protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
+            var protocol = new Client(mockedStream);
+            protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             assert.notEqual(sentData, null, "There wasn't any data sent");
             var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
             data.messageId.should.equal(Messages.ClientMessages.CRUD_INSERT);
@@ -72,16 +72,16 @@ describe('Protocol', function () {
             JSON.parse(DataType.decodeScalar(data.decoded.row[1].field[0].literal)).should.deep.equal({ _id: 456 });
         });
         it('should resolve Promise after inserting multiple documents', function () {
-            var protocol = new Protocol(nullStream);
-            var promise = protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
+            var protocol = new Client(nullStream);
+            var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
             return promise.should.eventually.deep.equal([]);
         });
         it('should report affected rows (once we handle int64 properly)');
 
         it('should throw an error when receiving multiple messages', function () {
-            var protocol = new Protocol(nullStream);
-            var promise = protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
+            var protocol = new Client(nullStream);
+            var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
             assert.throws(
                 function () {
@@ -92,8 +92,8 @@ describe('Protocol', function () {
             return promise.should.eventually.deep.equal([]);
         });
         it('should throw an error when receiving multiple messages', function () {
-            var protocol = new Protocol(nullStream);
-            var promise = protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
+            var protocol = new Client(nullStream);
+            var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
             assert.throws(
                 function () {
@@ -104,8 +104,8 @@ describe('Protocol', function () {
             return promise.should.eventually.deep.equal([]);
         });
         it('should fail if error is received', function () {
-            var protocol = new Protocol(nullStream);
-            var promise = protocol.crudInsert("schema", "collection", Protocol.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
+            var protocol = new Client(nullStream);
+            var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, {
                 code: 1,
                 sql_state: "0000",

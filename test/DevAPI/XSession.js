@@ -7,7 +7,7 @@ var expect = require('chai').expect;
 var mysqlx = require('../../'),
     Session = require('../../lib/DevAPI/BaseSession'),
     Schema = require('../../lib/DevAPI/Schema'),
-    Protocol = require('../../lib/Protocol'),
+    Client = require('../../lib/Protocol/Client'),
     NullAuth = require('../../lib/Authentication/NullAuth');
 
 describe('XSession', function () {
@@ -48,14 +48,14 @@ describe('XSession', function () {
         });
 
         beforeEach('create spy', function () {
-            spy = chai.spy(Protocol.prototype.sqlStmtExecute);
-            origExecSql = Protocol.prototype.sqlStmtExecute;
-            Protocol.prototype.sqlStmtExecute = spy;
+            spy = chai.spy(Client.prototype.sqlStmtExecute);
+            origExecSql = Client.prototype.sqlStmtExecute;
+            Client.prototype.sqlStmtExecute = spy;
         });
 
         afterEach('reset spy', function () {
             if (origExecSql) {
-                Protocol.prototype.sqlStmtExecute = origExecSql;
+                Client.prototype.sqlStmtExecute = origExecSql;
             }
         });
 

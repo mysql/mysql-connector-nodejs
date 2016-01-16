@@ -7,7 +7,7 @@ chai.use(spies);
 
 var assert = require("assert");
 var mysqlx = require("../../");
-var Protocol = require("../../lib/Protocol");
+var Client = require("../../lib/Protocol/Client");
 var Datatype = require("../../lib/Protocol/Datatype");
 var Messages = require('../../lib/Protocol/Messages'),
     protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
@@ -58,7 +58,7 @@ describe('DevAPI', function () {
             it('should call the row callback', function () {
                 const rowcb = chai.spy(),
                     promise = session.executeSql("SELECT 1").execute(rowcb);
-                produceResultSet(session._protocol);
+                produceResultSet(session._client);
                 rowcb.should.be.called.twice;
                 promise.should.eventually.be.fullfilled;
             });
@@ -66,7 +66,7 @@ describe('DevAPI', function () {
                 const rowcb = chai.spy(),
                     metacb = chai.spy(),
                     promise = session.executeSql("SELECT 1").execute(rowcb, metacb);
-                produceResultSet(session._protocol);
+                produceResultSet(session._client);
                 rowcb.should.be.called.twice;
                 metacb.should.be.called.once;
                 promise.should.eventually.be.fullfilled;
@@ -75,7 +75,7 @@ describe('DevAPI', function () {
                 const rowcb = chai.spy(),
                     metacb = chai.spy(),
                     promise = session.executeSql("SELECT 1").execute({row: rowcb, meta: metacb});
-                produceResultSet(session._protocol);
+                produceResultSet(session._client);
                 rowcb.should.be.called.twice;
                 metacb.should.be.called.once;
                 promise.should.eventually.be.fullfilled;

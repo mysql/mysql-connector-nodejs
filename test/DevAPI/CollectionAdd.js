@@ -6,7 +6,7 @@
 var chai = require('chai'),
     should = chai.should(),
     spies = require('chai-spies');
-var Protocol = require('../../lib/Protocol');
+var Client = require('../../lib/Protocol/Client');
 var mysqlx = require('../../');
 var NullAuth = require('../../lib/Authentication/NullAuth');
 
@@ -41,14 +41,14 @@ describe('DevAPI Collection Add', function () {
     });
 
     beforeEach('create spy', function () {
-        spy = chai.spy(Protocol.prototype.crudInsert);
-        origInsert = Protocol.prototype.crudInsert;
-        Protocol.prototype.crudInsert = spy;
+        spy = chai.spy(Client.prototype.crudInsert);
+        origInsert = Client.prototype.crudInsert;
+        Client.prototype.crudInsert = spy;
     });
 
     afterEach('reset spy', function () {
         if (origInsert) {
-            Protocol.prototype.crudInsert = origInsert;
+            Client.prototype.crudInsert = origInsert;
         }
     });
 

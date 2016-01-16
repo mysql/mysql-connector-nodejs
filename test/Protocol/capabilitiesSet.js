@@ -4,7 +4,7 @@ var chai = require("chai");
 chai.should();
 
 var assert = require("assert");
-var Protocol = require("../../lib/Protocol");
+var Client = require("../../lib/Protocol/Client");
 var Datatype = require("../../lib/Protocol/Datatype");
 var Messages = require('../../lib/Protocol/Messages');
 
@@ -13,7 +13,7 @@ var nullStream = {
     write: function () {}
 };
 
-describe('Protocol', function () {
+describe('Client', function () {
     describe('capabilitiesSet', function () {
         it('should send a Capabilities Set message', function () {
             var sentData = null;
@@ -26,7 +26,7 @@ describe('Protocol', function () {
                 }
             };
 
-            var protocol = new Protocol(mockedStream);
+            var protocol = new Client(mockedStream);
             assert.strictEqual(sentData, null, "There was data sent too early");
             protocol.capabilitiesSet({});
             assert.notEqual(sentData, null, "There was no data sent");
@@ -44,7 +44,7 @@ describe('Protocol', function () {
                 }
             };
 
-            var protocol = new Protocol(mockedStream);
+            var protocol = new Client(mockedStream);
             assert.strictEqual(sentData, null, "There was data sent too early");
             protocol.capabilitiesSet({ option: 42 });
             assert.notEqual(sentData, null, "There was no data sent");
@@ -64,7 +64,7 @@ describe('Protocol', function () {
                 }
             };
 
-            var protocol = new Protocol(mockedStream);
+            var protocol = new Client(mockedStream);
             assert.strictEqual(sentData, null, "There was data sent too early");
             protocol.capabilitiesSet({ option1: 42, option2: 24 });
             assert.notEqual(sentData, null, "There was no data sent");
@@ -75,13 +75,13 @@ describe('Protocol', function () {
             assert.strictEqual(data.decoded.capabilities.capabilities[1].name, 'option2');
         });
         it('should resolve Promise', function () {
-            var protocol = new Protocol(nullStream);
+            var protocol = new Client(nullStream);
             var promise = protocol.capabilitiesSet({});
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.OK, {}, protocol.serverMessages));
             return promise.should.be.fulfilled;
         });
         it('should fail on error', function () {
-            var protocol = new Protocol(nullStream);
+            var protocol = new Client(nullStream);
             var promise = protocol.capabilitiesSet({});
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, { code: 1, sql_state: 'HY000', msg: 'Invalid'}, protocol.serverMessages));
             return promise.should.be.rejected;

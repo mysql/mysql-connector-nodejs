@@ -6,7 +6,7 @@ chai.should();
 chai.use(spies);
 
 var assert = require("assert");
-var Protocol = require("../../lib/Protocol");
+var Client = require("../../lib/Protocol/Client");
 var Datatype = require("../../lib/Protocol/Datatype");
 var Messages = require('../../lib/Protocol/Messages'),
     protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
@@ -47,22 +47,22 @@ function produceResultSet(protocol, columnCount, rowCount, warnings) {
     protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
 }
 
-describe('Protocol', function () {
+describe('Client', function () {
     describe('sqlStatementExecute', function () {
         it('should throw if row callback is no function', function () {
-            const protocol = new Protocol(nullStream);
+            const protocol = new Client(nullStream);
             (() => {
                 protocol.sqlStmtExecute("invalid SQL", [], "this is not a function");
             }).should.throw(/.*has to be a function.*/);
         });
         it('should throw if meta callback is no function', function () {
-            const protocol = new Protocol(nullStream);
+            const protocol = new Client(nullStream);
             (() => {
                 protocol.sqlStmtExecute("invalid SQL", [], ()=>{}, "this is not a function");
             }).should.throw(/.*has to be a function.*/);
         });
         it('should reject the promise on error', function () {
-            const protocol = new Protocol(nullStream),
+            const protocol = new Client(nullStream),
                   promise = protocol.sqlStmtExecute("invalid SQL", []);
 
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.ERROR, {
@@ -73,21 +73,21 @@ describe('Protocol', function () {
             return promise.should.be.rejected;
         });
         it('should reject the promise on invalid message', function () {
-            const protocol = new Protocol(nullStream),
+            const protocol = new Client(nullStream),
                 promise = protocol.sqlStmtExecute("SELECT 1", []);
 
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
             return promise.should.be.rejected;
         });
         it('should reject the promise on invalid message', function () {
-            const protocol = new Protocol(nullStream),
+            const protocol = new Client(nullStream),
                 promise = protocol.sqlStmtExecute("SELECT 1", []);
 
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, protocol.serverMessages));
             return promise.should.be.rejected;
         });
         it('should reject the promise on invalid message and allow further requests', function () {
-            const protocol = new Protocol(nullStream),
+            const protocol = new Client(nullStream),
                 promise1 = protocol.sqlStmtExecute("SELECT 1", []),
                 promise2 = protocol.sqlStmtExecute("SELECT 1", []);
 
@@ -108,14 +108,14 @@ describe('Protocol', function () {
                 },
                 write: function () {}
             };
-            const protocol = new Protocol(closeStream),
+            const protocol = new Client(closeStream),
                 promise = protocol.sqlStmtExecute("SELECT 1", []);
 
             closeStream.closefunc();
             return promise.should.be.rejected;
         });
         it('should report on meta data', function () {
-            const protocol = new Protocol(nullStream),
+            const protocol = new Client(nullStream),
                   metacb = chai.spy(),
                   promise = protocol.sqlStmtExecute("SELECT * FROM t", [], () => {}, metacb);
 
@@ -124,7 +124,7 @@ describe('Protocol', function () {
             return promise.should.be.fulfilled;
         });
         it('should handle warning', function () {
-            const protocol = new Protocol(nullStream),
+            const protocol = new Client(nullStream),
                 promise = protocol.sqlStmtExecute("SELECT CAST('a' AS UNSIGNED)", []),
                 warning = {
                     level: 2,
@@ -137,7 +137,7 @@ describe('Protocol', function () {
         });
         for (let count = 0; count < 3; ++count) {
             it('should call row callback for each row data ('+count+' rows)', function () {
-                const protocol = new Protocol(nullStream),
+                const protocol = new Client(nullStream),
                       rowcb = chai.spy(),
                       promise = protocol.sqlStmtExecute("SELECT * FROM t", [], rowcb);
 
@@ -147,7 +147,7 @@ describe('Protocol', function () {
             });
         }
         it('should accept arguments', function () {
-            const protocol = new Protocol(nullStream),
+            const protocol = new Client(nullStream),
                 promise = protocol.sqlStmtExecute("SELECT * FROM t", ["a", 23]);
 
             produceResultSet(protocol, 1, 1);

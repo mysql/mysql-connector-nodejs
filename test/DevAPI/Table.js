@@ -6,7 +6,7 @@
 var chai = require('chai'),
     should = chai.should(),
     spies = require('chai-spies');
-var Protocol = require('../../lib/Protocol'),
+var Client = require('../../lib/Protocol/Client'),
     Messages = require('../../lib/Protocol/Messages');
 var mysqlx = require('../../');
 var NullAuth = require('../../lib/Authentication/NullAuth');
@@ -70,23 +70,23 @@ describe('DevAPI', function () {
 
         it('should return true if exists in database', function () {
             const promise = table.existsInDatabase();
-            createResponse(session._protocol, true);
+            createResponse(session._client, true);
             return promise.should.eventually.equal(true);
         });
         it('should return false if it doesn\'t exists in database', function () {
             const promise = table.existsInDatabase();
-            createResponse(session._protocol, false);
+            createResponse(session._client, false);
             return promise.should.eventually.equal(false);
         });
 
         it('should return true if table is a view', function () {
             const promise = table.isView();
-            createResponse(session._protocol, true);
+            createResponse(session._client, true);
             return promise.should.eventually.equal(true);
         });
         it('should return false if table is no view', function () {
             const promise = table.isView();
-            createResponse(session._protocol, false);
+            createResponse(session._client, false);
             return promise.should.eventually.equal(false);
         });
     });

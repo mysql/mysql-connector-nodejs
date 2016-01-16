@@ -4,7 +4,7 @@ var chai = require("chai");
 chai.should();
 
 var assert = require("assert");
-var Protocol = require("../../lib/Protocol");
+var Client = require("../../lib/Protocol/Client");
 var Messages = require('../../lib/Protocol/Messages');
 
 var nullStream = {
@@ -12,7 +12,7 @@ var nullStream = {
     write: function () {}
 };
 
-describe('Protocol', function () {
+describe('Client', function () {
     describe('capabilitiesGet', function () {
         it('should send a Capabilities Get message', function () {
             var sentData = null;
@@ -25,7 +25,7 @@ describe('Protocol', function () {
                 }
             };
 
-            var protocol = new Protocol(mockedStream);
+            var protocol = new Client(mockedStream);
             assert.strictEqual(sentData, null, "There was data sent too early");
             protocol.capabilitiesGet();
             assert.notEqual(sentData, null, "There was no data sent");
@@ -33,13 +33,13 @@ describe('Protocol', function () {
             assert.strictEqual(data.messageId, Messages.ClientMessages.CON_CAPABILITIES_GET);
         });
         it('should resolve Promise with empty capabilities', function () {
-            var protocol = new Protocol(nullStream);
+            var protocol = new Client(nullStream);
             var promise = protocol.capabilitiesGet();
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
             return promise.should.eventually.deep.equal({});
         });
         it('should resolve multiple Promises with multiple responses in one network package', function () {
-            var protocol = new Protocol(nullStream),
+            var protocol = new Client(nullStream),
                 promises = [
                     protocol.capabilitiesGet(),
                     protocol.capabilitiesGet(),
@@ -55,7 +55,7 @@ describe('Protocol', function () {
             return all.should.be.fulfilled;
         })
         it('should return Promise with empty capabilities from server', function () {
-            var protocol = new Protocol(nullStream);
+            var protocol = new Client(nullStream);
             var promise = protocol.capabilitiesGet();
             var caps = { /* TODO - Use an encoder for this so we can share input here with the expected below and make this readable */
                 capabilities: [
@@ -111,7 +111,7 @@ describe('Protocol', function () {
             });
         });
         it('should throw an error when receiving multiple messages', function () {
-            var protocol = new Protocol(nullStream);
+            var protocol = new Client(nullStream);
             var promise = protocol.capabilitiesGet();
             protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
             assert.throws(

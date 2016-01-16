@@ -4,7 +4,7 @@ var chai = require("chai");
 chai.should();
 
 var assert = require("assert");
-var Protocol = require("../../lib/Protocol");
+var Client = require("../../lib/Protocol/Client");
 var Messages = require('../../lib/Protocol/Messages');
 
 var nullStream = {
@@ -12,7 +12,7 @@ var nullStream = {
     write: function () {}
 };
 
-describe('Protocol', function () {
+describe('Client', function () {
     describe('Authentication', function () {
         describe('Single-Pass', function () {
             it('should put the initial data into the Authentication Start message', function () {
@@ -33,7 +33,7 @@ describe('Protocol', function () {
                     }
                 };
 
-                var protocol = new Protocol(mockedStream);
+                var protocol = new Client(mockedStream);
                 assert.strictEqual(sentData, null, "There was data sent too early");
                 protocol.authenticate(mockedAuthenticator);
                 assert.notEqual(sentData, null, "There was no data sent");
@@ -58,7 +58,7 @@ describe('Protocol', function () {
                     }
                 };
 
-                var protocol = new Protocol(mockedStream);
+                var protocol = new Client(mockedStream);
                 assert.equal(sentData, null, "There was data sent too early");
                 protocol.authenticate(mockedAuthenticator);
                 assert.notEqual(sentData, null, "There was no data sent");
@@ -66,7 +66,7 @@ describe('Protocol', function () {
                 assert.strictEqual(data.decoded.mech_name, 'mock');
             });
             it('should resolve Promise if Authentication succeeds after Auth Start', function () {
-                var protocol = new Protocol(nullStream);
+                var protocol = new Client(nullStream);
                 var mockedAuthenticator = {
                     name: 'mock',
                     getInitialAuthData: function () {
@@ -77,7 +77,7 @@ describe('Protocol', function () {
                 return promise.should.be.fulfilled;
             });
             it('should allow Failing with empty reason after Auth Start', function () {
-                var protocol = new Protocol(nullStream);
+                var protocol = new Client(nullStream);
                 var mockedAuthenticator = {
                     name: 'mock',
                     getInitialAuthData: function () {
@@ -88,7 +88,7 @@ describe('Protocol', function () {
                 return promise.should.be.rejected;
             });
             it('should allow to provide a reason, when Failing after Auth Start', function () {
-                var protocol = new Protocol(nullStream);
+                var protocol = new Client(nullStream);
                 var mockedAuthenticator = {
                     name: 'mock',
                     getInitialAuthData: function () {
@@ -100,7 +100,7 @@ describe('Protocol', function () {
                 return promise.should.be.rejected;
             });
             it('should empty queue if auth succeeds after Auth Start', function () {
-                var protocol = new Protocol(nullStream);
+                var protocol = new Client(nullStream);
                 var mockedAuthenticator = {
                     name: 'mock',
                     getInitialAuthData: function () {
@@ -114,7 +114,7 @@ describe('Protocol', function () {
                 });
             });
             it('should allow Failing with empty reason after Auth Start', function () {
-                var protocol = new Protocol(nullStream);
+                var protocol = new Client(nullStream);
                 var mockedAuthenticator = {
                     name: 'mock',
                     getInitialAuthData: function () {
@@ -149,7 +149,7 @@ describe('Protocol', function () {
                     }
                 };
 
-                var protocol = new Protocol(mockedStream);
+                var protocol = new Client(mockedStream);
                 protocol.authenticate(mockedAuthenticator);
                 protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
                 var data = protocol.decodeMessage(sentData, 0, protocol.clientMessages);
@@ -174,13 +174,13 @@ describe('Protocol', function () {
                     },
                 };
 
-                var protocol = new Protocol(mockedStream);
+                var protocol = new Client(mockedStream);
                 var promise = protocol.authenticate(mockedAuthenticator);
                 protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, protocol.serverMessages));
                 return promise.should.be.rejected;
             });
             it('should resolve Promise if Authentication succeeds after Auth Continue', function () {
-                var protocol = new Protocol(nullStream);
+                var protocol = new Client(nullStream);
                 var mockedAuthenticator = {
                     name: 'mock',
                     getInitialAuthData: function () {
@@ -196,7 +196,7 @@ describe('Protocol', function () {
                 return promise.should.be.fulfilled;
             });
             it('should fail if Authentication fails after Auth Continue', function () {
-                var protocol = new Protocol(nullStream);
+                var protocol = new Client(nullStream);
                 var mockedAuthenticator = {
                     name: 'mock',
                     getInitialAuthData: function () {
