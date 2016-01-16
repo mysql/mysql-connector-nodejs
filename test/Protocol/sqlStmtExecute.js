@@ -22,7 +22,7 @@ function produceResultSet(protocol, columnCount, rowCount, warnings) {
     const result = new Server.ResultSet(data => protocol.handleServerMessage(data));
     result.beginResult(columnCount);
     for (let r = 0; r < rowCount; ++r) {
-        result.row(columnCount)
+        result.row(columnCount);
     }
     result.finalizeSingle();
     if (warnings && warnings.length) {
