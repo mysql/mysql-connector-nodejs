@@ -28,12 +28,13 @@ var NullStreamFactory = {
 
 function produceResultSet(protocol, rowcount) {
     protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
-        type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
+        type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
         name: "_doc",
         original_name: "_doc",
         table: "table",
         original_table: "original_table",
-        schema: "schema"
+        schema: "schema",
+        content_type: 2 /* JSON */
     }, protocol.serverMessages));
     protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
         type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
@@ -44,7 +45,7 @@ function produceResultSet(protocol, rowcount) {
         schema: "schema"
     }, protocol.serverMessages));
 
-    let fields = ["\x01", "\x02"];
+    let fields = ["{\"foo\":\"bar\"}\0", "\x02"];
     for (let i = 0; i < rowcount; ++i) {
         protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, {field: fields}, protocol.serverMessages));
     }
@@ -88,13 +89,26 @@ describe('DevAPI Collection Find', function () {
         collection.find().limit(10, 0).execute();
         spy.should.be.called.once.with(session, "schema", "collection", Protocol.dataModel.DOCUMENT, [], undefined, {count: 10, offset: .0}, undefined, undefined);
     });
-    for (let i = 0; i < 3; ++i) {
-        it('should return only the first column (' + i + ' rows)', function () {
-            const rowcb = chai.spy(),
-                promise = collection.find().execute(rowcb);
-            produceResultSet(session._protocol, i);
-            rowcb.should.be.called.exactly(i);
-            return promise.should.be.fullfilled;
-        });
-    }
+    it('should resolve with zero rows', function () {
+        const rowcb = chai.spy(),
+            promise = collection.find().execute(rowcb);
+        produceResultSet(session._protocol, 0);
+        rowcb.should.not.be.called;
+        return promise.should.be.fullfilled;
+    });
+    it('should return only the first column', function () {
+        const rowcb = chai.spy(),
+            promise = collection.find().execute(rowcb);
+        produceResultSet(session._protocol, 1);
+        rowcb.should.be.called.once.with({foo: 'bar'});
+        return promise.should.be.fullfilled;
+    });
+    it('should return multiple rows', function () {
+        const rowcb = chai.spy(),
+            promise = collection.find().execute(rowcb);
+        produceResultSet(session._protocol, 10);
+        rowcb.should.be.called.exactly(10).with({foo: 'bar'});
+        return promise.should.be.fullfilled;
+    });
+    it('should send the data over the wire ;-)');
 });
