@@ -7,6 +7,7 @@ chai.use(spies);
 
 var assert = require("assert");
 var Client = require("../../lib/Protocol/Client");
+var Server = require("../../lib/Protocol/Server");
 var Encoding = require("../../lib/Protocol/Encoding");
 var Datatype = require("../../lib/Protocol/Datatype");
 var Messages = require('../../lib/Protocol/Messages'),
@@ -18,34 +19,18 @@ var nullStream = {
 };
 
 function produceResultSet(protocol, columnCount, rowCount, warnings) {
-    for (let i = 0; i < columnCount; ++i) {
-        protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
-            type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
-            name: "column" + i,
-            original_name: "original_column" + i,
-            table: "table",
-            original_table: "original_table",
-            schema: "schema"
-        }, Encoding.serverMessages));
-    }
+    const result = new Server.ResultSet(data => protocol.handleServerMessage(data));
+    result.beginResult(columnCount);
     for (let r = 0; r < rowCount; ++r) {
-        let fields = [];
-        for (let c = 0; c < columnCount; ++c) {
-            fields.push("\x01");
-        }
-        protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: fields }, Encoding.serverMessages));
+        result.row(columnCount)
     }
-    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, Encoding.serverMessages));
+    result.finalizeSingle();
     if (warnings && warnings.length) {
-        warnings.forEach(warning => {
-            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.NOTICE, {
-                type: 1,
-                scope: 2,
-                payload: protobuf.encode('Mysqlx.Notice.Warning', warning)
-            }, Encoding.serverMessages))
+        warnings.forEach(function (warning)  {
+            result.warning(warning);
         });
     }
-    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
+    result.finalize();
 }
 
 describe('Client', function () {
