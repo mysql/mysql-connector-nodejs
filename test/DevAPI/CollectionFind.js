@@ -3,30 +3,6 @@
 /*global
  describe, beforeEach, afterEach, it
  */
-var chai = require('chai'),
-    should = chai.should(),
-    spies = require('chai-spies');
-var Client = require('../../lib/Protocol/Client'),
-    Server = require('../../lib/Protocol/Server'),
-    Messages = require('../../lib/Protocol/Messages'),
-    Encoding = require('../../lib/Protocol/Encoding');
-var mysqlx = require('../../');
-var NullAuth = require('../../lib/Authentication/NullAuth');
-
-chai.use(spies);
-
-var nullStream = {
-    on: function () {},
-    write: function () {}
-};
-
-var NullStreamFactory = {
-    createSocket: function () {
-        return new Promise(function (resolve) {
-            resolve(nullStream);
-        });
-    }
-};
 
 function produceResultSet(protocol, rowCount) {
     const result = new Server.ResultSet(data => protocol.handleServerMessage(data));
@@ -58,10 +34,7 @@ describe('DevAPI Collection Find', function () {
     let session, collection, spy, origFind;
 
     beforeEach('get Session', function (done) {
-        return mysqlx.getSession({
-            authMethod: "NULL",
-            socketFactory: NullStreamFactory
-        }).then(function (s) {
+        return mysqlxtest.getNullSession().then(function (s) {
             session = s;
             collection = session.getSchema("schema").getCollection("collection");
             done();

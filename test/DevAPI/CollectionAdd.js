@@ -3,43 +3,15 @@
 /*global
   describe, beforeEach, afterEach, it
  */
-var chai = require('chai'),
-    should = chai.should(),
-    spies = require('chai-spies');
-var Client = require('../../lib/Protocol/Client');
-var Server = require('../../lib/Protocol/Server');
-var Messages = require('../../lib/Protocol/Messages');
-var mysqlx = require('../../');
-var NullAuth = require('../../lib/Authentication/NullAuth');
-
-chai.use(spies);
-chai.should();
+var should = chai.should();
 
 describe('DevAPI Collection Add', function () {
     var collection, spy, origInsert;
 
-    var nullStream = {
-        on: function () {},
-        write: function () {}
-    };
-
-    var NullStreamFactory = {
-        createSocket: function () {
-            return new Promise(function (resolve) {
-                resolve(nullStream);
-            });
-        }
-    };
-
     beforeEach('get Session', function (done) {
-        return mysqlx.getSession({
-            authMethod: "NULL",
-            socketFactory: NullStreamFactory
-        }).then(function (session) {
+        return mysqlxtest.getNullSession().then(function (session) {
             collection = session.getSchema("schema").getCollection("collection");
             done();
-        }).catch(function (err) {
-            done(err);
         });
     });
 

@@ -3,38 +3,13 @@
 /*global
  describe, context, beforeEach, afterEach, it
  */
-var chai = require('chai'),
-    should = chai.should(),
-    spies = require('chai-spies');
-var Client = require('../../lib/Protocol/Client'),
-    Encoding = require('../../lib/Protocol/Encoding'),
-    Messages = require('../../lib/Protocol/Messages');
-var mysqlx = require('../../');
-var NullAuth = require('../../lib/Authentication/NullAuth');
-
-chai.use(spies);
-
-var nullStream = {
-    on: function () {},
-    write: function () {}
-};
-
-var NullStreamFactory = {
-    createSocket: function () {
-        return new Promise(function (resolve) {
-            resolve(nullStream);
-        });
-    }
-};
+chai.should();
 
 describe('DevAPI', function () {
     context('Table', function () {
         let session, table;
         beforeEach('get Session', function (done) {
-            return mysqlx.getSession({
-                authMethod: "NULL",
-                socketFactory: NullStreamFactory
-            }).then(function (s) {
+            return mysqlxtest.getNullSession().then(function (s) {
                 session = s;
                 table = session.getSchema("schema").getTable("table");
                 done();

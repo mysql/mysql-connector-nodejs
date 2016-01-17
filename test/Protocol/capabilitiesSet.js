@@ -1,18 +1,8 @@
 "use strict";
 
-var chai = require("chai");
 chai.should();
 
 var assert = require("assert");
-var Client = require("../../lib/Protocol/Client");
-var Encoding = require("../../lib/Protocol/Encoding");
-var Datatype = require("../../lib/Protocol/Datatype");
-var Messages = require('../../lib/Protocol/Messages');
-
-var nullStream = {
-    on: function () {},
-    write: function () {}
-};
 
 describe('Client', function () {
     describe('capabilitiesSet', function () {

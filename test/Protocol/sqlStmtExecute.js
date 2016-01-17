@@ -1,22 +1,10 @@
 "use strict";
 
-var chai = require("chai"),
-    spies = require('chai-spies');
 chai.should();
-chai.use(spies);
 
-var assert = require("assert");
-var Client = require("../../lib/Protocol/Client");
-var Server = require("../../lib/Protocol/Server");
-var Encoding = require("../../lib/Protocol/Encoding");
-var Datatype = require("../../lib/Protocol/Datatype");
-var Messages = require('../../lib/Protocol/Messages'),
+const assert = require("assert"),
+    Datatype = require("../../lib/Protocol/Datatype"),
     protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
-
-var nullStream = {
-    on: function () {},
-    write: function () {}
-};
 
 function produceResultSet(protocol, columnCount, rowCount, warnings) {
     const result = new Server.ResultSet(data => protocol.handleServerMessage(data));

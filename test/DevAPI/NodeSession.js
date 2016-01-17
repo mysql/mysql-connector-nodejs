@@ -1,30 +1,9 @@
 "use strict";
 
-var chai = require("chai"),
-    spies = require('chai-spies');
 chai.should();
-chai.use(spies);
 
-var assert = require("assert");
-var mysqlx = require("../../");
-var Client = require("../../lib/Protocol/Client");
-var Datatype = require("../../lib/Protocol/Datatype");
-var Messages = require('../../lib/Protocol/Messages'),
-    Encoding = require('../../lib/Protocol/Encoding'),
+const assert = require("assert"),
     protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
-
-var nullStream = {
-    on: function () {},
-    write: function () {}
-};
-
-var NullStreamFactory = {
-    createSocket: function () {
-        return new Promise(function (resolve) {
-            resolve(nullStream);
-        });
-    }
-};
 
 function produceResultSet(protocol) {
     protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
@@ -46,10 +25,7 @@ describe('DevAPI', function () {
         describe('executeSQL', function () {
             let session;
             beforeEach('get Session', function (done) {
-                return mysqlx.getNodeSession({
-                    authMethod: "NULL",
-                    socketFactory: NullStreamFactory
-                }).then(function (s) {
+                return mysqlxtest.getNullNodeSession().then(function (s) {
                     session = s;
                     done();
                 }).catch(function (err) {

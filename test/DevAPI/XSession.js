@@ -1,14 +1,9 @@
 "use strict";
 
-var chai = require('chai'),
-    should = chai.should(),
-    spies = require('chai-spies');
-var expect = require('chai').expect;
-var mysqlx = require('../../'),
+chai.should();
+const expect = require('chai').expect,
     Session = require('../../lib/DevAPI/BaseSession'),
-    Schema = require('../../lib/DevAPI/Schema'),
-    Client = require('../../lib/Protocol/Client'),
-    NullAuth = require('../../lib/Authentication/NullAuth');
+    Schema = require('../../lib/DevAPI/Schema');
 
 describe('XSession', function () {
     it('should have a getSchema method', function () {
@@ -36,10 +31,7 @@ describe('XSession', function () {
         };
 
         beforeEach('get Session', function (done) {
-            return mysqlx.getSession({
-                authMethod: "NULL",
-                socketFactory: NullStreamFactory
-            }).then(function (s) {
+            return mysqlxtest.getNullSession().then(function (s) {
                 session = s;
                 done();
             }).catch(function (err) {
