@@ -62,6 +62,19 @@ describe('WorkQueue', function () {
                 /Queue is empty/
             );
         });
+        it('should clear', function () {
+            var queue = new WorkQueue();
+            queue.push(function(message, cb) {
+                cb();
+            });
+            queue.clear();
+            assert.throws(
+                function() {
+                    queue.process(true);
+                },
+                /Queue is empty/
+            );
+        });
         it('should handle multiple handlers in order', function () {
             var cnt = 0;
             var queue = new WorkQueue();
