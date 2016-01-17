@@ -7,10 +7,13 @@ var chai = require('chai'),
     should = chai.should(),
     spies = require('chai-spies');
 var Client = require('../../lib/Protocol/Client');
+var Server = require('../../lib/Protocol/Server');
+var Messages = require('../../lib/Protocol/Messages');
 var mysqlx = require('../../');
 var NullAuth = require('../../lib/Authentication/NullAuth');
 
 chai.use(spies);
+chai.should();
 
 describe('DevAPI Collection Add', function () {
     var collection, spy, origInsert;
@@ -95,5 +98,12 @@ describe('DevAPI Collection Add', function () {
         }).catch(function (err) {
             done(err);
         });
+    });
+    it('should return affected rows', function () {
+        const promise = collection.add({_id: 3232}).execute(),
+            result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
+        result.finalize();
+        return promise.should.eventually.deep.equal({rows_affected: ['1']});
     });
 });
