@@ -6,13 +6,15 @@ const assert = require("assert"),
     Datatype = require("../../lib/Protocol/Datatype"),
     protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
 
-function produceResultSet(protocol, columnCount, rowCount, warnings) {
+function produceResultSet(protocol, resultsetCount, columnCount, rowCount, warnings) {
     const result = new Server.ResultSet(data => protocol.handleServerMessage(data));
-    result.beginResult(columnCount);
-    for (let r = 0; r < rowCount; ++r) {
-        result.row(columnCount);
+    for (let rset = 0; rset < resultsetCount; ++rset) {
+        result.beginResult(columnCount);
+        for (let r = 0; r < rowCount; ++r) {
+            result.row(columnCount);
+        }
+        result.finalizeSingle();
     }
-    result.finalizeSingle();
     if (warnings && warnings.length) {
         warnings.forEach(function (warning)  {
             result.warning(warning);
@@ -66,7 +68,7 @@ describe('Client', function () {
                 promise2 = protocol.sqlStmtExecute("SELECT 1", []);
 
             protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
-            produceResultSet(protocol, 1, 1);
+            produceResultSet(protocol, 1, 1, 1);
             return Promise.all([
                 promise1.should.be.rejected,
                 promise2.should.be.fullfilled
@@ -93,10 +95,45 @@ describe('Client', function () {
                   metacb = chai.spy(),
                   promise = protocol.sqlStmtExecute("SELECT * FROM t", [], () => {}, metacb);
 
-            produceResultSet(protocol, 1, 1);
+            produceResultSet(protocol, 1, 1, 1);
             metacb.should.have.been.called.once;
             return promise.should.be.fulfilled;
         });
+        it('should report multiple meta data in one call', function () {
+            const protocol = new Client(nullStream),
+                metacb = chai.spy(),
+                promise = protocol.sqlStmtExecute("SELECT * FROM t", [], () => {}, metacb);
+
+            produceResultSet(protocol, 1, 2, 1);
+            const field = {
+                type: 1,
+                name: "column",
+                original_name: "original_column",
+                table: "table",
+                original_table: "original_table",
+                schema: "schema"
+            };
+            metacb.should.have.been.called.once.with([field, field]);
+            return promise.should.be.fulfilled;
+        });
+        it('should call metacb for each resultset', function () {
+            const protocol = new Client(nullStream),
+                metacb = chai.spy(),
+                promise = protocol.sqlStmtExecute("SELECT * FROM t", [], () => {}, metacb);
+
+            produceResultSet(protocol, 2, 2, 1, false, 2);
+            const field = {
+                type: 1,
+                name: "column",
+                original_name: "original_column",
+                table: "table",
+                original_table: "original_table",
+                schema: "schema"
+            };
+            metacb.should.have.been.called.twice.with([field, field]);
+            return promise.should.be.fulfilled;
+        });
+
         it('should handle warning', function () {
             const protocol = new Client(nullStream),
                 promise = protocol.sqlStmtExecute("SELECT CAST('a' AS UNSIGNED)", []),
@@ -106,7 +143,7 @@ describe('Client', function () {
                     msg: 'Truncated incorrect INTEGER value: \'a\''
                 };
 
-            produceResultSet(protocol, 1, 1, [warning]);
+            produceResultSet(protocol, 1, 1, 1, [warning]);
             return promise.should.eventually.deep.equal({warnings: [ warning ]});
         });
         for (let count = 0; count < 3; ++count) {
@@ -115,7 +152,7 @@ describe('Client', function () {
                       rowcb = chai.spy(),
                       promise = protocol.sqlStmtExecute("SELECT * FROM t", [], rowcb);
 
-                produceResultSet(protocol, 1, count);
+                produceResultSet(protocol, 1, 1, count);
                 rowcb.should.have.been.called.exactly(count);
                 return promise.should.be.fulfilled;
             });
@@ -124,7 +161,7 @@ describe('Client', function () {
             const protocol = new Client(nullStream),
                 promise = protocol.sqlStmtExecute("SELECT * FROM t", ["a", 23]);
 
-            produceResultSet(protocol, 1, 1);
+            produceResultSet(protocol, 1, 1, 1);
             return promise.should.be.fulfilled;
         });
 
