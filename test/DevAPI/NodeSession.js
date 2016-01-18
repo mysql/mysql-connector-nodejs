@@ -6,18 +6,11 @@ const assert = require("assert"),
     protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
 
 function produceResultSet(protocol) {
-    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
-        type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
-        name: "column",
-        original_name: "original_column",
-        table: "table",
-        original_table: "original_table",
-        schema: "schema"
-    }, Encoding.serverMessages));
-    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: ["\x01"] }, Encoding.serverMessages));
-    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: ["\x01"] }, Encoding.serverMessages));
-    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, Encoding.serverMessages));
-    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
+    const result = new Server.ResultSet(data => protocol.handleServerMessage(data));
+    result.beginResult(2);
+    result.row(2);
+    result.row(2);
+    result.finalize();
 }
 
 describe('DevAPI', function () {
