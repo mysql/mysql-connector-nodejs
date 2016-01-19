@@ -1,7 +1,7 @@
 "use strict";
 
 /*global
- describe, context, beforeEach, afterEach, it
+ describe, context, beforeEach, afterEach, Messages, Server, Encoding, mysqlxtest, it, beforeEach, chai
  */
 chai.should();
 
