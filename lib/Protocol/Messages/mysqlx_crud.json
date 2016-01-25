@@ -208,6 +208,11 @@
           "rule": "repeated",
           "type": "TypedRow",
           "tag": 4
+        },
+        "args": {
+          "rule": "repeated",
+          "type": "Mysqlx.Datatypes.Scalar",
+          "tag": 5
         }
       }
     },

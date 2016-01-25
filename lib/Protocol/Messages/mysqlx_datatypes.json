@@ -30,6 +30,20 @@
               "tag": 2
             }
           }
+        },
+        "Octets": {
+          "fields": {
+            "value": {
+              "rule": "required",
+              "type": "bytes",
+              "tag": 1
+            },
+            "content_type": {
+              "rule": "optional",
+              "type": "uint32",
+              "tag": 2
+            }
+          }
         }
       },
       "fields": {
@@ -48,9 +62,9 @@
           "type": "uint64",
           "tag": 3
         },
-        "v_opaque": {
+        "v_octets": {
           "rule": "optional",
-          "type": "bytes",
+          "type": "Octets",
           "tag": 5
         },
         "v_double": {
