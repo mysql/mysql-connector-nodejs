@@ -13,6 +13,24 @@ describe('MySQLx Expression parsing', function () {
             exp: {}
         },
         {
+            should: 'allow booleans',
+            in: 'true',
+            exp: {
+
+                type: 2,
+                literal: Datatype.encodeScalar(true)
+            }
+        },
+        {
+            should: 'allow booleans',
+            in: 'false',
+            exp: {
+
+                type: 2,
+                literal: Datatype.encodeScalar(false)
+            }
+        },
+        {
             should: 'allow whitespaces within strings',
             in: '"foo bar"',
             exp: {
