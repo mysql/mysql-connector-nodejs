@@ -1,7 +1,7 @@
 "use strict";
 
 /*global
- describe, beforeEach, afterEach, it
+ describe, beforeEach, afterEach, it, Server, Messages, Client, chai, mysqlxtest
  */
 
 function produceResultSet(protocol, rowCount) {
@@ -61,7 +61,21 @@ describe('DevAPI Collection Find', function () {
     });
     it('should allow to set a limit', function () {
         collection.find().limit(10, 0).execute();
-        spy.should.be.called.once.with(session, "schema", "collection", Client.dataModel.DOCUMENT, [], undefined, {count: 10, offset: .0}, undefined, undefined);
+        spy.should.be.called.once.with(session, "schema", "collection", Client.dataModel.DOCUMENT, [], undefined, {count: 10, offset: 0.0}, undefined, undefined);
+    });
+    it('should allow to set an offset', function () {
+        collection.find().limit(10, 10).execute();
+        spy.should.be.called.once.with(session, "schema", "collection", Client.dataModel.DOCUMENT, [], undefined, {count: 10, offset: 10}, undefined, undefined);
+    });
+    it('should not allow to set a negative limit', function () {
+        (function () {
+            collection.find().limit(-10).execute();
+        }).should.throw(/Limit can't be negative/);
+    });
+    it('should not allow to set an negative offset', function () {
+        (function () {
+            collection.find().limit(10, -10).execute();
+        }).should.throw(/Offset can't be negative/);
     });
     it('should resolve with zero rows', function () {
         const rowcb = chai.spy(),
