@@ -164,6 +164,46 @@ describe('Client', function () {
             produceResultSet(protocol, 1, 1, 1);
             return promise.should.be.fulfilled;
         });
+        it('should decode JSON data', function () {
+            const protocol = new Client(nullStream),
+                rowcb = chai.spy(),
+                promise = protocol.sqlStmtExecute("...", [], rowcb);
+
+            const result = new Server.ResultSet(data => protocol.handleServerMessage(data));
+            result.beginResult([{
+                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
+                content_type: 2,
+                name: "column",
+                original_name: "original_column",
+                table: "table",
+                original_table: "original_table",
+                schema: "schema"
+            }]);
+            result.row(['{"foo":"bar"}' + "\x00"]);
+            result.finalize();
+            rowcb.should.have.been.called.once.with([{foo: "bar"}]);
+            return promise.should.be.fulfilled;
+        });
+        it('should return NULL values', function () {
+            const protocol = new Client(nullStream),
+                rowcb = chai.spy(),
+                promise = protocol.sqlStmtExecute("...", [], rowcb);
+
+            const result = new Server.ResultSet(data => protocol.handleServerMessage(data));
+            result.beginResult([{
+                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
+                content_type: 2,
+                name: "column",
+                original_name: "original_column",
+                table: "table",
+                original_table: "original_table",
+                schema: "schema"
+            }]);
+            result.row([""]);
+            result.finalize();
+            rowcb.should.have.been.called.once.with([null]);
+            return promise.should.be.fulfilled;
+        });
 
         // for those we hae to inspect the sent message:
         it('should verify bound parameters');
