@@ -1,5 +1,9 @@
 "use strict";
 
+/*global
+ describe, context, beforeEach, afterEach, it, chai, Client, Encoding, Messages, nullStream
+ */
+
 chai.should();
 
 var assert = require("assert");
