@@ -7,7 +7,7 @@
 chai.should();
 
 var assert = require("assert");
-var DataType = require('../../lib/Protocol/Datatype');
+var DataType = require('../../../lib/Protocol/Datatype');
 
 describe('Client', function () {
     describe('crudInsert', function () {

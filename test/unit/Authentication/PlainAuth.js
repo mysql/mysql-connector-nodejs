@@ -1,7 +1,7 @@
 "use strict";
 
 var assert = require("assert");
-var PlainAuth = require("../../lib/Authentication/PlainAuth");
+var PlainAuth = require("../../../lib/Authentication/PlainAuth");
 
 var username = 'root';
 var password = 'fff';

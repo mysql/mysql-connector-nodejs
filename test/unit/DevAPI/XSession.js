@@ -2,8 +2,8 @@
 
 chai.should();
 const expect = require('chai').expect,
-    Session = require('../../lib/DevAPI/BaseSession'),
-    Schema = require('../../lib/DevAPI/Schema');
+    Session = require('../../../lib/DevAPI/BaseSession'),
+    Schema = require('../../../lib/DevAPI/Schema');
 
 describe('XSession', function () {
     it('should have a getSchema method', function () {

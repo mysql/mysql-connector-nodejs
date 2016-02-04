@@ -1,6 +1,6 @@
 "use strict";
 
-var encode = require('../../../lib/Protocol/Datatype').encode;
+var encode = require('../../../../lib/Protocol/Datatype').encode;
 require('chai').should();
 
 describe('Data encoding', function () {

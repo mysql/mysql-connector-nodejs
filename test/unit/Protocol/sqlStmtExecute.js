@@ -3,8 +3,8 @@
 chai.should();
 
 const assert = require("assert"),
-    Datatype = require("../../lib/Protocol/Datatype"),
-    protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
+    Datatype = require("../../../lib/Protocol/Datatype"),
+    protobuf = new (require('../../../lib/Protocol/protobuf.js'))(Messages);
 
 function produceResultSet(protocol, resultsetCount, columnCount, rowCount, warnings) {
     const result = new Server.ResultSet(data => protocol.handleServerMessage(data));

@@ -1,7 +1,7 @@
 "use strict";
 
-var Datatype = require('../../lib/Protocol/Datatype');
-var parse = require('../../lib/Expressions').parse;
+var Datatype = require('../../../lib/Protocol/Datatype');
+var parse = require('../../../lib/Expressions').parse;
 require('chai').should();
 
 

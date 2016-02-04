@@ -1,5 +1,5 @@
-var decode = require('../../../lib/Protocol/Datatype').decodeField;
-var fieldtypes = require('../../../lib/Protocol/Messages/mysqlx_resultset').messages.ColumnMetaData.enums.FieldType;
+var decode = require('../../../../lib/Protocol/Datatype').decodeField;
+var fieldtypes = require('../../../../lib/Protocol/Messages/mysqlx_resultset').messages.ColumnMetaData.enums.FieldType;
 
 /** TODO: Move - see also Datatype.js */
 var contentTypes = {

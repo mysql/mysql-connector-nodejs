@@ -1,5 +1,5 @@
 var assert = require('assert');
-var WorkQueue = require('../lib/WorkQueue');
+var WorkQueue = require('../../lib/WorkQueue');
 
 describe('WorkQueue', function () {
     describe('Simple queue processing', function () {

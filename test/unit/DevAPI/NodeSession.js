@@ -3,7 +3,7 @@
 chai.should();
 
 const assert = require("assert"),
-    protobuf = new (require('../../lib/Protocol/protobuf.js'))(Messages);
+    protobuf = new (require('../../../lib/Protocol/protobuf.js'))(Messages);
 
 function produceResultSet(protocol) {
     const result = new Server.ResultSet(data => protocol.handleServerMessage(data));

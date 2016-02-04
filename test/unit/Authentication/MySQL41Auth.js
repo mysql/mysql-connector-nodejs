@@ -1,7 +1,7 @@
 "use strict";
 
 var assert = require("assert");
-var MySQL41Auth = require("../../lib/Authentication/MySQL41Auth");
+var MySQL41Auth = require("../../../lib/Authentication/MySQL41Auth");
 
 var username = "root";
 
