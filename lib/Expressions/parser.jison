@@ -77,6 +77,37 @@ parser.charUnescape = function (chr) {
 
   return chr;
 };
+parser.initPlaceholders = function () {
+  this.placeholders = {
+    ordinal: 0,
+    named: []
+  }
+};
+parser.addOrdinalPlaceholder = function (name) {
+  if (typeof this.placeholders === 'undefined') {
+    this.initPlaceholders();
+  }
+  if (this.placeholders.named.length) {
+    throw new Error("Mixing of named and ordinal placeholders is not permitted");
+  }
+  return {
+    type: 6,
+    position: this.placeholders.ordinal++
+  }
+};
+parser.addNamedPlaceholder = function (name) {
+  if (typeof this.placeholders === 'undefined') {
+    this.initPlaceholders();
+  }
+  if (this.placeholders.ordinal) {
+    throw new Error("Mixing of named and ordinal placeholders is not permitted");
+  }
+  this.placeholders.named.push(name);
+  return {
+    type: 6,
+    position: this.placeholders.named.length - 1
+  }
+};
 %}
 
 %x INITIAL
@@ -97,6 +128,8 @@ parser.charUnescape = function (chr) {
 <INITIAL>"false" return 'false';
 
 <INITIAL>{name}  return 'StringLiteral';
+
+<INITIAL>'?' return '?';
 
 <INITIAL>',' return ',';
 
@@ -129,6 +162,10 @@ parser.charUnescape = function (chr) {
 <INITIAL>'[' return '[';
 
 <INITIAL>']' return ']';
+
+<INITIAL>'?' return '?';
+
+<INITIAL>':' return ':';
 
 <INITIAL>"/*"(.|\r|\n)*?"*/" %{
     if (yytext.match(/\r|\n/) && parser.restricted) {
@@ -179,8 +216,17 @@ parser.charUnescape = function (chr) {
 %%
 
 Input
-  : EOF { return {} }
-  | Expression EOF { return $$ }
+  : EOF { return { expr: {} } }
+  | Expression EOF {
+      const result = {
+        expr: $$
+      };
+      if (parser.placeholders) {
+        result.placeholders = parser.placeholders;
+        delete parser.placeholders
+      }
+      return result;
+  }
   ;
 
 StringOrNumber
@@ -197,7 +243,12 @@ Literal
 Expression
   : Literal
   | FunctionCall
-  | ':' PlaceholderName
+  | '?' %{
+    $$ = parser.addOrdinalPlaceholder();
+  }%
+  | ':' StringLiteral %{
+    $$ = parser.addNamedPlaceholder($2);
+  }%
   | '@' SQLVariable
   | column %{
     $$ = {

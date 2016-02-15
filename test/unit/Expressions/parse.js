@@ -208,10 +208,70 @@ describe('MySQLx Expression parsing', function () {
                     ]
                 }
             }
+        },
+        {
+            should: 'parse named placeholders',
+            in: ':foo',
+            exp: {
+                type: 6,
+                position: 0
+            }
+        },
+        {
+            should: 'parse multiple named placeholders',
+            in: 'concat(:foo, :bar)',
+            exp: {
+                type: 4,
+                function_call: {
+                    name: {
+                        name: "concat"
+                    },
+                    param: [
+                        {
+                            type: 6,
+                            position: 0
+                        },
+                        {
+                            type: 6,
+                            position: 1
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            should: 'parse ordinal placeholders',
+            in: '?',
+            exp: {
+                type: 6,
+                position: 0
+            }
+        },
+        {
+            should: 'parse multiple ordinal placeholders',
+            in: 'concat(?, ?)',
+            exp: {
+                type: 4,
+                function_call: {
+                    name: {
+                        name: "concat"
+                    },
+                    param: [
+                        {
+                            type: 6,
+                            position: 0
+                        },
+                        {
+                            type: 6,
+                            position: 1
+                        }
+                    ]
+                }
+            }
         }
     ].forEach(function (expression) {
             it('should ' + expression.should + ' (' + expression.in + ')', function () {
-                parse(expression.in).should.deep.equal(expression.exp);
+                parse(expression.in).expr.should.deep.equal(expression.exp);
             });
         });
 });
