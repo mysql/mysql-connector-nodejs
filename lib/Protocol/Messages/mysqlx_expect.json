@@ -1,0 +1,64 @@
+{
+  "options": {
+    "java_package": "com.mysql.cj.mysqlx.protobuf"
+  },
+  "messages": {
+    "Open": {
+      "enums": {
+        "CtxOperation": {
+          "EXPECT_CTX_COPY_PREV": 0,
+          "EXPECT_CTX_EMPTY": 1
+        }
+      },
+      "messages": {
+        "Condition": {
+          "enums": {
+            "ConditionOperation": {
+              "EXPECT_OP_SET": 0,
+              "EXPECT_OP_UNSET": 1
+            }
+          },
+          "fields": {
+            "condition_key": {
+              "rule": "required",
+              "type": "uint32",
+              "tag": 1
+            },
+            "condition_value": {
+              "rule": "optional",
+              "type": "bytes",
+              "tag": 2
+            },
+            "op": {
+              "rule": "optional",
+              "type": "ConditionOperation",
+              "tag": 3,
+              "options": {
+                "default": "EXPECT_OP_SET"
+              }
+            }
+          }
+        }
+      },
+      "fields": {
+        "op": {
+          "rule": "optional",
+          "type": "CtxOperation",
+          "tag": 1,
+          "options": {
+            "default": "EXPECT_CTX_COPY_PREV"
+          }
+        },
+        "cond": {
+          "rule": "repeated",
+          "type": "Condition",
+          "tag": 2
+        }
+      }
+    },
+    "Close": {
+      "fields": {}
+    }
+  },
+  "package": "Mysqlx.Expect"
+}
