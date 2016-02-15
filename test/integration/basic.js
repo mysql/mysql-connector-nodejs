@@ -34,5 +34,61 @@ describe('Basic Test with server', function () {
         expect(promise).to.notify(done);
     });
 
+    describe('tests with session', function () {
+        let sessionPromise, schema;
+
+        beforeEach('get session', function () {
+            sessionPromise = mysqlx.getNodeSession(properties).then(s => {
+                return s.createSchema(properties.schema).then((sch) => {
+                    schema = sch;
+                    return s;
+                });
+            });
+            return sessionPromise;
+        });
+        afterEach('close session', function () {
+            return sessionPromise.then((session) => {
+                return Promise.all([
+                    session.dropSchema(properties.schema),
+                    session.close()
+                ]);
+            });
+        });
+        it('should list created collection', function () {
+            const collectionName = "testcollection",
+                expected = { "testcollection": schema.getCollection(collectionName) };
+
+            return Promise.all([
+                schema.createCollection(collectionName),
+                schema.getCollections().should.eventually.deep.equal(expected),
+                schema.dropCollection(collectionName),
+                schema.getCollections().should.eventually.deep.equal({})
+            ]).should.be.fullfilled;
+        });
+        it('should rerieve an object stored into the database', function (done) {
+            const collectionName = "testcollection",
+                collection = schema.getCollection(collectionName),
+                document = {
+                    _id: "efefevvr",
+                    here: {
+                        we: "do",
+                        have: 1,
+                        great: "object"
+                    }
+                },
+                rowcb = chai.spy();
+
+
+            expect(Promise.all([
+                schema.createCollection(collectionName),
+                collection.add(document).execute(),
+                collection.find().execute(rowcb),
+                schema.dropCollection(collectionName)
+            ]).then(() => {
+                rowcb.should.be.called.once.with(document);
+                return true;
+            })).to.notify(done);
+        });
+    });
 });
 
