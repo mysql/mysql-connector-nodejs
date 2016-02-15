@@ -1,7 +1,7 @@
 "use strict";
 
 /*global
- describe, context, beforeEach, afterEach, it
+ describe, context, beforeEach, afterEach, it, chai, Encoding, mysqlxtest, Messages
  */
 chai.should();
 
@@ -75,6 +75,9 @@ describe('DevAPI', function () {
             const promise = table.drop();
             session._client.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, { code: 1, sql_state: 'HY000', msg: 'Invalid'}, Encoding.serverMessages));
             return promise.should.be.rejected;
+        });
+        it('should hide internals from inspect output', function () {
+            table.inspect().should.deep.equal({ schema: "schema", table: "table" });
         });
     });
 });

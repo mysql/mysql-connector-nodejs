@@ -65,5 +65,8 @@ describe('DevAPI', function () {
             session._client.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, { code: 1, sql_state: 'HY000', msg: 'Invalid'}, Encoding.serverMessages));
             return promise.should.be.rejected;
         });
+        it('should hide internals from inspect output', function () {
+            collection.inspect().should.deep.equal({ schema: "schema", collection: "collection" });
+        });
     });
 });
