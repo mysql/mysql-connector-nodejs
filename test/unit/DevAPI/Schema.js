@@ -62,6 +62,9 @@ describe('DevAPI', function () {
             result.beginResult([{
                 type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
                 name: "name"
+            },{
+                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
+                name: "type"
             }]);
             result.finalize();
 
@@ -74,9 +77,13 @@ describe('DevAPI', function () {
             result.beginResult([{
                 type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
                 name: "name"
+            },{
+                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
+                name: "type"
             }]);
-            result.row(["collection1\0"]);
-            result.row(["collection2\0"]);
+            result.row(["collection1\0", "COLLECTION\0"]);
+            result.row(["table\0", "TABLE\0"]);
+            result.row(["collection2\0", "COLLECTION\0"]);
             result.finalize();
 
             return promise.should.eventually.deep.equal({
@@ -132,9 +139,13 @@ describe('DevAPI', function () {
             result.beginResult([{
                 type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
                 name: "name"
+            },{
+                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
+                name: "type"
             }]);
-            result.row(["table1\0"]);
-            result.row(["table2\0"]);
+            result.row(["table1\0", "TABLE\0"]);
+            result.row(["collection\0", "COLLECTION\0"]);
+            result.row(["table2\0", "TABLE\0"]);
             result.finalize();
 
             return promise.should.eventually.deep.equal({
