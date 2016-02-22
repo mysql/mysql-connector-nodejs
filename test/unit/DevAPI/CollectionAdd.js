@@ -72,10 +72,14 @@ describe('DevAPI Collection Add', function () {
         });
     });
     it('should return affected rows', function () {
-        const promise = collection.add({_id: 3232}).execute(),
-            result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        const promise = collection.add({_id: 3232}).execute().then(
+            result => result.getAffectedRowsCount()
+        );
+
+        const result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
         result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
         result.finalize();
-        return promise.should.eventually.deep.equal({rows_affected: ['1']});
+
+        return promise.should.eventually.deep.equal(1);
     });
 });
