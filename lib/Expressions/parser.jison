@@ -127,8 +127,6 @@ parser.addNamedPlaceholder = function (name) {
 <INITIAL>"true" return 'true';
 <INITIAL>"false" return 'false';
 
-<INITIAL>{name}  return 'StringLiteral';
-
 <INITIAL>'?' return '?';
 
 <INITIAL>',' return ',';
@@ -166,6 +164,8 @@ parser.addNamedPlaceholder = function (name) {
 <INITIAL>'?' return '?';
 
 <INITIAL>':' return ':';
+
+<INITIAL>{name}  return 'StringLiteral';
 
 <INITIAL>"/*"(.|\r|\n)*?"*/" %{
     if (yytext.match(/\r|\n/) && parser.restricted) {
@@ -283,6 +283,30 @@ Expression
       operator: {
         name: $2,
         param: [ $1, $3 ]
+      }
+    }
+  }%
+  | Expression StringLiteral Expression %{
+    if ($2.toLowerCase() !== 'like') {
+        throw new Error("Unexpected operator " + $2);
+    }
+    $$ = {
+      type: 5,
+      operator: {
+        name: 'like',
+        param: [ $1, $3 ]
+      }
+    }
+  }%
+  | Expression StringLiteral StringLiteral Expression %{
+    if ($2.toLowerCase() !== 'not' && $3.toLowerCase() !== 'like') {
+        throw new Error("Unexpected operator " + $2 + " " + $3);
+    }
+    $$ = {
+      type: 5,
+      operator: {
+        name: 'not_like',
+        param: [ $1, $4 ]
       }
     }
   }%

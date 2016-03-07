@@ -67,6 +67,46 @@ describe('MySQLx Expression parsing', function () {
             }
         },
         {
+            should: 'parse LIKE',
+            in: '"abc" LIKE "%b_"',
+            exp: {
+                type: 5,
+                operator: {
+                    name: 'like',
+                    param: [
+                        {
+                            type: 2,
+                            literal: Datatype.encodeScalar("abc")
+                        },
+                        {
+                            type: 2,
+                            literal: Datatype.encodeScalar("%b_")
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            should: 'parse NOT LIKE',
+            in: '"abc" NOT LIKE "%b_"',
+            exp: {
+                type: 5,
+                operator: {
+                    name: 'not_like',
+                    param: [
+                        {
+                            type: 2,
+                            literal: Datatype.encodeScalar("abc")
+                        },
+                        {
+                            type: 2,
+                            literal: Datatype.encodeScalar("%b_")
+                        }
+                    ]
+                }
+            }
+        },
+        {
             should: 'return operator tree for comparison',
             in: '$.name == "Johannes"',
             exp: {
