@@ -9,22 +9,21 @@ documents making it possible to use both tables and collections at the same
 time.
 
 For general information about MySQL Hybrid please refer to documentation on
-http://insidemysql.com/mysqlx/
+http://mysql.com/
 
 Requirements
-============
-This library requires at least Node.js 0.12. It has been tested with
-Node.js 4.2.
+------------
+This library requires at least Node.js 4.2.
 
 Installation
-============
+------------
 This library is organized in a way that it can be installed using Node.js's npm
 tool into your project:
   `npm install mysqlx-1.0.0.tgz`
 Please refer to http://npmjs.com for more information on npm.
 
 Getting Started
-===============
+---------------
 A simple JavaScript file using this library follows:
 
 
@@ -66,8 +65,8 @@ A simple JavaScript file using this library follows:
 
 
 License
-=======
-Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+-------
+Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License as
@@ -85,9 +84,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 02110-1301  USA
 
 APPENDIX: Licenses for Third-Party Components
-=============================================
-protobuf.js
------------
+---------------------------------------------
+### protobuf.js
+
 Use of any of this software is governed by the terms of
 the license below:
 

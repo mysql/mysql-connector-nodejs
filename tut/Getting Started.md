@@ -1,13 +1,13 @@
 # Connector/Node.JS
 
 Connector/NJS is a connector for the asynchronous Node.JS platform in
-version 0.12 written in 100% JavaScript speaking the MySQL X Protocol.
-(no support for the old protocol)
+version 4.2 written in 100% JavaScript speaking the MySQL X Protocol.
+(no support for the traditional MySQL protocol)
 
 ## Requirements:
 
- * MySQL 5.7 with current X plugin
- * Node.JS 0.12
+ * MySQL 5.7 with X plugin
+ * Node.JS 4.2
 
 ## Putting c/NJS in place:
 
@@ -34,7 +34,7 @@ behavior and some common pitfalls:
 ```
 "use strict";
 
-var mysqlx = require('mysqlx');
+const mysqlx = require('mysqlx');
 
 mysqlx.getSession({
     host: 'localhost',
@@ -48,13 +48,13 @@ mysqlx.getSession({
     }).then(function (collection) {
         return Promise.all([
             collection.add(
-                {_id: 1232321, baz: { foo: "bar"}},
-                {_id: 2256521, baz: { foo: "baz"}},
-                {_id: 3256521, baz: { foo: "baz"}},
-                {_id: 4256521, address: { street: "221b Main St"}}
+                { baz: { foo: "bar"} },
+                { baz: { foo: "baz"} },
+                { baz: { foo: "baz"} },
+                { address: { street: "221b Main St"} }
             ).execute(),
-            collection.find("@.baz.foo == 'baz'").execute(function (row) { console.log(row); }),
-            collection.drop()
+            collection.find("@.baz.foo == 'baz'").execute( row => console.log(row) ),
+            collection.drop().execute()
         ]);
     }).then(function () {
         return session.dropSchema("foo");
