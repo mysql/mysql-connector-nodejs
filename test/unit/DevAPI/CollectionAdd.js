@@ -82,4 +82,48 @@ describe('DevAPI Collection Add', function () {
 
         return promise.should.eventually.deep.equal(1);
     });
+    it('should return document\'s id', function () {
+        const promise = collection.add({_id: 3232}).execute().then(
+            result => result.getDocumentId()
+        );
+
+        const result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
+        result.finalize();
+
+        return promise.should.eventually.deep.equal(3232);
+    });
+    it('should return document\'s id (array form)', function () {
+        const promise = collection.add({_id: 3232}).execute().then(
+            result => result.getDocumentIds()
+        );
+
+        const result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
+        result.finalize();
+
+        return promise.should.eventually.deep.equal([3232]);
+    });
+    it('should return multiple document\'s ids', function () {
+        const promise = collection.add({_id: 3232}).add({_id: 4321}).execute().then(
+            result => result.getDocumentIds()
+        );
+
+        const result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
+        result.finalize();
+
+        return promise.should.eventually.deep.equal([3232, 4321]);
+    });
+    it('should return multiple generated document\'s ids', function () {
+        const promise = collection.add({noid: 3232}).add({noid: 4321}).execute().then(
+            result => result.getDocumentIds().length
+        );
+
+        const result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
+        result.finalize();
+
+        return promise.should.eventually.deep.equal(2);
+    });
 });
