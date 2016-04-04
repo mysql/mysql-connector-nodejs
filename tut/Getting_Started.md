@@ -1,12 +1,12 @@
 # Connector/Node.JS
 
 Connector/NJS is a connector for the asynchronous Node.JS platform in
-version 4.2 written in 100% JavaScript speaking the MySQL X Protocol.
+version 4.2 written in 100% JavaScript speaking the X DevAPI Protocol.
 (no support for the traditional MySQL protocol)
 
 ## Requirements:
 
- * MySQL 5.7 with X plugin
+ * MySQL 5.7.12 or higher, with the X plugin enabled
  * Node.JS 4.2
 
 ## Putting c/NJS in place:
@@ -22,8 +22,8 @@ project's directory:
 
 ## Getting started:
 
-The upper userspace layer which will follow the DevAPI. This follows quite 
-closely to what other MySQL X connectors, should do but there is an important
+The upper userspace layer which will follow the X DevAPI. This follows quite 
+closely to what other X enabled connectors should do, but there is an important
 difference: This connector is asynchronous and returns Promises for all network
 operations. See
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise for basic introduction to JavaScript's Promise.
@@ -99,7 +99,7 @@ console.log("Hello World");
 ```
 
 getSession is a function from the mysqlx module taking an object with
-properties as parameter. 33060 is the port the MySQL X Protocol uses.
+properties as parameter. 33060 is the port that the X DevAPI Protocol uses by default.
 The return value is a Promise which will resolve to a Session object.
 This means that as soon as we're successfully connected the callback
 provided to the then() function will be called. In case of an error the
@@ -107,8 +107,8 @@ exception provided to catch() will be called. Mind that the execution
 won't block but those callbaks are called sometime later. Therefore
 we're seeing "Hello world" printed before "connected". 
 
-One important thing is that by this async nature it is easy to "loose"
-errors. for instance when running this code
+One important thing is that by this async nature it is easy to "lose"
+errors. For instance, when running this code:
 
 ```
 mysqlx.getSession({
@@ -127,7 +127,7 @@ mysqlx.getSession({
 });
 ```
 
-we won't see any output and the script will hang. The reason is that the
+We won't see any output and the script will hang. The reason is that the
 error happens in an async part of the code and is never caught.
 Additionally we only close the connection if this was successful, but as
 long as a network connection exists node.js doesn't terminate.
@@ -196,8 +196,7 @@ Downsides of this approach are that we have to somehow provide the
 collection object to all of those scopes and we have less throughput as
 the following operation will only be sent to the server after we
 processed the response from the previous operation (no pipelining). A
-future version of the connector will provide "batches" (which were just
-designed on Friday as part of the overall DevAPI). Additionally one has
+future version of the connector may provide "batches". Additionally, one has
 to be careful to put the "return" statements in, else errors will be
 lost, again.
 

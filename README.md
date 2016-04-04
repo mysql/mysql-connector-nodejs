@@ -1,15 +1,15 @@
-MySQL X Connector/Node.js
+Connector/Node.js which implements the X DevAPI
 =========================
-The MySQL X Connector is an asychronous promise-based client library for the
-MySQL X Protocol of MySQL 5.7 Hybrid.
+The Node.js Connector is an asychronous promise-based client library for the
+X DevAPI protocol that was introduced in MySQL 5.7.12.
 
-MySQL 5.7 Hybrid is an open-source relational database that is secure, high
-performing, and easy to use. MySQL Hybrid supports relational tables and JSON 
+MySQL 5.7 is an open-source relational database that is secure, high
+performing, and easy to use. The X DevAPI supports relational tables and JSON 
 documents making it possible to use both tables and collections at the same
 time.
 
-For general information about MySQL Hybrid please refer to documentation on
-http://mysql.com/
+For general information about the X DevAPI, please refer to documentation on
+http://dev.mysql.com/doc/x-devapi-userguide/en/
 
 Requirements
 ------------
