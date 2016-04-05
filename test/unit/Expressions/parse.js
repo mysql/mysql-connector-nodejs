@@ -250,6 +250,28 @@ describe('MySQLx Expression parsing', function () {
             }
         },
         {
+            should: 'compare field and integer with backtick',
+            in: '`foo` > 200',
+            exp: {
+                type: 5,
+                operator: {
+                    name: '>',
+                    param: [
+                        {
+                            type: 1,
+                            identifier: {
+                                name: "foo"
+                            }
+                        },
+                        {
+                            type: 2,
+                            literal: Datatype.encodeScalar(200)
+                        }
+                    ]
+                }
+            }
+        },
+        {
             should: 'parse named placeholders',
             in: ':foo',
             exp: {

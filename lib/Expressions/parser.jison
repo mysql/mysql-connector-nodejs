@@ -126,6 +126,10 @@ parser.addNamedPlaceholder = function (name) {
 
 <INITIAL>"true" return 'true';
 <INITIAL>"false" return 'false';
+<INITIAL>"like" return 'like';
+<INITIAL>"LIKE" return 'like';
+<INITIAL>"not" return 'not';
+<INITIAL>"NOT" return 'not';
 
 <INITIAL>'?' return '?';
 
@@ -164,6 +168,14 @@ parser.addNamedPlaceholder = function (name) {
 <INITIAL>'?' return '?';
 
 <INITIAL>':' return ':';
+
+<INITIAL>'<' return '<';
+
+<INITIAL>'>' return '>';
+
+<INITIAL>'<=' return '<=';
+
+<INITIAL>'>=' return '>=';
 
 <INITIAL>{name}  return 'StringLiteral';
 
@@ -286,10 +298,7 @@ Expression
       }
     }
   }%
-  | Expression StringLiteral Expression %{
-    if ($2.toLowerCase() !== 'like') {
-        throw new Error("Unexpected operator " + $2);
-    }
+  | Expression like Expression %{
     $$ = {
       type: 5,
       operator: {
@@ -298,10 +307,7 @@ Expression
       }
     }
   }%
-  | Expression StringLiteral StringLiteral Expression %{
-    if ($2.toLowerCase() !== 'not' && $3.toLowerCase() !== 'like') {
-        throw new Error("Unexpected operator " + $2 + " " + $3);
-    }
+  | Expression not like Expression %{
     $$ = {
       type: 5,
       operator: {
@@ -325,6 +331,10 @@ BinaryOperator
   | '*'
   | '/'
   | '%'
+  | '<'
+  | '>'
+  | '<='
+  | '>='
   ;
 
 Field
