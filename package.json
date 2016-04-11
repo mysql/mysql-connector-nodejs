@@ -7,25 +7,15 @@
   "files": [
     "lib/",
     "test/",
-    "COPYING.txt",
+    "COPYING",
     "README",
+    "README.md",
     "CHANGES",
     "index.js"
   ],
   "scripts": {
-    "test": "mocha --recursive -R xunit test/ > test-reports.xml",
-    "generate-parser": "jison -o lib/Expressions/parser.js  ./lib/Expressions/parser.jison",
-    "coverage": "istanbul cover --report cobertura --report lcov _mocha --recursive test/",
-    "doc": "jsdoc -d doc/ --readme README.md -u tut -r index.js lib/"
   },
   "dependencies": {},
-  "devDependencies": {
-    "chai-as-promised": "^5.1.0",
-    "chai-spies": "^0.7.0",
-    "istanbul": "^0.3.17",
-    "jsdoc": "^3.3.2",
-    "mocha": "^2.2.1"
-  },
   "engines": {
     "node": ">=4.2.0"
   }

@@ -17,7 +17,7 @@ directory from which they can be loaded. This can be done with the `npm` tool fr
 project's directory:
 
 ```
-    $ npm install mysqlx-nodejs-1.0.0.tgz
+    $ npm install mysql-connector-nodejs-1.0.2.tar.gz
 ```
 
 ## Getting started:
