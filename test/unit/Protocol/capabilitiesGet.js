@@ -27,7 +27,7 @@ describe('Client', function () {
         it('should resolve Promise with empty capabilities', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.capabilitiesGet();
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
+            protocol.handleNetworkFragment(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
             return promise.should.eventually.deep.equal({});
         });
         it('should resolve multiple Promises with multiple responses in one network package', function () {
@@ -43,7 +43,7 @@ describe('Client', function () {
             for (var i = 0; i < promises.length; ++i) {
                 singleResponse.copy(result, i * singleResponse.length);
             }
-            protocol.handleServerMessage(result);
+            protocol.handleNetworkFragment(result);
             return all.should.be.fulfilled;
         })
         it('should return Promise with empty capabilities from server', function () {
@@ -93,7 +93,7 @@ describe('Client', function () {
                     }
                 ]
             };
-            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, caps, Encoding.serverMessages));
+            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, caps, Encoding.serverMessages));
             return promise.should.eventually.deep.equal({
                 "some.capability": "foobar",
                 "some.other.capability": [
@@ -105,10 +105,10 @@ describe('Client', function () {
         it('should throw an error when receiving multiple messages', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.capabilitiesGet();
-            protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
+            protocol.handleNetworkFragment(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
             assert.throws(
                 function () {
-                    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
+                    protocol.handleNetworkFragment(protocol.encodeMessage(Messages.ServerMessages.CONN_CAPABILITIES, {}, protocol.serverMessages));
                 },
                 /Queue is empty/
             );

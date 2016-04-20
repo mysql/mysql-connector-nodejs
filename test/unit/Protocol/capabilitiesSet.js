@@ -68,13 +68,13 @@ describe('Client', function () {
         it('should resolve Promise', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.capabilitiesSet({});
-            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.OK, {}, Encoding.serverMessages));
+            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.OK, {}, Encoding.serverMessages));
             return promise.should.be.fulfilled;
         });
         it('should fail on error', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.capabilitiesSet({});
-            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, { code: 1, sql_state: 'HY000', msg: 'Invalid'}, Encoding.serverMessages));
+            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, { code: 1, sql_state: 'HY000', msg: 'Invalid'}, Encoding.serverMessages));
             return promise.should.be.rejected;
         });
     });

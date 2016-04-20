@@ -6,7 +6,7 @@ const assert = require("assert"),
     protobuf = new (require('../../../lib/Protocol/protobuf.js'))(Messages);
 
 function produceResultSet(protocol) {
-    const result = new Server.ResultSet(data => protocol.handleServerMessage(data));
+    const result = new Server.ResultSet(data => protocol.handleNetworkFragment(data));
     result.beginResult(2);
     result.row(2);
     result.row(2);

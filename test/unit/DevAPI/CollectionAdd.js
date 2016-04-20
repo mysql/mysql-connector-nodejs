@@ -76,7 +76,7 @@ describe('DevAPI Collection Add', function () {
             result => result.getAffectedRowsCount()
         );
 
-        const result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        const result = new Server.ResultSet(data => collection.getSession()._client.handleNetworkFragment(data));
         result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
         result.finalize();
 
@@ -87,7 +87,7 @@ describe('DevAPI Collection Add', function () {
             result => result.getDocumentId()
         );
 
-        const result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        const result = new Server.ResultSet(data => collection.getSession()._client.handleNetworkFragment(data));
         result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
         result.finalize();
 
@@ -98,7 +98,7 @@ describe('DevAPI Collection Add', function () {
             result => result.getDocumentIds()
         );
 
-        const result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        const result = new Server.ResultSet(data => collection.getSession()._client.handleNetworkFragment(data));
         result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
         result.finalize();
 
@@ -109,7 +109,7 @@ describe('DevAPI Collection Add', function () {
             result => result.getDocumentIds()
         );
 
-        const result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        const result = new Server.ResultSet(data => collection.getSession()._client.handleNetworkFragment(data));
         result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
         result.finalize();
 
@@ -120,7 +120,7 @@ describe('DevAPI Collection Add', function () {
             result => result.getDocumentIds().length
         );
 
-        const result = new Server.ResultSet(data => collection.getSession()._client.handleServerMessage(data));
+        const result = new Server.ResultSet(data => collection.getSession()._client.handleNetworkFragment(data));
         result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
         result.finalize();
 

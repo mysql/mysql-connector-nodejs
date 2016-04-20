@@ -13,7 +13,7 @@ describe('Client', function () {
         it('should fail if error is received', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.crudModify("schema", "collection", Client.dataModel.DOCUMENT, "", []);
-            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {
+            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {
                 code: 1,
                 sql_state: "0000",
                 msg: "Unknown error"

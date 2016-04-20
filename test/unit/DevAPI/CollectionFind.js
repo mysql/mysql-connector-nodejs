@@ -5,7 +5,7 @@
  */
 
 function produceResultSet(protocol, rowCount) {
-    const result = new Server.ResultSet(data => protocol.handleServerMessage(data));
+    const result = new Server.ResultSet(data => protocol.handleNetworkFragment(data));
     result.beginResult([{
         type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
         name: "_doc",

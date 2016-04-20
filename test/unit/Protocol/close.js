@@ -10,7 +10,7 @@ describe('Client', function () {
             const protocol = new Client(nullStream),
                 promise = protocol.close();
 
-            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.OK, {}, Encoding.serverMessages));
+            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.OK, {}, Encoding.serverMessages));
 
             return promise.should.be.fullfilled;
         });

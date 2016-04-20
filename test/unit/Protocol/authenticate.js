@@ -65,7 +65,7 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
                 return promise.should.be.fulfilled;
             });
             it('should allow Failing with empty reason after Auth Start', function () {
@@ -76,7 +76,7 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {}, Encoding.serverMessages));
                 return promise.should.be.rejected;
             });
             it('should allow to provide a reason, when Failing after Auth Start', function () {
@@ -88,7 +88,7 @@ describe('Client', function () {
                 };
                 var message = "This is a test!";
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {msg: message}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {msg: message}, Encoding.serverMessages));
                 return promise.should.be.rejected;
             });
             it('should empty queue if auth succeeds after Auth Start', function () {
@@ -99,7 +99,7 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
                 return promise.then(function () {
                     assert.equal(protocol._workQueue.hasMore(), false);
                     return true;
@@ -113,7 +113,7 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {}, Encoding.serverMessages));
                 return promise.catch(function () {
                     assert.equal(protocol._workQueue.hasMore(), false);
                     return true;
@@ -143,10 +143,10 @@ describe('Client', function () {
 
                 var protocol = new Client(mockedStream);
                 protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
                 var data = Encoding.decodeMessage(sentData, 0, Encoding.clientMessages);
                 assert.strictEqual(data.decoded.auth_data.toString(), (new Buffer([0, 1, 2, 3, 4, 5])).toString());
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
                 var data = Encoding.decodeMessage(sentData, 0, Encoding.clientMessages);
                 assert.strictEqual(data.decoded.auth_data.toString(), (new Buffer([6, 7, 8, 9])).toString());
             });
@@ -168,7 +168,7 @@ describe('Client', function () {
 
                 var protocol = new Client(mockedStream);
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
                 return promise.should.be.rejected;
             });
             it('should resolve Promise if Authentication succeeds after Auth Continue', function () {
@@ -181,10 +181,10 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_OK, {}, Encoding.serverMessages));
                 return promise.should.be.fulfilled;
             });
             it('should fail if Authentication fails after Auth Continue', function () {
@@ -197,10 +197,10 @@ describe('Client', function () {
                     }
                 };
                 var promise = protocol.authenticate(mockedAuthenticator);
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
-                protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SESS_AUTHENTICATE_CONTINUE, {}, Encoding.serverMessages));
+                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {}, Encoding.serverMessages));
                 return promise.should.be.rejected;
             });
             it('should detect old MySQL protocol', function () {
@@ -213,8 +213,8 @@ describe('Client', function () {
                         0x5f, 0x6e, 0x61, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64,
                         0x00]);
                 (function () {
-                    protocol.handleServerMessage(buf);
-                }).should.throw(/is no MySQL server speaking MySQL X Protocol/);
+                    protocol.handleNetworkFragment(buf);
+                }).should.throw(/is no MySQL server speaking X Protocol/);
             });
         });
     });

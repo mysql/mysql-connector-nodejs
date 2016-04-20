@@ -70,7 +70,7 @@ describe('Client', function () {
         it('should resolve Promise after inserting multiple documents', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
-            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
+            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
             return promise.should.eventually.deep.equal({});
         });
         it('should report affected rows (once we handle int64 properly)');
@@ -78,10 +78,10 @@ describe('Client', function () {
         it('should throw an error when receiving multiple messages', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
-            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
+            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
             assert.throws(
                 function () {
-                    protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
+                    protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
                 },
                 /Queue is empty/
             );
@@ -90,10 +90,10 @@ describe('Client', function () {
         it('should throw an error when receiving multiple messages', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
-            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
+            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
             assert.throws(
                 function () {
-                    protocol.handleServerMessage(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
+                    protocol.handleNetworkFragment(protocol.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, protocol.serverMessages));
                 },
                 /Queue is empty/
             );
@@ -102,7 +102,7 @@ describe('Client', function () {
         it('should fail if error is received', function () {
             var protocol = new Client(nullStream);
             var promise = protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }], [{ _id: 456 }]]);
-            protocol.handleServerMessage(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {
+            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, {
                 code: 1,
                 sql_state: "0000",
                 msg: "Unknown error"
