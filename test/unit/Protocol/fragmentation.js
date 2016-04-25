@@ -43,7 +43,6 @@ describe('Client', function () {
 
             const complete = Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages);
 
-
             protocol.handleNetworkFragment(complete.slice(0, 1));
             protocol.handleNetworkFragment(complete.slice(1));
 
