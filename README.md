@@ -20,7 +20,7 @@ Installation
 ------------
 This library is organized in a way that it can be installed using Node.js's npm
 tool into your project:
-  `npm install mysql-connector-nodejs-1.0.2.tar.gz`
+  `npm install mysql-connector-nodejs-1.0.3.tar.gz`
 Please refer to http://npmjs.com for more information on npm.
 
 Getting Started
