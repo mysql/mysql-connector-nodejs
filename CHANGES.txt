@@ -1,0 +1,22 @@
+=====================================================
+MySQL Connector/Node.JS 1.0 - Release Notes & Changes
+=====================================================
+
+MySQL Connector/Node.JS
+Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+
+Full release notes:
+ http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
+
+v1.0.3
+======
+
+- Improved handling of fragmented TCP packages
+- BUG#23118665:C/NODEJS FAILS TO WORK WHEN SSL IS ENABLED
+
+v1.0.2
+======
+
+- Initial public release
+- Support for X DevAPI 1.0.4
+

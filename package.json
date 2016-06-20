@@ -7,14 +7,12 @@
   "files": [
     "lib/",
     "test/",
+    "CHANGES.txt",
     "COPYING",
     "README",
-    "README.md",
     "CHANGES",
     "index.js"
   ],
-  "scripts": {
-  },
   "dependencies": {},
   "engines": {
     "node": ">=4.2.0"
