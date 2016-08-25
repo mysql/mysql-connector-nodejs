@@ -91,7 +91,33 @@ describe('DevAPI', function () {
                 collection2: schema.getCollection("collection2")
             });
         });
+        it('should return an list of collections, which can be used as table', function () {
+            const promise = schema.getCollections();
 
+            const result = new Server.ResultSet(data => session._client.handleNetworkFragment(data));
+            result.beginResult([{
+                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
+                name: "name"
+            },{
+                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
+                name: "type"
+            }]);
+            result.row(["collection1\0", "COLLECTION\0"]);
+            result.row(["table\0", "TABLE\0"]);
+            result.row(["collection2\0", "COLLECTION\0"]);
+            result.finalize();
+
+            return promise.then(collections => {
+                let retval = {};
+                for (var k in collections) {
+                    retval[k] = schema.getCollectionAsTable(k);
+                }
+                return retval;
+            }).should.eventually.deep.equal({
+                collection1: schema.getTable("collection1"),
+                collection2: schema.getTable("collection2")
+            });
+        });
         it('should return a newly created collection', function () {
             const promise = schema.createCollection("newcollection"),
                 result = new Server.ResultSet(data => session._client.handleNetworkFragment(data));
