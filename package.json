@@ -1,6 +1,6 @@
 {
-  "name": "mysqlx",
-  "version": "1.0.3",
+  "name": "@mysql/mysqlx",
+  "version": "1.0.4",
   "description": "A node.js driver for MySQL.",
   "author": "Johannes Schlüter <johannes.schlueter@oracle.com>",
   "license": "GPL-2.0",
@@ -9,10 +9,22 @@
     "test/",
     "CHANGES.txt",
     "COPYING",
-    "README",
+    "README.md",
     "CHANGES",
     "index.js"
   ],
+  "keywords": [
+    "MySQL",
+    "MySQL DevAPI",
+    "Databases",
+    "Database"
+  ],
+  "homepage": "http://www.mysql.com",
+  "bugs": {
+    "url": "http://bugs.mysql.com"
+  },
+  "scripts": {
+  },
   "dependencies": {},
   "engines": {
     "node": ">=4.2.0"

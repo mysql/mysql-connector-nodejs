@@ -8,6 +8,15 @@ Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v1.0.4
+======
+- Changed package name from mysqlx to @mysql/mysqlx
+- MY-237 Added View DDL support
+- MY-300 Added support for Common URI format
+- MY-328 Added Collection.count() and Table.count()
+- MY-334 Added Schema.getCollectionAsTable()
+
+
 v1.0.3
 ======
 
