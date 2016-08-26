@@ -1,4 +1,4 @@
-# Connector/Node.JS
+# MySQL Connector/Node.JS
 
 Connector/NJS is a connector for the asynchronous Node.JS platform in
 version 4.2 written in 100% JavaScript speaking the X DevAPI Protocol.
@@ -17,8 +17,15 @@ directory from which they can be loaded. This can be done with the `npm` tool fr
 project's directory:
 
 ```
-    $ npm install mysql-connector-nodejs-1.0.2.tar.gz
+    $ npm install mysql-connector-nodejs-1.0.4.tar.gz
 ```
+
+You can also fetch the Connector directly from npmjs.com:
+
+```
+    $ npm install @mysql/mysqlx
+```
+
 
 ## Getting started:
 
@@ -34,7 +41,7 @@ behavior and some common pitfalls:
 ```
 "use strict";
 
-const mysqlx = require('mysqlx');
+const mysqlx = require('@mysql/mysqlx');
 
 mysqlx.getSession({
     host: 'localhost',
