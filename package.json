@@ -5,12 +5,11 @@
   "author": "Johannes Schlüter <johannes.schlueter@oracle.com>",
   "license": "GPL-2.0",
   "files": [
+    "README.md",
     "lib/",
     "test/",
     "CHANGES.txt",
     "COPYING",
-    "README.md",
-    "CHANGES",
     "index.js"
   ],
   "keywords": [

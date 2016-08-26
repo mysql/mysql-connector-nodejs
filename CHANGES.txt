@@ -10,6 +10,7 @@ Full release notes:
 
 v1.0.4
 ======
+
 - Changed package name from mysqlx to @mysql/mysqlx
 - MY-237 Added View DDL support
 - MY-300 Added support for Common URI format
