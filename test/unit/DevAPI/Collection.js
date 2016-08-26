@@ -8,13 +8,10 @@ chai.should();
 describe('DevAPI', function () {
     context('Collection', function () {
         let session, collection;
-        beforeEach('get Session', function (done) {
+        beforeEach('get Session', function () {
             return mysqlxtest.getNullSession().then(function (s) {
                 session = s;
                 collection = session.getSchema("schema").getCollection("collection");
-                done();
-            }).catch(function (err) {
-                done(err);
             });
         });
 

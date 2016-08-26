@@ -8,10 +8,9 @@ var should = chai.should();
 describe('DevAPI Collection Add', function () {
     var collection, spy, origInsert;
 
-    beforeEach('get Session', function (done) {
+    beforeEach('get Session', function () {
         return mysqlxtest.getNullSession().then(function (session) {
             collection = session.getSchema("schema").getCollection("collection");
-            done();
         });
     });
 
@@ -53,7 +52,7 @@ describe('DevAPI Collection Add', function () {
         spy.should.be.called.once();
         should.exist(doc._id);
     });
-    it('should use a provided generator to create _id field if needed', function (done) {
+    it('should use a provided generator to create _id field if needed', function () {
         return mysqlx.getSession({
             authMethod: "NULL",
             socketFactory: NullStreamFactory,
@@ -66,9 +65,6 @@ describe('DevAPI Collection Add', function () {
 
             spy.should.be.called.once();
             doc._id.should.equal("GENERATED");
-            done();
-        }).catch(function (err) {
-            done(err);
         });
     });
     it('should return affected rows', function () {

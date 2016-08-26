@@ -17,12 +17,9 @@ describe('DevAPI', function () {
     describe('nodeSession', function () {
         describe('executeSQL', function () {
             let session;
-            beforeEach('get Session', function (done) {
+            beforeEach('get Session', function () {
                 return mysqlxtest.getNullNodeSession().then(function (s) {
                     session = s;
-                    done();
-                }).catch(function (err) {
-                    done(err);
                 });
             });
             it('should call the row callback', function () {

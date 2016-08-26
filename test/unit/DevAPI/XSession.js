@@ -30,12 +30,9 @@ describe('XSession', function () {
             }
         };
 
-        beforeEach('get Session', function (done) {
+        beforeEach('get Session', function () {
             return mysqlxtest.getNullSession().then(function (s) {
                 session = s;
-                done();
-            }).catch(function (err) {
-                done(err);
             });
         });
 
