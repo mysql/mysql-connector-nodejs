@@ -76,4 +76,15 @@ exports.getAuthMethods = function () {
     return Authentication.getNames();
 };
 
+/**
+ * Get the version number
+ *
+ * This is  shortcut for reading package.json/version
+ *
+ * @return {String}
+ */
+exports.getVersion = function() {
+    return require("./package").version;
+};
+
 exports.mysqlx = exports;
