@@ -1,6 +1,6 @@
 "use strict";
 
-const parseUri = require('../../../lib/Util/parseUri');
+const parseUri = require('../../../../lib/DevAPI/Util/parseUri');
 require('chai').should();
 
 
