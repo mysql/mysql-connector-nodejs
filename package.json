@@ -1,6 +1,6 @@
 {
   "name": "@mysql/mysqlx",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A node.js driver for MySQL.",
   "author": "Johannes Schlüter <johannes.schlueter@oracle.com>",
   "license": "GPL-2.0",
