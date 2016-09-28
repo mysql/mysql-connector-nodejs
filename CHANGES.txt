@@ -11,12 +11,12 @@ Full release notes:
 v1.0.4
 ======
 
-- Changed package name from mysqlx to @mysql/mysqlx
-- MY-237 Added View DDL support
-- MY-300 Added support for Common URI format
-- MY-328 Added Collection.count() and Table.count()
-- MY-334 Added Schema.getCollectionAsTable()
-
+- Changed package name from `mysqlx` to `@mysql/xdevapi`
+- Added View DDL support
+- Added support for Common URI format
+- Added Collection.count() and Table.count()
+- Added Schema.getCollectionAsTable()
+- Added xdevapi.getVersion()
 
 v1.0.3
 ======
