@@ -1,7 +1,7 @@
 {
-  "name": "@mysql/mysqlx",
+  "name": "@mysql/xdevapi",
   "version": "1.0.5",
-  "description": "A node.js driver for MySQL.",
+  "description": "MySQL Connector/Node.JS - A Node.JS driver for MySQL using the X Protocol and X DevAPI.",
   "author": "Johannes Schlüter <johannes.schlueter@oracle.com>",
   "license": "GPL-2.0",
   "files": [
@@ -14,7 +14,8 @@
   ],
   "keywords": [
     "MySQL",
-    "MySQL DevAPI",
+    "MySQL X DevAPI",
+    "mysqlx",
     "Databases",
     "Database"
   ],
