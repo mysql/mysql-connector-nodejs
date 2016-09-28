@@ -57,6 +57,11 @@
           "rule": "optional",
           "type": "string",
           "tag": 2
+        },
+        "alias": {
+          "rule": "optional",
+          "type": "string",
+          "tag": 3
         }
       }
     },
@@ -127,6 +132,35 @@
         }
       }
     },
+    "Join": {
+      "enums": {
+        "Operation": {
+          "LEFT": 0,
+          "RIGHT": 1,
+          "INNER": 2
+        }
+      },
+      "fields": {
+        "collection": {
+          "rule": "required",
+          "type": "Collection",
+          "tag": 1
+        },
+        "match": {
+          "rule": "required",
+          "type": "Mysqlx.Expr.Expr",
+          "tag": 2
+        },
+        "operation": {
+          "rule": "optional",
+          "type": "Operation",
+          "tag": 3,
+          "options": {
+            "default": "LEFT"
+          }
+        }
+      }
+    },
     "Find": {
       "fields": {
         "collection": {
@@ -173,6 +207,11 @@
           "rule": "optional",
           "type": "Mysqlx.Expr.Expr",
           "tag": 9
+        },
+        "join": {
+          "rule": "repeated",
+          "type": "Join",
+          "tag": 10
         }
       }
     },
