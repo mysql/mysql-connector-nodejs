@@ -23,7 +23,7 @@ project's directory:
 You can also fetch the Connector directly from npmjs.com:
 
 ```
-    $ npm install @mysql/mysqlx
+    $ npm install @mysql/xdevapi
 ```
 
 
@@ -41,9 +41,9 @@ behavior and some common pitfalls:
 ```
 "use strict";
 
-const mysqlx = require('@mysql/mysqlx');
+const xdevapi = require('@mysql/xdevapi');
 
-mysqlx.getSession({
+xdevapi.getSession({
     host: 'localhost',
     port: 33060,
     dbUser: 'root',
@@ -85,14 +85,13 @@ This script starts with a marker to enable the "strict" mode, so that
 variables have to be declared and some other things.
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode
 
-Then we load the mysqlx module. As we've put the code into
-node_modules/mysqlx node.js's module loader will work.
+Then we load the xdevapi module.
 https://nodejs.org/api/modules.html
 
 Then it becomes interesting
 
 ```
-mysqlx.getSession({
+xdevapi.getSession({
     host: 'localhost',
     port: 33060,
     dbUser: 'root',
@@ -105,20 +104,20 @@ mysqlx.getSession({
 console.log("Hello World");
 ```
 
-getSession is a function from the mysqlx module taking an object with
-properties as parameter. 33060 is the port that the X DevAPI Protocol uses by default.
+getSession is a function from the xdevapi module taking an object with
+properties as parameter. 33060 is the port that the X Protocol uses by default.
 The return value is a Promise which will resolve to a Session object.
 This means that as soon as we're successfully connected the callback
 provided to the then() function will be called. In case of an error the
 exception provided to catch() will be called. Mind that the execution
-won't block but those callbaks are called sometime later. Therefore
+won't block but those callbacks are called sometime later. Therefore
 we're seeing "Hello world" printed before "connected". 
 
 One important thing is that by this async nature it is easy to "lose"
 errors. For instance, when running this code:
 
 ```
-mysqlx.getSession({
+xdevapi.getSession({
     host: 'localhost',
     port: 33060,
     dbUser: 'root',
@@ -215,7 +214,7 @@ In order to enable SSL you have to configure the server accordingly and then
 set the ssl option to true. 
 
 ```
-var sessionPromise = mysqlx.getNodeSession({
+var sessionPromise = xdevapi.getNodeSession({
     host: 'localhost',
     port: 33060,
     dbUser: 'root',
@@ -233,7 +232,7 @@ By default the MySQL41 password mechanism is used. The connector also supports
 PLAIN password transfer (only when using SSL)
 
 ```
-var sessionPromise = mysqlx.getNodeSession({
+var sessionPromise = xdevapi.getNodeSession({
     host: 'localhost',
     port: 33060,
     dbUser: 'root',
