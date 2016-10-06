@@ -8,6 +8,12 @@ Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v1.0.5
+======
+
+- Added Table creation API.
+- Added APIs for Transaction handling
+
 v1.0.4
 ======
 
