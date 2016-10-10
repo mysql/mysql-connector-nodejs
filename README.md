@@ -30,7 +30,7 @@ Getting Started
 A simple JavaScript file using this library follows:
 
 
-    const xdevapi = require('@mysql/devapi');
+    const xdevapi = require('@mysql/xdevapi');
 
     xdevapi.getSession({
         host: 'localhost',
