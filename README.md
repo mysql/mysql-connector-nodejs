@@ -20,7 +20,7 @@ Installation
 ------------
 This library is organized in a way that it can be installed using Node.js's npm
 tool into your project:
-  `npm install mysql-connector-nodejs-1.0.4.tar.gz`
+  `npm install mysql-connector-nodejs-1.0.5.tar.gz`
 or diectly from npmjs.com:
   `npm install @mysql/xdevapi`
 Please refer to http://npmjs.com for more information on npm.
@@ -30,7 +30,7 @@ Getting Started
 A simple JavaScript file using this library follows:
 
 
-    const xdevapi = require('@mysql/devapi');
+    const xdevapi = require('@mysql/xdevapi');
 
     xdevapi.getSession({
         host: 'localhost',
