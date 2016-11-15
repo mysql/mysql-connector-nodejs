@@ -1,8 +1,7 @@
-"use strict";
+'use strict';
 
-/*global
- describe, context, beforeEach, afterEach, it, chai
- */
+/* eslint-env node, mocha */
+/* global chai */
 
 const expect = require('chai').expect;
 const fixtures = require('test/integration/fixtures');
@@ -23,8 +22,8 @@ describe('@slow tests with session', function () {
     });
 
     it('should list created collection', function (done) {
-        const collectionName = "testcollection",
-            expected = { "testcollection": schema.getCollection(collectionName) };
+        const collectionName = 'testcollection';
+        const expected = { testcollection: schema.getCollection(collectionName) };
 
         expect(Promise.all([
             schema.createCollection(collectionName),
@@ -35,17 +34,17 @@ describe('@slow tests with session', function () {
     });
 
     it('should retrieve an object stored into the database', function (done) {
-        const collectionName = "testcollection",
-            collection = schema.getCollection(collectionName),
-            document = {
-                _id: "efefevvr",
-                here: {
-                    we: "do",
-                    have: 1,
-                    great: "object"
-                }
-            },
-            rowcb = chai.spy();
+        const collectionName = 'testcollection';
+        const collection = schema.getCollection(collectionName);
+        const document = {
+            _id: 'efefevvr',
+            here: {
+                we: 'do',
+                have: 1,
+                great: 'object'
+            }
+        };
+        const rowcb = chai.spy();
 
         expect(Promise.all([
             schema.createCollection(collectionName),
@@ -59,27 +58,26 @@ describe('@slow tests with session', function () {
     });
 
     it('should retrieve an modified object stored into the database', function (done) {
-        const collectionName = "testcollection",
-            collection = schema.getCollection(collectionName),
-            initialDocument = {
-                _id: "efefevvr",
-                here: {
-                    we: "do",
-                    have: 1,
-                    great: "object"
-                }
-            },
-            resultDocument = {
-                _id: "efefevvr",
-                here: "all is gone"
-            },
-            rowcb = chai.spy();
-
+        const collectionName = 'testcollection';
+        const collection = schema.getCollection(collectionName);
+        const initialDocument = {
+            _id: 'efefevvr',
+            here: {
+                we: 'do',
+                have: 1,
+                great: 'object'
+            }
+        };
+        const resultDocument = {
+            _id: 'efefevvr',
+            here: 'all is gone'
+        };
+        const rowcb = chai.spy();
 
         expect(Promise.all([
             schema.createCollection(collectionName),
             collection.add(initialDocument).execute(),
-            collection.modify("$._id == '"+initialDocument._id+"'").set("$.here", "all is gone").execute(),
+            collection.modify(`$._id == '${initialDocument._id}'`).set('$.here', 'all is gone').execute(),
             collection.find().execute(rowcb),
             schema.dropCollection(collectionName)
         ]).then(() => {
@@ -89,24 +87,23 @@ describe('@slow tests with session', function () {
     });
 
     it('should not retrieve an deleted object', function (done) {
-        const collectionName = "testcollection",
-            collection = schema.getCollection(collectionName),
-            document = {
-                _id: "efefevvr",
-                here: {
-                    we: "do",
-                    have: 1,
-                    great: "object"
-                }
-            },
-            rowcb = chai.spy();
-
+        const collectionName = 'testcollection';
+        const collection = schema.getCollection(collectionName);
+        const document = {
+            _id: 'efefevvr',
+            here: {
+                we: 'do',
+                have: 1,
+                great: 'object'
+            }
+        };
+        const rowcb = chai.spy();
 
         expect(Promise.all([
             schema.createCollection(collectionName),
             collection.add(document).execute(),
             collection.find().execute(rowcb),
-            collection.remove("$._id == '"+document._id+"'").execute(),
+            collection.remove(`$._id == '${document._id}'`).execute(),
             collection.find().execute(rowcb),
             schema.dropCollection(collectionName)
         ]).then(() => {
@@ -116,16 +113,11 @@ describe('@slow tests with session', function () {
     });
 
     it('should respect limit when deleting objects', function (done) {
-        const collectionName = "testcollection",
-            collection = schema.getCollection(collectionName),
-            document1 = {
-                _id: "document1",
-            },
-            document2 = {
-                _id: "document2",
-            },
-            rowcb = chai.spy();
-
+        const collectionName = 'testcollection';
+        const collection = schema.getCollection(collectionName);
+        const document1 = { _id: 'document1' };
+        const document2 = { _id: 'document2' };
+        const rowcb = chai.spy();
 
         expect(Promise.all([
             schema.createCollection(collectionName),
