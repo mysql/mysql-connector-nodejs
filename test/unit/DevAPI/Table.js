@@ -3,6 +3,12 @@
 /*global
  describe, context, beforeEach, afterEach, it, chai, Encoding, mysqlxtest, Messages
  */
+
+// npm `test` script was updated to use NODE_PATH=.
+const Table = require('lib/DevAPI/Table');
+const TableSelect = require('lib/DevAPI/TableSelect');
+const expect = require('chai').expect;
+
 chai.should();
 
 describe('DevAPI', function () {
@@ -75,6 +81,28 @@ describe('DevAPI', function () {
         });
         it('should hide internals from inspect output', function () {
             table.inspect().should.deep.equal({ schema: "schema", table: "table" });
+        });
+
+        context('select()', () => {
+            it('should return an instance of the proper class', () => {
+                const instance = (new Table()).select();
+
+                expect(instance).to.be.an.instanceof(TableSelect);
+            });
+
+            it('should set the projection parameters provided as an array', () => {
+                const expressions = ['foo', 'bar'];
+                const instance = (new Table()).select(expressions);
+
+                expect(instance._projection).to.deep.equal(expressions);
+            });
+
+            it('should set the projection parameters provided as multiple arguments', () => {
+                const expressions = ['foo', 'bar'];
+                const instance = (new Table()).select(expressions[0], expressions[1]);
+
+                expect(instance._projection).to.deep.equal(expressions);
+            });
         });
     });
 });

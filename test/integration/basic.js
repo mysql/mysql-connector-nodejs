@@ -15,7 +15,7 @@ describe('Basic Test with server', function () {
         expect(session).to.notify(done);
         // return session.should.be.fullfilled; !? Mocha ignored the promise ... strange
     });
-    
+
     it('should reject a wrong password', function () {
         const wrongProperties = {
             dbUser: 'a user by this name should not exist, I hope',
@@ -25,7 +25,7 @@ describe('Basic Test with server', function () {
         };
         return mysqlx.getNodeSession(wrongProperties).should.be.rejected;
     });
-    
+
     it('should execute a simple query', function (done) {
         const rowcb = chai.spy();
         const promise = mysqlx.getNodeSession(properties).then(session => {

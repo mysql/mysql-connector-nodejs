@@ -3,45 +3,37 @@
 /*global
  describe, context, beforeEach, afterEach, it, chai
  */
-chai.should();
-const expect = require('chai').expect,
-    mysqlx = require('../../'),
-    properties = require('./properties');
 
-describe('tests with session', function () {
-    let sessionPromise, schema;
+const expect = require('chai').expect;
+const fixtures = require('test/integration/fixtures');
 
-    beforeEach('get session', function () {
-        sessionPromise = mysqlx.getNodeSession(properties).then(s => {
-            return s.createSchema(properties.schema).then((sch) => {
-                schema = sch;
-                return s;
-            });
-        });
-        return sessionPromise;
-    });
-    
-    afterEach('close session', function () {
-        return sessionPromise.then((session) => {
-            return Promise.all([
-                session.dropSchema(properties.schema),
-                session.close()
-            ]);
+describe('@slow tests with session', function () {
+    let session, schema;
+
+    beforeEach('set context', () => {
+        return fixtures.setup().then(suite => {
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            session = suite.session;
+            schema = suite.schema;
         });
     });
-    
-    it('should list created collection', function () {
+
+    afterEach('clear context', () => {
+        return fixtures.teardown(session);
+    });
+
+    it('should list created collection', function (done) {
         const collectionName = "testcollection",
             expected = { "testcollection": schema.getCollection(collectionName) };
 
-        return Promise.all([
+        expect(Promise.all([
             schema.createCollection(collectionName),
             schema.getCollections().should.eventually.deep.equal(expected),
             schema.dropCollection(collectionName),
             schema.getCollections().should.eventually.deep.equal({})
-        ]).should.be.fullfilled;
+        ])).to.notify(done);
     });
-    
+
     it('should retrieve an object stored into the database', function (done) {
         const collectionName = "testcollection",
             collection = schema.getCollection(collectionName),
@@ -55,7 +47,6 @@ describe('tests with session', function () {
             },
             rowcb = chai.spy();
 
-
         expect(Promise.all([
             schema.createCollection(collectionName),
             collection.add(document).execute(),
@@ -66,7 +57,7 @@ describe('tests with session', function () {
             return true;
         })).to.notify(done);
     });
-    
+
     it('should retrieve an modified object stored into the database', function (done) {
         const collectionName = "testcollection",
             collection = schema.getCollection(collectionName),
@@ -96,7 +87,7 @@ describe('tests with session', function () {
             return true;
         })).to.notify(done);
     });
-    
+
     it('should not retrieve an deleted object', function (done) {
         const collectionName = "testcollection",
             collection = schema.getCollection(collectionName),
@@ -123,7 +114,7 @@ describe('tests with session', function () {
             return true;
         })).to.notify(done);
     });
-    
+
     it('should respect limit when deleting objects', function (done) {
         const collectionName = "testcollection",
             collection = schema.getCollection(collectionName),
