@@ -72,4 +72,26 @@ describe('TableSelect', () => {
             expect(query._limit).to.deep.equal({ count: 10, offset: 0 });
         });
     });
+
+    context('orderBy()', () => {
+        it('should be fluent', () => {
+            const query = (new TableSelect()).orderBy();
+
+            expect(query).to.be.an.instanceof(TableSelect);
+        });
+
+        it('should set the order parameters provided as an array', () => {
+            const parameters = ['foo desc', 'bar desc'];
+            const query = (new TableSelect()).orderBy(parameters);
+
+            expect(query._orderby).to.deep.equal(parameters);
+        });
+
+        it('should set the order parameters provided as multiple arguments', () => {
+            const parameters = ['foo desc', 'bar desc'];
+            const query = (new TableSelect()).orderBy(parameters[0], parameters[1]);
+
+            expect(query._orderby).to.deep.equal(parameters);
+        });
+    });
 });

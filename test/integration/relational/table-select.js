@@ -35,16 +35,16 @@ describe('@slow relational table integration tests', () => {
                 .execute();
         });
 
-        beforeEach('add fixtures', () => {
-            return schema
-                .getTable('test')
-                .insert(['test2', 'test3'])
-                .values(['value2', 23])
-                .values(['value1', 42])
-                .execute();
-        });
-
         context('without projection', () => {
+            beforeEach('add fixtures', () => {
+                return schema
+                    .getTable('test')
+                    .insert(['test2', 'test3'])
+                    .values(['value2', 23])
+                    .values(['value1', 42])
+                    .execute();
+            });
+
             it('should include all columns without projection', () => {
                 const expected = [[1, 'value2', 23], [2, 'value1', 42]];
                 let actual = [];
@@ -62,6 +62,15 @@ describe('@slow relational table integration tests', () => {
         });
 
         context('with projection', () => {
+            beforeEach('add fixtures', () => {
+                return schema
+                    .getTable('test')
+                    .insert(['test2', 'test3'])
+                    .values(['value2', 23])
+                    .values(['value1', 42])
+                    .execute();
+            });
+
             it('should include only columns provided as an expression array', () => {
                 const expected = [['value2', 23], ['value1', 42]];
                 let actual = [];
@@ -89,6 +98,54 @@ describe('@slow relational table integration tests', () => {
                     })
                     .then(() => {
                         expect(actual).to.deep.include.members(expected);
+                    });
+            });
+        });
+
+        context('with order', () => {
+            beforeEach('add fixtures', () => {
+                return schema
+                    .getTable('test')
+                    .insert(['test2', 'test3'])
+                    .values(['value1', 42])
+                    .values(['value1', 23])
+                    .values(['value2', 23])
+                    .execute();
+            });
+
+            it('should sort by columns provided as an expression array', () => {
+                const expected = [['value2', 23], ['value1', 23], ['value1', 42]];
+                let actual = [];
+
+                return schema
+                    .getTable('test')
+                    .select('test2', 'test3')
+                    .orderBy(['test2 desc', 'test3 asc'])
+                    .execute(row => {
+                        actual.push(row);
+                    })
+                    .then(() => {
+                        actual.forEach((row, index) => {
+                            expect(row).to.deep.equal(expected[index]);
+                        });
+                    });
+            });
+
+            it('should sort by columns provided as expression arguments', () => {
+                const expected = [['value1', 42], ['value2', 23], ['value1', 23]];
+                let actual = [];
+
+                return schema
+                    .getTable('test')
+                    .select('test2', 'test3')
+                    .orderBy('test3 desc', 'test2 desc')
+                    .execute(row => {
+                        actual.push(row);
+                    })
+                    .then(() => {
+                        actual.forEach((row, index) => {
+                            expect(row).to.deep.equal(expected[index]);
+                        });
                     });
             });
         });
