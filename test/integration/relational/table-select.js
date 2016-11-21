@@ -149,5 +149,58 @@ describe('@slow relational table integration tests', () => {
                     });
             });
         });
+
+        context('with grouping', () => {
+            beforeEach('add fixtures', () => {
+                return schema
+                    .getTable('test')
+                    .insert(['test2', 'test3'])
+                    .values(['value1', 42])
+                    .values(['value2', 23])
+                    .values(['value1', 42])
+                    .values(['value1', 23])
+                    .values(['value2', 23])
+                    .values(['value2', 42])
+                    .execute();
+            });
+
+            it('should group columns provided as an expression array', () => {
+                const expected = [['value1', 23], ['value1', 42], ['value2', 23], ['value2', 42]];
+                let actual = [];
+
+                return schema
+                    .getTable('test')
+                    .select('test2', 'test3')
+                    .groupBy(['test2', 'test3'])
+                    .execute(row => {
+                        actual.push(row);
+                    })
+                    .then(() => {
+                        expect(actual).to.have.lengthOf(expected.length);
+                        actual.forEach((row, index) => {
+                            expect(row).to.deep.equal(expected[index]);
+                        });
+                    });
+            });
+
+            it('should group columns provided as expression arguments', () => {
+                const expected = [['value1', 23], ['value2', 23], ['value1', 42], ['value2', 42]];
+                let actual = [];
+
+                return schema
+                    .getTable('test')
+                    .select('test2', 'test3')
+                    .groupBy('test3', 'test2')
+                    .execute(row => {
+                        actual.push(row);
+                    })
+                    .then(() => {
+                        expect(actual).to.have.lengthOf(expected.length);
+                        actual.forEach((row, index) => {
+                            expect(row).to.deep.equal(expected[index]);
+                        });
+                    });
+            });
+        });
     });
 });

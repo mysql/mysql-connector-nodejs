@@ -94,4 +94,26 @@ describe('TableSelect', () => {
             expect(query._orderby).to.deep.equal(parameters);
         });
     });
+
+    context('groupBy()', () => {
+        it('should be fluent', () => {
+            const query = (new TableSelect()).groupBy();
+
+            expect(query).to.be.an.instanceof(TableSelect);
+        });
+
+        it('should set the grouping columns provided as an array', () => {
+            const grouping = ['foo', 'bar'];
+            const query = (new TableSelect()).groupBy(grouping);
+
+            expect(query._groupby).to.deep.equal(grouping);
+        });
+
+        it('should set the grouping columns provided as an array', () => {
+            const grouping = ['foo', 'bar'];
+            const query = (new TableSelect()).groupBy(grouping[0], grouping[1]);
+
+            expect(query._groupby).to.deep.equal(grouping);
+        });
+    });
 });
