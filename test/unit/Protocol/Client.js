@@ -11,13 +11,17 @@ const SqlResultHandler = require('lib/Protocol/ResponseHandler').SqlResultHandle
 const td = require('testdouble');
 
 describe('Client', () => {
-    let on;
+    let on, sendMessage;
 
     beforeEach('create fakes', () => {
         on = td.function();
+
+        sendMessage = SqlResultHandler.prototype.sendMessage;
+        SqlResultHandler.prototype.sendMessage = td.function();
     });
 
     afterEach('reset fakes', () => {
+        SqlResultHandler.prototype.sendMessage = sendMessage;
         td.reset();
     });
 
@@ -64,18 +68,8 @@ describe('Client', () => {
         });
     });
 
+    // FIXME(ruiquelhas): test the promise interface.
     context('crudFind()', () => {
-        let sendMessage;
-
-        beforeEach('create fakes', () => {
-            sendMessage = SqlResultHandler.prototype.sendMessage;
-            SqlResultHandler.prototype.sendMessage = td.function();
-        });
-
-        afterEach('reset fakes', () => {
-            SqlResultHandler.prototype.sendMessage = sendMessage;
-        });
-
         it('should encode grouping expressions correctly', () => {
             const client = new Client({ on });
             const expected = [{
@@ -108,6 +102,97 @@ describe('Client', () => {
             client.crudFind();
 
             td.verify(handler.sendMessage(client._workQueue, client._stream, 'foobar'), { times: 1 });
+        });
+    });
+
+    context('crudInsert()', () => {
+        it('should encode field names correctly', () => {
+            const client = new Client({ on });
+            const expected = ['foo', 'bar'];
+            const handler = new SqlResultHandler();
+            const match = td.matchers.argThat(data => isEqual(data.projection, expected));
+
+            client.encodeMessage = td.function();
+
+            td.when(handler.sendMessage(), { ignoreExtraArgs: true }).thenResolve();
+
+            return client.crudInsert(null, null, null, [['baz', 'qux']], expected)
+                .then(() => td.verify(client.encodeMessage(Messages.ClientMessages.CRUD_INSERT, match), { times: 1 }));
+        });
+
+        it('should encode row values correctly', () => {
+            const client = new Client({ on });
+            const expected = [{
+                field: [{
+                    type: 2,
+                    literal: {
+                        type: 8,
+                        v_string: {
+                            value: 'foo'
+                        }
+                    }
+                }, {
+                    type: 2,
+                    literal: {
+                        type: 8,
+                        v_string: {
+                            value: 'bar'
+                        }
+                    }
+                }]
+            }];
+            const handler = new SqlResultHandler();
+            const match = td.matchers.argThat(data => isEqual(data.row, expected));
+
+            td.when(handler.sendMessage(), { ignoreExtraArgs: true }).thenResolve();
+
+            client.encodeMessage = td.function();
+
+            return client.crudInsert(null, null, null, [['foo', 'bar']])
+                .then(() => td.verify(client.encodeMessage(Messages.ClientMessages.CRUD_INSERT, match), { times: 1 }));
+        });
+
+        it('should send encoded message to the server', () => {
+            const client = new Client({ on });
+            const expected = { foo: 'bar' };
+            const handler = new SqlResultHandler();
+
+            client.encodeMessage = td.function();
+
+            td.when(client.encodeMessage(), { ignoreExtraArgs: true }).thenReturn('foobar');
+            td.when(handler.sendMessage(client._workQueue, client._stream, 'foobar')).thenResolve(expected);
+
+            return client.crudInsert(null, null, null, [[]]).should.become(expected);
+        });
+
+        it('should throw error if no documents are provided', () => {
+            const client = new Client({ on });
+            const handler = new SqlResultHandler();
+
+            client.encodeMessage = td.function();
+
+            return client.crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, {})
+                .catch(err => {
+                    expect(err).to.be.an.instanceof(Error);
+                    expect(err.message).to.equal('No document provided for Crud::Insert');
+
+                    td.verify(client.encodeMessage(), { ignoreExtraArgs: true, times: 0 });
+                    td.verify(handler.sendMessage(), { ignoreExtraArgs: true, times: 0 });
+                });
+        });
+
+        // TODO(rui.quelhas): add the same test for `crudFind`
+        it('should throw error if the message cannot be sent', () => {
+            const client = new Client({ on });
+            const error = new Error('foo');
+            const handler = new SqlResultHandler();
+
+            client.encodeMessage = td.function();
+
+            td.when(client.encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
+            td.when(handler.sendMessage(), { ignoreExtraArgs: true }).thenReject(error);
+
+            return client.crudInsert(null, null, null, [['foo', 'bar']]).should.be.rejectedWith(error);
         });
     });
 });

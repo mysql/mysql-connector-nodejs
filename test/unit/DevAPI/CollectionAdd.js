@@ -28,21 +28,36 @@ describe('DevAPI Collection Add', function () {
 
 
     it('should request protocol to add one item', function () {
-        collection.add({_id: 12}).execute();
-        spy.should.be.called.once.with("schema", "collection", [[{_id: 12}]]);
+        const doc = { _id: 12 };
+
+        collection.add(doc).execute();
+        spy.should.be.called.once.with("schema", "collection", [[JSON.stringify(doc)]]);
     });
 
     it('should request protocol to add one item', function () {
-        collection.add({_id: 12}).execute();
-        spy.should.be.called.once.with("schema", "collection", [[{_id: 12}]]);
+        const doc = { _id: 12 };
+
+        collection.add(doc).execute();
+        spy.should.be.called.once.with("schema", "collection", [[JSON.stringify(doc)]]);
     });
+
     it('should request protocol to add an array of items', function () {
-        collection.add([{_id: 12}, {_id: 34}]).execute();
-        spy.should.be.called.once.with("schema", "collection", [[{_id: 12}], [{_id: 34}]]);
+        const docs = [{ _id: 12 }, { _id: 34 }];
+
+        collection.add(docs).execute();
+        spy.should.be.called.once.with("schema", "collection", [
+            [JSON.stringify(docs[0])],
+            [JSON.stringify(docs[1])]
+        ]);
     });
     it('should request protocol to add items passed via varargs', function () {
-        collection.add({_id: 12}, {_id: 34}).execute();
-        spy.should.be.called.once.with("schema", "collection", [[{_id: 12}], [{_id: 34}]]);
+        const docs = [{ _id: 12 }, { _id: 34 }];
+
+        collection.add(docs[0], docs[1]).execute();
+        spy.should.be.called.once.with("schema", "collection", [
+            [JSON.stringify(docs[0])],
+            [JSON.stringify(docs[1])]
+        ]);
     });
     it('should create an _id field if none was provided', function () {
         var doc = { foo: 12 };

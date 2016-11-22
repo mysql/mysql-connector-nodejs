@@ -6,6 +6,7 @@
 // npm `test` script was updated to use NODE_PATH=.
 const Table = require('lib/DevAPI/Table');
 const TableSelect = require('lib/DevAPI/TableSelect');
+const TableInsert = require('lib/DevAPI/TableInsert');
 const expect = require('chai').expect;
 
 chai.should();
@@ -108,6 +109,35 @@ describe('DevAPI', () => {
                 const instance = (new Table()).select(expressions[0], expressions[1]);
 
                 expect(instance._projection).to.deep.equal(expressions);
+            });
+        });
+
+        context('insert()', () => {
+            it('should return an instance of the proper class', () => {
+                const instance = (new Table()).insert([]);
+
+                expect(instance).to.be.an.instanceof(TableInsert);
+            });
+
+            it('should set field names provided as an array', () => {
+                const expressions = ['foo', 'bar'];
+                const instance = (new Table()).insert(expressions);
+
+                expect(instance._fields).to.deep.equal(expressions);
+            });
+
+            it('should set field names provided as multiple arguments', () => {
+                const expressions = ['foo', 'bar'];
+                const instance = (new Table()).insert(expressions[0], expressions[1]);
+
+                expect(instance._fields).to.deep.equal(expressions);
+            });
+
+            it('should set field names provided as object keys', () => {
+                const expressions = ['foo', 'bar'];
+                const instance = (new Table()).insert({ foo: 'baz', bar: 'qux' });
+
+                expect(instance._fields).to.deep.equal(expressions);
             });
         });
     });
