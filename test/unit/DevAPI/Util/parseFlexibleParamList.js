@@ -15,6 +15,6 @@ describe('parseFlexibleParamList', () => {
     });
 
     it('should throw an error if an expression is not valid', () => {
-        expect(function () { parseFlexibleParamList([{ foo: 'bar' }]); }).to.throw(Error, 'invalid input expression');
+        expect(function () { parseFlexibleParamList([undefined]); }).to.throw(Error, 'invalid input expression');
     });
 });
