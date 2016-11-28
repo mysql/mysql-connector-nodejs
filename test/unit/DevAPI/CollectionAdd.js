@@ -1,140 +1,103 @@
-"use strict";
+'use strict';
 
-/*global
-  describe, beforeEach, afterEach, it
- */
-var should = chai.should();
+/* eslint-env node, mocha */
 
-describe('DevAPI Collection Add', function () {
-    var collection, spy, origInsert;
+const CollectionAdd = require('lib/DevAPI/CollectionAdd');
+const Client = require('lib/Protocol/Client');
+const Result = require('lib/DevAPI/Result');
+const expect = require('chai').expect;
+const td = require('testdouble');
 
-    beforeEach('get Session', function () {
-        return mysqlxtest.getNullSession().then(function (session) {
-            collection = session.getSchema("schema").getCollection("collection");
+describe('CollectionAdd', () => {
+    let crudInsert, fakeSchema, fakeSession, getName, idGenerator;
+
+    beforeEach('create fake session', () => {
+        crudInsert = td.function();
+        idGenerator = td.function();
+        fakeSession = {
+            _client: { crudInsert },
+            idGenerator
+        };
+    });
+
+    beforeEach('create fake schema', () => {
+        getName = td.function();
+        fakeSchema = { getName };
+
+        td.when(getName()).thenReturn('schema');
+    });
+
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
+    context('add()', () => {
+        it('should be fluent', () => {
+            const query = (new CollectionAdd()).add({ foo: 'bar' });
+
+            expect(query).to.be.an.instanceOf(CollectionAdd);
+        });
+
+        it('should include the documents provided as an array', () => {
+            const expected = [{ foo: 'bar' }, { foo: 'baz' }];
+            const query = (new CollectionAdd()).add(expected);
+
+            expect(query._document).to.deep.equal(expected);
+        });
+
+        it('should include all the documents provided as multiple arguments', () => {
+            const expected = [{ foo: 'bar' }, { foo: 'baz' }];
+            const query = (new CollectionAdd()).add(expected[0], expected[1]);
+
+            expect(query._document).to.deep.equal(expected);
+        });
+
+        it('should append documents to existing ones', () => {
+            const expected = [{ foo: 'bar' }, { foo: 'baz' }];
+            const query = (new CollectionAdd(fakeSession, fakeSchema, null, [{ foo: 'bar' }])).add({ foo: 'baz' });
+
+            expect(query._document).to.deep.equal(expected);
+        });
+
+        it('should append documents provided on multiple calls', () => {
+            const expected = [{ foo: 'bar' }, { foo: 'baz' }];
+            const query = (new CollectionAdd()).add({ foo: 'bar' }).add({ foo: 'baz' });
+
+            expect(query._document).to.deep.equal(expected);
         });
     });
 
-    beforeEach('create spy', function () {
-        spy = chai.spy(Client.prototype.crudInsert);
-        origInsert = Client.prototype.crudInsert;
-        Client.prototype.crudInsert = spy;
-    });
+    context('execute()', () => {
+        it('should include all documents that were added', () => {
+            const documents = [{ _id: 'foo', foo: 'bar' }, { _id: 'bar', bar: 'baz' }];
+            const state = { ok: true };
+            const expected = new Result(state);
+            const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection')).add([documents[0]]).add(documents[1]);
 
-    afterEach('reset spy', function () {
-        if (origInsert) {
-            Client.prototype.crudInsert = origInsert;
-        }
-    });
+            td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify(documents[0])], [JSON.stringify(documents[1])]])).thenResolve(state);
 
-
-    it('should request protocol to add one item', function () {
-        const doc = { _id: 12 };
-
-        collection.add(doc).execute();
-        spy.should.be.called.once.with("schema", "collection", [[JSON.stringify(doc)]]);
-    });
-
-    it('should request protocol to add one item', function () {
-        const doc = { _id: 12 };
-
-        collection.add(doc).execute();
-        spy.should.be.called.once.with("schema", "collection", [[JSON.stringify(doc)]]);
-    });
-
-    it('should request protocol to add an array of items', function () {
-        const docs = [{ _id: 12 }, { _id: 34 }];
-
-        collection.add(docs).execute();
-        spy.should.be.called.once.with("schema", "collection", [
-            [JSON.stringify(docs[0])],
-            [JSON.stringify(docs[1])]
-        ]);
-    });
-    it('should request protocol to add items passed via varargs', function () {
-        const docs = [{ _id: 12 }, { _id: 34 }];
-
-        collection.add(docs[0], docs[1]).execute();
-        spy.should.be.called.once.with("schema", "collection", [
-            [JSON.stringify(docs[0])],
-            [JSON.stringify(docs[1])]
-        ]);
-    });
-    it('should create an _id field if none was provided', function () {
-        var doc = { foo: 12 };
-
-        collection.add(doc).execute();
-
-        spy.should.be.called.once();
-        should.exist(doc._id);
-    });
-    it('should use a provided generator to create _id field if needed', function () {
-        return mysqlx.getSession({
-            authMethod: "NULL",
-            socketFactory: NullStreamFactory,
-            idGenerator: function () { return "GENERATED"; }
-        }).then(function (session) {
-            collection = session.getSchema("schema").getCollection("collection");
-            var doc = { foo: 12 };
-
-            collection.add(doc).execute();
-
-            spy.should.be.called.once();
-            doc._id.should.equal("GENERATED");
+            return query.execute().should.eventually.deep.equal(expected);
         });
-    });
-    it('should return affected rows', function () {
-        const promise = collection.add({_id: 3232}).execute().then(
-            result => result.getAffectedRowsCount()
-        );
 
-        const result = new Server.ResultSet(data => collection.getSession()._client.handleNetworkFragment(data));
-        result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
-        result.finalize();
+        it('should generate an id for documents that do not have one', () => {
+            const state = { ok: true };
+            const expected = new Result(state);
+            const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection', [{ foo: 'bar' }]));
 
-        return promise.should.eventually.deep.equal(1);
-    });
-    it('should return document\'s id', function () {
-        const promise = collection.add({_id: 3232}).execute().then(
-            result => result.getDocumentId()
-        );
+            td.when(idGenerator()).thenReturn('baz');
+            td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify({ foo: 'bar', _id: 'baz' })]])).thenResolve(state);
 
-        const result = new Server.ResultSet(data => collection.getSession()._client.handleNetworkFragment(data));
-        result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
-        result.finalize();
+            return query.execute().should.eventually.deep.equal(expected);
+        });
 
-        return promise.should.eventually.deep.equal(3232);
-    });
-    it('should return document\'s id (array form)', function () {
-        const promise = collection.add({_id: 3232}).execute().then(
-            result => result.getDocumentIds()
-        );
+        it('should append the ids of the added documents to the response state', () => {
+            const state = { ok: true };
+            const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection', [{ foo: 'bar' }]));
 
-        const result = new Server.ResultSet(data => collection.getSession()._client.handleNetworkFragment(data));
-        result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
-        result.finalize();
+            td.when(idGenerator()).thenReturn('baz');
+            td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify({ foo: 'bar', _id: 'baz' })]])).thenResolve(state);
 
-        return promise.should.eventually.deep.equal([3232]);
-    });
-    it('should return multiple document\'s ids', function () {
-        const promise = collection.add({_id: 3232}).add({_id: 4321}).execute().then(
-            result => result.getDocumentIds()
-        );
-
-        const result = new Server.ResultSet(data => collection.getSession()._client.handleNetworkFragment(data));
-        result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
-        result.finalize();
-
-        return promise.should.eventually.deep.equal([3232, 4321]);
-    });
-    it('should return multiple generated document\'s ids', function () {
-        const promise = collection.add({noid: 3232}).add({noid: 4321}).execute().then(
-            result => result.getDocumentIds().length
-        );
-
-        const result = new Server.ResultSet(data => collection.getSession()._client.handleNetworkFragment(data));
-        result.sessionState(Messages.messages['Mysqlx.Notice.SessionStateChanged'].enums.Parameter.ROWS_AFFECTED, 1);
-        result.finalize();
-
-        return promise.should.eventually.deep.equal(2);
+            return query.execute().then(result => expect(result.getDocumentIds()).to.deep.equal(['baz']));
+        });
     });
 });
