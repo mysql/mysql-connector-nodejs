@@ -5,7 +5,7 @@
 const expect = require('chai').expect;
 const fixtures = require('test/integration/fixtures');
 
-describe('@slow document collection add', () => {
+describe('@integration document collection add', () => {
     let session, schema, collection;
 
     beforeEach('set context', () => {

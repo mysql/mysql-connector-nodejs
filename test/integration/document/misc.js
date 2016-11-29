@@ -1,0 +1,101 @@
+'use strict';
+
+/* eslint-env node, mocha */
+
+const expect = require('chai').expect;
+const fixtures = require('test/integration/fixtures');
+
+// TODO(rui.quelhas): extract tests into proper self-contained suites.
+describe('@integration collection miscellaneous tests', () => {
+    let session, schema, collection;
+
+    beforeEach('set context', () => {
+        return fixtures.setup().then(suite => {
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            session = suite.session;
+            schema = suite.schema;
+        });
+    });
+
+    beforeEach('create collection', () => {
+        return schema.createCollection('test').then(col => {
+            collection = col;
+        });
+    });
+
+    afterEach('clear context', () => {
+        return fixtures.teardown(session);
+    });
+
+    it('should retrieve an existing document from the collection', () => {
+        const expected = {
+            _id: 'efefevvr',
+            here: {
+                we: 'do',
+                have: 1,
+                great: 'object'
+            }
+        };
+
+        return collection
+            .add(expected)
+            .execute()
+            .then(() => {
+                return collection.find().execute(actual => expect(actual).to.deep.equal(expected));
+            });
+    });
+
+    it('should retrieve a modified document from the collection', () => {
+        const document = {
+            _id: 'efefevvr',
+            here: {
+                we: 'do',
+                have: 1,
+                great: 'object'
+            }
+        };
+
+        const expected = {
+            _id: 'efefevvr',
+            here: 'all is gone'
+        };
+
+        return Promise.all([
+            collection.add(document).execute(),
+            collection.modify(`$._id == '${document._id}'`).set('$.here', 'all is gone').execute()
+        ]).then(() => {
+            collection.find().execute(actual => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    it('should not retrieve a document that was removed from the collection', () => {
+        const document = {
+            _id: 'efefevvr',
+            here: {
+                we: 'do',
+                have: 1,
+                great: 'object'
+            }
+        };
+
+        return Promise.all([
+            collection.add(document).execute(),
+            collection.find().execute(),
+            collection.remove(`$._id == '${document._id}'`).execute()
+        ]).then(() => {
+            collection.find().execute(actual => expect(actual).to.be.empty);
+        });
+    });
+
+    it('should respect limit when deleting documents', () => {
+        const document1 = { _id: 'document1' };
+        const document2 = { _id: 'document2' };
+
+        return Promise.all([
+            collection.add([document1, document2]).execute(),
+            collection.remove().limit(1).execute()
+        ]).then(() => {
+            collection.find().execute(actual => expect(actual).to.deep.equal(document2));
+        });
+    });
+});

@@ -5,7 +5,7 @@
 const expect = require('chai').expect;
 const fixtures = require('test/integration/fixtures');
 
-describe('@slow relational table insert', () => {
+describe('@integration relational table insert', () => {
     let session, schema, table;
 
     beforeEach('set context', () => {
