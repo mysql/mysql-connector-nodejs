@@ -89,4 +89,20 @@ describe('@integration document collection add', () => {
                 });
         });
     });
+
+    context('with an empty array', () => {
+        it('should not throw an error if the collection exists', () => {
+            return expect(collection.add([]).execute()).to.not.be.rejected;
+        });
+
+        it('should not throw an error if the collection does not exist', () => {
+            const promise = schema
+                .dropCollection('test')
+                .then(() => {
+                    return collection.add([]).execute()
+                });
+
+            return expect(promise).to.not.be.rejected;
+        });
+    });
 });

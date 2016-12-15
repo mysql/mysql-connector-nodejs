@@ -99,5 +99,14 @@ describe('CollectionAdd', () => {
 
             return query.execute().then(result => expect(result.getDocumentIds()).to.deep.equal(['baz']));
         });
+
+        it('should return early if no documents were provided', () => {
+            const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection', []));
+
+            return query.execute().then(() => {
+                td.verify(idGenerator(), { times: 0 });
+                td.verify(crudInsert(), { ignoreExtraArgs: true, times: 0 });
+            });
+        });
     });
 });
