@@ -82,4 +82,14 @@ describe('@slow document collection find', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('with limit', () => {
+        it('should not allow to set a negative limit', () => {
+            (() => collection.find().limit(-10).execute()).should.throw(/Limit can't be negative/);
+        });
+
+        it('should not allow to set an negative offset', () => {
+            (() => collection.find().limit(10, -10).execute()).should.throw(/Offset can't be negative/);
+        });
+    });
 });

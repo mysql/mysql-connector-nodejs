@@ -1,101 +1,13 @@
 'use strict';
 
 /* eslint-env node, mocha */
-/* global Server, Messages, Client, chai, mysqlxtest */
 
 const CollectionFind = require('lib/DevAPI/CollectionFind');
 const Result = require('lib/DevAPI/Result');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-function produceResultSet (protocol, rowCount) {
-    const result = new Server.ResultSet(data => protocol.handleNetworkFragment(data));
-    result.beginResult([{
-        type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
-        name: '_doc',
-        original_name: '_doc',
-        table: 'table',
-        original_table: 'original_table',
-        schema: 'schema',
-        content_type: 2 /* JSON */
-    }, {
-        type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
-        name: '_doc',
-        original_name: '_doc',
-        table: 'table',
-        original_table: 'original_table',
-        schema: 'schema'
-    }]);
-
-    const fields = ['{"foo":"bar"}\0', '\x02'];
-    for (let r = 0; r < rowCount; ++r) {
-        result.row(fields);
-    }
-    result.finalize();
-}
-
 describe('DevAPI Collection Find', () => {
-    let session, collection, spy, origFind;
-
-    beforeEach('get Session', function () {
-        return mysqlxtest.getNullSession().then(function (s) {
-            session = s;
-            collection = session.getSchema('schema').getCollection('collection');
-        });
-    });
-
-    beforeEach('create spy', function () {
-        spy = chai.spy(Client.prototype.crudFind);
-        origFind = Client.prototype.crudFind;
-        Client.prototype.crudFind = spy;
-    });
-
-    afterEach('reset spy', () => {
-        if (origFind) {
-            Client.prototype.crudFind = origFind;
-        }
-    });
-
-    it('should not allow to set a negative limit', () => {
-        (() => collection.find().limit(-10).execute()).should.throw(/Limit can't be negative/);
-    });
-
-    it('should not allow to set an negative offset', () => {
-        (() => collection.find().limit(10, -10).execute()).should.throw(/Offset can't be negative/);
-    });
-
-    it('should resolve with zero rows', () => {
-        const rowcb = chai.spy();
-        const promise = collection.find().execute(rowcb);
-
-        produceResultSet(session._client, 0);
-        rowcb.should.not.be.called;
-
-        return promise.should.be.fullfilled;
-    });
-
-    it('should return only the first column', () => {
-        const rowcb = chai.spy();
-        const promise = collection.find().execute(rowcb);
-
-        produceResultSet(session._client, 1);
-        rowcb.should.be.called.once.with({foo: 'bar'});
-
-        return promise.should.be.fullfilled;
-    });
-
-    it('should return multiple rows', () => {
-        const rowcb = chai.spy();
-        const promise = collection.find().execute(rowcb);
-
-        produceResultSet(session._client, 10);
-        rowcb.should.be.called.exactly(10).with({foo: 'bar'});
-
-        return promise.should.be.fullfilled;
-    });
-
-    it('should send the data over the wire ;-)');
-
     context('bind()', () => {
         it('should be fluent', () => {
             const query = (new CollectionFind()).bind('foo', 'bar');
