@@ -1,0 +1,85 @@
+'use strict';
+
+/* eslint-env node, mocha */
+
+const expect = require('chai').expect;
+const fixtures = require('test/integration/fixtures');
+
+describe('@slow document collection find', () => {
+    let session, schema, collection;
+
+    beforeEach('set context', () => {
+        return fixtures.setup().then(suite => {
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            session = suite.session;
+            schema = suite.schema;
+        });
+    });
+
+    beforeEach('create collection', () => {
+        return schema.createCollection('test');
+    });
+
+    beforeEach('update context', () => {
+        collection = schema.getCollection('test');
+    });
+
+    afterEach('clear context', () => {
+        return fixtures.teardown(session);
+    });
+
+    context('without query', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: 'foo', foo: 'bar' })
+                .add({ _id: 'bar', bar: 'baz' })
+                .execute();
+        });
+
+        it('should return all documents in the database', () => {
+            const expected = [{ _id: 'foo', foo: 'bar' }, { _id: 'bar', bar: 'baz' }];
+            let actual = [];
+
+            return collection
+                .find()
+                .execute(doc => {
+                    actual.push(doc);
+                })
+                .then(() => {
+                    expect(actual).to.have.lengthOf(expected.length);
+                    expect(actual).to.deep.include.all.members(expected);
+                });
+        });
+    });
+
+    context('with binding query', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: 'foo', foo: 'bar', size: 42 })
+                .add({ _id: 'bar', bar: 'baz', size: 23 })
+                .execute();
+        });
+
+        it('should return documents that match a criteria specified with named parameter pairs', () => {
+            const expected = [{ _id: 'foo', foo: 'bar', size: 42 }];
+            let actual = [];
+
+            return collection
+                .find('$.size == :size')
+                .bind('size', 42)
+                .execute(doc => actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should return documents that match a criteria specified with a named parameter mapping', () => {
+            const expected = [{ _id: 'foo', foo: 'bar', size: 42 }];
+            let actual = [];
+
+            return collection
+                .find('$.size == :size')
+                .bind({ size: 42 })
+                .execute(doc => actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+});
