@@ -201,4 +201,42 @@ describe('@integration relational table select', () => {
                 });
         });
     });
+
+    context('with limit', () => {
+        beforeEach('add fixtures', () => {
+            return schema
+                .getTable('test')
+                .insert(['test2', 'test3'])
+                .values(['foo', 42])
+                .values(['bar', 23])
+                .values(['baz', 42])
+                .values(['qux', 23])
+                .values(['quux', 23])
+                .execute();
+        });
+
+        it('should return a given number of row', () => {
+            const expected = [[1, 'foo', 42], [2, 'bar', 23], [3, 'baz', 42]];
+            let actual = [];
+
+            return schema
+                .getTable('test')
+                .select()
+                .limit(3)
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should return the rows after a given offset', () => {
+            const expected = [[3, 'baz', 42], [4, 'qux', 23]];
+            let actual = [];
+
+            return schema
+                .getTable('test')
+                .select()
+                .limit(2, 2)
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });

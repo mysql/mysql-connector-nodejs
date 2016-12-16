@@ -2,12 +2,20 @@
 
 /* eslint-env node, mocha */
 
+// npm `test` script was updated to use NODE_PATH=.
+const BaseQuery = require('lib/DevAPI/BaseQuery');
 const CollectionFind = require('lib/DevAPI/CollectionFind');
 const Result = require('lib/DevAPI/Result');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
 describe('DevAPI Collection Find', () => {
+    context('constructor', () => {
+        it('should be an instance of BaseQuery', () => {
+            expect(new CollectionFind()).to.be.an.instanceof(BaseQuery);
+        });
+    });
+
     context('bind()', () => {
         it('should be fluent', () => {
             const query = (new CollectionFind()).bind('foo', 'bar');
@@ -104,7 +112,7 @@ describe('DevAPI Collection Find', () => {
             const expected = new Result(state);
             const query = (new CollectionFind(fakeSession, fakeSchema)).limit(10, 0);
             const any = td.matchers.anything();
-            const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, { count: 10, offset: 0 });
+            const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, { row_count: 10, offset: 0 });
 
             td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
 

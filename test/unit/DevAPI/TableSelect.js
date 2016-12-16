@@ -4,6 +4,7 @@
 /* global Client */
 
 // npm `test` script was updated to use NODE_PATH=.
+const BaseQuery = require('lib/DevAPI/BaseQuery');
 const Result = require('lib/DevAPI/Result');
 const TableSelect = require('lib/DevAPI/TableSelect');
 const expect = require('chai').expect;
@@ -27,6 +28,12 @@ describe('TableSelect', () => {
 
     afterEach('reset fakes', () => {
         td.reset();
+    });
+
+    context('constructor', () => {
+        it('should be an instance of BaseQuery', () => {
+            expect(new TableSelect()).to.be.an.instanceof(BaseQuery);
+        });
     });
 
     context('execute()', () => {
@@ -62,14 +69,6 @@ describe('TableSelect', () => {
             const query = (new TableSelect(fakeSession, fakeSchema, 'table', ['foo'])).orderBy(['bar']);
 
             expect(query.getViewDefinition()).to.equal(expected);
-        });
-    });
-
-    context('limit()', () => {
-        it('should set `count` and `offset` properties in the _limit variable', () => {
-            const query = (new TableSelect(fakeSession, fakeSchema, 'table', [])).limit(10, 0);
-
-            expect(query._limit).to.deep.equal({ count: 10, offset: 0 });
         });
     });
 

@@ -84,12 +84,36 @@ describe('@slow document collection find', () => {
     });
 
     context('with limit', () => {
-        it('should not allow to set a negative limit', () => {
-            (() => collection.find().limit(-10).execute()).should.throw(/Limit can't be negative/);
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: 1, name: 'foo' })
+                .add({ _id: 2, name: 'bar' })
+                .add({ _id: 3, name: 'baz' })
+                .add({ _id: 4, name: 'qux' })
+                .add({ _id: 5, name: 'quux' })
+                .execute();
         });
 
-        it('should not allow to set an negative offset', () => {
-            (() => collection.find().limit(10, -10).execute()).should.throw(/Offset can't be negative/);
+        it('should return a given number of documents', () => {
+            const expected = [{ _id: 1, name: 'foo' }, { _id: 2, name: 'bar' }, { _id: 3, name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .find()
+                .limit(3)
+                .execute(doc => actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should return the documents after a given offset', () => {
+            const expected = [{ _id: 3, name: 'baz' }, { _id: 4, name: 'qux' }];
+            let actual = [];
+
+            return collection
+                .find()
+                .limit(2, 2)
+                .execute(doc => actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
         });
     });
 });
