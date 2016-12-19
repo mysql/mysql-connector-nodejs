@@ -43,6 +43,18 @@ describe('@integration server connection', () => {
                 });
             });
         });
+
+        context('using an unified connection string', () => {
+            it('should connect to the server with a string containing all the connection details', () => {
+                // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@[${config.host}]:${config.port}/${config.schema}`;
+
+                return mysqlx
+                    .getNodeSession(uri)
+                    .then(session => session.getSchemas())
+                    .then(result => expect(result).to.include.keys(config.schema));
+            });
+        });
     });
 
     context('server cluster abstraction', () => {
