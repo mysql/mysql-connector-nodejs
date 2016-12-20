@@ -42,12 +42,20 @@ describe('@integration server connection', () => {
                     expect(result.inspect()).to.deep.equal(expected);
                 });
             });
+
+            it('should connect to the server in the default port', () => {
+                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}`;
+
+                return mysqlx
+                    .getNodeSession(uri)
+                    .then(result => expect(result.inspect()).to.include({ port: config.port }));
+            });
         });
 
         context('using an unified connection string', () => {
             it('should connect to the server with a string containing all the connection details', () => {
                 // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@[${config.host}]:${config.port}/${config.schema}`;
+                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}:${config.port}/${config.schema}`;
 
                 return mysqlx
                     .getNodeSession(uri)

@@ -37,6 +37,10 @@ describe('BaseSession', () => {
         it('should throw an error if the properties are not provided', () => {
             expect(() => new BaseSession()).to.throw(Error);
         });
+
+        it('should throw an error if the port is not in the appropriate range', () => {
+            [-1, 65537].forEach(port => expect(() => new BaseSession({ port })).to.throw('Port must be between 0 and 65536'));
+        });
     });
 
     context('getSchema()', () => {
