@@ -92,6 +92,17 @@ describe('MySQLx URL parsing', () => {
             expect(parseUri('mysqlx://user:password@hostname:3357/schema')).to.deep.equal(expected);
         });
 
+        it('should parse a URI with SSL/TLS options', () => {
+            const expected = {
+                dbUser: 'user',
+                dbPassword: 'password',
+                host: 'hostname',
+                ssl: true
+            };
+
+            expect(parseUri('mysqlx://user:password@hostname/?ssl-enable')).to.deep.equal(expected);
+        });
+
         it('should throw an error if the host is not provided', () => {
             expect(() => parseUri('mysqlx://')).to.throw(Error);
         });
@@ -152,6 +163,17 @@ describe('MySQLx URL parsing', () => {
             const expected = { host: 'a1:b2:c4:d4:e5:f6' };
 
             expect(parseUri('[a1:b2:c4:d4:e5:f6]')).to.deep.equal(expected);
+        });
+
+        it('should parse a connection string with SSL/TLS options', () => {
+            const expected = {
+                dbUser: 'user',
+                dbPassword: 'password',
+                host: 'hostname',
+                ssl: true
+            };
+
+            expect(parseUri('user:password@hostname?ssl-enable')).to.deep.equal(expected);
         });
 
         it('should throw an error if the host is empty', () => {

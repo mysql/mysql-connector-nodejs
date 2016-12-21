@@ -93,6 +93,37 @@ describe('BaseSession', () => {
                     td.verify(stream.end(), { times: 1 });
                 });
             });
+
+            it('should be able to setup a SSL/TLS connection', () => {
+                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: true };
+                const session = new BaseSession(properties);
+                const capabilitiesGet = td.function();
+                const enableSSL = td.function();
+                const expected = { foo: 'bar' };
+
+                Client.prototype.capabilitiesGet = capabilitiesGet;
+                Client.prototype.enableSSL = enableSSL;
+
+                td.when(enableSSL({ isServer: false })).thenResolve();
+                td.when(capabilitiesGet()).thenResolve(expected);
+
+                return session.connect().then(() => {
+                    expect(session._serverCapabilities).to.deep.equal(expected);
+                });
+            });
+
+            it('should not try to setup a SSL/TLS connection if no such intent is specified', () => {
+                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
+                const session = new BaseSession(properties);
+                const enableSSL = td.function();
+
+                Client.prototype.enableSSL = enableSSL;
+
+                return session.connect().then(() => {
+                    td.verify(enableSSL(), { ignoreExtraArgs: true, times: 0 });
+                    expect(session._serverCapabilities).to.be.empty;
+                });
+            });
         });
 
         context('getSchemas()', () => {

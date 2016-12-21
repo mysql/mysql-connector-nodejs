@@ -50,6 +50,15 @@ describe('@integration server connection', () => {
                     .getNodeSession(uri)
                     .then(result => expect(result.inspect()).to.include({ port: config.port }));
             });
+
+            it('should connect to the server using SSL/TLS', () => {
+                // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}/?ssl-enable`;
+
+                return mysqlx
+                    .getNodeSession(uri)
+                    .then(result => expect(result.inspect()).to.have.property('ssl', true));
+            });
         });
 
         context('using an unified connection string', () => {
@@ -110,6 +119,15 @@ describe('@integration server connection', () => {
                     expect(result).to.be.an.instanceof(BaseSession);
                     expect(result.inspect()).to.deep.equal(expected);
                 });
+            });
+
+            it('should connect to the server using SSL/TLS', () => {
+                // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}?ssl-enable`;
+
+                return mysqlx
+                    .getNodeSession(uri)
+                    .then(result => expect(result.inspect()).to.have.property('ssl', true));
             });
         });
     });
