@@ -1,194 +1,212 @@
-"use strict";
+'use strict';
 
-/*global
- describe, context, beforeEach, afterEach, Messages, Server, Encoding, mysqlxtest, it, beforeEach, chai
- */
-chai.should();
+/* eslint-env node, mocha */
 
-describe('DevAPI', function () {
-    context('Schema', function () {
-        let session, schema;
-        beforeEach('get Session', function () {
-            return mysqlxtest.getNullSession().then(function (s) {
-                session = s;
-                schema = session.getSchema("schema");
+// npm `test` script was updated to use NODE_PATH=.
+const Schema = require('lib/DevAPI/Schema');
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+const td = require('testdouble');
+
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
+
+describe('Schema', () => {
+    let sqlStmtExecute;
+
+    beforeEach('create fakes', () => {
+        sqlStmtExecute = td.function();
+    });
+
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
+    context('existsInDatabase()', () => {
+        it('should return true if the schema exists in database', () => {
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+
+            td.when(sqlStmtExecute('SHOW DATABASES LIKE ?', ['foo'], td.callback(['foo']))).thenResolve();
+
+            return expect(schema.existsInDatabase()).to.eventually.be.true;
+        });
+
+        it('should return false if the schema does not exist in database', () => {
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+
+            td.when(sqlStmtExecute('SHOW DATABASES LIKE ?', ['foo'], td.callback([]))).thenResolve();
+
+            return expect(schema.existsInDatabase()).to.eventually.be.false;
+        });
+    });
+
+    context('getCollections()', () => {
+        it('should return an empty object if there are no collections', () => {
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+
+            td.when(sqlStmtExecute('list_objects', ['foo'], td.callback([]), null, 'xplugin')).thenResolve();
+
+            return expect(schema.getCollections()).to.eventually.be.an.instanceof(Object).and.be.empty;
+        });
+
+        it('should return an object containing the existing collections', () => {
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+
+            td.when(sqlStmtExecute('list_objects', ['foo'], td.callback(['foo', 'COLLECTION']), null, 'xplugin')).thenResolve();
+
+            return expect(schema.getCollections()).to.eventually.deep.equal({ foo: schema.getCollection('foo') });
+        });
+    });
+
+    context('createCollection', () => {
+        context('when the collection already exists (error code 1050)', () => {
+            it('should return the existing collection if the option to re-use is enabled', () => {
+                const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+                const expected = schema.getCollection('bar');
+                const error = new Error();
+                error.info = { code: 1050 };
+
+                td.when(sqlStmtExecute('create_collection', ['foo', 'bar'], null, null, 'xplugin')).thenReject(error);
+
+                return expect(schema.createCollection('bar', { ReuseExistingObject: true })).to.eventually.deep.equal(expected);
+            });
+
+            it('should fail if the option to re-use is disabled', () => {
+                const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+                const error = new Error();
+                error.info = { code: 1050 };
+
+                td.when(sqlStmtExecute('create_collection', ['foo', 'bar'], null, null, 'xplugin')).thenReject(error);
+
+                return expect(schema.createCollection('bar')).to.eventually.be.rejectedWith(error);
             });
         });
 
+        context('when the collection does not exist', () => {
+            it('should return a newly created collection', () => {
+                const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+                const expected = schema.getCollection('bar');
 
-        it('Should know its name', function () {
-            schema.getName().should.equal("schema");
-        });
+                td.when(sqlStmtExecute('create_collection', ['foo', 'bar'], null, null, 'xplugin')).thenResolve();
 
-        it('Should provide access to the schema (aka. itself)', function () {
-            schema.getSchema().should.deep.equal("schema");
-        });
-        it('Should provide access to the session', function () {
-            schema.getSession().should.deep.equal(session);
-        });
+                return expect(schema.createCollection('bar')).to.eventually.deep.equal(expected);
+            });
 
-        function createResponse(protocol, row) {
-            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
-                name: "_doc",
-                table: "table",
-                schema: "schema"
-            }, Encoding.serverMessages));
-            if (row) {
-                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, {field: ["\x01"]}, Encoding.serverMessages));
-            }
-            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, Encoding.serverMessages));
-            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
-        }
+            it('should fail if some unexpected error is thrown', () => {
+                const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+                const error = new Error();
+                error.info = {};
 
-        it('should return true if exists in database', function () {
-            const promise = schema.existsInDatabase();
-            createResponse(session._client, true);
-            return promise.should.eventually.equal(true);
-        });
-        it('should return false if it doesn\'t exists in database', function () {
-            const promise = schema.existsInDatabase();
-            createResponse(session._client, false);
-            return promise.should.eventually.equal(false);
-        });
+                td.when(sqlStmtExecute('create_collection', ['foo', 'bar'], null, null, 'xplugin')).thenReject(error);
 
-        it('should return an empty list for no collection', function () {
-            const promise = schema.getCollections();
+                return expect(schema.createCollection('bar')).to.eventually.be.rejectedWith(error);
+            });
 
-            const result = new Server.ResultSet(data => session._client.handleNetworkFragment(data));
-            result.beginResult([{
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
-                name: "name"
-            },{
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
-                name: "type"
-            }]);
-            result.finalize();
+            it('should fail if some unexpected error is thrown even if the option to re-use is enabled', () => {
+                const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+                const error = new Error();
+                error.info = {};
 
-            return promise.should.eventually.deep.equal({});
-        });
-        it('should return an list of collections', function () {
-            const promise = schema.getCollections();
+                td.when(sqlStmtExecute('create_collection', ['foo', 'bar'], null, null, 'xplugin')).thenReject(error);
 
-            const result = new Server.ResultSet(data => session._client.handleNetworkFragment(data));
-            result.beginResult([{
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
-                name: "name"
-            },{
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
-                name: "type"
-            }]);
-            result.row(["collection1\0", "COLLECTION\0"]);
-            result.row(["table\0", "TABLE\0"]);
-            result.row(["collection2\0", "COLLECTION\0"]);
-            result.finalize();
-
-            return promise.should.eventually.deep.equal({
-                collection1: schema.getCollection("collection1"),
-                collection2: schema.getCollection("collection2")
+                return expect(schema.createCollection('bar', { ReuseExistingObject: true })).to.eventually.be.rejectedWith(error);
             });
         });
-        it('should return an list of collections, which can be used as table', function () {
-            const promise = schema.getCollections();
+    });
 
-            const result = new Server.ResultSet(data => session._client.handleNetworkFragment(data));
-            result.beginResult([{
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
-                name: "name"
-            },{
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
-                name: "type"
-            }]);
-            result.row(["collection1\0", "COLLECTION\0"]);
-            result.row(["table\0", "TABLE\0"]);
-            result.row(["collection2\0", "COLLECTION\0"]);
-            result.finalize();
+    context('dropCollection()', () => {
+        it('should return true if the collection was dropped', () => {
+            const schema = new Schema();
+            const drop = td.function();
+            const getCollection = td.function();
 
-            return promise.then(collections => {
-                let retval = {};
-                for (var k in collections) {
-                    retval[k] = schema.getCollectionAsTable(k);
-                }
-                return retval;
-            }).should.eventually.deep.equal({
-                collection1: schema.getTable("collection1"),
-                collection2: schema.getTable("collection2")
-            });
-        });
-        it('should return a newly created collection', function () {
-            const promise = schema.createCollection("newcollection"),
-                result = new Server.ResultSet(data => session._client.handleNetworkFragment(data));
-            result.finalize();
+            schema.getCollection = getCollection;
 
-            return promise.should.eventually.deep.equal(
-                schema.getCollection("newcollection")
-            );
-        });
-        it('should fail on error to create', function () {
-            const promise = schema.createCollection("newcollection");
-            session._client.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, { code: 1, sql_state: 'HY000', msg: 'Invalid'}, Encoding.serverMessages));
-            return promise.should.be.rejected;
+            td.when(drop()).thenResolve(true);
+            td.when(schema.getCollection('foo')).thenReturn({ drop });
+
+            return expect(schema.dropCollection('foo')).to.eventually.be.true;
         });
 
-        it('should return true for good drop collection', function () {
-            const promise = schema.dropCollection("foo");
-            session._client.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
-            return promise.should.eventually.equal(true);
+        it('should fail if an unexpected error was thrown', () => {
+            const schema = new Schema();
+            const drop = td.function();
+            const getCollection = td.function();
+            const error = new Error('foobar');
+
+            schema.getCollection = getCollection;
+
+            td.when(drop()).thenReject(error);
+            td.when(schema.getCollection('foo')).thenReturn({ drop });
+
+            return expect(schema.dropCollection('foo')).to.eventually.be.rejectedWith(error);
         });
-        it('should fail for bad drop collection', function () {
-            const promise = schema.dropCollection("foo");
-            session._client.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, { code: 1, sql_state: 'HY000', msg: 'Invalid'}, Encoding.serverMessages));
-            return promise.should.be.rejected;
-        });
+    });
 
+    context('getTables()', () => {
+        it('should return an empty object if there are no tables', () => {
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
 
+            td.when(sqlStmtExecute('list_objects', ['foo'], td.callback([]), null, 'xplugin')).thenResolve();
 
-        it('should return an empty list for no table', function () {
-            const promise = schema.getTables();
-
-            const result = new Server.ResultSet(data => session._client.handleNetworkFragment(data));
-            result.beginResult([{
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
-                name: "name"
-            }]);
-            result.finalize();
-
-            return promise.should.eventually.deep.equal({});
-        });
-        it('should return an list of tables', function () {
-            const promise = schema.getTables();
-
-            const result = new Server.ResultSet(data => session._client.handleNetworkFragment(data));
-            result.beginResult([{
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
-                name: "name"
-            },{
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.BYTES,
-                name: "type"
-            }]);
-            result.row(["table1\0", "TABLE\0"]);
-            result.row(["collection\0", "COLLECTION\0"]);
-            result.row(["table2\0", "TABLE\0"]);
-            result.finalize();
-
-            return promise.should.eventually.deep.equal({
-                table1: schema.getTable("table1"),
-                table2: schema.getTable("table2")
-            });
+            return expect(schema.getTables()).to.eventually.be.an.instanceof(Object).and.be.empty;
         });
 
-        it('should return true for good drop table', function () {
-            const promise = schema.dropTable("foo");
-            session._client.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
-            return promise.should.eventually.equal(true);
+        it('should return an object containing the existing tables', () => {
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+            const expected = schema.getTable('bar');
+
+            td.when(sqlStmtExecute('list_objects', ['foo'], td.callback(['bar', 'TABLE']), null, 'xplugin')).thenResolve();
+
+            return expect(schema.getTables()).to.eventually.deep.equal({ bar: expected });
         });
-        it('should fail for bad drop table', function () {
-            const promise = schema.dropTable("foo");
-            session._client.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, { code: 1, sql_state: 'HY000', msg: 'Invalid'}, Encoding.serverMessages));
-            return promise.should.be.rejected;
+
+        it('should return an object containing the existing views', () => {
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+            const expected = schema.getTable('bar');
+
+            td.when(sqlStmtExecute('list_objects', ['foo'], td.callback(['bar', 'VIEW']), null, 'xplugin')).thenResolve();
+
+            return expect(schema.getTables()).to.eventually.deep.equal({ bar: expected });
         });
-        it('should hide internals from inspect output', function () {
-            schema.inspect().should.deep.equal({ schema: "schema" });
+    });
+
+    context('dropTable()', () => {
+        it('should return true if the table was dropped', () => {
+            const schema = new Schema();
+            const drop = td.function();
+            const getTable = td.function();
+
+            schema.getTable = getTable;
+
+            td.when(drop()).thenResolve(true);
+            td.when(schema.getTable('foo')).thenReturn({ drop });
+
+            return expect(schema.dropTable('foo')).to.eventually.be.true;
+        });
+
+        it('should fail if an unexpected error was thrown', () => {
+            const schema = new Schema();
+            const drop = td.function();
+            const getTable = td.function();
+            const error = new Error('foobar');
+
+            schema.getTable = getTable;
+
+            td.when(drop()).thenReject(error);
+            td.when(schema.getTable('foo')).thenReturn({ drop });
+
+            return expect(schema.dropTable('foo')).to.eventually.be.rejectedWith(error);
+        });
+    });
+
+    context('inspect()', () => {
+        it('should hide internals', () => {
+            const schema = new Schema(null, 'foobar');
+            const expected = { schema: 'foobar' };
+
+            schema.inspect().should.deep.equal(expected);
         });
     });
 });
