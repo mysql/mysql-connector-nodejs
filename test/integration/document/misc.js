@@ -98,4 +98,11 @@ describe('@integration collection miscellaneous tests', () => {
             collection.find().execute(actual => expect(actual).to.deep.equal(document2));
         });
     });
+
+    it('should check if a collection exists in the database', () => {
+        return schema
+            .createCollection('foobar')
+            .then(collection => collection.existsInDatabase())
+            .then(result => expect(result).to.be.true);
+    });
 });

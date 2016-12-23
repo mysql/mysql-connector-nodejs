@@ -146,7 +146,7 @@ describe('Client', function () {
             produceResultSet(protocol, 1, 1, 1, [warning]);
             return promise.should.eventually.deep.equal({warnings: [ warning ]});
         });
-        for (let count = 0; count < 3; ++count) {
+        for (let count = 1; count < 3; ++count) {
             it('should call row callback for each row data ('+count+' rows)', function () {
                 const protocol = new Client(nullStream),
                       rowcb = chai.spy(),

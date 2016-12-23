@@ -4,9 +4,11 @@
 /* global chai, Encoding, mysqlxtest, Messages */
 
 // npm `test` script was updated to use NODE_PATH=.
+const Client = require('lib/Protocol/Client');
 const Collection = require('lib/DevAPI/Collection');
 const CollectionAdd = require('lib/DevAPI/CollectionAdd');
 const expect = require('chai').expect;
+const td = require('testdouble');
 
 chai.should();
 
@@ -47,20 +49,35 @@ describe('Collection', function () {
         protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
     }
 
-    it('should return true if exists in database', function () {
-        const promise = collection.existsInDatabase();
+    context('existsInDatabase()', () => {
+        let sqlStmtExecute, getName;
 
-        createResponse(session._client, true);
+        beforeEach('create fakes', () => {
+            sqlStmtExecute = td.function();
+            getName = td.function();
+        });
 
-        return promise.should.eventually.equal(true);
-    });
+        afterEach('reset fakes', () => {
+            td.reset();
+        });
 
-    it('should return false if it doesn\'t exists in database', function () {
-        const promise = collection.existsInDatabase();
+        it('should return true if exists in database', () => {
+            const collection = new Collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
 
-        createResponse(session._client, false);
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute('list_objects', ['bar', 'foo'], td.callback(['foo']), null, 'xplugin')).thenResolve();
 
-        return promise.should.eventually.equal(false);
+            return expect(collection.existsInDatabase()).to.eventually.be.true;
+        });
+
+        it('should return false if it does not exist in database', () => {
+            const collection = new Collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute('list_objects', ['bar', 'foo'], td.callback([]), null, 'xplugin')).thenResolve();
+
+            return expect(collection.existsInDatabase()).to.eventually.be.false;
+        });
     });
 
     it('should return true for good drop', function () {
