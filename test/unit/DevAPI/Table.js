@@ -1,144 +1,158 @@
 'use strict';
 
 /* eslint-env node, mocha */
-/* global chai, Encoding, mysqlxtest, Messages */
 
 // npm `test` script was updated to use NODE_PATH=.
 const Table = require('lib/DevAPI/Table');
-const TableSelect = require('lib/DevAPI/TableSelect');
 const TableInsert = require('lib/DevAPI/TableInsert');
+const TableSelect = require('lib/DevAPI/TableSelect');
 const expect = require('chai').expect;
+const td = require('testdouble');
 
-chai.should();
+describe('Table', () => {
+    let sqlStmtExecute, getName;
 
-describe('DevAPI', () => {
-    context('Table', () => {
-        let session, table;
+    beforeEach('create fakes', () => {
+        sqlStmtExecute = td.function();
+        getName = td.function();
+    });
 
-        beforeEach('get Session', () => {
-            return mysqlxtest.getNullSession().then(function (s) {
-                session = s;
-                table = session.getSchema('schema').getTable('table');
-            });
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
+    context('getName()', () => {
+        it('should return the table name', () => {
+            const table = new Table(null, null, 'foobar');
+
+            expect(table.getName()).to.equal('foobar');
+        });
+    });
+
+    context('existsInDatabase()', () => {
+        it('should return true if the table exists in database', () => {
+            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const query = 'SELECT COUNT(*) cnt FROM information_schema.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute(query, ['def', 'bar', 'foo'], td.callback(['foo']))).thenResolve();
+
+            return expect(table.existsInDatabase()).to.eventually.be.true;
         });
 
-        it('Should know its name', () => {
-            table.getName().should.equal('table');
+        it('should return false if the table does not exist in database', () => {
+            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const query = 'SELECT COUNT(*) cnt FROM information_schema.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute(query, ['def', 'bar', 'foo'], td.callback([]))).thenResolve();
+
+            return expect(table.existsInDatabase()).to.eventually.be.false;
+        });
+    });
+
+    context('isView()', () => {
+        it('should return true if the table exists in database', () => {
+            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const query = 'SELECT COUNT(*) cnt FROM information_schema.VIEWS WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute(query, ['def', 'bar', 'foo'], td.callback(['foo']))).thenResolve();
+
+            return expect(table.isView()).to.eventually.be.true;
         });
 
-        it('Should provide access to the schema', () => {
-            table.getSchema().getName().should.equal('schema');
+        it('should return false if the table does not exist in database', () => {
+            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const query = 'SELECT COUNT(*) cnt FROM information_schema.VIEWS WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute(query, ['def', 'bar', 'foo'], td.callback([]))).thenResolve();
+
+            return expect(table.isView()).to.eventually.be.false;
+        });
+    });
+
+    context('drop()', () => {
+        it('should return true if the table was dropped', () => {
+            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute('DROP TABLE `bar`.`foo`')).thenResolve();
+
+            return expect(table.drop()).to.eventually.be.true;
         });
 
-        it('Should provide access to the session', () => {
-            table.getSession().should.deep.equal(session);
+        it('should fail if an expected error is thrown', () => {
+            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const error = new Error('foobar');
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute('DROP TABLE `bar`.`foo`')).thenReject(error);
+
+            return expect(table.drop()).to.eventually.be.rejectedWith(error);
+        });
+    });
+
+    context('inspect()', () => {
+        it('should hide internals', () => {
+            const table = new Table(null, { getName }, 'foo');
+            const expected = { schema: 'bar', table: 'foo' };
+
+            td.when(getName()).thenReturn('bar');
+
+            expect(table.inspect()).to.deep.equal(expected);
+        });
+    });
+
+    context('select()', () => {
+        it('should return an instance of the proper class', () => {
+            const instance = (new Table()).select();
+
+            expect(instance).to.be.an.instanceof(TableSelect);
         });
 
-        function createResponse (protocol, row) {
-            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
-                type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
-                name: '_doc',
-                table: 'table',
-                schema: 'schema'
-            }, Encoding.serverMessages));
+        it('should set the projection parameters provided as an array', () => {
+            const expressions = ['foo', 'bar'];
+            const instance = (new Table()).select(expressions);
 
-            if (row) {
-                protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, {field: ['\x01']}, Encoding.serverMessages));
-            }
-
-            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, Encoding.serverMessages));
-            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
-        }
-
-        it('should return true if it exists in database', () => {
-            const promise = table.existsInDatabase();
-            createResponse(session._client, true);
-            return promise.should.eventually.equal(true);
+            expect(instance._projection).to.deep.equal(expressions);
         });
 
-        it('should return false if it doesn\'t exist in database', () => {
-            const promise = table.existsInDatabase();
-            createResponse(session._client, false);
-            return promise.should.eventually.equal(false);
+        it('should set the projection parameters provided as multiple arguments', () => {
+            const expressions = ['foo', 'bar'];
+            const instance = (new Table()).select(expressions[0], expressions[1]);
+
+            expect(instance._projection).to.deep.equal(expressions);
+        });
+    });
+
+    context('insert()', () => {
+        it('should return an instance of the proper class', () => {
+            const instance = (new Table()).insert([]);
+
+            expect(instance).to.be.an.instanceof(TableInsert);
         });
 
-        it('should return true if table is a view', () => {
-            const promise = table.isView();
-            createResponse(session._client, true);
-            return promise.should.eventually.equal(true);
+        it('should set field names provided as an array', () => {
+            const expressions = ['foo', 'bar'];
+            const instance = (new Table()).insert(expressions);
+
+            expect(instance._fields).to.deep.equal(expressions);
         });
 
-        it('should return false if table is not a view', () => {
-            const promise = table.isView();
-            createResponse(session._client, false);
-            return promise.should.eventually.equal(false);
+        it('should set field names provided as multiple arguments', () => {
+            const expressions = ['foo', 'bar'];
+            const instance = (new Table()).insert(expressions[0], expressions[1]);
+
+            expect(instance._fields).to.deep.equal(expressions);
         });
 
-        it('should return true for good drop', () => {
-            const promise = table.drop();
-            session._client.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
-            return promise.should.eventually.equal(true);
-        });
+        it('should set field names provided as object keys', () => {
+            const expressions = ['foo', 'bar'];
+            const instance = (new Table()).insert({ foo: 'baz', bar: 'qux' });
 
-        it('should fail for bad drop', () => {
-            const promise = table.drop();
-            session._client.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, { code: 1, sql_state: 'HY000', msg: 'Invalid' }, Encoding.serverMessages));
-            return promise.should.be.rejected;
-        });
-
-        it('should hide internals from inspect output', () => {
-            table.inspect().should.deep.equal({ schema: 'schema', table: 'table' });
-        });
-
-        context('select()', () => {
-            it('should return an instance of the proper class', () => {
-                const instance = (new Table()).select();
-
-                expect(instance).to.be.an.instanceof(TableSelect);
-            });
-
-            it('should set the projection parameters provided as an array', () => {
-                const expressions = ['foo', 'bar'];
-                const instance = (new Table()).select(expressions);
-
-                expect(instance._projection).to.deep.equal(expressions);
-            });
-
-            it('should set the projection parameters provided as multiple arguments', () => {
-                const expressions = ['foo', 'bar'];
-                const instance = (new Table()).select(expressions[0], expressions[1]);
-
-                expect(instance._projection).to.deep.equal(expressions);
-            });
-        });
-
-        context('insert()', () => {
-            it('should return an instance of the proper class', () => {
-                const instance = (new Table()).insert([]);
-
-                expect(instance).to.be.an.instanceof(TableInsert);
-            });
-
-            it('should set field names provided as an array', () => {
-                const expressions = ['foo', 'bar'];
-                const instance = (new Table()).insert(expressions);
-
-                expect(instance._fields).to.deep.equal(expressions);
-            });
-
-            it('should set field names provided as multiple arguments', () => {
-                const expressions = ['foo', 'bar'];
-                const instance = (new Table()).insert(expressions[0], expressions[1]);
-
-                expect(instance._fields).to.deep.equal(expressions);
-            });
-
-            it('should set field names provided as object keys', () => {
-                const expressions = ['foo', 'bar'];
-                const instance = (new Table()).insert({ foo: 'baz', bar: 'qux' });
-
-                expect(instance._fields).to.deep.equal(expressions);
-            });
+            expect(instance._fields).to.deep.equal(expressions);
         });
     });
 });
