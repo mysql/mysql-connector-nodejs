@@ -105,4 +105,24 @@ describe('@integration collection miscellaneous tests', () => {
             .then(collection => collection.existsInDatabase())
             .then(result => expect(result).to.be.true);
     });
+
+    it('should drop a collection from the database', () => {
+        return schema
+            .createCollection('foobar')
+            .then(collection => collection.drop().then(() => Promise.resolve(collection)))
+            .then(collection => collection.existsInDatabase())
+            .then(exists => expect(exists).to.be.false);
+    });
+
+    it('should create a collection with the given name', () => {
+        return schema
+            .createCollection('foobar')
+            .then(collection => expect(collection.getName()).to.equal('foobar'));
+    });
+
+    it('should create a collection within the appropriate schema', () => {
+        return schema
+            .createCollection('foobar')
+            .then(collection => expect(collection.getSchema()).to.deep.equal(schema));
+    });
 });

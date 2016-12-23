@@ -1,66 +1,52 @@
 'use strict';
 
 /* eslint-env node, mocha */
-/* global chai, Encoding, mysqlxtest, Messages */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Client = require('lib/Protocol/Client');
 const Collection = require('lib/DevAPI/Collection');
 const CollectionAdd = require('lib/DevAPI/CollectionAdd');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-chai.should();
+describe('Collection', () => {
+    let sqlStmtExecute, getName;
 
-describe('Collection', function () {
-    let session, collection;
+    beforeEach('create fakes', () => {
+        sqlStmtExecute = td.function();
+        getName = td.function();
+    });
 
-    beforeEach('get Session', function () {
-        return mysqlxtest.getNullSession().then(function (s) {
-            session = s;
-            collection = session.getSchema('schema').getCollection('collection');
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
+    context('getName()', () => {
+        it('should return the collection name', () => {
+            const collection = new Collection(null, null, 'foobar');
+
+            expect(collection.getName()).to.equal('foobar');
         });
     });
 
-    it('Should know its name', function () {
-        collection.getName().should.equal('collection');
+    context('getSchema()', () => {
+        it('should return the associated schema', () => {
+            const collection = new Collection(null, { getName });
+
+            td.when(getName()).thenReturn('foobar');
+
+            expect(collection.getSchema().getName()).to.equal('foobar');
+        });
     });
 
-    it('Should provide access to the schema', function () {
-        collection.getSchema().getName().should.equal('schema');
+    context('getSession()', () => {
+        it('should return the associated session', () => {
+            const collection = new Collection({ foo: 'bar' });
+
+            expect(collection.getSession()).to.deep.equal({ foo: 'bar' });
+        });
     });
-    it('Should provide access to the session', function () {
-        collection.getSession().should.deep.equal(session);
-    });
-
-    function createResponse (protocol, row) {
-        protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_COLUMN_META_DATA, {
-            type: Messages.messages['Mysqlx.Resultset.ColumnMetaData'].enums.FieldType.SINT,
-            name: '_doc',
-            table: 'table',
-            schema: 'schema'
-        }, Encoding.serverMessages));
-
-        if (row) {
-            protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_ROW, { field: ['\x01'] }, Encoding.serverMessages));
-        }
-
-        protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.RESULTSET_FETCH_DONE, {}, Encoding.serverMessages));
-        protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
-    }
 
     context('existsInDatabase()', () => {
-        let sqlStmtExecute, getName;
-
-        beforeEach('create fakes', () => {
-            sqlStmtExecute = td.function();
-            getName = td.function();
-        });
-
-        afterEach('reset fakes', () => {
-            td.reset();
-        });
-
         it('should return true if exists in database', () => {
             const collection = new Collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
 
@@ -80,24 +66,36 @@ describe('Collection', function () {
         });
     });
 
-    it('should return true for good drop', function () {
-        const promise = collection.drop();
+    context('drop()', () => {
+        it('should return true if the collection was dropped', () => {
+            const collection = new Collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
 
-        session._client.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages));
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute('drop_collection', ['bar', 'foo'], null, null, 'xplugin')).thenResolve();
 
-        return promise.should.eventually.equal(true);
+            return expect(collection.drop()).to.eventually.be.true;
+        });
+
+        it('should fail if the collection was not dropped', () => {
+            const collection = new Collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const error = new Error('foobar');
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute('drop_collection', ['bar', 'foo'], null, null, 'xplugin')).thenReject(error);
+
+            return expect(collection.drop()).to.eventually.be.rejectedWith(error);
+        });
     });
 
-    it('should fail for bad drop', function () {
-        const promise = collection.drop();
+    context('inspect()', () => {
+        it('should hide internals', () => {
+            const collection = new Collection(null, { getName }, 'foo');
+            const expected = { schema: 'bar', collection: 'foo' };
 
-        session._client.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.ERROR, { code: 1, sql_state: 'HY000', msg: 'Invalid' }, Encoding.serverMessages));
+            td.when(getName()).thenReturn('bar');
 
-        return promise.should.be.rejected;
-    });
-
-    it('should hide internals from inspect output', function () {
-        collection.inspect().should.deep.equal({ schema: 'schema', collection: 'collection' });
+            expect(collection.inspect()).to.deep.equal(expected);
+        });
     });
 
     context('add()', () => {
