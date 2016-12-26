@@ -73,38 +73,6 @@ describe('Table', () => {
         });
     });
 
-    context('drop()', () => {
-        it('should return true if the table was dropped', () => {
-            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(sqlStmtExecute('DROP TABLE `bar`.`foo`')).thenResolve();
-
-            return expect(table.drop()).to.eventually.be.true;
-        });
-
-        it('should fail if an expected error is thrown', () => {
-            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
-            const error = new Error('foobar');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(sqlStmtExecute('DROP TABLE `bar`.`foo`')).thenReject(error);
-
-            return expect(table.drop()).to.eventually.be.rejectedWith(error);
-        });
-    });
-
-    context('inspect()', () => {
-        it('should hide internals', () => {
-            const table = new Table(null, { getName }, 'foo');
-            const expected = { schema: 'bar', table: 'foo' };
-
-            td.when(getName()).thenReturn('bar');
-
-            expect(table.inspect()).to.deep.equal(expected);
-        });
-    });
-
     context('select()', () => {
         it('should return an instance of the proper class', () => {
             const instance = (new Table()).select();
@@ -153,6 +121,66 @@ describe('Table', () => {
             const instance = (new Table()).insert({ foo: 'baz', bar: 'qux' });
 
             expect(instance._fields).to.deep.equal(expressions);
+        });
+
+        it('should throw an error if the fields are invalid', () => {
+            const table = new Table();
+
+            expect(() => table.insert()).to.throw(Error);
+        });
+    });
+
+    context('drop()', () => {
+        it('should return true if the table was dropped', () => {
+            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute('DROP TABLE `bar`.`foo`')).thenResolve();
+
+            return expect(table.drop()).to.eventually.be.true;
+        });
+
+        it('should fail if an expected error is thrown', () => {
+            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const error = new Error('foobar');
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute('DROP TABLE `bar`.`foo`')).thenReject(error);
+
+            return expect(table.drop()).to.eventually.be.rejectedWith(error);
+        });
+    });
+
+    context('count()', () => {
+        it('should return the number of records found', () => {
+            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const count = 3;
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute('SELECT COUNT(*) FROM `bar`.`foo`', [], td.callback([count]))).thenResolve();
+
+            return expect(table.count()).to.eventually.equal(count);
+        });
+
+        it('should fail if an expected error is thrown', () => {
+            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const error = new Error('foobar');
+
+            td.when(getName()).thenReturn('bar');
+            td.when(sqlStmtExecute('SELECT COUNT(*) FROM `bar`.`foo`'), { ignoreExtraArgs: true }).thenReject(error);
+
+            return expect(table.count()).to.eventually.be.rejectedWith(error);
+        });
+    });
+
+    context('inspect()', () => {
+        it('should hide internals', () => {
+            const table = new Table(null, { getName }, 'foo');
+            const expected = { schema: 'bar', table: 'foo' };
+
+            td.when(getName()).thenReturn('bar');
+
+            expect(table.inspect()).to.deep.equal(expected);
         });
     });
 });
