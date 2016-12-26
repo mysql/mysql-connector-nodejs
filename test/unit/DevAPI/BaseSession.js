@@ -58,13 +58,15 @@ describe('BaseSession', () => {
     });
 
     context('server access methods', () => {
-        let authenticate, createSocket;
+        let authenticate, capabilitiesGet, createSocket;
 
         beforeEach('create fakes', () => {
             authenticate = td.function();
+            capabilitiesGet = td.function();
             createSocket = td.function();
 
             Client.prototype.authenticate = authenticate;
+            Client.prototype.capabilitiesGet = capabilitiesGet;
 
             td.when(authenticate(), { ignoreExtraArgs: true }).thenResolve();
             td.when(createSocket(), { ignoreExtraArgs: true }).thenResolve(new Duplex());
@@ -76,7 +78,9 @@ describe('BaseSession', () => {
                 const session = (new BaseSession(properties));
                 const expected = { dbUser: 'foo' };
 
-                expect(session.connect()).to.eventually.deep.equal(expected);
+                td.when(capabilitiesGet()).thenResolve();
+
+                return session.connect().then(session => expect(session.inspect()).to.deep.include(expected));
             });
 
             it('should close the internal stream if there is an error', () => {
@@ -94,34 +98,50 @@ describe('BaseSession', () => {
                 });
             });
 
-            it('should be able to setup a SSL/TLS connection', () => {
-                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: true };
-                const session = new BaseSession(properties);
-                const capabilitiesGet = td.function();
-                const enableSSL = td.function();
-                const expected = { foo: 'bar' };
+            context('secure connection', () => {
+                let enableSSL;
 
-                Client.prototype.capabilitiesGet = capabilitiesGet;
-                Client.prototype.enableSSL = enableSSL;
+                beforeEach('create fakes', () => {
+                    enableSSL = td.function();
 
-                td.when(enableSSL({ isServer: false })).thenResolve();
-                td.when(capabilitiesGet()).thenResolve(expected);
-
-                return session.connect().then(() => {
-                    expect(session._serverCapabilities).to.deep.equal(expected);
+                    Client.prototype.enableSSL = enableSSL;
                 });
-            });
 
-            it('should not try to setup a SSL/TLS connection if no such intent is specified', () => {
-                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
-                const session = new BaseSession(properties);
-                const enableSSL = td.function();
+                it('should be able to setup a SSL/TLS connection', () => {
+                    const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: true };
+                    const session = new BaseSession(properties);
+                    const expected = { foo: 'bar' };
 
-                Client.prototype.enableSSL = enableSSL;
+                    td.when(enableSSL({ isServer: false })).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve(expected);
 
-                return session.connect().then(() => {
-                    td.verify(enableSSL(), { ignoreExtraArgs: true, times: 0 });
-                    expect(session._serverCapabilities).to.be.empty;
+                    return session.connect().then(() => {
+                        expect(session._serverCapabilities).to.deep.equal(expected);
+                    });
+                });
+
+                it('should not try to setup a SSL/TLS connection if no such intent is specified', () => {
+                    const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
+                    const session = new BaseSession(properties);
+
+                    td.when(capabilitiesGet()).thenResolve();
+
+                    return session.connect().then(() => {
+                        td.verify(enableSSL(), { ignoreExtraArgs: true, times: 0 });
+                        expect(session._serverCapabilities).to.be.empty;
+                    });
+                });
+
+                it('should fail if an error is thrown in the SSL setup', () => {
+                    const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: true };
+                    const session = new BaseSession(properties);
+
+                    td.when(enableSSL({})).thenReject(new Error());
+                    td.when(capabilitiesGet()).thenResolve({ foo: 'bar' });
+
+                    return session.connect().catch(() => {
+                        expect(session._serverCapabilities).to.be.empty;
+                    });
                 });
             });
         });
