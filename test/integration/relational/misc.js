@@ -3,7 +3,7 @@
 /* eslint-env node, mocha */
 
 const Column = require('lib/DevAPI/Column');
-const config = require('test/integration/properties');
+const config = require('test/properties');
 const expect = require('chai').expect;
 const fixtures = require('test/integration/fixtures');
 const mysqlx = require('index');

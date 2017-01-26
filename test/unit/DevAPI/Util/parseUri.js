@@ -5,7 +5,7 @@
 const parseUri = require('lib/DevAPI/Util/parseUri');
 const expect = require('chai').expect;
 
-describe('MySQLx URL parsing', () => {
+describe('parseUri', () => {
     context('for RFC-3986 URIs', () => {
         it('should parse an URI with a hostname', () => {
             const expected = {
@@ -92,15 +92,77 @@ describe('MySQLx URL parsing', () => {
             expect(parseUri('mysqlx://user:password@hostname:3357/schema')).to.deep.equal(expected);
         });
 
-        it('should parse a URI with SSL/TLS options', () => {
-            const expected = {
-                dbUser: 'user',
-                dbPassword: 'password',
-                host: 'hostname',
-                ssl: true
-            };
+        context('SSL/TLS properties', () => {
+            it('should parse a URI with SSL/TLS options', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    host: 'hostname',
+                    ssl: true
+                };
 
-            expect(parseUri('mysqlx://user:password@hostname/?ssl-enable')).to.deep.equal(expected);
+                expect(parseUri('mysqlx://user:password@hostname/?ssl-enable')).to.deep.equal(expected);
+            });
+
+            it('should parse a URI with encoded paths to validation PEM files', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    host: 'hostname',
+                    ssl: true,
+                    sslOptions: {
+                        ca: '/path/to/ca',
+                        crl: '/path/to/crl'
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@hostname?ssl-ca=%2Fpath%2Fto%2Fca&ssl-crl=%2Fpath%2Fto%2Fcrl')).to.deep.equal(expected);
+            });
+
+            it('should parse a URI with custom paths to validation PEM files', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    host: 'hostname',
+                    ssl: true,
+                    sslOptions: {
+                        ca: '/path/to/ca',
+                        crl: '/path/to/crl'
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@hostname?ssl-ca=(/path/to/ca)&ssl-crl=(/path/to/crl)')).to.deep.equal(expected);
+            });
+
+            it('should parse empty paths to validation PEM files', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    host: 'hostname',
+                    ssl: true,
+                    sslOptions: {
+                        ca: '',
+                        crl: ''
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@hostname?ssl-ca=&ssl-crl=')).to.deep.equal(expected);
+            });
+
+            it('should parse empty custom paths to validation PEM files', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    host: 'hostname',
+                    ssl: true,
+                    sslOptions: {
+                        ca: '',
+                        crl: ''
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@hostname?ssl-ca=()&ssl-crl=()')).to.deep.equal(expected);
+            });
         });
 
         it('should throw an error if the host is not provided', () => {
@@ -165,15 +227,77 @@ describe('MySQLx URL parsing', () => {
             expect(parseUri('[a1:b2:c4:d4:e5:f6]')).to.deep.equal(expected);
         });
 
-        it('should parse a connection string with SSL/TLS options', () => {
-            const expected = {
-                dbUser: 'user',
-                dbPassword: 'password',
-                host: 'hostname',
-                ssl: true
-            };
+        context('SSL/TLS properties', () => {
+            it('should parse a connection string with SSL/TLS options', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    host: 'hostname',
+                    ssl: true
+                };
 
-            expect(parseUri('user:password@hostname?ssl-enable')).to.deep.equal(expected);
+                expect(parseUri('user:password@hostname?ssl-enable')).to.deep.equal(expected);
+            });
+
+            it('should parse a connection string with encoded paths to validation PEM files', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    host: 'hostname',
+                    ssl: true,
+                    sslOptions: {
+                        ca: '/path/to/ca',
+                        crl: '/path/to/crl'
+                    }
+                };
+
+                expect(parseUri('user:password@hostname?ssl-ca=%2Fpath%2Fto%2Fca&ssl-crl=%2Fpath%2Fto%2Fcrl')).to.deep.equal(expected);
+            });
+
+            it('should parse a connection string with custom paths to validation PEM files', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    host: 'hostname',
+                    ssl: true,
+                    sslOptions: {
+                        ca: '/path/to/ca',
+                        crl: '/path/to/crl'
+                    }
+                };
+
+                expect(parseUri('user:password@hostname?ssl-ca=(/path/to/ca)&ssl-crl=(/path/to/crl)')).to.deep.equal(expected);
+            });
+
+            it('should parse empty paths to validation PEM files', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    host: 'hostname',
+                    ssl: true,
+                    sslOptions: {
+                        ca: '',
+                        crl: ''
+                    }
+                };
+
+                expect(parseUri('user:password@hostname?ssl-ca=&ssl-crl=')).to.deep.equal(expected);
+            });
+
+            it('should parse empty custom paths to validation PEM files', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    host: 'hostname',
+                    ssl: true,
+                    sslOptions: {
+                        ca: '',
+                        crl: ''
+                    }
+                };
+
+                expect(parseUri('user:password@hostname?ssl-ca=()&ssl-crl=()')).to.deep.equal(expected);
+            });
         });
 
         it('should throw an error if the host is empty', () => {

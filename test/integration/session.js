@@ -3,8 +3,8 @@
 /* eslint-env node, mocha */
 
 const BaseSession = require('lib/DevAPI/BaseSession');
-const config = require('./properties');
 const expect = require('chai').expect;
+const config = require('test/properties');
 const mysqlx = require('index');
 
 describe('@integration server connection', () => {

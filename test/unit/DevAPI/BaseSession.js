@@ -112,7 +112,7 @@ describe('BaseSession', () => {
                     const session = new BaseSession(properties);
                     const expected = { foo: 'bar' };
 
-                    td.when(enableSSL({ isServer: false })).thenResolve();
+                    td.when(enableSSL({})).thenResolve();
                     td.when(capabilitiesGet()).thenResolve(expected);
 
                     return session.connect().then(() => {
@@ -142,6 +142,16 @@ describe('BaseSession', () => {
                     return session.connect().catch(() => {
                         expect(session._serverCapabilities).to.be.empty;
                     });
+                });
+
+                it('should pass down any custom SSL/TLS-related option', () => {
+                    const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, sslOptions: { foo: 'bar' } };
+                    const session = new BaseSession(properties);
+
+                    td.when(enableSSL({ foo: 'bar' })).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve();
+
+                    return session.connect();
                 });
             });
         });
