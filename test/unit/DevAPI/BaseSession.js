@@ -6,8 +6,13 @@ const BaseSession = require('lib/DevAPI/BaseSession');
 const Client = require('lib/Protocol/Client');
 const Duplex = require('stream').Duplex;
 const Schema = require('lib/DevAPI/Schema');
-const expect = require('chai').expect;
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
 const td = require('testdouble');
+
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
 
 describe('BaseSession', () => {
     let clientProto, sqlStmtExecute;
@@ -75,7 +80,7 @@ describe('BaseSession', () => {
         context('connect()', () => {
             it('should return a clean object with the session properties', () => {
                 const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
-                const session = (new BaseSession(properties));
+                const session = new BaseSession(properties);
                 const expected = { dbUser: 'foo' };
 
                 td.when(capabilitiesGet()).thenResolve();
@@ -86,7 +91,7 @@ describe('BaseSession', () => {
             it('should close the internal stream if there is an error', () => {
                 // Not providing credentials should result in an authentication error.
                 const properties = { socketFactory: { createSocket } };
-                const session = (new BaseSession(properties));
+                const session = new BaseSession(properties);
                 const stream = new Duplex();
 
                 stream.end = td.function();
@@ -158,43 +163,52 @@ describe('BaseSession', () => {
 
         context('getSchemas()', () => {
             it('should return an object with the existing schemas', () => {
-                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
-                const session = (new BaseSession(properties));
-                const expected = { foobar: { schema: 'foobar' } };
+                const session = new BaseSession({});
+                const schema = 'foobar';
+                const expected = { foobar: { schema } };
 
-                td.when(sqlStmtExecute('SHOW DATABASES', [], td.callback(['foobar']))).thenResolve();
+                session.getSchema = td.function();
+                session._client = Object.assign({}, this._client, { sqlStmtExecute });
 
-                expect(session.connect().then(session => session.getSchemas())).to.eventually.deep.equal(expected);
+                td.when(session.getSchema(schema)).thenReturn({ schema });
+                td.when(sqlStmtExecute('SHOW DATABASES', [], td.callback([schema]))).thenResolve();
+
+                return expect(session.getSchemas()).to.eventually.deep.equal(expected);
             });
         });
 
         context('createSchema()', () => {
             it('should create and return a new schema', () => {
-                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
-                const session = (new BaseSession(properties));
-                const expected = { foobar: { schema: 'foobar' } };
+                const session = new BaseSession({});
+                const schema = 'foobar';
+                const expected = { schema };
 
-                td.when(sqlStmtExecute('CREATE DATABASE foobar')).thenResolve();
+                session.getSchema = td.function();
+                session._client = Object.assign({}, this._client, { sqlStmtExecute });
 
-                expect(session.connect().then(session => session.createSchema('foobar'))).to.eventually.deep.equal(expected);
+                td.when(session.getSchema(schema)).thenReturn(expected);
+                td.when(sqlStmtExecute(`CREATE DATABASE \`${schema}\``)).thenResolve();
+
+                return expect(session.createSchema(schema)).to.eventually.deep.equal(expected);
             });
         });
 
         context('dropSchema()', () => {
             it('should drop a schema', () => {
-                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
-                const session = (new BaseSession(properties));
+                const session = new BaseSession({});
+                const schema = 'foobar';
 
-                td.when(sqlStmtExecute('DROP DATABASE foobar')).thenResolve();
+                session._client = Object.assign({}, this._client, { sqlStmtExecute });
 
-                expect(session.connect().then(session => session.dropSchema('foobar'))).to.eventually.be.true;
+                td.when(sqlStmtExecute(`DROP DATABASE \`${schema}\``)).thenResolve(true);
+
+                return expect(session.dropSchema(schema)).to.eventually.be.true;
             });
         });
 
         context('dropCollection()', () => {
             it('should try to drop a collection', () => {
-                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
-                const session = (new BaseSession(properties));
+                const session = new BaseSession({});
                 const expected = { ok: true };
                 const dropCollection = td.function();
 
@@ -203,14 +217,13 @@ describe('BaseSession', () => {
                 td.when(dropCollection('qux')).thenResolve(expected);
                 td.when(session.getSchema('baz')).thenReturn({ dropCollection });
 
-                expect(session.connect().then(session => session.dropSchema('baz', 'qux'))).to.eventually.deep.equal(expected);
+                return expect(session.dropCollection('baz', 'qux')).to.eventually.deep.equal(expected);
             });
         });
 
         context('dropTable()', () => {
             it('should try to drop a collection', () => {
-                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
-                const session = (new BaseSession(properties));
+                const session = new BaseSession({});
                 const expected = { ok: true };
                 const dropTable = td.function();
 
@@ -219,7 +232,7 @@ describe('BaseSession', () => {
                 td.when(dropTable('qux')).thenResolve(expected);
                 td.when(session.getSchema('baz')).thenReturn({ dropTable });
 
-                expect(session.connect().then(session => session.dropSchema('baz', 'qux'))).to.eventually.deep.equal(expected);
+                return expect(session.dropTable('baz', 'qux')).to.eventually.deep.equal(expected);
             });
         });
     });
