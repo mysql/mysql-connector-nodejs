@@ -6,8 +6,13 @@
 const BaseQuery = require('lib/DevAPI/BaseQuery');
 const CollectionFind = require('lib/DevAPI/CollectionFind');
 const Result = require('lib/DevAPI/Result');
-const expect = require('chai').expect;
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
 const td = require('testdouble');
+
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
 
 describe('DevAPI Collection Find', () => {
     context('constructor', () => {
@@ -104,7 +109,7 @@ describe('DevAPI Collection Find', () => {
 
             td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
 
-            query.execute().should.eventually.equal(expected);
+            return expect(query.execute()).to.eventually.deep.equal(expected);
         });
 
         it('should include the limit count and offset', () => {
@@ -116,7 +121,7 @@ describe('DevAPI Collection Find', () => {
 
             td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
 
-            query.execute().should.eventually.equal(expected);
+            return expect(query.execute()).to.eventually.deep.equal(expected);
         });
 
         it('should include the bounds', () => {
@@ -128,7 +133,7 @@ describe('DevAPI Collection Find', () => {
 
             td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
 
-            query.execute().should.eventually.equal(expected);
+            return expect(query.execute()).eventually.deep.equal(expected);
         });
     });
 });
