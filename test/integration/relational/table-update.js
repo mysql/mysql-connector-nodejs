@@ -3,7 +3,7 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const fixtures = require('test/integration/fixtures');
+const fixtures = require('test/fixtures');
 
 describe('@integration relational table update', () => {
     let session, schema, table;

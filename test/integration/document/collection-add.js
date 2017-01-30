@@ -3,15 +3,14 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const fixtures = require('test/integration/fixtures');
+const fixtures = require('test/fixtures');
 
 describe('@integration document collection add', () => {
-    let session, schema, collection;
+    let schema, collection;
 
     beforeEach('set context', () => {
         return fixtures.setup().then(suite => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-            session = suite.session;
             schema = suite.schema;
         });
     });
@@ -25,7 +24,7 @@ describe('@integration document collection add', () => {
     });
 
     afterEach('clear context', () => {
-        return fixtures.teardown(session);
+        return fixtures.teardown();
     });
 
     context('with a single call', () => {
@@ -99,7 +98,7 @@ describe('@integration document collection add', () => {
             const promise = schema
                 .dropCollection('test')
                 .then(() => {
-                    return collection.add([]).execute()
+                    return collection.add([]).execute();
                 });
 
             return expect(promise).to.not.be.rejected;

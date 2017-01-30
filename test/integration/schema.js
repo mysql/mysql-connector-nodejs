@@ -2,21 +2,20 @@
 
 /* eslint-env node, mocha */
 
-const fixtures = require('test/integration/fixtures');
+const fixtures = require('test/fixtures');
 
 describe('@integration session schema', () => {
-    let session, schema;
+    let schema;
 
     beforeEach('set context', () => {
         return fixtures.setup().then(suite => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-            session = suite.session;
             schema = suite.schema;
         });
     });
 
     afterEach('clear context', () => {
-        return fixtures.teardown(session);
+        return fixtures.teardown();
     });
 
     it('should allow to create collections', () => {

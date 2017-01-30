@@ -3,16 +3,15 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const fixtures = require('test/integration/fixtures');
+const fixtures = require('test/fixtures');
 
 // TODO(rui.quelhas): extract tests into proper self-contained suites.
 describe('@integration collection miscellaneous tests', () => {
-    let session, schema, collection;
+    let schema, collection;
 
     beforeEach('set context', () => {
         return fixtures.setup().then(suite => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-            session = suite.session;
             schema = suite.schema;
         });
     });
@@ -24,7 +23,7 @@ describe('@integration collection miscellaneous tests', () => {
     });
 
     afterEach('clear context', () => {
-        return fixtures.teardown(session);
+        return fixtures.teardown();
     });
 
     it('should retrieve an existing document from the collection', () => {

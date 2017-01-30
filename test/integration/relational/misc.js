@@ -5,7 +5,7 @@
 const Column = require('lib/DevAPI/Column');
 const config = require('test/properties');
 const expect = require('chai').expect;
-const fixtures = require('test/integration/fixtures');
+const fixtures = require('test/fixtures');
 const mysqlx = require('index');
 
 // TODO(rui.quelhas): extract tests into proper self-contained suites.
@@ -20,7 +20,7 @@ describe('@integration relational miscellaneous tests', () => {
     });
 
     afterEach('clear context', () => {
-        return fixtures.teardown(session);
+        return fixtures.teardown();
     });
 
     context('raw SQL query', () => {

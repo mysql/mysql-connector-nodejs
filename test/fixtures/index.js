@@ -32,10 +32,13 @@ exports.setup = function () {
         });
 };
 
-exports.teardown = function (session) {
-    return session
-        .dropSchema(config.schema)
-        .then(() => {
-            session.close();
+exports.teardown = function () {
+    return mysqlx
+        .getSession(config)
+        .then(session => {
+            return session.dropSchema(config.schema).then(() => session);
+        })
+        .then(session => {
+            return session.close();
         });
 };
