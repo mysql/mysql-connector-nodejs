@@ -37,13 +37,5 @@ GLOBAL.mysqlxtest = {
         }).catch(function (err) {
             done(err);
         });
-    },
-    getNullNodeSession: function (done) {
-        return mysqlx.getNodeSession({
-            authMethod: "NULL",
-            socketFactory: NullStreamFactory
-        }).catch(function (err) {
-            done(err);
-        });
     }
 };

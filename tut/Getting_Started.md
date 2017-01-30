@@ -28,7 +28,7 @@ $ npm install @mysql/xdevapi
 
 ## Getting started:
 
-The upper userspace layer which will follow the X DevAPI. This follows quite 
+The upper userspace layer which will follow the X DevAPI. This follows quite
 closely to what other X enabled connectors should do, but there is an important
 difference: This connector is asynchronous and returns Promises for all network
 operations. Check the [`Promise` reference documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) for more details.
@@ -107,7 +107,7 @@ This means that as soon as we're successfully connected the callback
 provided to the `then()` function will be called. In case of an error the
 exception provided to `catch()` will be called. Mind that the execution
 won't block but those callbacks are called sometime later. Therefore
-we're seeing `"Hello world"` printed before `"connected"`. 
+we're seeing `"Hello world"` printed before `"connected"`.
 
 One important thing is that by this async nature it is easy to "lose"
 errors. For instance, when running this code:
@@ -153,7 +153,7 @@ we received the response from create schema, essentially the close will
 be pipelined by the server. Additionally we're handling the error.
 Another approach, which is taken in the large script above is returning
 the promise returned by `createSchema()` to `getSession()`'s `then()` which
-will in turn trigger the outer catch block. 
+will in turn trigger the outer catch block.
 
 Another technique I'm using in the script above is using Promise.all to
 group operations.
@@ -203,14 +203,14 @@ to be careful to put the `return` statements in, else errors will be
 lost, again.
 
 
-## FAQ 
+## FAQ
 ### SSL/TLS
 
 In order to enable SSL you have to configure the server accordingly and then
-set the ssl option to true. 
+set the ssl option to true.
 
 ```js
-var sessionPromise = xdevapi.getNodeSession({
+var sessionPromise = xdevapi.getSession({
     host: 'localhost',
     port: 33060,
     dbUser: 'root',
@@ -225,7 +225,7 @@ SSL options from [your platform](https://nodejs.org/api/tls.html#tls_new_tls_tls
 Currently, there is out-of-the-box support for validating a server certificate against a CA (Certificate Authority) and/or a CRL (Certificate Revocation List), so in that case, you just need to provide the path to the respective [PEM-encoded X.509](https://tools.ietf.org/html/rfc5280) files like so:
 
 ```js
-var sessionPromise = xdevapi.getNodeSession({
+var sessionPromise = xdevapi.getSession({
     host: 'localhost',
     port: 33060,
     dbUser: 'root',
@@ -236,7 +236,7 @@ var sessionPromise = xdevapi.getNodeSession({
         crl: 'path/to/crl.pem'
     }
 });
-``` 
+```
 
 ### Authentication
 
@@ -244,7 +244,7 @@ By default the `MYSQL41` password mechanism is used. The connector also supports
 `PLAIN` password transfer (only when using SSL)
 
 ```js
-var sessionPromise = xdevapi.getNodeSession({
+var sessionPromise = xdevapi.getSession({
     host: 'localhost',
     port: 33060,
     dbUser: 'root',
@@ -253,7 +253,7 @@ var sessionPromise = xdevapi.getNodeSession({
     authMethod: 'PLAIN'
 });
 ```
-By implementing the {@link IAuthenticator} interface a user can also provide custom 
+By implementing the {@link IAuthenticator} interface a user can also provide custom
 authentication mechanisms.
 
 ### URIs and connection strings
@@ -262,16 +262,16 @@ Besides creating sessions with a configuration object, one can also resort to a 
 
 ```js
 // RFC 3986
-var sessionPromise = xdevapi.getNodeSession('mysqlx://root@localhost:33060');
+var sessionPromise = xdevapi.getSession('mysqlx://root@localhost:33060');
 
 // Simplified connection strings
-var sessionPromise = xdevapi.getNodeSession('root@localhost:33060');
+var sessionPromise = xdevapi.getSession('root@localhost:33060');
 ```
 
 ### Script hangs
 
 If you run a custom script and it hangs most likely you didn't close your
-session using [`session.close()`]{@link BaseSession#close} as Node.JS doesn't
+session using [`session.close()`]{@link Session#close} as Node.JS doesn't
 terminate a script as long as a connection is open. This is often caused by an
 error which wasn't handled properly. Check your script for code paths where
 a `Promise` has no `catch` routine defined or where no `close` happens

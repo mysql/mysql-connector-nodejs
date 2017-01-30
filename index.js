@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  *
  * MySQL Connector/Node.js is licensed under the terms of the GPLv2
  * <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
@@ -24,12 +24,11 @@
  * 02110-1301  USA
  */
 
-"use strict";
+'use strict';
 
-const XSession = require('./lib/DevAPI/XSession'),
-    NodeSession = require('./lib/DevAPI/NodeSession'),
-    Expressions = require('./lib/Expressions'),
-    Authentication = require('./lib/Authentication');
+const Session = require('./lib/DevAPI/Session');
+const Expressions = require('./lib/Expressions');
+const Authentication = require('./lib/Authentication');
 
 /**
  * MySQL X module
@@ -40,21 +39,10 @@ const XSession = require('./lib/DevAPI/XSession'),
 /**
  *
  * @param {Properties} properties
- * @returns {Promise.<XSession>}
+ * @returns {Promise.<Session>}
  */
 exports.getSession = function (properties) {
-    const session = new XSession(properties);
-    return session.connect();
-};
-
-/**
- *
- * @param {Properties} properties
- * @returns {Promise.<NodeSession>}
- */
-exports.getNodeSession = function (properties) {
-    const session = new NodeSession(properties);
-    return session.connect();
+    return (new Session(properties)).connect();
 };
 
 /**
@@ -83,8 +71,6 @@ exports.getAuthMethods = function () {
  *
  * @return {String}
  */
-exports.getVersion = function() {
-    return require("./package").version;
+exports.getVersion = function () {
+    return require('./package').version;
 };
-
-exports.mysqlx = exports;

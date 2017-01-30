@@ -13,7 +13,7 @@ describe('@integration relational miscellaneous tests', () => {
     let session;
 
     beforeEach('set context', () => {
-        return mysqlx.getNodeSession(config).then(s => {
+        return mysqlx.getSession(config).then(s => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             session = s;
         });

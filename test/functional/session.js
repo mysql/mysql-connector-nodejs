@@ -26,7 +26,7 @@ describe('@functional server connection', () => {
             const secureConfig = Object.assign({}, config, { ssl: true, sslOptions: { ca, servername } });
 
             return mysqlx
-                .getNodeSession(secureConfig)
+                .getSession(secureConfig)
                 .then(result => expect(result.inspect()).to.have.property('ssl', true));
         });
 
@@ -38,7 +38,7 @@ describe('@functional server connection', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'non-authoritative-ca.pem');
             const secureConfig = Object.assign({}, config, { ssl: true, sslOptions: { ca, servername } });
 
-            return expect(mysqlx.getNodeSession(secureConfig)).to.eventually.be.rejected.then(err => {
+            return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejected.then(err => {
                 // FIXME(Rui): with an intermediate CA, the error code should be 'UNABLE_TO_GET_ISSUER_CERT'.
                 expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
             });
@@ -50,7 +50,7 @@ describe('@functional server connection', () => {
             const secureConfig = Object.assign({}, config, { ssl: true, sslOptions: { ca, crl, servername } });
 
             return mysqlx
-                .getNodeSession(secureConfig)
+                .getSession(secureConfig)
                 .then(result => expect(result.inspect()).to.have.property('ssl', true));
         });
 
@@ -59,7 +59,7 @@ describe('@functional server connection', () => {
             const crl = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'crl.pem');
             const secureConfig = Object.assign({}, config, { ssl: true, sslOptions: { ca, crl, servername } });
 
-            return expect(mysqlx.getNodeSession(secureConfig)).to.eventually.be.rejected.then(err => {
+            return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejected.then(err => {
                 expect(err.code).to.equal('CERT_REVOKED');
             });
         });

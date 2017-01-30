@@ -2,133 +2,95 @@
 
 /* eslint-env node, mocha */
 
-const BaseSession = require('lib/DevAPI/BaseSession');
-const expect = require('chai').expect;
+const Session = require('lib/DevAPI/Session');
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
 const mysqlx = require('index');
 
-describe('@integration server connection', () => {
-    context('single server running the X plugin', () => {
-        context('using a configuration object', () => {
-            it('should connect to the server in a new session', () => {
-                return mysqlx.getNodeSession(config).should.be.fulfilled;
-            });
+chai.use(chaiAsPromised);
 
-            it('should connect to the server with an IPv6 host', () => {
-                const ipv6Config = Object.assign({}, config, { host: '::1' });
+const expect = chai.expect;
 
-                return mysqlx.getNodeSession(ipv6Config).should.be.fulfilled;
-            });
-
-            it('should not connect if the credentials are invalid', () => {
-                const invalidConfig = Object.assign({}, config, {
-                    dbUser: 'invalid user',
-                    dbPassword: 'invalid password'
-                });
-
-                return mysqlx.getNodeSession(invalidConfig).should.be.rejected;
-            });
+describe('@integration X plugin session', () => {
+    context('using a configuration object', () => {
+        it('should connect to the server in a new session', () => {
+            return expect(mysqlx.getSession(config)).to.be.fulfilled;
         });
 
-        context('using a RFC-3986 URI', () => {
-            it('should connect to the server with an IPv6 host', () => {
-                const ipv6Config = Object.assign({}, config, { host: '::1' });
-                // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-                const uri = `mysqlx://${ipv6Config.dbUser}:${ipv6Config.dbPassword}@[${ipv6Config.host}]:${ipv6Config.port}`;
-                const expected = { dbUser: ipv6Config.dbUser, host: ipv6Config.host, port: ipv6Config.port };
+        it('should connect to the server with an IPv6 host', () => {
+            const ipv6Config = Object.assign({}, config, { host: '::1' });
 
-                return mysqlx.getNodeSession(uri).then(result => {
-                    expect(result).to.be.an.instanceof(BaseSession);
-                    expect(result.inspect()).to.deep.equal(expected);
-                });
-            });
-
-            it('should connect to the server in the default port', () => {
-                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}`;
-
-                return mysqlx
-                    .getNodeSession(uri)
-                    .then(result => expect(result.inspect()).to.include({ port: config.port }));
-            });
-
-            it('should connect to the server using SSL/TLS', () => {
-                // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}/?ssl-enable`;
-
-                return mysqlx
-                    .getNodeSession(uri)
-                    .then(result => expect(result.inspect()).to.have.property('ssl', true));
-            });
+            return expect(mysqlx.getSession(ipv6Config)).to.be.fulfilled;
         });
 
-        context('using an unified connection string', () => {
-            it('should connect to the server with a string containing all the connection details', () => {
-                // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}:${config.port}/${config.schema}`;
-
-                return mysqlx
-                    .getNodeSession(uri)
-                    .then(session => session.getSchemas())
-                    .then(result => expect(result).to.include.keys(config.schema));
+        it('should not connect if the credentials are invalid', () => {
+            const invalidConfig = Object.assign({}, config, {
+                dbUser: 'invalid user',
+                dbPassword: 'invalid password'
             });
-        });
 
-        context('using an unified connection string', () => {
-            it('should connect to the server with a string containing all the connection details', () => {
-                // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@[${config.host}]:${config.port}/${config.schema}`;
-
-                return mysqlx
-                    .getNodeSession(uri)
-                    .then(session => session.getSchemas())
-                    .then(result => expect(result).to.include.keys(config.schema));
-            });
+            return expect(mysqlx.getSession(invalidConfig)).to.be.rejected;
         });
     });
 
-    context('server cluster abstraction', () => {
-        context('using a configuration object', () => {
-            it('should connect to the server in a new session', () => {
-                return mysqlx.getSession(config).should.be.fulfilled;
-            });
+    context('using a RFC-3986 URI', () => {
+        it('should connect to the server with an IPv6 host', () => {
+            const ipv6Config = Object.assign({}, config, { host: '::1' });
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `mysqlx://${ipv6Config.dbUser}:${ipv6Config.dbPassword}@[${ipv6Config.host}]:${ipv6Config.port}`;
+            const expected = { dbUser: ipv6Config.dbUser, host: ipv6Config.host, port: ipv6Config.port };
 
-            it('should connect to the server with an IPv6 host', () => {
-                const ipv6Config = Object.assign({}, config, { host: '::1' });
-
-                return mysqlx.getSession(ipv6Config).should.be.fulfilled;
-            });
-
-            it('should not connect if the credentials are invalid', () => {
-                const invalidConfig = Object.assign({}, config, {
-                    dbUser: 'invalid user',
-                    dbPassword: 'invalid password'
-                });
-
-                return mysqlx.getSession(invalidConfig).should.be.rejected;
+            return mysqlx.getSession(uri).then(result => {
+                expect(result).to.be.an.instanceof(Session);
+                expect(result.inspect()).to.deep.equal(expected);
             });
         });
 
-        context('using a RFC-3986 URI', () => {
-            it('should connect to the server with an IPv6 host', () => {
-                const ipv6Config = Object.assign({}, config, { host: '::1' });
-                // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-                const uri = `mysqlx://${ipv6Config.dbUser}:${ipv6Config.dbPassword}@[${ipv6Config.host}]:${ipv6Config.port}`;
-                const expected = { dbUser: ipv6Config.dbUser, host: ipv6Config.host, port: ipv6Config.port };
+        it('should connect to the server in the default port', () => {
+            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}`;
 
-                return mysqlx.getSession(uri).then(result => {
-                    expect(result).to.be.an.instanceof(BaseSession);
-                    expect(result.inspect()).to.deep.equal(expected);
-                });
-            });
+            return mysqlx
+                .getSession(uri)
+                .then(result => expect(result.inspect()).to.include({ port: config.port }));
+        });
 
-            it('should connect to the server using SSL/TLS', () => {
-                // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-                const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}?ssl-enable`;
+        it('should connect to the server using SSL/TLS', () => {
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}/?ssl-enable`;
 
-                return mysqlx
-                    .getNodeSession(uri)
-                    .then(result => expect(result.inspect()).to.have.property('ssl', true));
-            });
+            return mysqlx
+                .getSession(uri)
+                .then(result => expect(result.inspect()).to.have.property('ssl', true));
+        });
+    });
+
+    context('using an unified connection string', () => {
+        it('should connect to the server with a string containing all the connection details', () => {
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `${config.dbUser}:${config.dbPassword}@${config.host}:${config.port}/${config.schema}`;
+
+            return mysqlx
+                .getSession(uri)
+                .then(session => session.getSchemas())
+                .then(result => expect(result).to.include.keys(config.schema));
+        });
+
+        it('should connect to the server in the default port', () => {
+            const uri = `${config.dbUser}:${config.dbPassword}@${config.host}`;
+
+            return mysqlx
+                .getSession(uri)
+                .then(result => expect(result.inspect()).to.include({ port: config.port }));
+        });
+
+        it('should connect to the server using SSL/TLS', () => {
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `${config.dbUser}:${config.dbPassword}@${config.host}/?ssl-enable`;
+
+            return mysqlx
+                .getSession(uri)
+                .then(result => expect(result.inspect()).to.have.property('ssl', true));
         });
     });
 });

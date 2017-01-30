@@ -2,7 +2,7 @@
 
 /* eslint-env node, mocha */
 
-const BaseSession = require('lib/DevAPI/BaseSession');
+const Session = require('lib/DevAPI/Session');
 const Client = require('lib/Protocol/Client');
 const Duplex = require('stream').Duplex;
 const Schema = require('lib/DevAPI/Schema');
@@ -14,7 +14,7 @@ chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
-describe('BaseSession', () => {
+describe('Session', () => {
     let clientProto, sqlStmtExecute;
 
     beforeEach('create fakes', () => {
@@ -34,29 +34,29 @@ describe('BaseSession', () => {
         it('should override the idGenerator function with a custom one', () => {
             const expected = { foo: 'bar' };
             const idGenerator = () => expected;
-            const session = new BaseSession({ idGenerator });
+            const session = new Session({ idGenerator });
 
             expect(session.idGenerator()).to.deep.equal(expected);
         });
 
         it('should throw an error if the properties are not provided', () => {
-            expect(() => new BaseSession()).to.throw(Error);
+            expect(() => new Session()).to.throw(Error);
         });
 
         it('should throw an error if the port is not in the appropriate range', () => {
-            [-1, 65537].forEach(port => expect(() => new BaseSession({ port })).to.throw('Port must be between 0 and 65536'));
+            [-1, 65537].forEach(port => expect(() => new Session({ port })).to.throw('Port must be between 0 and 65536'));
         });
     });
 
     context('getSchema()', () => {
         it('should return a Schema instance', () => {
-            const schema = (new BaseSession({})).getSchema('foobar');
+            const schema = (new Session({})).getSchema('foobar');
 
             expect(schema).to.be.an.instanceof(Schema);
         });
 
         it('should return a schema with the given name', () => {
-            const schema = (new BaseSession({})).getSchema('foobar');
+            const schema = (new Session({})).getSchema('foobar');
 
             expect(schema.getName()).to.equal('foobar');
         });
@@ -80,7 +80,7 @@ describe('BaseSession', () => {
         context('connect()', () => {
             it('should return a clean object with the session properties', () => {
                 const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
-                const session = new BaseSession(properties);
+                const session = new Session(properties);
                 const expected = { dbUser: 'foo' };
 
                 td.when(capabilitiesGet()).thenResolve();
@@ -91,7 +91,7 @@ describe('BaseSession', () => {
             it('should close the internal stream if there is an error', () => {
                 // Not providing credentials should result in an authentication error.
                 const properties = { socketFactory: { createSocket } };
-                const session = new BaseSession(properties);
+                const session = new Session(properties);
                 const stream = new Duplex();
 
                 stream.end = td.function();
@@ -114,7 +114,7 @@ describe('BaseSession', () => {
 
                 it('should be able to setup a SSL/TLS connection', () => {
                     const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: true };
-                    const session = new BaseSession(properties);
+                    const session = new Session(properties);
                     const expected = { foo: 'bar' };
 
                     td.when(enableSSL({})).thenResolve();
@@ -127,7 +127,7 @@ describe('BaseSession', () => {
 
                 it('should not try to setup a SSL/TLS connection if no such intent is specified', () => {
                     const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
-                    const session = new BaseSession(properties);
+                    const session = new Session(properties);
 
                     td.when(capabilitiesGet()).thenResolve();
 
@@ -139,7 +139,7 @@ describe('BaseSession', () => {
 
                 it('should fail if an error is thrown in the SSL setup', () => {
                     const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: true };
-                    const session = new BaseSession(properties);
+                    const session = new Session(properties);
 
                     td.when(enableSSL({})).thenReject(new Error());
                     td.when(capabilitiesGet()).thenResolve({ foo: 'bar' });
@@ -151,7 +151,7 @@ describe('BaseSession', () => {
 
                 it('should pass down any custom SSL/TLS-related option', () => {
                     const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, sslOptions: { foo: 'bar' } };
-                    const session = new BaseSession(properties);
+                    const session = new Session(properties);
 
                     td.when(enableSSL({ foo: 'bar' })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve();
@@ -163,7 +163,7 @@ describe('BaseSession', () => {
 
         context('getSchemas()', () => {
             it('should return an object with the existing schemas', () => {
-                const session = new BaseSession({});
+                const session = new Session({});
                 const schema = 'foobar';
                 const expected = { foobar: { schema } };
 
@@ -179,7 +179,7 @@ describe('BaseSession', () => {
 
         context('createSchema()', () => {
             it('should create and return a new schema', () => {
-                const session = new BaseSession({});
+                const session = new Session({});
                 const schema = 'foobar';
                 const expected = { schema };
 
@@ -195,7 +195,7 @@ describe('BaseSession', () => {
 
         context('dropSchema()', () => {
             it('should drop a schema', () => {
-                const session = new BaseSession({});
+                const session = new Session({});
                 const schema = 'foobar';
 
                 session._client = Object.assign({}, this._client, { sqlStmtExecute });
@@ -208,7 +208,7 @@ describe('BaseSession', () => {
 
         context('dropCollection()', () => {
             it('should try to drop a collection', () => {
-                const session = new BaseSession({});
+                const session = new Session({});
                 const expected = { ok: true };
                 const dropCollection = td.function();
 
@@ -223,7 +223,7 @@ describe('BaseSession', () => {
 
         context('dropTable()', () => {
             it('should try to drop a collection', () => {
-                const session = new BaseSession({});
+                const session = new Session({});
                 const expected = { ok: true };
                 const dropTable = td.function();
 
@@ -239,7 +239,7 @@ describe('BaseSession', () => {
 
     context('idGenerator()', () => {
         it('should generate an UUID in the apropriate format', () => {
-            const uuid = (new BaseSession({})).idGenerator();
+            const uuid = (new Session({})).idGenerator();
 
             expect(uuid).to.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{8}$/);
         });
