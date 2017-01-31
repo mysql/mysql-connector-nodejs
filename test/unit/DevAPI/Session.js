@@ -244,4 +244,17 @@ describe('Session', () => {
             expect(uuid).to.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{8}$/);
         });
     });
+
+    context('sql()', () => {
+        it('should call `executeSQL()`', () => {
+            const session = new Session({});
+            const executeSql = td.function();
+
+            session.executeSql = executeSql;
+
+            td.when(executeSql('foo')).thenReturn('bar');
+
+            expect(session.sql('foo')).to.equal('bar');
+        });
+    });
 });
