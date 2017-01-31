@@ -2,10 +2,11 @@
 
 /* eslint-env node, mocha */
 
-const Session = require('lib/DevAPI/Session');
 const Client = require('lib/Protocol/Client');
 const Duplex = require('stream').Duplex;
 const Schema = require('lib/DevAPI/Schema');
+const Session = require('lib/DevAPI/Session');
+const Statement = require('lib/DevAPI/Statement');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const td = require('testdouble');
@@ -242,6 +243,45 @@ describe('Session', () => {
             const uuid = (new Session({})).idGenerator();
 
             expect(uuid).to.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{8}$/);
+        });
+    });
+
+    context('executeSql()', () => {
+        it('should return an instance of Statement', () => {
+            const session = new Session({});
+
+            expect(session.executeSql('foo')).to.be.an.instanceOf(Statement);
+        });
+
+        it('should create a Statement using the session client', () => {
+            const session = new Session({});
+
+            session._client = 'foo';
+
+            const statement = session.executeSql();
+
+            expect(statement._client).to.equal('foo');
+        });
+
+        it('should create a Statement using the provided query', () => {
+            const session = new Session({});
+            const statement = session.executeSql('foo');
+
+            expect(statement._query).to.equal('foo');
+        });
+
+        it('should create a Statement using the data provided as arguments', () => {
+            const session = new Session({});
+            const statement = session.executeSql('foo', 'bar', 'baz');
+
+            expect(statement._args).to.deep.equal(['bar', 'baz']);
+        });
+
+        it('should create a Statement using the data provided as an array', () => {
+            const session = new Session({});
+            const statement = session.executeSql('foo', ['bar', 'baz']);
+
+            expect(statement._args).to.deep.equal(['bar', 'baz']);
         });
     });
 
