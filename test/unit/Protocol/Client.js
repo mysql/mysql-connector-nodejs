@@ -70,15 +70,17 @@ describe('Client', () => {
     });
 
     context('enableSSL()', () => {
-        let FakeClient, connect, parseX509Bundle, readFile;
+        let FakeClient, connect, getServerCipherSuite, parseX509Bundle, readFile;
 
         beforeEach('create fakes', () => {
             connect = td.function();
             readFile = td.function();
+            getServerCipherSuite = td.function();
             parseX509Bundle = td.function();
 
             FakeClient = proxyquire('lib/Protocol/Client', {
                 './Util/parseX509Bundle': parseX509Bundle,
+                './Util/getServerCipherSuite': getServerCipherSuite,
                 '../Adapters/fs': { readFile },
                 tls: { connect }
             });
@@ -91,9 +93,36 @@ describe('Client', () => {
             client.capabilitiesSet = td.function();
 
             td.when(client.capabilitiesSet({ tls: true })).thenResolve();
-            td.when(connect({ rejectUnauthorized: false, socket: stream }, td.callback())).thenReturn(stream);
+            td.when(connect(td.matchers.contains({ rejectUnauthorized: false, socket: stream }), td.callback())).thenReturn(stream);
 
             return expect(client.enableSSL({})).to.eventually.be.true;
+        });
+
+        it('should use the server cipher suite by default', () => {
+            const stream = { on };
+            const client = new FakeClient(stream);
+
+            client.capabilitiesSet = td.function();
+
+            td.when(getServerCipherSuite()).thenReturn('foo:bar:!baz');
+            td.when(client.capabilitiesSet({ tls: true })).thenResolve();
+            td.when(connect({ ciphers: 'foo:bar:!baz', rejectUnauthorized: false, socket: stream }, td.callback())).thenReturn(stream);
+
+            return expect(client.enableSSL({})).to.eventually.be.true;
+        });
+
+        // TODO(Rui): this will change for a future milestone.
+        it('should use the server cipher suite even if a custom one is provided', () => {
+            const stream = { on };
+            const client = new FakeClient(stream);
+
+            client.capabilitiesSet = td.function();
+
+            td.when(getServerCipherSuite()).thenReturn('foo:bar:!baz');
+            td.when(client.capabilitiesSet({ tls: true })).thenResolve();
+            td.when(connect({ ciphers: 'foo:bar:!baz', rejectUnauthorized: false, socket: stream }, td.callback())).thenReturn(stream);
+
+            return expect(client.enableSSL({ ciphers: 'qux:!quux' })).to.eventually.be.true;
         });
 
         it('should enable server certificate authority validation if requested', () => {
@@ -105,7 +134,7 @@ describe('Client', () => {
             td.when(readFile('foobar', 'ascii')).thenResolve('--base64Giberish--');
             td.when(parseX509Bundle('--base64Giberish--')).thenReturn(['foo']);
             td.when(client.capabilitiesSet({ tls: true })).thenResolve();
-            td.when(connect({ ca: ['foo'], rejectUnauthorized: true, socket: stream }, td.callback())).thenReturn(stream);
+            td.when(connect(td.matchers.contains({ ca: ['foo'], rejectUnauthorized: true, socket: stream }), td.callback())).thenReturn(stream);
 
             return expect(client.enableSSL({ ca: 'foobar' })).to.eventually.be.true;
         });
@@ -120,7 +149,7 @@ describe('Client', () => {
             td.when(readFile('bazqux', 'ascii')).thenResolve('foo');
             td.when(parseX509Bundle('--base64Giberish--')).thenReturn(['bar']);
             td.when(client.capabilitiesSet({ tls: true })).thenResolve();
-            td.when(connect({ ca: ['bar'], crl: 'foo', rejectUnauthorized: true, socket: stream }, td.callback())).thenReturn(stream);
+            td.when(connect(td.matchers.contains({ ca: ['bar'], crl: 'foo', rejectUnauthorized: true, socket: stream }), td.callback())).thenReturn(stream);
 
             return expect(client.enableSSL({ ca: 'foobar', crl: 'bazqux' })).to.eventually.be.true;
         });
@@ -132,14 +161,16 @@ describe('Client', () => {
 
             client.capabilitiesSet = td.function();
 
+            td.when(getServerCipherSuite()).thenReturn('foo:bar:!baz');
             td.when(client.capabilitiesSet({ tls: true })).thenResolve();
 
             const expected = {
-                socket: stream,
-                rejectUnauthorized: false
+                ciphers: 'foo:bar:!baz',
+                rejectUnauthorized: false,
+                socket: stream
             };
 
-            // The custom matcher makes sure the options do not contain `crl: undefined`. 
+            // The custom matcher makes sure the options do not contain `crl: undefined`.
             td.when(connect(td.matchers.argThat(options => isEqual(options, expected)), td.callback())).thenReturn(stream);
 
             return expect(client.enableSSL({ crl: 'foobar' })).to.eventually.be.true;
