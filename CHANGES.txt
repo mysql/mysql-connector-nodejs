@@ -3,10 +3,21 @@ MySQL Connector/Node.JS 1.0 - Release Notes & Changes
 =====================================================
 
 MySQL Connector/Node.JS
-Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
+
+v1.0.6
+======
+
+- Added support for single array or multiple argument function calls on the public API
+- Updated behavior of `collection.add([])` to avoid confusing exceptions
+- Fixed issues with `collection.bind()`
+- Fixed parsing issues on URI and connection string corner-cases
+- Added support for creating IPv6 sessions with a URI or connection string
+- Added support for creating TLS sessions with a URI or connection string
+- Added support for validating the server certificate with a given CA and/or CRL
 
 v1.0.5
 ======
@@ -35,4 +46,3 @@ v1.0.2
 
 - Initial public release
 - Support for X DevAPI 1.0.4
-

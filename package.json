@@ -1,8 +1,12 @@
 {
   "name": "@mysql/xdevapi",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "MySQL Connector/Node.JS - A Node.JS driver for MySQL using the X Protocol and X DevAPI.",
   "author": "Johannes Schlüter <johannes.schlueter@oracle.com>",
+  "contributors": [{
+    "name": "Rui Quelhas",
+    "email": "rui.quelhas@oracle.com"
+  }],
   "license": "GPL-2.0",
   "files": [
     "README.md",
@@ -23,8 +27,7 @@
   "bugs": {
     "url": "http://bugs.mysql.com"
   },
-  "scripts": {
-  },
+  "scripts": {},
   "dependencies": {},
   "engines": {
     "node": ">=4.2.0"

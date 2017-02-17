@@ -19,7 +19,7 @@ This library requires at least Node.js 4.2.x and MySQL 5.7.12.
 
 This library is organized in a way that it can be installed using Node.js's npm
 tool into your project:
-  `npm install mysql-connector-nodejs-1.0.4.tar.gz`
+  `npm install mysql-connector-nodejs-1.0.6.tar.gz`
 or directly from npmjs.com:
   `npm install @mysql/xdevapi`
 Please refer to http://npmjs.com for more information on npm.
