@@ -1,8 +1,7 @@
-MySQL Connector/Node.js with X DevAPI
-=====================================
+# MySQL Connector/Node.js with X DevAPI
 
 The Node.js Connector is an asynchronous promise-based client library for the
-X DevAPI and he X Protocol that was introduced in MySQL 5.7.12.
+X DevAPI (using the X Protocol) that was introduced in MySQL 5.7.12.
 
 MySQL 5.7 is an open-source relational database that is secure, high
 performing, and easy to use. The X DevAPI supports relational tables and JSON 
@@ -10,65 +9,91 @@ documents making it possible to use both tables and collections at the same
 time.
 
 For general information about the X DevAPI, please refer to documentation on
-http://dev.mysql.com/doc/x-devapi-userguide/en/
+http://dev.mysql.com/doc/x-devapi-userguide/en/.
 
-Requirements
-------------
-This library requires at least Node.js 4.2 and MySQL 5.7.12.
+## Requirements
 
-Installation
-------------
+This library requires at least Node.js 4.2.x and MySQL 5.7.12.
+
+## Installation
+
 This library is organized in a way that it can be installed using Node.js's npm
 tool into your project:
   `npm install mysql-connector-nodejs-1.0.4.tar.gz`
-or diectly from npmjs.com:
+or directly from npmjs.com:
   `npm install @mysql/xdevapi`
 Please refer to http://npmjs.com for more information on npm.
 
-Getting Started
----------------
-A simple JavaScript file using this library follows:
+## Getting Started
 
+Here's a small example of how to leverage the library using MySQL as a document-store.
 
-    const xdevapi = require('@mysql/xdevapi');
+```js
+const mysql = require('@mysql/xdevapi');
 
-    xdevapi.getSession({
+mysql
+    .getSession({
         host: 'localhost',
         port: 33060,
-        dbUser: 'root',
-        dbPassword: ''
-    }).then(function (session) {
-        return session.createSchema("test_schema").then(function (schema) {
-            return schema.createCollection("myCollection");
-        }).then(function (collection) {
-            return Promise.all([
-                collection.add(
-                    {baz: { foo: "bar"}},
-                    {foo: { bar: "baz"}}
-                ).execute(),
-                collection.find("$.baz.foo == 'bar'").execute(function (row) {
-                    console.log("Row: %j", row);
-                }).then(function (res) {
-                    console.log("Collection find done!");
+        dbUser: 'user',
+        dbPassword: 'passwd'
+    })
+    .then(session => {
+        console.log('Session created');
+        
+        return session.createSchema('test_schema');
+    })
+    .then(schema => {
+        console.log('Schema created');
+        
+        return schema.createCollection('myCollection');
+    })
+    .then(collection => {
+        console.log('Collection created')
+        
+        return Promise.all([
+            collection
+                .add({ baz: { foo: 'bar' } }, { foo: { bar: 'baz' } })
+                .execute(),
+            collection
+                .find("$.baz.foo == 'bar'")
+                .execute(row => {
+                    console.log('Found row: %j', row);
+                })
+                .then(res => {
+                    console.log('Collection find finished');
                 }),
-                collection.remove("($.foo.bar) == 'baz'").execute().then(function () {
-                    console.log("Document deleted");
+            collection
+                .remove("($.foo.bar) == 'baz'")
+                .execute()
+                .then(() => {
+                    console.log('Document deleted');
                 }),
-                collection.drop()
-            ]);
-        }).then(function () {
-            return session.dropSchema("test_schema");
-        }).then(function () {
-            return session.close();
-        });
-    }).catch(function (err) {
+            collection
+                .drop()
+                .then(() => {
+                    console.log('Collection deleted');
+                })
+        ]);
+    })
+    .then(() => {
+        return session.dropSchema('test_schema');
+    })
+    .then(() => {
+        console.log('Schema deleted');
+
+        return session.close();
+    })
+    .then(() => {
+        console.log('Session destroyed');
+    })
+    .catch(err => {
         console.log(err.stack);
-        process.exit();
     });
+```
 
+## License
 
-License
--------
 This is a release of MySQL Connector for Node.js, Oracle's dual-
 license Node.js Driver for MySQL. For the avoidance of
 doubt, this particular copy of the software is released
@@ -76,7 +101,7 @@ under the version 2 of the GNU General Public License.
 
 MySQL Connector for Node.js is brought to you by Oracle.
 
-Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 
 License information can be found in the COPYING file.
 
@@ -113,8 +138,8 @@ that GPLv2 or any later version may be used, or where a choice
 of which version of the GPL is applied is otherwise unspecified.
 
 
-APPENDIX: Licenses for Third-Party Components
----------------------------------------------
+## APPENDIX: Licenses for Third-Party Components
+
 ### protobuf.js
 
 Use of any of this software is governed by the terms of
@@ -140,5 +165,3 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
 ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
 CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
