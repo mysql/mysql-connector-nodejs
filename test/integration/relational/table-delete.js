@@ -5,7 +5,7 @@
 const expect = require('chai').expect;
 const fixtures = require('test/integration/fixtures');
 
-describe('@slow relational table delete', () => {
+describe('@integration relational table delete', () => {
     let session, schema, table;
 
     beforeEach('set context', () => {
