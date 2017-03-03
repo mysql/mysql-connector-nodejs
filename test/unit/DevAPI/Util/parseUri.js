@@ -51,19 +51,19 @@ describe('parseUri', () => {
             expect(parseUri('mysqlx://user:password@[a1:a2:a3:a4:a5:a6:a7:a8]:3357')).to.deep.equal(expected);
         });
 
-        it('should parse a connection string containing just the hostname', () => {
+        it('should parse an URI containing just the hostname', () => {
             const expected = { host: 'server.example.com' };
 
             expect(parseUri('mysqlx://server.example.com')).to.deep.equal(expected);
         });
 
-        it('should parse a connection string containing just the IPv4 address', () => {
+        it('should parse an URI string containing just the IPv4 address', () => {
             const expected = { host: '127.0.0.1' };
 
             expect(parseUri('mysqlx://127.0.0.1')).to.deep.equal(expected);
         });
 
-        it('should parse a connection string containing just the IPv6 address', () => {
+        it('should parse an URI containing just the IPv6 address', () => {
             const expected = { host: 'a1:b2:c4:d4:e5:f6' };
 
             expect(parseUri('mysqlx://[a1:b2:c4:d4:e5:f6]')).to.deep.equal(expected);
@@ -104,7 +104,7 @@ describe('parseUri', () => {
                 expect(parseUri('mysqlx://user:password@hostname/?ssl-enable')).to.deep.equal(expected);
             });
 
-            it('should parse a URI with encoded paths to validation PEM files', () => {
+            it('should parse an URI with encoded paths to validation PEM files', () => {
                 const expected = {
                     dbUser: 'user',
                     dbPassword: 'password',
@@ -119,7 +119,7 @@ describe('parseUri', () => {
                 expect(parseUri('mysqlx://user:password@hostname?ssl-ca=%2Fpath%2Fto%2Fca&ssl-crl=%2Fpath%2Fto%2Fcrl')).to.deep.equal(expected);
             });
 
-            it('should parse a URI with custom paths to validation PEM files', () => {
+            it('should parse an URI with custom paths to validation PEM files', () => {
                 const expected = {
                     dbUser: 'user',
                     dbPassword: 'password',
