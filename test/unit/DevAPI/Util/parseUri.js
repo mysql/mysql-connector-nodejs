@@ -72,9 +72,9 @@ describe('parseUri', () => {
         });
 
         it('should parse an URI containing just the IPv6 address', () => {
-            const expected = { endpoints: [{ host: 'a1:b2:c4:d4:e5:f6' }] };
+            const expected = { endpoints: [{ host: 'a1:b2:c4:d4:e5:f6:a7:b8' }] };
 
-            expect(parseUri('mysqlx://[a1:b2:c4:d4:e5:f6]')).to.deep.equal(expected);
+            expect(parseUri('mysqlx://[a1:b2:c4:d4:e5:f6:a7:b8]')).to.deep.equal(expected);
         });
 
         it('should parse an URI with an empty path', () => {
@@ -102,6 +102,17 @@ describe('parseUri', () => {
             };
 
             expect(parseUri('mysqlx://user:password@hostname:3357/schema')).to.deep.equal(expected);
+        });
+
+        it('should parse a URI with an invalid port type (validation is done somewhere else)', () => {
+            const expected = {
+                endpoints: [{
+                    host: 'hostname',
+                    port: 'foobar'
+                }]
+            };
+
+            expect(parseUri('mysqlx://hostname:foobar')).to.deep.equal(expected);
         });
 
         context('route failover', () => {
@@ -248,9 +259,8 @@ describe('parseUri', () => {
             });
         });
 
-        // TODO(Rui): does this test make any sense?
-        it.skip('should throw an error if the host is not valid', () => {
-            expect(() => parseUri('mysqlx://')).to.throw(Error);
+        it('should throw an error if the host is not valid', () => {
+            expect(() => parseUri('mysql#x')).to.throw(Error, 'Invalid URI');
         });
     });
 
@@ -314,9 +324,20 @@ describe('parseUri', () => {
         });
 
         it('should parse a connection string containing just the IPv6 address', () => {
-            const expected = { endpoints: [{ host: 'a1:b2:c4:d4:e5:f6' }] };
+            const expected = { endpoints: [{ host: 'a1:b2:c4:d4:e5:f6:a7:b8' }] };
 
-            expect(parseUri('[a1:b2:c4:d4:e5:f6]')).to.deep.equal(expected);
+            expect(parseUri('[a1:b2:c4:d4:e5:f6:a7:b8]')).to.deep.equal(expected);
+        });
+
+        it('should parse a URI with an invalid port type (validation is done somewhere else)', () => {
+            const expected = {
+                endpoints: [{
+                    host: 'hostname',
+                    port: 'foobar'
+                }]
+            };
+
+            expect(parseUri('hostname:foobar')).to.deep.equal(expected);
         });
 
         context('route failover', () => {
