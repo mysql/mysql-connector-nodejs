@@ -63,6 +63,18 @@ describe('@integration X plugin session', () => {
                 .getSession(uri)
                 .then(result => expect(result.inspect()).to.have.property('ssl', true));
         });
+
+        it('should connect to the server or router using a failover address', () => {
+            const hosts = ['[::1]', '127.0.0.1'];
+            const failoverConfig = Object.assign({}, config, { host: undefined });
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
+
+            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
+                expect(session.inspect().host).to.equal('::1');
+                expect(session.inspect().port).to.equal(33060);
+            });
+        });
     });
 
     context('using an unified connection string', () => {
@@ -91,6 +103,18 @@ describe('@integration X plugin session', () => {
             return mysqlx
                 .getSession(uri)
                 .then(result => expect(result.inspect()).to.have.property('ssl', true));
+        });
+
+        it('should connect to the server or router using a failover address', () => {
+            const hosts = ['(127.0.0.1, priority=99)', '([::1]:33060, priority=100)'];
+            const failoverConfig = Object.assign({}, config, { host: undefined });
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
+
+            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
+                expect(session.inspect().host).to.deep.equal('::1');
+                expect(session.inspect().port).to.deep.equal(33060);
+            });
         });
     });
 });
