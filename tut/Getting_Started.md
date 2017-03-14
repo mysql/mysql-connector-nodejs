@@ -268,6 +268,20 @@ var sessionPromise = xdevapi.getSession('mysqlx://root@localhost:33060');
 var sessionPromise = xdevapi.getSession('root@localhost:33060');
 ```
 
+### Failover
+
+You can provide multiple MySQL router or server addresses (host and port) when creating a session. This allows the connector to perform automatic failover selection when the hosts are not available. The selection is made based on the priority assigned to each address, either implicitely (position in the list), or explicitely (using a special format depicted above).
+
+Explicit priorities should start at `0` (lowest priority) and finish at `100` (highest priority). When two addresses share the same priority, the first one from the list will be selected.
+
+```js
+// Implicit priority (ordered list of addresses)
+var sessionPromise = xdevapi.getSession('mysqlx://root@[localhost:33060, 127.0.0.1:33060]');
+
+// Explicit priority
+var sessionPromise = xdevapi.getSession('mysqlx://root@[(127.0.0.1:33060, priority=99), (localhost:33060, priority=100)]');
+```
+
 ### Script hangs
 
 If you run a custom script and it hangs most likely you didn't close your

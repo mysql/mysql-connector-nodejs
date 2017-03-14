@@ -160,6 +160,70 @@ describe('Session', () => {
                     return session.connect();
                 });
             });
+
+            context('failover', () => {
+                it('should failover to the next available address if the connection fails', () => {
+                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, socketFactory: { createSocket } };
+                    const session = new Session(properties);
+                    const expected = { dbUser: 'baz', host: 'bar', port: 2 };
+
+                    const error = new Error();
+                    error.code = 'ENOTFOUND';
+
+                    td.when(capabilitiesGet()).thenResolve();
+                    td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
+                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
+
+                    return session.connect().then(session => expect(session.inspect()).to.deep.include(expected));
+                });
+
+                it('should fail if there are no remaining failover addresses', () => {
+                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const properties = { endpoints, socketFactory: { createSocket } };
+                    const session = new Session(properties);
+
+                    const error = new Error();
+                    error.code = 'ENOTFOUND';
+
+                    td.when(createSocket(), { ignoreExtraArgs: true }).thenReject(error);
+
+                    return expect(session.connect()).to.be.rejected.then(err => {
+                        expect(err.message).to.equal('All routers failed.');
+                        expect(err.errno).to.equal(4001);
+                    });
+                });
+
+                it('should fail if an unexpected error is thrown', () => {
+                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const properties = { endpoints, socketFactory: { createSocket } };
+                    const session = new Session(properties);
+                    const error = new Error('foobar');
+
+                    td.when(createSocket(), { ignoreExtraArgs: true }).thenReject(error);
+
+                    return expect(session.connect()).to.be.rejectedWith(error);
+                });
+
+                it('should reset the connection availability constraints when all routers are unavailable', () => {
+                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, socketFactory: { createSocket } };
+                    const session = new Session(properties);
+                    const expected = { dbUser: 'baz', host: 'foo', port: 1 };
+
+                    const error = new Error();
+                    error.code = 'ENOTFOUND';
+
+                    td.when(capabilitiesGet()).thenResolve();
+                    // failover restarts from the highest priority address
+                    td.when(createSocket(), { ignoreExtraArgs: true }).thenResolve(new Duplex());
+                    td.when(createSocket(), { ignoreExtraArgs: true, times: 2 }).thenReject(error);
+
+                    return expect(session.connect()).to.be.rejectedWith('All routers failed.')
+                        .then(() => expect(session.connect()).to.be.fulfilled)
+                        .then(session => expect(session.inspect()).to.deep.include(expected));
+                });
+            });
         });
 
         context('getSchemas()', () => {

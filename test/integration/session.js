@@ -64,15 +64,15 @@ describe('@integration X plugin session', () => {
                 .then(result => expect(result.inspect()).to.have.property('ssl', true));
         });
 
-        it('should connect to the server or router using a failover address', () => {
-            const hosts = ['[::1]', '127.0.0.1'];
-            const failoverConfig = Object.assign({}, config, { host: undefined });
+        it('should connect to the server if an address is not reachable but there is a failover available', () => {
+            const failoverConfig = Object.assign({}, config);
+            const hosts = [`${failoverConfig.host}:${failoverConfig.port + 1}`, `${failoverConfig.host}:${failoverConfig.port}`];
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
             return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
-                expect(session.inspect().host).to.equal('::1');
-                expect(session.inspect().port).to.equal(33060);
+                expect(session.inspect().host).to.deep.equal(failoverConfig.host);
+                expect(session.inspect().port).to.deep.equal(failoverConfig.port);
             });
         });
     });
@@ -105,17 +105,16 @@ describe('@integration X plugin session', () => {
                 .then(result => expect(result.inspect()).to.have.property('ssl', true));
         });
 
-        it('should connect to the server or router using a failover address', () => {
-            const hosts = ['(127.0.0.1, priority=99)', '([::1]:33060, priority=100)'];
-            const failoverConfig = Object.assign({}, config, { host: undefined });
+        it('should connect to the server if an address is not reachable but there is a failover available', () => {
+            const failoverConfig = Object.assign({}, config);
+            const hosts = [`(${failoverConfig.host}:${failoverConfig.port}, priority=99), (${failoverConfig.host}:${failoverConfig.port}, priority=100)`];
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
             return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
-                expect(session.inspect().host).to.deep.equal('::1');
-                expect(session.inspect().port).to.deep.equal(33060);
+                expect(session.inspect().host).to.deep.equal(failoverConfig.host);
+                expect(session.inspect().port).to.deep.equal(failoverConfig.port);
             });
         });
     });
 });
-
