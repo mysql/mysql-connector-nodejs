@@ -37,8 +37,8 @@ const Authentication = require('./lib/Authentication');
  */
 
 /**
- *
- * @param {Properties} properties
+ * Create a new session.
+ * @param {URI} properties
  * @returns {Promise.<Session>}
  */
 exports.getSession = function (properties) {
