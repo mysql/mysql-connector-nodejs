@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015-2017, Oracle and/or its affiliates. All rights reserved.
  *
  * MySQL Connector/Node.js is licensed under the terms of the GPLv2
  * <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
@@ -42,7 +42,15 @@ const Authentication = require('./lib/Authentication');
  * @returns {Promise.<Session>}
  */
 exports.getSession = function (properties) {
-    return (new Session(properties)).connect();
+    let session;
+
+    try {
+        session = new Session(properties);
+    } catch (err) {
+        return Promise.reject(err);
+    }
+
+    return session.connect();
 };
 
 /**

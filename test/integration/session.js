@@ -55,6 +55,14 @@ describe('@integration X plugin session', () => {
                 .then(result => expect(result.inspect()).to.include({ port: config.port }));
         });
 
+        it('should not connect if the port is out of bounds', () => {
+            const invalidConfig = Object.assign({}, config, { port: -1 });
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `mysqlx://${invalidConfig.dbUser}:${invalidConfig.dbPassword}@${invalidConfig.host}:${invalidConfig.port}`;
+
+            return mysqlx.getSession(uri).should.be.rejectedWith('Port must be between 0 and 65536');
+        });
+
         it('should connect to the server using SSL/TLS', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}/?ssl-enable`;
@@ -75,9 +83,33 @@ describe('@integration X plugin session', () => {
                 expect(session.inspect().port).to.deep.equal(failoverConfig.port);
             });
         });
+
+        it('should not connect to the server if neither none or all failover addresses have explicit priority', () => {
+            const failoverConfig = Object.assign({}, config);
+            const hosts = [`${failoverConfig.host}, ([::1], priority=100)`];
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
+
+            return mysqlx.getSession(uri).should.be.rejected.then(err => {
+                expect(err.message).to.equal('You must either assign no priority to any of the routers or give a priority for every router');
+                expect(err.errno).to.equal(4000);
+            });
+        });
+
+        it('should not connect to the server if any address priority is out of bounds', () => {
+            const failoverConfig = Object.assign({}, config);
+            const hosts = [`(${failoverConfig.host}, priority=100), ([::1], priority=101)`];
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
+
+            return mysqlx.getSession(uri).should.be.rejected.then(err => {
+                expect(err.message).to.equal('The priorities must be between 0 and 100');
+                expect(err.errno).to.equal(4007);
+            });
+        });
     });
 
-    context('using an unified connection string', () => {
+    context('using a unified connection string', () => {
         it('should connect to the server with a string containing all the connection details', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${config.dbUser}:${config.dbPassword}@${config.host}:${config.port}/${config.schema}`;
@@ -94,6 +126,14 @@ describe('@integration X plugin session', () => {
             return mysqlx
                 .getSession(uri)
                 .then(result => expect(result.inspect()).to.include({ port: config.port }));
+        });
+
+        it('should not connect if the port is out of bounds', () => {
+            const invalidConfig = Object.assign({}, config, { port: 65537 });
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `${invalidConfig.dbUser}:${invalidConfig.dbPassword}@${invalidConfig.host}:${invalidConfig.port}`;
+
+            return mysqlx.getSession(uri).should.be.rejectedWith('Port must be between 0 and 65536');
         });
 
         it('should connect to the server using SSL/TLS', () => {
@@ -114,6 +154,30 @@ describe('@integration X plugin session', () => {
             return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
                 expect(session.inspect().host).to.deep.equal(failoverConfig.host);
                 expect(session.inspect().port).to.deep.equal(failoverConfig.port);
+            });
+        });
+
+        it('should not connect to the server if neither none or all failover addresses have explicit priority', () => {
+            const failoverConfig = Object.assign({}, config);
+            const hosts = [`(${failoverConfig.host}), ([::1], priority=100)`];
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
+
+            return mysqlx.getSession(uri).should.be.rejected.then(err => {
+                expect(err.message).to.equal('You must either assign no priority to any of the routers or give a priority for every router');
+                expect(err.errno).to.equal(4000);
+            });
+        });
+
+        it('should not connect to the server if any address priority is out of bounds', () => {
+            const failoverConfig = Object.assign({}, config);
+            const hosts = [`(${failoverConfig.host}, priority=-1), ([::1], priority=100)`];
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
+
+            return mysqlx.getSession(uri).should.be.rejected.then(err => {
+                expect(err.message).to.equal('The priorities must be between 0 and 100');
+                expect(err.errno).to.equal(4007);
             });
         });
     });
