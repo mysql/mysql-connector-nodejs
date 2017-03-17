@@ -23,7 +23,7 @@ describe('@functional server connection', () => {
         // a certificate signed by an intermediate CA using the CA chain.
         it('should connect to the server if the server certificate was issued by the authority', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'ca.pem');
-            const secureConfig = Object.assign({}, config, { ssl: true, sslOptions: { ca, servername } });
+            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true, sslOptions: { ca, servername } });
 
             return mysqlx
                 .getSession(secureConfig)
@@ -36,7 +36,7 @@ describe('@functional server connection', () => {
         // result in the expected error.
         it('should not connect if the server certificate was not issued by the authority', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'non-authoritative-ca.pem');
-            const secureConfig = Object.assign({}, config, { ssl: true, sslOptions: { ca, servername } });
+            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true, sslOptions: { ca, servername } });
 
             return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejected.then(err => {
                 // FIXME(Rui): with an intermediate CA, the error code should be 'UNABLE_TO_GET_ISSUER_CERT'.
@@ -47,7 +47,7 @@ describe('@functional server connection', () => {
         it('should connect to the server if the server certificate is not revoked', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'ca.pem');
             const crl = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'empty-crl.pem');
-            const secureConfig = Object.assign({}, config, { ssl: true, sslOptions: { ca, crl, servername } });
+            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true, sslOptions: { ca, crl, servername } });
 
             return mysqlx
                 .getSession(secureConfig)
@@ -57,7 +57,7 @@ describe('@functional server connection', () => {
         it('should not connect if the server certificate is revoked', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'ca.pem');
             const crl = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'crl.pem');
-            const secureConfig = Object.assign({}, config, { ssl: true, sslOptions: { ca, crl, servername } });
+            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true, sslOptions: { ca, crl, servername } });
 
             return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejected.then(err => {
                 expect(err.code).to.equal('CERT_REVOKED');

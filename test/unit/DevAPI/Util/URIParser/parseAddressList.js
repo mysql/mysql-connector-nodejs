@@ -9,26 +9,32 @@ describe('parseAddressList', () => {
     it('should parse a list of addresses with explicit priority', () => {
         expect(parseAddressList('[(127.0.0.1, priority=98), ([::1], priority=100), (localhost, priority=99)]')).to.deep.equal([{
             host: '::1',
-            port: undefined
+            port: undefined,
+            socket: undefined
         }, {
             host: 'localhost',
-            port: undefined
+            port: undefined,
+            socket: undefined
         }, {
             host: '127.0.0.1',
-            port: undefined
+            port: undefined,
+            socket: undefined
         }]);
     });
 
     it('should parse a list of addresses with implict priority', () => {
         expect(parseAddressList('[[::1], localhost, 127.0.0.1]')).to.deep.equal([{
             host: '::1',
-            port: undefined
+            port: undefined,
+            socket: undefined
         }, {
             host: 'localhost',
-            port: undefined
+            port: undefined,
+            socket: undefined
         }, {
             host: '127.0.0.1',
-            port: undefined
+            port: undefined,
+            socket: undefined
         }]);
     });
 

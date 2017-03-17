@@ -268,6 +268,18 @@ var sessionPromise = xdevapi.getSession('mysqlx://root@localhost:33060');
 var sessionPromise = xdevapi.getSession('root@localhost:33060');
 ```
 
+### Local sockets (UNIX-only)
+
+Besides using TCP-based connections, you can also connect to a local server via a UNIX socket:
+
+```js
+// pct-encoded socket path
+var sessionPromise = xdevapi.getNodeSession('mysqlx://root@%2Fpath%2Fto%2Fsocket/schema');
+
+// unencoded socket path
+var sessionPromise = xdevapi.getNodeSession('mysqlx://root@(/path/to/socket)/schema');
+```
+
 ### Failover
 
 You can provide multiple MySQL router or server addresses (host and port) when creating a session. This allows the connector to perform automatic failover selection when the hosts are not available. The selection is made based on the priority assigned to each address, either implicitely (position in the list), or explicitely (using a special format depicted above).

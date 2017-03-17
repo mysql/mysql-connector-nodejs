@@ -19,7 +19,7 @@ describe('@integration X plugin session', () => {
         });
 
         it('should connect to the server with an IPv6 host', () => {
-            const ipv6Config = Object.assign({}, config, { host: '::1' });
+            const ipv6Config = Object.assign({}, config, { host: '::1', socket: undefined });
 
             return expect(mysqlx.getSession(ipv6Config)).to.be.fulfilled;
         });
@@ -27,7 +27,8 @@ describe('@integration X plugin session', () => {
         it('should not connect if the credentials are invalid', () => {
             const invalidConfig = Object.assign({}, config, {
                 dbUser: 'invalid user',
-                dbPassword: 'invalid password'
+                dbPassword: 'invalid password',
+                socket: undefined
             });
 
             return expect(mysqlx.getSession(invalidConfig)).to.be.rejected;
@@ -39,7 +40,7 @@ describe('@integration X plugin session', () => {
             const ipv6Config = Object.assign({}, config, { host: '::1' });
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${ipv6Config.dbUser}:${ipv6Config.dbPassword}@[${ipv6Config.host}]:${ipv6Config.port}`;
-            const expected = { dbUser: ipv6Config.dbUser, host: ipv6Config.host, port: ipv6Config.port };
+            const expected = { dbUser: ipv6Config.dbUser, host: ipv6Config.host, port: ipv6Config.port, socket: undefined, ssl: false };
 
             return mysqlx.getSession(uri).then(result => {
                 expect(result).to.be.an.instanceof(Session);
@@ -105,6 +106,19 @@ describe('@integration X plugin session', () => {
             return mysqlx.getSession(uri).should.be.rejected.then(err => {
                 expect(err.message).to.equal('The priorities must be between 0 and 100');
                 expect(err.errno).to.equal(4007);
+            });
+        });
+
+        it('should connect to the server with a local UNIX socket', function () {
+            if (!config.socket) {
+                return this.skip();
+            }
+
+            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@(${config.socket})`;
+            const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
+
+            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
+                expect(session.inspect()).to.deep.equal(expected);
             });
         });
     });
@@ -178,6 +192,20 @@ describe('@integration X plugin session', () => {
             return mysqlx.getSession(uri).should.be.rejected.then(err => {
                 expect(err.message).to.equal('The priorities must be between 0 and 100');
                 expect(err.errno).to.equal(4007);
+            });
+        });
+
+        it('should connect to the server with a local UNIX socket', function () {
+            if (!config.socket) {
+                return this.skip();
+            }
+
+            // Uses the default socket allocated for MySQL.
+            const uri = `${config.dbUser}:${config.dbPassword}@(${config.socket})`;
+            const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
+
+            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
+                expect(session.inspect()).to.deep.equal(expected);
             });
         });
     });

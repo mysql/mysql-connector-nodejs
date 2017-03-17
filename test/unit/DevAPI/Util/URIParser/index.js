@@ -13,7 +13,8 @@ describe('parseUri', () => {
                 dbPassword: 'password',
                 endpoints: [{
                     host: 'hostname',
-                    port: 3357
+                    port: 3357,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -32,7 +33,8 @@ describe('parseUri', () => {
                 dbPassword: 'password',
                 endpoints: [{
                     host: '127.0.0.1',
-                    port: 3357
+                    port: 3357,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -51,7 +53,8 @@ describe('parseUri', () => {
                 dbPassword: 'password',
                 endpoints: [{
                     host: '::',
-                    port: 3357
+                    port: 3357,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -70,7 +73,8 @@ describe('parseUri', () => {
                 dbPassword: 'password',
                 endpoints: [{
                     host: 'a1:a2:a3:a4:a5:a6:a7:a8',
-                    port: 3357
+                    port: 3357,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -89,7 +93,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: 'server.example.com',
-                    port: undefined
+                    port: undefined,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -108,7 +113,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: '127.0.0.1',
-                    port: undefined
+                    port: undefined,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -127,7 +133,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: 'a1:b2:c4:d4:e5:f6:a7:b8',
-                    port: undefined
+                    port: undefined,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -146,7 +153,8 @@ describe('parseUri', () => {
                 dbPassword: 'password',
                 endpoints: [{
                     host: 'hostname',
-                    port: 3357
+                    port: 3357,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -165,7 +173,8 @@ describe('parseUri', () => {
                 dbPassword: 'password',
                 endpoints: [{
                     host: 'hostname',
-                    port: 3357
+                    port: 3357,
+                    socket: undefined
                 }],
                 schema: 'schema',
                 ssl: false,
@@ -184,7 +193,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: 'hostname',
-                    port: 'foobar'
+                    port: 'foobar',
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -204,10 +214,12 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: '127.0.0.1',
-                        port: 3357
+                        port: 3357,
+                        socket: undefined
                     }, {
                         host: '::1',
-                        port: 3357
+                        port: 3357,
+                        socket: undefined
                     }],
                     schema: 'schema',
                     ssl: false,
@@ -226,13 +238,16 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: '::1',
-                        port: undefined
+                        port: undefined,
+                        socket: undefined
                     }, {
                         host: '127.0.0.1',
-                        port: undefined
+                        port: undefined,
+                        socket: undefined
                     }, {
                         host: 'localhost',
-                        port: 3357
+                        port: 3357,
+                        socket: undefined
                     }],
                     schema: 'schema',
                     ssl: false,
@@ -272,7 +287,8 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'hostname',
-                        port: 33060
+                        port: 33060,
+                        socket: undefined
                     }],
                     schema: undefined,
                     ssl: true,
@@ -291,7 +307,8 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'hostname',
-                        port: 33060
+                        port: 33060,
+                        socket: undefined
                     }],
                     schema: undefined,
                     ssl: true,
@@ -310,7 +327,8 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'hostname',
-                        port: 33060
+                        port: 33060,
+                        socket: undefined
                     }],
                     schema: undefined,
                     ssl: true,
@@ -329,7 +347,8 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'hostname',
-                        port: 33060
+                        port: 33060,
+                        socket: undefined
                     }],
                     schema: undefined,
                     ssl: true,
@@ -348,7 +367,8 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'hostname',
-                        port: 33060
+                        port: 33060,
+                        socket: undefined
                     }],
                     schema: undefined,
                     ssl: true,
@@ -359,6 +379,48 @@ describe('parseUri', () => {
                 };
 
                 expect(parseUri('mysqlx://user:password@hostname:33060?ssl-ca=()&ssl-crl=()')).to.deep.equal(expected);
+            });
+        });
+
+        context('local sockets', () => {
+            it('should parse an URI with a pct-encoded UNIX socket', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    endpoints: [{
+                        host: undefined,
+                        port: undefined,
+                        socket: '/path/to/socket'
+                    }],
+                    schema: undefined,
+                    ssl: false,
+                    sslOptions: {
+                        ca: undefined,
+                        crl: undefined
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@%2Fpath%2Fto%2Fsocket')).to.deep.equal(expected);
+            });
+
+            it('should parse an URI with a custom-encoded UNIX socket', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    endpoints: [{
+                        host: undefined,
+                        port: undefined,
+                        socket: '/path/to/socket'
+                    }],
+                    schema: undefined,
+                    ssl: false,
+                    sslOptions: {
+                        ca: undefined,
+                        crl: undefined
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@(/path/to/socket)')).to.deep.equal(expected);
             });
         });
 
@@ -374,7 +436,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: 'hostname',
-                    port: 3357
+                    port: 3357,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -393,7 +456,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: 'hostname',
-                    port: 3357
+                    port: 3357,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -412,7 +476,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: 'hostname',
-                    port: undefined
+                    port: undefined,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -431,7 +496,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: 'hostname',
-                    port: undefined
+                    port: undefined,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -450,7 +516,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: 'server.example.com',
-                    port: undefined
+                    port: undefined,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -469,7 +536,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: '127.0.0.1',
-                    port: undefined
+                    port: undefined,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -488,7 +556,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: 'a1:b2:c4:d4:e5:f6:a7:b8',
-                    port: undefined
+                    port: undefined,
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -507,7 +576,8 @@ describe('parseUri', () => {
                 dbPassword: undefined,
                 endpoints: [{
                     host: 'hostname',
-                    port: 'foobar'
+                    port: 'foobar',
+                    socket: undefined
                 }],
                 schema: undefined,
                 ssl: false,
@@ -527,13 +597,16 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: '::1',
-                        port: 33060
+                        port: 33060,
+                        socket: undefined
                     }, {
                         host: 'localhost',
-                        port: 33060
+                        port: 33060,
+                        socket: undefined
                     }, {
                         host: '127.0.0.1',
-                        port: 33060
+                        port: 33060,
+                        socket: undefined
                     }],
                     schema: 'schema',
                     ssl: false,
@@ -552,13 +625,16 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'localhost',
-                        port: 3357
+                        port: 3357,
+                        socket: undefined
                     }, {
                         host: '127.0.0.1',
-                        port: 3357
+                        port: 3357,
+                        socket: undefined
                     }, {
                         host: '::1',
-                        port: undefined
+                        port: undefined,
+                        socket: undefined
                     }],
                     schema: 'schema',
                     ssl: false,
@@ -599,7 +675,8 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'hostname',
-                        port: undefined
+                        port: undefined,
+                        socket: undefined
                     }],
                     schema: undefined,
                     ssl: true,
@@ -618,7 +695,8 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'hostname',
-                        port: undefined
+                        port: undefined,
+                        socket: undefined
                     }],
                     schema: undefined,
                     ssl: true,
@@ -637,7 +715,8 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'hostname',
-                        port: undefined
+                        port: undefined,
+                        socket: undefined
                     }],
                     schema: undefined,
                     ssl: true,
@@ -656,7 +735,8 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'hostname',
-                        port: undefined
+                        port: undefined,
+                        socket: undefined
                     }],
                     schema: undefined,
                     ssl: true,
@@ -675,7 +755,8 @@ describe('parseUri', () => {
                     dbPassword: 'password',
                     endpoints: [{
                         host: 'hostname',
-                        port: undefined
+                        port: undefined,
+                        socket: undefined
                     }],
                     schema: undefined,
                     ssl: true,
@@ -687,6 +768,46 @@ describe('parseUri', () => {
 
                 expect(parseUri('user:password@hostname?ssl-ca=()&ssl-crl=()')).to.deep.equal(expected);
             });
+        });
+
+        it('should parse a connection string with a pct-encoded UNIX socket', () => {
+            const expected = {
+                dbUser: 'user',
+                dbPassword: 'password',
+                endpoints: [{
+                    host: undefined,
+                    port: undefined,
+                    socket: './path/to/socket'
+                }],
+                schema: undefined,
+                ssl: false,
+                sslOptions: {
+                    ca: undefined,
+                    crl: undefined
+                }
+            };
+
+            expect(parseUri('user:password@.%2Fpath%2Fto%2Fsocket')).to.deep.equal(expected);
+        });
+
+        it('should parse an URI with a custom-encoded UNIX socket', () => {
+            const expected = {
+                dbUser: 'user',
+                dbPassword: 'password',
+                endpoints: [{
+                    host: undefined,
+                    port: undefined,
+                    socket: './path/to/socket'
+                }],
+                schema: 'schema',
+                ssl: false,
+                sslOptions: {
+                    ca: undefined,
+                    crl: undefined
+                }
+            };
+
+            expect(parseUri('user:password@(./path/to/socket)/schema')).to.deep.equal(expected);
         });
 
         it('should throw an error if the host is empty', () => {
