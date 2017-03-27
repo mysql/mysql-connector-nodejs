@@ -1,0 +1,12 @@
+{
+    "root": {
+        "appdata": {
+            "foo": "bar"
+        }
+    },
+    "foo": {
+        "appdata": {
+            "foo": "bar"
+        }
+    }
+}

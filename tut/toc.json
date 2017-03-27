@@ -5,14 +5,17 @@
     "Managing_Database_Objects": {
         "title": "Managing Database Objects"
     },
+    "Persistent_Session_Configuration": {
+        "title": "Persistent Session Configuration"
+    },
     "Table_Creation_API": {
         "title": "Table Creation API"
     },
-    "Working_with_Documents": {
-        "title": "Working with Documents"
-    },
     "Working_with_Collections": {
         "title": "Working with Collections"
+    },
+    "Working_with_Documents": {
+        "title": "Working with Documents"
     },
     "Working_with_Tables": {
         "title": "Working with Relational Tables"

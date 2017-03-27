@@ -8,6 +8,7 @@ const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
 const mysqlx = require('index');
 const os = require('os');
+const path = require('path');
 
 chai.use(chaiAsPromised);
 
@@ -272,6 +273,80 @@ describe('@integration X plugin session', () => {
 
             return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
                 expect(session.inspect()).to.deep.equal(expected);
+            });
+        });
+    });
+
+    context('using a configuration handling interface', () => {
+        beforeEach('set environment variables', () => {
+            const filename = 'sessions.json';
+            const rootDir = path.join(__dirname, '..', 'fixtures', 'configuration');
+
+            process.env.MYSQL_SYSTEM_CONFIG = path.resolve(rootDir, 'system', filename);
+            process.env.MYSQL_USER_CONFIG = path.resolve(rootDir, 'user', filename);
+        });
+
+        afterEach('unset environment variables', () => {
+            process.env.MYSQL_SYSTEM_CONFIG = '';
+            process.env.MYSQL_USER_CONFIG = '';
+        });
+
+        context('given a persistent session configuration object', () => {
+            it('should connect by loading a session using the persistent configuration', () => {
+                const expected = { dbUser: config.dbUser, host: config.host, port: config.port, socket: undefined, ssl: false };
+
+                return expect(mysqlx.config.get(config.dbUser)).to.be.fulfilled
+                    .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, config.dbPassword)).to.be.fulfilled)
+                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+            });
+        });
+
+        context('given an object containing the session name', () => {
+            it('should connect by loading an existing persistent session configuration', () => {
+                const expected = { dbUser: config.dbUser, host: config.host, port: config.port, socket: undefined, ssl: false };
+
+                return expect(mysqlx.getSession({ dbPassword: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
+                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+            });
+
+            it('should connect by loading and overriding an existing session with the given properties', () => {
+                const expected = { dbUser: config.dbUser, host: '::1', port: config.port, socket: undefined, ssl: false };
+
+                return expect(mysqlx.getSession({ host: '::1', dbPassword: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
+                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+            });
+
+            it('should connect using known property aliases', () => {
+                const expected = { dbUser: config.dbUser, host: '::1', port: config.port, socket: undefined, ssl: true };
+
+                return expect(mysqlx.getSession({ host: '::1', password: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
+                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+            });
+        });
+
+        context('given a JSON string containing the session name', () => {
+            it('should connect by loading an existing persistent session configuration', () => {
+                const json = JSON.stringify({ dbPassword: config.dbPassword, sessionName: config.dbUser });
+                const expected = { dbUser: config.dbUser, host: config.host, port: config.port, socket: undefined, ssl: true };
+
+                return expect(mysqlx.getSession(json)).to.be.fulfilled
+                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+            });
+
+            it('should connect by loading and overriding an existing session with the given properties', () => {
+                const json = JSON.stringify({ host: '::1', dbPassword: config.dbPassword, sessionName: config.dbUser });
+                const expected = { dbUser: config.dbUser, host: '::1', port: config.port, socket: undefined, ssl: true };
+
+                return expect(mysqlx.getSession(json)).to.be.fulfilled
+                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+            });
+
+            it('should connect using known property aliases', () => {
+                const json = JSON.stringify({ host: '::1', password: config.dbPassword, sessionName: config.dbUser });
+                const expected = { dbUser: config.dbUser, host: '::1', port: config.port, socket: undefined, ssl: true };
+
+                return expect(mysqlx.getSession(json)).to.be.fulfilled
+                    .then(session => expect(session.inspect()).to.deep.equal(expected));
             });
         });
     });

@@ -1,0 +1,8 @@
+{
+    "root": {
+        "uri": "mysqlx://root@localhost:33060/nodejsmysqlxtest"
+    },
+    "foo": {
+        "uri": "mysqlx://foo:bar@localhost:33060/nodejsmysqlxtest"
+    }
+}

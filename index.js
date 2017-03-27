@@ -29,29 +29,97 @@
 const Session = require('./lib/DevAPI/Session');
 const Expressions = require('./lib/Expressions');
 const Authentication = require('./lib/Authentication');
+const configManager = require('./lib/DevAPI/SessionConfigManager');
+const parseUri = require('./lib/DevAPI/Util/URIParser');
 
 /**
- * MySQL X module
- *
  * @module mysqlx
  */
 
+const config = configManager();
+
 /**
- * Create a new session.
- * @param {URI} properties
+ * Create a session instance.
+ * @private
+ * @param {string|URI} configuration - session base reference
+ * @throws {Error} When the session base reference is not valid.
  * @returns {Promise.<Session>}
  */
-exports.getSession = function (properties) {
+function createSession (configuration) {
     let session;
 
     try {
-        session = new Session(properties);
+        session = new Session(configuration);
     } catch (err) {
         return Promise.reject(err);
     }
 
     return session.connect();
+}
+
+/**
+ * Load a new session.
+ * @private
+ * @param {string|URI|module:SessionConfig} session
+ * @see {@link module:SessionConfig|SessionConfig}
+ * @param {Object} overrides - session properties to override
+ * @returns {Promise.<Session>}
+ */
+function loadSession (properties, overrides) {
+    if (typeof properties.getUri !== 'function') {
+        return createSession(properties);
+    }
+
+    const base = parseUri(properties.getUri());
+    delete base.endpoints;
+
+    const configuration = Object.assign({}, base, overrides);
+
+    return createSession(configuration);
+}
+
+/**
+ * Load a new or existing session.
+ * @param {string|URI|SessionConfig} properties - session properties
+ * @see {@link module:SessionConfig|SessionConfig}
+ * @param {string} [password] - user password
+ * @returns {Promise.<Session>}
+ */
+exports.getSession = function (properties, password) {
+    let configuration = {};
+
+    try {
+        // properties is a JSON string
+        configuration = JSON.parse(properties);
+    } catch (err) {
+        if (err.name !== 'SyntaxError') {
+            return Promise.reject(err);
+        }
+
+        // properties is an URI, an object or a dictionary
+        configuration = properties;
+    }
+
+    password = password || configuration.dbPassword;
+
+    if (!configuration.sessionName) {
+        return loadSession(configuration, { dbPassword: password });
+    }
+
+    const base = Object.assign({}, configuration, { dbPassword: password });
+    delete base.sessionName;
+
+    return config.get(configuration.sessionName)
+        .then(instance => loadSession(instance, base));
 };
+
+/**
+ * Manage persisted session configurations.
+ * @type {SessionConfigManager}
+ * @const
+ * @see {@link module:SessionConfigManager|SessionConfigManager}
+ */
+exports.config = config;
 
 /**
  * Parse an expression into parse tree
