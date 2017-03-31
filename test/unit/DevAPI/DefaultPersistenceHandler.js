@@ -14,22 +14,20 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('DefaultPersistenceHandler', () => {
-    let defaultPersistenceHandler;
+    let defaultPersistenceHandler, readFile;
+
+    beforeEach('create fakes', () => {
+        readFile = td.function();
+        defaultPersistenceHandler = proxyquire('lib/DevAPI/DefaultPersistenceHandler', {
+            '../Adapters/fs': { readFile }
+        });
+    });
+
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
 
     context('load()', () => {
-        let readFile;
-
-        beforeEach('create fakes', () => {
-            readFile = td.function();
-            defaultPersistenceHandler = proxyquire('lib/DevAPI/DefaultPersistenceHandler', {
-                '../Adapters/fs': { readFile }
-            });
-        });
-
-        afterEach('reset fakes', () => {
-            td.reset();
-        });
-
         context('@unix', () => {
             let platform, systemConfigFile, userConfigFile;
 
@@ -175,6 +173,51 @@ describe('DefaultPersistenceHandler', () => {
             td.when(readFile(), { ignoreExtraArgs: true }).thenResolve('foo');
 
             return expect(defaultPersistenceHandler().load('foo')).to.be.rejected;
+        });
+    });
+
+    context('list()', () => {
+        it('should return an array containing the names of the available persistent sessions', () => {
+            const expected = ['foo', 'bar', 'baz', 'qux'];
+            const systemConfig = JSON.stringify({ [expected[0]]: {}, [expected[1]]: {} });
+            const userConfig = JSON.stringify({ [expected[2]]: {}, [expected[3]]: {} });
+
+            td.when(readFile(), { ignoreExtraArgs: true }).thenResolve(userConfig);
+            td.when(readFile(), { ignoreExtraArgs: true, times: 1 }).thenResolve(systemConfig);
+
+            return expect(defaultPersistenceHandler().list()).to.be.fulfilled
+                .then(sessions => expect(sessions).to.deep.equal(expected));
+        });
+
+        it('should not return duplicate names', () => {
+            const expected = ['foo', 'bar'];
+            const systemConfig = JSON.stringify({ [expected[0]]: {} });
+            const userConfig = JSON.stringify({ [expected[1]]: {}, [expected[0]]: {} });
+
+            td.when(readFile(), { ignoreExtraArgs: true }).thenResolve(userConfig);
+            td.when(readFile(), { ignoreExtraArgs: true, times: 1 }).thenResolve(systemConfig);
+
+            return expect(defaultPersistenceHandler().list()).to.be.fulfilled
+                .then(sessions => expect(sessions).to.deep.equal(expected));
+        });
+
+        it('should return an empty array if no configuration file exists', () => {
+            const error = new Error();
+            error.code = 'ENOENT';
+
+            td.when(readFile(), { ignoreExtraArgs: true }).thenReject(error);
+
+            return expect(defaultPersistenceHandler().list()).to.be.fulfilled
+                .then(sessions => expect(sessions).to.be.empty);
+        });
+
+        it('should return an empty array if the configuration files are empty', () => {
+            const config = JSON.stringify({});
+
+            td.when(readFile(), { ignoreExtraArgs: true }).thenResolve(config);
+
+            return expect(defaultPersistenceHandler().list()).to.be.fulfilled
+                .then(sessions => expect(sessions).to.be.empty);
         });
     });
 });

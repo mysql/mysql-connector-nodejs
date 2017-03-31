@@ -349,6 +349,13 @@ describe('@integration X plugin session', () => {
                     .then(session => expect(session.inspect()).to.deep.equal(expected));
             });
         });
+
+        it('should provide access to the list of persistent sessions', () => {
+            const expected = ['root', 'foo'];
+
+            return expect(mysqlx.config.list()).to.be.fulfilled
+                .then(sessions => expect(sessions).to.deep.equal(expected));
+        });
     });
 
     context('database management', () => {

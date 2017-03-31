@@ -44,3 +44,15 @@ mysqlx
         console.log('Session created using a persistent configuration');
     });
 ```
+
+### Getting the name of a persistent session
+
+A `list()` method is available to access the names of the existing persistent sessions.
+
+```js
+const mysqlx = require('@mysqlx/xdevapi');
+
+mysqlx.config.list().then(sessions => {
+    console.log(sessions); // ['foo', 'bar', 'baz', 'qux']
+});
+```

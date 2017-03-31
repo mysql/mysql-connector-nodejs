@@ -13,15 +13,15 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('SessionConfigManager', () => {
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
     context('get()', () => {
         let load;
 
         beforeEach('create fakes', () => {
             load = td.function();
-        });
-
-        afterEach('reset fakes', () => {
-            td.reset();
         });
 
         context('without a registered password handler', () => {
@@ -120,6 +120,33 @@ describe('SessionConfigManager', () => {
             const config = configManager().setPersistenceHandler(undefined);
 
             return expect(config.get('foo')).to.be.rejectedWith('No IPersistenceHandler implementation available');
+        });
+    });
+
+    context('list()', () => {
+        let list;
+
+        beforeEach('create fakes', () => {
+            list = td.function();
+        });
+
+        it('should return an array containing the names of the available persistent sessions', () => {
+            const expected = ['foo', 'bar'];
+
+            td.when(list()).thenResolve(expected);
+
+            const config = configManager().setPersistenceHandler({ list });
+
+            return expect(config.list()).to.be.fulfilled
+                .then(sessions => {
+                    expect(sessions).to.deep.equal(expected);
+                });
+        });
+
+        it('should fail if no IPersistenceHandler implementation is available', () => {
+            const config = configManager().setPersistenceHandler(undefined);
+
+            return expect(config.list()).to.be.rejectedWith('No IPersistenceHandler implementation available');
         });
     });
 });
