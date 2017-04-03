@@ -293,7 +293,7 @@ describe('@integration X plugin session', () => {
 
         context('given a persistent session configuration object', () => {
             it('should connect by loading a session using the persistent configuration', () => {
-                const expected = { dbUser: config.dbUser, host: config.host, port: config.port, socket: undefined, ssl: false };
+                const expected = { dbUser: config.dbUser, host: config.host, port: config.port, socket: undefined, ssl: true };
 
                 return expect(mysqlx.config.get(config.dbUser)).to.be.fulfilled
                     .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, config.dbPassword)).to.be.fulfilled)
@@ -303,14 +303,14 @@ describe('@integration X plugin session', () => {
 
         context('given an object containing the session name', () => {
             it('should connect by loading an existing persistent session configuration', () => {
-                const expected = { dbUser: config.dbUser, host: config.host, port: config.port, socket: undefined, ssl: false };
+                const expected = { dbUser: config.dbUser, host: config.host, port: config.port, socket: undefined, ssl: true };
 
                 return expect(mysqlx.getSession({ dbPassword: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
                     .then(session => expect(session.inspect()).to.deep.equal(expected));
             });
 
             it('should connect by loading and overriding an existing session with the given properties', () => {
-                const expected = { dbUser: config.dbUser, host: '::1', port: config.port, socket: undefined, ssl: false };
+                const expected = { dbUser: config.dbUser, host: '::1', port: config.port, socket: undefined, ssl: true };
 
                 return expect(mysqlx.getSession({ host: '::1', dbPassword: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
                     .then(session => expect(session.inspect()).to.deep.equal(expected));
@@ -355,6 +355,57 @@ describe('@integration X plugin session', () => {
 
             return expect(mysqlx.config.list()).to.be.fulfilled
                 .then(sessions => expect(sessions).to.deep.equal(expected));
+        });
+
+        context('storing persistent sessions', () => {
+            beforeEach('set environment variables', () => {
+                // save configuration on a temporary directory
+                process.env.MYSQL_USER_CONFIG = path.resolve(os.tmpdir(), 'sessions.json');
+            });
+
+            afterEach('unset environment variables', () => {
+                process.env.MYSQL_USER_CONFIG = '';
+            });
+
+            context('given a session name and a configuration object', () => {
+                it('should save the session details using the given name', () => {
+                    // TODO(Rui): maybe add some appdata to the object.
+                    const data = Object.assign({}, config);
+                    const expected = { dbUser: data.dbUser, host: data.host, port: data.port, socket: undefined, ssl: true };
+
+                    return expect(mysqlx.config.save('test', data)).to.be.fulfilled
+                        .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled)
+                        .then(session => expect(session.inspect()).to.deep.equal(expected));
+                });
+
+                // TODO(Rui): only makes sense with appdata.
+                it('should work with primitive key-value dictionaries');
+            });
+
+            context('given a session name and configuration string', () => {
+                it('should save the session details the using name and a JSON config', () => {
+                    const data = Object.assign({}, config, { ssl: false });
+                    const expected = { dbUser: data.dbUser, host: data.host, port: data.port, socket: undefined, ssl: false };
+
+                    return expect(mysqlx.config.save('test', JSON.stringify(data))).to.be.fulfilled
+                        .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled)
+                        .then(session => expect(session.inspect()).to.deep.equal(expected));
+                });
+
+                it('should save the session details the using name a URI and additional appdata', () => {
+                    const data = Object.assign({}, config);
+                    const uri = `mysqlx://${data.dbUser}:${data.dbPassword}@${data.host}:${data.port}?ssl-mode=DISABLED`;
+                    const expected = { dbUser: data.dbUser, host: data.host, port: data.port, socket: undefined, ssl: false };
+
+                    return expect(mysqlx.config.save('test', uri, { foo: 'bar' })).to.be.fulfilled
+                        .then(sessionConfig => {
+                            expect(sessionConfig.getAppData('foo')).to.equal('bar');
+
+                            return expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled;
+                        })
+                        .then(session => expect(session.inspect()).to.deep.equal(expected));
+                });
+            });
         });
     });
 

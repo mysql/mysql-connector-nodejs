@@ -14,12 +14,14 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('DefaultPersistenceHandler', () => {
-    let defaultPersistenceHandler, readFile;
+    let defaultPersistenceHandler, readFile, writeFile;
 
     beforeEach('create fakes', () => {
         readFile = td.function();
+        writeFile = td.function();
+
         defaultPersistenceHandler = proxyquire('lib/DevAPI/DefaultPersistenceHandler', {
-            '../Adapters/fs': { readFile }
+            '../Adapters/fs': { readFile, writeFile }
         });
     });
 
@@ -218,6 +220,100 @@ describe('DefaultPersistenceHandler', () => {
 
             return expect(defaultPersistenceHandler().list()).to.be.fulfilled
                 .then(sessions => expect(sessions).to.be.empty);
+        });
+    });
+
+    context('save()', () => {
+        context('@unix', () => {
+            let platform, userConfigFile;
+
+            beforeEach('set environment variables', () => {
+                platform = process.platform;
+                Object.defineProperty(process, 'platform', { value: 'unix' });
+            });
+
+            beforeEach('set scope variables', () => {
+                userConfigFile = path.resolve(os.homedir(), '.mysql', 'sessions.json');
+            });
+
+            afterEach('reset environment variables', () => {
+                Object.defineProperty(process, 'platform', { value: platform });
+            });
+
+            context('using the in-memory cache', () => {
+                it('should write the session details to the configuration file', () => {
+                    const sessionName = 'foobar';
+                    const old = { [sessionName]: { appdata: { baz: 'qux' }, uri: 'foo' } };
+                    const fresh = { [sessionName]: { appdata: { biz: 'quux' }, uri: 'bar' } };
+
+                    td.when(writeFile(userConfigFile, JSON.stringify(fresh))).thenResolve();
+
+                    const handler = defaultPersistenceHandler({ cache: { user: old } });
+
+                    return expect(handler.save(sessionName, fresh[sessionName])).to.be.fulfilled.then(() => {
+                        td.verify(readFile(), { ignoreExtraArgs: true, times: 0 });
+                    });
+                });
+            });
+
+            context('not using the in-memory cache', () => {
+                it('should write the session details to the configuration file', () => {
+                    const sessionName = 'foobar';
+                    const old = { [sessionName]: { appdata: { baz: 'qux' }, uri: 'foo' } };
+                    const fresh = { [sessionName]: { appdata: { biz: 'quux' }, uri: 'bar' } };
+
+                    td.when(readFile(userConfigFile)).thenResolve(JSON.stringify(old));
+                    td.when(writeFile(userConfigFile, JSON.stringify(fresh))).thenResolve();
+
+                    return expect(defaultPersistenceHandler().save(sessionName, fresh[sessionName])).to.be.fulfilled;
+                });
+            });
+        });
+
+        context('@windows', () => {
+            let platform, userConfigFile;
+
+            beforeEach('set environment variables', () => {
+                platform = process.platform;
+                Object.defineProperty(process, 'platform', { value: 'win32' });
+            });
+
+            beforeEach('set scope variables', () => {
+                userConfigFile = path.resolve(os.homedir(), 'APPDATA', 'MySQL', 'sessions.json');
+            });
+
+            afterEach('reset environment variables', () => {
+                Object.defineProperty(process, 'platform', { value: platform });
+            });
+
+            context('using the in-memory cache', () => {
+                it('should write the session details to the configuration file', () => {
+                    const sessionName = 'foobar';
+                    const old = { [sessionName]: { appdata: { baz: 'qux' }, uri: 'foo' } };
+                    const fresh = { [sessionName]: { appdata: { biz: 'quux' }, uri: 'bar' } };
+
+                    td.when(writeFile(userConfigFile, JSON.stringify(fresh))).thenResolve();
+
+                    const handler = defaultPersistenceHandler({ cache: { user: old } });
+
+                    return expect(handler.save(sessionName, fresh[sessionName])).to.be.fulfilled.then(() => {
+                        td.verify(readFile(), { ignoreExtraArgs: true, times: 0 });
+                    });
+                });
+            });
+
+            context('not using the in-memory cache', () => {
+                it('should write the session details to the configuration file', () => {
+                    const sessionName = 'foobar';
+                    const old = { [sessionName]: { appdata: { baz: 'qux' }, uri: 'foo' } };
+                    const fresh = { [sessionName]: { appdata: { biz: 'quux' }, uri: 'bar' } };
+
+                    td.when(readFile(userConfigFile)).thenResolve(JSON.stringify(old));
+                    td.when(writeFile(userConfigFile, JSON.stringify(fresh))).thenResolve();
+
+                    return expect(defaultPersistenceHandler().save(sessionName, fresh[sessionName])).to.be.fulfilled;
+                });
+            });
         });
     });
 });

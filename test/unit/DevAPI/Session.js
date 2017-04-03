@@ -87,7 +87,7 @@ describe('Session', () => {
 
         context('connect()', () => {
             it('should return a clean object with the session properties', () => {
-                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
+                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: false };
                 const session = new Session(properties);
                 const expected = { dbUser: 'foo' };
 
@@ -134,13 +134,14 @@ describe('Session', () => {
                 });
 
                 it('should not try to setup a SSL/TLS connection if no such intent is specified', () => {
-                    const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
+                    const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: false };
                     const session = new Session(properties);
 
+                    td.when(enableSSL(), { ignoreExtraArgs: true }).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({});
 
                     return session.connect().then(() => {
-                        td.verify(enableSSL(), { ignoreExtraArgs: true, times: 0 });
+                        expect(td.explain(enableSSL).callCount).to.equal(0);
                         expect(session._serverCapabilities).to.be.empty;
                     });
                 });
@@ -171,27 +172,29 @@ describe('Session', () => {
                     const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
                     const session = new Session(properties);
 
+                    td.when(enableSSL({})).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ tls: true });
 
                     return session.connect().then(session => expect(session.inspect()).to.deep.include({ ssl: true }));
                 });
-            });
 
-            context('insecure sessions', () => {
-                it('should not enable SSL/TLS if the server does not support it', () => {
+                it('should fail if the server does not support TLS/SSL', () => {
                     const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
                     const session = new Session(properties);
+                    const error = new Error();
+                    error.info = { code: 5001 };
 
+                    td.when(enableSSL({})).thenReject(error);
                     td.when(capabilitiesGet()).thenResolve({});
 
-                    return session.connect().then(session => expect(session.inspect()).to.deep.include({ ssl: false }));
+                    return expect(session.connect()).to.be.rejected;
                 });
             });
 
             context('failover', () => {
                 it('should failover to the next available address if the connection fails', () => {
                     const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
-                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, socketFactory: { createSocket } };
+                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, socketFactory: { createSocket }, ssl: false };
                     const session = new Session(properties);
                     const expected = { dbUser: 'baz', host: 'bar', port: 2 };
 
@@ -234,7 +237,7 @@ describe('Session', () => {
 
                 it('should reset the connection availability constraints when all routers are unavailable', () => {
                     const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
-                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, socketFactory: { createSocket } };
+                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, socketFactory: { createSocket }, ssl: false };
                     const session = new Session(properties);
                     const expected = { dbUser: 'baz', host: 'foo', port: 1 };
 
