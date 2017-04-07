@@ -6,6 +6,7 @@ const Session = require('lib/DevAPI/Session');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
+const fs = require('fs');
 const mysqlx = require('index');
 const os = require('os');
 const path = require('path');
@@ -363,8 +364,11 @@ describe('@integration X plugin session', () => {
                 process.env.MYSQL_USER_CONFIG = path.resolve(os.tmpdir(), 'sessions.json');
             });
 
-            afterEach('unset environment variables', () => {
+            afterEach('unset environment variables', (done) => {
+                const file = process.env.MYSQL_USER_CONFIG;
                 process.env.MYSQL_USER_CONFIG = '';
+
+                fs.unlink(file, done);
             });
 
             context('given a session name and a configuration object', () => {
@@ -424,6 +428,39 @@ describe('@integration X plugin session', () => {
                             expect(session.inspect()).to.deep.equal(expected);
                         });
                 });
+            });
+        });
+
+        context('deleting a persistent session', () => {
+            beforeEach('set environment variables', () => {
+                // save configuration on a temporary directory
+                process.env.MYSQL_USER_CONFIG = path.resolve(os.tmpdir(), 'sessions.json');
+            });
+
+            afterEach('unset environment variables', (done) => {
+                const file = process.env.MYSQL_USER_CONFIG;
+                process.env.MYSQL_USER_CONFIG = '';
+
+                fs.unlink(file, done);
+            });
+
+            it('should succeed if the session exists', () => {
+                const data = Object.assign({}, config);
+
+                return expect(mysqlx.config.save('test', data)).to.be.fulfilled
+                    .then(sessionConfig => expect(mysqlx.config.delete('test')).to.be.fulfilled)
+                    .then(status => expect(status).to.be.true);
+            });
+
+            it('should not succeed if the session does not exist', () => {
+                const data = Object.assign({}, config);
+
+                return expect(mysqlx.config.save('test', data)).to.be.fulfilled
+                    .then(sessionConfig => {
+                        return expect(mysqlx.config.delete('test')).to.be.fulfilled
+                            .then(() => expect(mysqlx.config.delete('test')).to.be.fulfilled);
+                    })
+                    .then(status => expect(status).to.be.false);
             });
         });
     });

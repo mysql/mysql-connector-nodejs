@@ -492,4 +492,45 @@ describe('SessionConfigManager', () => {
                 });
         });
     });
+
+    context('delete()', () => {
+        let exists, remove;
+
+        beforeEach('create fakes', () => {
+            exists = td.function();
+            remove = td.function();
+        });
+
+        it('should delete a given session if it exists', () => {
+            const sessionName = 'foo';
+
+            td.when(exists(sessionName)).thenResolve(true);
+            td.when(remove(sessionName)).thenResolve();
+
+            const config = configManager().setPersistenceHandler({ delete: remove, exists });
+            const session = sessionConfig(sessionName);
+
+            return expect(config.delete(sessionName)).to.be.fulfilled
+                .then(status => expect(status).to.be.true);
+        });
+
+        it('should delete a given session if it does not exist', () => {
+            const sessionName = 'foo';
+
+            td.when(exists(sessionName)).thenResolve(false);
+            td.when(remove(sessionName)).thenResolve();
+
+            const config = configManager().setPersistenceHandler({ delete: remove, exists });
+            const session = sessionConfig(sessionName);
+
+            return expect(config.delete(sessionName)).to.be.fulfilled
+                .then(status => expect(status).to.be.false);
+        });
+
+        it('should fail if no IPersistenceHandler implementation is available', () => {
+            const config = configManager().setPersistenceHandler(undefined);
+
+            return expect(config.delete('foo')).to.be.rejectedWith('No IPersistenceHandler implementation available');
+        });
+    });
 });

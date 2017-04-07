@@ -159,3 +159,29 @@ mysqlx.config
         console.log('Session created using a persistent configuration');
     });
 ```
+
+### Deleting a persistent session
+
+Deleting a persistent session means that the session entry (including properties) are to be removed from the user-specific configuration file (as described above). Since the system-specific configuration file is meant to be read-only, any session details it might contain  need to be removed manually, otherwise, the session will continue to exist.
+
+```js
+const mysqlx = require('@mysqlx/xdevapi');
+
+mysqlx.config
+    .save({ sessionName: '<session_name>', host: '127.0.0.1', foo: 'bar' })
+    .then(sessionConfig => {
+        console.log(sessionConfig.getUri()); // mysqlx://127.0.0.1
+
+        return mysqlx.config.delete('<session_name>');
+    })
+    .then(status => {
+        // Returns `true` if the session exists and was deleted.
+        console.log(status); // true
+
+        return mysqlx.config.delete('<session_name>');
+    })
+    .then(status => {
+        // Returns `true` if the session does not exist.
+        console.log(status); // false
+    });
+```
