@@ -5,8 +5,9 @@
 const configManager = require('lib/DevAPI/SessionConfigManager');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const td = require('testdouble');
 const parseUri = require('lib/DevAPI/Util/URIParser');
+const sessionConfig = require('lib/DevAPI/SessionConfig');
+const td = require('testdouble');
 
 chai.use(chaiAsPromised);
 
@@ -468,6 +469,27 @@ describe('SessionConfigManager', () => {
             config.setPersistenceHandler(undefined);
 
             return expect(config.save('foo')).to.be.rejectedWith('No IPersistenceHandler implementation available');
+        });
+
+        it('should have a `save` hook in the SessionConfig instance', () => {
+            const sessionName = 'foo';
+            const host = 'bar';
+            const uri = `mysqlx://${host}`;
+
+            td.when(save(sessionName, { uri, appdata: { baz: 'quux' } })).thenResolve();
+            td.when(save(sessionName, { uri, appdata: { baz: 'qux' } }), { times: 1 }).thenResolve();
+
+            const config = configManager().setPersistenceHandler({ save });
+
+            return expect(config.save(sessionName, { host, ssl: true, baz: 'qux' })).to.be.fulfilled
+                .then(result => {
+                    return result.setAppData('baz', 'quux').save();
+                })
+                .then(result => {
+                    expect(td.explain(save).callCount).to.equal(2);
+                    expect(result.getUri()).to.equal(uri);
+                    expect(result.getAppData('baz')).to.equal('quux');
+                });
         });
     });
 });

@@ -3,7 +3,12 @@
 /* eslint-env node, mocha */
 
 const sessionConfig = require('lib/DevAPI/SessionConfig');
-const expect = require('chai').expect;
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
 
 describe('SessionConfig', () => {
     it('should throw error if the name is invalid', () => {
@@ -33,6 +38,21 @@ describe('SessionConfig', () => {
     // Tests both `setAppData()` and `getAppData()`.
     it('should encapsulate application specific parameters', () => {
         expect(sessionConfig().setAppData('foo', 'bar').getAppData('foo')).to.equal('bar');
+    });
+
+    context('save()', () => {
+        it('should emit a `save` event', () => {
+            const config = sessionConfig('foo');
+
+            config.on('save', next => {
+                return next(config);
+            });
+
+            return expect(config.save()).to.be.fulfilled.then(result => {
+                expect(result.getName).to.be.a('function');
+                expect(result.getName()).to.equal('foo');
+            });
+        });
     });
 
     context('toObject()', () => {

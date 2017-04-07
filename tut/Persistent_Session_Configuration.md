@@ -107,3 +107,55 @@ mysqlx.config.list().then(sessions => {
     console.log(sessions); // ['foo', 'bar', 'baz', 'qux']
 });
 ```
+
+### Updating an existing persistent session
+
+To update an existing persistent session, one can access the session configuration API via either of the above-mentioned `save()` or `get()` global methods. The API provides methods to update the URI - `setUri()` - and application-specific parameters - `setAppData()`.
+
+#### Newly created sessions
+
+```js
+const mysqlx = require('@mysqlx/xdevapi');
+
+mysqlx.config
+    .save('<session_name>', 'mysqlx://localhost', { foo: 'bar' })
+    .then(configuration => {
+        configuration.setUri('mysqlx://127.0.0.1');
+        configuration.setAppData('foo', 'baz');
+
+        return configuration.save();
+    })
+    .then(configuration => {
+        console.log(configuration.getUri()); // mysqlx://127.0.0.1
+        console.log(configuration.getAppData('foo')); // baz
+
+        return mysqlx.getSession(configuration, '<user_password>');
+    })
+    .then(session => {
+        console.log('Session created using a persistent configuration');
+    });
+```
+
+#### Existing sessions
+
+```js
+const mysqlx = require('@mysqlx/xdevapi');
+
+mysqlx.config
+    .get('<session_name>')
+    .then(configuration => {
+        configuration.setUri('mysqlx://127.0.0.1');
+        configuration.setAppData('foo', 'baz');
+
+        return configuration.save();
+    })
+    .then(configuration => {
+        console.log(configuration.getUri()); // mysqlx://127.0.0.1
+        console.log(configuration.getAppData('foo')); // baz
+
+        return mysqlx.getSession(configuration, '<user_password>');
+    })
+    .then(session => {
+        console.log('Session created using a persistent configuration');
+    });
+```

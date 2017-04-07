@@ -406,6 +406,25 @@ describe('@integration X plugin session', () => {
                         .then(session => expect(session.inspect()).to.deep.equal(expected));
                 });
             });
+
+            context('given a session configuration instance', () => {
+                it('should save the session details', () => {
+                    // TODO(Rui): maybe add some appdata to the object.
+                    const data = Object.assign({}, config, { ssl: false });
+                    const expected = { dbUser: data.dbUser, host: data.host, port: data.port, socket: undefined, ssl: false };
+
+                    return expect(mysqlx.config.save('test', data)).to.be.fulfilled
+                        .then(sessionConfig => {
+                            return expect(mysqlx.config.save(sessionConfig)).to.be.fulfilled;
+                        })
+                        .then(sessionConfig => {
+                            return expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled;
+                        })
+                        .then(session => {
+                            expect(session.inspect()).to.deep.equal(expected);
+                        });
+                });
+            });
         });
     });
 
