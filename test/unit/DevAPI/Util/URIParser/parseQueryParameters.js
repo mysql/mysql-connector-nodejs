@@ -28,4 +28,16 @@ describe('parseQueryParameters', () => {
     it('should parse an empty querystring', () => {
         expect(parseQueryParameters('')).to.deep.equal({});
     });
+
+    it('should optionally throw an error for duplicate parameters', () => {
+        expect(() => parseQueryParameters('foo=bar&foo=baz', { allowDuplicates: false })).to.throw('Duplicate options');
+    });
+
+    it('should support case-insensitive option keys', () => {
+        expect(parseQueryParameters('fOo=bar&BAZ=QuX')).to.deep.equal({ foo: 'bar', baz: 'QuX' });
+    });
+
+    it('should support specific case-insensitive option values', () => {
+        expect(parseQueryParameters('fOo=BaR&BAZ=QuX', { ignoreCase: ['foo'] })).to.deep.equal({ foo: 'bar', baz: 'QuX' });
+    });
 });

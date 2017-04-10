@@ -17,7 +17,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -37,7 +37,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -57,7 +57,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -77,7 +77,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -97,7 +97,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -117,7 +117,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -137,7 +137,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -157,7 +157,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -177,7 +177,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: 'schema',
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -197,7 +197,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -222,7 +222,7 @@ describe('parseUri', () => {
                         socket: undefined
                     }],
                     schema: 'schema',
-                    ssl: false,
+                    ssl: true,
                     sslOptions: {
                         ca: undefined,
                         crl: undefined
@@ -250,7 +250,7 @@ describe('parseUri', () => {
                         socket: undefined
                     }],
                     schema: 'schema',
-                    ssl: false,
+                    ssl: true,
                     sslOptions: {
                         ca: undefined,
                         crl: undefined
@@ -281,7 +281,7 @@ describe('parseUri', () => {
         });
 
         context('SSL/TLS properties', () => {
-            it('should parse a URI with SSL/TLS options', () => {
+            it('should parse a URI that requires SSL/TLS', () => {
                 const expected = {
                     dbUser: 'user',
                     dbPassword: 'password',
@@ -298,7 +298,27 @@ describe('parseUri', () => {
                     }
                 };
 
-                expect(parseUri('mysqlx://user:password@hostname:33060/?ssl-enable')).to.deep.equal(expected);
+                expect(parseUri('mysqlx://user:password@hostname:33060/?ssl-mode=REQUIRED')).to.deep.equal(expected);
+            });
+
+            it('should parse a URI that disables SSL/TLS', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    endpoints: [{
+                        host: 'hostname',
+                        port: 33060,
+                        socket: undefined
+                    }],
+                    schema: undefined,
+                    ssl: false,
+                    sslOptions: {
+                        ca: undefined,
+                        crl: undefined
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@hostname:33060/?ssl-mode=DISABLED')).to.deep.equal(expected);
             });
 
             it('should parse an URI with encoded paths to validation PEM files', () => {
@@ -393,7 +413,7 @@ describe('parseUri', () => {
                         socket: '/path/to/socket'
                     }],
                     schema: undefined,
-                    ssl: false,
+                    ssl: true,
                     sslOptions: {
                         ca: undefined,
                         crl: undefined
@@ -413,7 +433,7 @@ describe('parseUri', () => {
                         socket: '/path/to/socket'
                     }],
                     schema: undefined,
-                    ssl: false,
+                    ssl: true,
                     sslOptions: {
                         ca: undefined,
                         crl: undefined
@@ -440,7 +460,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -460,7 +480,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -480,7 +500,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -500,7 +520,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -520,7 +540,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -540,7 +560,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -560,7 +580,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -580,7 +600,7 @@ describe('parseUri', () => {
                     socket: undefined
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -609,7 +629,7 @@ describe('parseUri', () => {
                         socket: undefined
                     }],
                     schema: 'schema',
-                    ssl: false,
+                    ssl: true,
                     sslOptions: {
                         ca: undefined,
                         crl: undefined
@@ -637,7 +657,7 @@ describe('parseUri', () => {
                         socket: undefined
                     }],
                     schema: 'schema',
-                    ssl: false,
+                    ssl: true,
                     sslOptions: {
                         ca: undefined,
                         crl: undefined
@@ -669,7 +689,7 @@ describe('parseUri', () => {
         });
 
         context('SSL/TLS properties', () => {
-            it('should parse a connection string with SSL/TLS options', () => {
+            it('should parse a connection string that requires SSL/TLS', () => {
                 const expected = {
                     dbUser: 'user',
                     dbPassword: 'password',
@@ -686,7 +706,27 @@ describe('parseUri', () => {
                     }
                 };
 
-                expect(parseUri('user:password@hostname?ssl-enable')).to.deep.equal(expected);
+                expect(parseUri('user:password@hostname?ssl-mode=REQUIRED')).to.deep.equal(expected);
+            });
+
+            it('should parse a connection string that disables SSL/TLS', () => {
+                const expected = {
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    endpoints: [{
+                        host: 'hostname',
+                        port: undefined,
+                        socket: undefined
+                    }],
+                    schema: undefined,
+                    ssl: false,
+                    sslOptions: {
+                        ca: undefined,
+                        crl: undefined
+                    }
+                };
+
+                expect(parseUri('user:password@hostname?ssl-mode=DISABLED')).to.deep.equal(expected);
             });
 
             it('should parse a connection string with encoded paths to validation PEM files', () => {
@@ -780,7 +820,7 @@ describe('parseUri', () => {
                     socket: './path/to/socket'
                 }],
                 schema: undefined,
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined
@@ -800,7 +840,7 @@ describe('parseUri', () => {
                     socket: './path/to/socket'
                 }],
                 schema: 'schema',
-                ssl: false,
+                ssl: true,
                 sslOptions: {
                     ca: undefined,
                     crl: undefined

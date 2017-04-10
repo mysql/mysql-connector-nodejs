@@ -3,8 +3,10 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const config = require('test/properties');
+const properties = require('test/properties');
 const mysqlx = require('index.js');
+
+const config = Object.assign({}, properties, { socket: undefined });
 
 exports.setup = function () {
     let session;

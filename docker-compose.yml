@@ -1,0 +1,25 @@
+version: '2.1'
+
+services:
+    mysql-with-ssl:
+        command: mysqld --plugin-load=mysqlx=mysqlx.so --ssl-key=/ssl/key.pem --ssl-cert=/ssl/cert.pem
+        extends:
+            file: common-services.yml
+            service: mysql
+        ports:
+            - 3306:3306
+            - 33060:33060
+        volumes:
+            - ./test/fixtures/ssl/server:/ssl:ro
+
+    mysql-without-ssl:
+        command: mysqld --plugin-load=mysqlx=mysqlx.so --port=3307 --mysqlx-port=33061 --skip-ssl
+        extends:
+            file: common-services.yml
+            service: mysql
+        ports:
+            - 3307:3307
+            - 33061:33061
+
+volumes:
+    ssl:

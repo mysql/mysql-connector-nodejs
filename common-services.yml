@@ -1,0 +1,10 @@
+version: '2.1'
+
+services:
+    mysql:
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+            MYSQL_DATABASE: nodejsmysqlxtest
+            MYSQL_PASSWORD: bar
+            MYSQL_USER: foo
+        image: mysql/mysql-server:${MYSQL_VERSION:-latest}

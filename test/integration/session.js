@@ -7,6 +7,7 @@ const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
 const mysqlx = require('index');
+const os = require('os');
 
 chai.use(chaiAsPromised);
 
@@ -15,20 +16,38 @@ const expect = chai.expect;
 describe('@integration X plugin session', () => {
     context('using a configuration object', () => {
         it('should connect to the server in a new session', () => {
-            return expect(mysqlx.getSession(config)).to.be.fulfilled;
+            const tcpConfig = Object.assign({}, config);
+
+            return expect(mysqlx.getSession(tcpConfig)).to.be.fulfilled;
         });
 
         it('should connect to the server with an IPv6 host', () => {
-            const ipv6Config = Object.assign({}, config, { host: '::1', socket: undefined });
+            const ipv6Config = Object.assign({}, config, { host: '::1' });
 
             return expect(mysqlx.getSession(ipv6Config)).to.be.fulfilled;
+        });
+
+        it('should connect to the server using SSL/TLS by default', () => {
+            // X plugin socket connections do not support SSL/TLS.
+            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true });
+
+            return expect(mysqlx.getSession(secureConfig)).to.be.fulfilled.then(session => {
+                expect(session.inspect()).to.have.property('ssl', true);
+            });
+        });
+
+        it('should connect to the server insecurely if SSL/TLS is disabled explicitly', () => {
+            const insecureConfig = Object.assign({}, config, { ssl: false });
+
+            return expect(mysqlx.getSession(insecureConfig)).to.be.fulfilled.then(session => {
+                expect(session.inspect()).to.have.property('ssl', false);
+            });
         });
 
         it('should not connect if the credentials are invalid', () => {
             const invalidConfig = Object.assign({}, config, {
                 dbUser: 'invalid user',
-                dbPassword: 'invalid password',
-                socket: undefined
+                dbPassword: 'invalid password'
             });
 
             return expect(mysqlx.getSession(invalidConfig)).to.be.rejected;
@@ -40,7 +59,7 @@ describe('@integration X plugin session', () => {
             const ipv6Config = Object.assign({}, config, { host: '::1' });
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${ipv6Config.dbUser}:${ipv6Config.dbPassword}@[${ipv6Config.host}]:${ipv6Config.port}`;
-            const expected = { dbUser: ipv6Config.dbUser, host: ipv6Config.host, port: ipv6Config.port, socket: undefined, ssl: false };
+            const expected = { dbUser: ipv6Config.dbUser, host: ipv6Config.host, port: ipv6Config.port, socket: undefined, ssl: true };
 
             return mysqlx.getSession(uri).then(result => {
                 expect(result).to.be.an.instanceof(Session);
@@ -64,18 +83,27 @@ describe('@integration X plugin session', () => {
             return mysqlx.getSession(uri).should.be.rejectedWith('Port must be between 0 and 65536');
         });
 
-        it('should connect to the server using SSL/TLS', () => {
+        it('should connect to the server using SSL/TLS by default', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}/?ssl-enable`;
+            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}`;
 
             return mysqlx
                 .getSession(uri)
                 .then(result => expect(result.inspect()).to.have.property('ssl', true));
         });
 
+        it('should connect to the server insecurely if SSL/TLS is disabled explicitly', () => {
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}?ssl-mode=DISABLED`;
+
+            return mysqlx
+                .getSession(uri)
+                .then(result => expect(result.inspect()).to.have.property('ssl', false));
+        });
+
         it('should connect to the server if an address is not reachable but there is a failover available', () => {
             const failoverConfig = Object.assign({}, config);
-            const hosts = [`${failoverConfig.host}:${failoverConfig.port + 1}`, `${failoverConfig.host}:${failoverConfig.port}`];
+            const hosts = [`${failoverConfig.host}:${failoverConfig.port + 1000}`, `${failoverConfig.host}:${failoverConfig.port}`];
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
@@ -114,7 +142,22 @@ describe('@integration X plugin session', () => {
                 return this.skip();
             }
 
+            // Uses the default socket allocated for MySQL.
             const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@(${config.socket})`;
+            const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
+
+            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
+                expect(session.inspect()).to.deep.equal(expected);
+            });
+        });
+
+        it('should ignore security options using a local UNIX socket', function () {
+            if (!config.socket || os.platform() === 'win32') {
+                return this.skip();
+            }
+
+            // Uses the default socket allocated for MySQL.
+            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@(${config.socket})?ssl-mode=REQUIRED&ssl-ca=(/path/to/ca.pem)?ssl-crl=(/path/to/crl.pem)`;
             const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
 
             return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
@@ -150,13 +193,22 @@ describe('@integration X plugin session', () => {
             return mysqlx.getSession(uri).should.be.rejectedWith('Port must be between 0 and 65536');
         });
 
-        it('should connect to the server using SSL/TLS', () => {
+        it('should connect to the server using SSL/TLS by default', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-            const uri = `${config.dbUser}:${config.dbPassword}@${config.host}/?ssl-enable`;
+            const uri = `${config.dbUser}:${config.dbPassword}@${config.host}`;
 
             return mysqlx
                 .getSession(uri)
                 .then(result => expect(result.inspect()).to.have.property('ssl', true));
+        });
+
+        it('should connect to the server insecurely if SSL/TLS is disabled explicitly', () => {
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `${config.dbUser}:${config.dbPassword}@${config.host}?ssl-mode=DISABLED`;
+
+            return mysqlx
+                .getSession(uri)
+                .then(result => expect(result.inspect()).to.have.property('ssl', false));
         });
 
         it('should connect to the server if an address is not reachable but there is a failover available', () => {
@@ -202,6 +254,20 @@ describe('@integration X plugin session', () => {
 
             // Uses the default socket allocated for MySQL.
             const uri = `${config.dbUser}:${config.dbPassword}@(${config.socket})`;
+            const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
+
+            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
+                expect(session.inspect()).to.deep.equal(expected);
+            });
+        });
+
+        it('should ignore security options using a local UNIX socket', function () {
+            if (!config.socket || os.platform() === 'win32') {
+                return this.skip();
+            }
+
+            // Uses the default socket allocated for MySQL.
+            const uri = `${config.dbUser}:${config.dbPassword}@(${config.socket})?ssl-mode=REQUIRED&ssl-ca=(/path/to/ca.pem)?ssl-crl=(/path/to/crl.pem)`;
             const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
 
             return mysqlx.getSession(uri).should.be.fulfilled.then(session => {

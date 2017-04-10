@@ -3,19 +3,17 @@
 /* eslint-env node, mocha */
 
 const Column = require('lib/DevAPI/Column');
-const config = require('test/properties');
 const expect = require('chai').expect;
 const fixtures = require('test/fixtures');
-const mysqlx = require('index');
 
 // TODO(rui.quelhas): extract tests into proper self-contained suites.
 describe('@integration relational miscellaneous tests', () => {
     let session;
 
     beforeEach('set context', () => {
-        return mysqlx.getSession(config).then(s => {
+        return fixtures.setup().then(suite => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-            session = s;
+            session = suite.session;
         });
     });
 

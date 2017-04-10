@@ -63,6 +63,14 @@ describe('@functional server connection', () => {
                 expect(err.code).to.equal('CERT_REVOKED');
             });
         });
+
+        it('should not connect if the server does not support SSL/TLS', () => {
+            // Insecure server will be running on port 33061.
+            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true, port: 33061 });
+            const error = `The server's X plugin version does not support SSL. Please refer to https://dev.mysql.com/doc/refman/5.7/en/x-plugin-ssl-connections.html for more details on how to enable secure connections.`;
+
+            return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejectedWith(error);
+        });
     });
 });
 

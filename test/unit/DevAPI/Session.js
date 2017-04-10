@@ -91,7 +91,7 @@ describe('Session', () => {
                 const session = new Session(properties);
                 const expected = { dbUser: 'foo' };
 
-                td.when(capabilitiesGet()).thenResolve();
+                td.when(capabilitiesGet()).thenResolve({});
 
                 return session.connect().then(session => expect(session.inspect()).to.deep.include(expected));
             });
@@ -137,7 +137,7 @@ describe('Session', () => {
                     const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
                     const session = new Session(properties);
 
-                    td.when(capabilitiesGet()).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve({});
 
                     return session.connect().then(() => {
                         td.verify(enableSSL(), { ignoreExtraArgs: true, times: 0 });
@@ -162,9 +162,29 @@ describe('Session', () => {
                     const session = new Session(properties);
 
                     td.when(enableSSL({ foo: 'bar' })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve({});
 
                     return session.connect();
+                });
+
+                it('should enable TLS/SSL if the server supports it', () => {
+                    const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
+                    const session = new Session(properties);
+
+                    td.when(capabilitiesGet()).thenResolve({ tls: true });
+
+                    return session.connect().then(session => expect(session.inspect()).to.deep.include({ ssl: true }));
+                });
+            });
+
+            context('insecure sessions', () => {
+                it('should not enable SSL/TLS if the server does not support it', () => {
+                    const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
+                    const session = new Session(properties);
+
+                    td.when(capabilitiesGet()).thenResolve({});
+
+                    return session.connect().then(session => expect(session.inspect()).to.deep.include({ ssl: false }));
                 });
             });
 
@@ -178,7 +198,7 @@ describe('Session', () => {
                     const error = new Error();
                     error.code = 'ENOTFOUND';
 
-                    td.when(capabilitiesGet()).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve({});
                     td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
                     td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
 
@@ -221,7 +241,7 @@ describe('Session', () => {
                     const error = new Error();
                     error.code = 'ENOTFOUND';
 
-                    td.when(capabilitiesGet()).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve({});
                     // failover restarts from the highest priority address
                     td.when(createSocket(), { ignoreExtraArgs: true }).thenResolve(new Duplex());
                     td.when(createSocket(), { ignoreExtraArgs: true, times: 2 }).thenReject(error);
