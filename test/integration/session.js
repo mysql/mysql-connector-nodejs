@@ -36,21 +36,23 @@ describe('@integration X plugin session', () => {
             // X plugin socket connections do not support SSL/TLS.
             const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true });
 
-            return expect(mysqlx.getSession(secureConfig)).to.be.fulfilled.then(session => {
-                expect(session.inspect()).to.have.property('ssl', true);
+            return expect(mysqlx.getSession(secureConfig)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.have.property('ssl', true);
 
-                return session.close();
-            });
+                    return session.close();
+                });
         });
 
         it('should connect to the server insecurely if SSL/TLS is disabled explicitly', () => {
             const insecureConfig = Object.assign({}, config, { ssl: false });
 
-            return expect(mysqlx.getSession(insecureConfig)).to.be.fulfilled.then(session => {
-                expect(session.inspect()).to.have.property('ssl', false);
+            return expect(mysqlx.getSession(insecureConfig)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.have.property('ssl', false);
 
-                return session.close();
-            });
+                    return session.close();
+                });
         });
 
         it('should not connect if the credentials are invalid', () => {
@@ -70,12 +72,13 @@ describe('@integration X plugin session', () => {
             const uri = `mysqlx://${ipv6Config.dbUser}:${ipv6Config.dbPassword}@[${ipv6Config.host}]:${ipv6Config.port}`;
             const expected = { dbUser: ipv6Config.dbUser, host: ipv6Config.host, port: ipv6Config.port, socket: undefined, ssl: true };
 
-            return mysqlx.getSession(uri).then(session => {
-                expect(session).to.be.an.instanceof(Session);
-                expect(session.inspect()).to.deep.equal(expected);
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session).to.be.an.instanceof(Session);
+                    expect(session.inspect()).to.deep.equal(expected);
 
-                return session.close();
-            });
+                    return session.close();
+                });
         });
 
         it('should connect to the server in the default port', () => {

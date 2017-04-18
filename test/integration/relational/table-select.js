@@ -163,21 +163,20 @@ describe('@integration relational table select', () => {
         });
 
         it('should group columns provided as an expression array', () => {
-            const expected = [['value1', 23], ['value1', 42], ['value2', 23], ['value2', 42]];
+            const expected = [['value1', 42], ['value1', 23], ['value2', 42], ['value2', 23]];
             let actual = [];
 
             return schema
                 .getTable('test')
                 .select('test2', 'test3')
                 .groupBy(['test2', 'test3'])
+                // MySQL 8.0.1 does not ensure GROUP BY order
+                .orderBy(['test2 ASC', 'test3 DESC'])
                 .execute(row => {
                     actual.push(row);
                 })
                 .then(() => {
-                    expect(actual).to.have.lengthOf(expected.length);
-                    actual.forEach((row, index) => {
-                        expect(row).to.deep.equal(expected[index]);
-                    });
+                    expect(actual).to.deep.equal(expected);
                 });
         });
 
@@ -189,6 +188,8 @@ describe('@integration relational table select', () => {
                 .getTable('test')
                 .select('test2', 'test3')
                 .groupBy('test3', 'test2')
+                // MySQL 8.0.1 does not ensure GROUP BY order
+                .orderBy('test3 ASC', 'test2 ASC')
                 .execute(row => {
                     actual.push(row);
                 })
