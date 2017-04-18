@@ -40,6 +40,13 @@ describe('Session', () => {
             expect(session.idGenerator()).to.deep.equal(expected);
         });
 
+        it('should use a new seed when generating UUIDs', () => {
+            const session1 = new Session({});
+            const session2 = new Session({});
+
+            expect(session1.idGenerator().substring(0, 12)).to.not.equal(session2.idGenerator().substring(0, 12));
+        });
+
         it('should throw an error if the properties are not provided', () => {
             expect(() => new Session()).to.throw(Error);
         });
@@ -306,7 +313,7 @@ describe('Session', () => {
         it('should generate an UUID in the apropriate format', () => {
             const uuid = (new Session({})).idGenerator();
 
-            expect(uuid).to.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{8}$/);
+            expect(uuid).to.match(/^[A-F0-9]{32}$/);
         });
     });
 
