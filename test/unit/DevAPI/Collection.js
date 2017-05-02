@@ -5,6 +5,7 @@
 // npm `test` script was updated to use NODE_PATH=.
 const Collection = require('lib/DevAPI/Collection');
 const CollectionAdd = require('lib/DevAPI/CollectionAdd');
+const CollectionRemove = require('lib/DevAPI/CollectionRemove');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -138,6 +139,22 @@ describe('Collection', () => {
             const instance = (new Collection()).add(documents[0], documents[1]);
 
             expect(instance._document).to.deep.equal(documents);
+        });
+    });
+
+    context('remove()', () => {
+        it('should return an operation instance for a valid condition query', () => {
+            const session = 'foo';
+            const schema = 'bar';
+            const collection = 'baz';
+            const query = 'true';
+            const instance = (new Collection(session, schema, collection)).remove(query);
+
+            expect(instance).to.be.an.instanceOf(CollectionRemove);
+            expect(instance._session).to.deep.equal(session);
+            expect(instance._schema).to.deep.equal(schema);
+            expect(instance._collection).to.deep.equal(collection);
+            expect(instance._query).to.deep.equal(query);
         });
     });
 });

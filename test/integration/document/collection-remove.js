@@ -24,25 +24,56 @@ describe('@integration document collection remove', () => {
         collection = schema.getCollection('test');
     });
 
+    beforeEach('add fixtures', () => {
+        return collection
+            .add({ _id: 1, name: 'foo' })
+            .add({ _id: 2, name: 'bar' })
+            .add({ _id: 3, name: 'baz' })
+            .execute();
+    });
+
     afterEach('clear context', () => {
         return fixtures.teardown(session);
     });
 
-    context('with limit', () => {
-        beforeEach('add fixtures', () => {
-            return collection
-                .add({ _id: 1, name: 'foo' })
-                .add({ _id: 2, name: 'bar' })
-                .add({ _id: 3, name: 'baz' })
-                .execute();
-        });
+    context('with truthy condition', () => {
+        it('should remove all documents from a collection', () => {
+            let actual = [];
 
+            return collection
+                .remove('true')
+                .execute()
+                .then(() => collection.find().execute(doc => {
+                    if (!doc) {
+                        return;
+                    }
+
+                    actual.push(doc);
+                }))
+                .then(() => expect(actual).to.be.empty);
+        });
+    });
+
+    context('with filtering condition', () => {
+        it('should remove the documents from a collection that match the criteria', () => {
+            const expected = [{ _id: 2, name: 'bar' }, { _id: 3, name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .remove('$.name == "foo"')
+                .execute()
+                .then(() => collection.find().execute(doc => actual.push(doc)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('with limit', () => {
         it('should remove a given number of documents', () => {
             const expected = [{ _id: 3, name: 'baz' }];
             let actual = [];
 
             return collection
-                .remove()
+                .remove('true')
                 .limit(2)
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))

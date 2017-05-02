@@ -92,7 +92,7 @@ describe('@integration collection miscellaneous tests', () => {
 
         return Promise.all([
             collection.add([document1, document2]).execute(),
-            collection.remove().limit(1).execute()
+            collection.remove('true').limit(1).execute()
         ]).then(() => {
             collection.find().execute(actual => expect(actual).to.deep.equal(document2));
         });
