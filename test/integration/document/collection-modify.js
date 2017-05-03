@@ -24,25 +24,53 @@ describe('@integration document collection modify', () => {
         collection = schema.getCollection('test');
     });
 
+    beforeEach('add fixtures', () => {
+        return collection
+            .add({ _id: 1, name: 'foo' })
+            .add({ _id: 2, name: 'bar' })
+            .add({ _id: 3, name: 'baz' })
+            .execute();
+    });
+
     afterEach('clear context', () => {
         return fixtures.teardown(session);
     });
 
-    context('with limit', () => {
-        beforeEach('add fixtures', () => {
-            return collection
-                .add({ _id: 1, name: 'foo' })
-                .add({ _id: 2, name: 'bar' })
-                .add({ _id: 3, name: 'baz' })
-                .execute();
-        });
+    context('with truthy condition', () => {
+        it('should updated all documents in a collection', () => {
+            const expected = [{ _id: 1, name: 'qux' }, { _id: 2, name: 'qux' }, { _id: 3, name: 'qux' }];
+            let actual = [];
 
+            return collection
+                .modify('true')
+                .set('$.name', 'qux')
+                .execute()
+                .then(() => collection.find().execute(doc => actual.push(doc)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('with filtering condition', () => {
+        it('should update the documents from a collection that match the criteria', () => {
+            const expected = [{ _id: 1, name: 'foo' }, { _id: 2, name: 'qux' }, { _id: 3, name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .modify('$.name == "bar"')
+                .set('$.name', 'qux')
+                .execute()
+                .then(() => collection.find().execute(doc => actual.push(doc)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('with limit', () => {
         it('should modify a given number of documents', () => {
             const expected = [{ _id: 1, name: 'qux' }, { _id: 2, name: 'bar' }, { _id: 3, name: 'baz' }];
             let actual = [];
 
             return collection
-                .modify()
+                .modify('true')
                 .set('$.name', 'qux')
                 .limit(1)
                 .execute()
