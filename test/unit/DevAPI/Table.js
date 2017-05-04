@@ -4,6 +4,7 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const Table = require('lib/DevAPI/Table');
+const TableDelete = require('lib/DevAPI/TableDelete');
 const TableInsert = require('lib/DevAPI/TableInsert');
 const TableSelect = require('lib/DevAPI/TableSelect');
 const expect = require('chai').expect;
@@ -181,6 +182,23 @@ describe('Table', () => {
             td.when(getName()).thenReturn('bar');
 
             expect(table.inspect()).to.deep.equal(expected);
+        });
+    });
+
+    context('delete()', () => {
+        it('should return an operation instance for a valid condition query', () => {
+            const session = 'foo';
+            const schema = 'bar';
+            const table = 'baz';
+            const query = 'true';
+            const instance = (new Table(session, schema, table)).delete(query);
+
+            expect(instance).to.be.an.instanceOf(TableDelete);
+            expect(instance._session).to.deep.equal(session);
+            expect(instance._schema).to.deep.equal(schema);
+            expect(instance._table).to.deep.equal(table);
+            expect(instance._query).to.deep.equal(query);
+            expect(instance.where).to.be.a('function');
         });
     });
 });

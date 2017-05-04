@@ -1,0 +1,124 @@
+## Handling data in existing tables
+
+Considering a table `testSchema.testTable` such as the following:
+
+```
++------+------+
+| name | age  |
++------+------+
+| foo  |   23 |
+| bar  |   42 |
++------+------+
+```
+
+Table rows can be updated or deleted under some specific conditions, as shown below.
+
+To update/delete specific rows from a table, one should provide the appropriate filtering condition when calling `update()` or by additionally calling the `where()` method. For more details about the expression format, please check the [guide](https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-other-definitions.html#crud-ebnf-searchconditionstr).
+
+To update/delete all rows from a table, one should provide any expression that evaluates to `true` (if no expression is provided, executing the operation will result in an error) when calling `delete()` or by appending a call to  `where()`.
+
+### Deleting rows that match a given criteria
+
+#### Without `where()`
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .getSchema('testSchema')
+            .getTable('testTable')
+            // The criteria is defined through the expression.
+            .delete('`name` == "foo"')
+            .execute()
+            .then(() => table)
+    })
+    .then(table => {
+        let resultSet = [];
+
+        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet)
+    })
+    .then(result => {
+        console.log(result); // [ [ 'bar', 42 ] ]
+    });
+```
+
+#### With `where()`
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .getSchema('testSchema')
+            .getTable('testTable')
+            // The criteria is defined through the expression.
+            .delete()
+            .where('`name` == "foo"')
+            .execute()
+            .then(() => table)
+    })
+    .then(table => {
+        let resultSet = [];
+
+        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet)
+    })
+    .then(result => {
+        console.log(result); // [ [ 'bar', 42 ] ]
+    });
+```
+
+### Deleting all rows
+
+#### Without `where()`
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .getSchema('testSchema')
+            .getTable('testTable')
+            // The expression should evaluate to `true`.
+            .delete('true')
+            .execute()
+            .then(() => table)
+    })
+    .then(table => {
+        let resultSet = [];
+
+        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet)
+    })
+    .then(result => {
+        console.log(result); // []
+    });
+```
+
+#### With `where()`
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .getSchema('testSchema')
+            .getTable('testTable')
+            // The expression should evaluate to `true`.
+            .delete()
+            .where('true')
+            .execute()
+            .then(() => table)
+    })
+    .then(table => {
+        let resultSet = [];
+
+        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet)
+    })
+    .then(result => {
+        console.log(result); // []
+    });
+```
