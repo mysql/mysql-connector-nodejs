@@ -8,6 +8,22 @@ Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.7
+======
+
+- Add support for server connections using local UNIX sockets
+- Add failover support when creating sessions by providing multiple server/router addresses
+- Normalize multiple session types into a single `Session` entity
+- Enable SSL/TLS on server connections by default
+- Introduce a new mysql-specific UUID format for document ids
+- Fix issue preventing document ids to be set to `0`
+- Fix protocol issue preventing the addition of a large number of documents to a collection
+- Prevent behavior of implicitely removing entire tables and collections
+- Fix issue with `bind()` usage for removing documents from a collection
+- Normalize dropX() methods and restrict them to the proper scope
+- Fix protocol issue preventing SHA256 password users of picking the `PLAIN` authentication mechanism in MySQL 8
+- Add high-level management interface to support persistent session configurations
+
 v1.0.6
 ======
 

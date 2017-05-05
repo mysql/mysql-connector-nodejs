@@ -4,25 +4,31 @@ The Node.js Connector is an asynchronous promise-based client library for the
 X DevAPI (using the X Protocol) that was introduced in MySQL 5.7.12.
 
 MySQL 5.7 is an open-source relational database that is secure, high
-performing, and easy to use. The X DevAPI supports relational tables and JSON 
+performing, and easy to use. The X DevAPI supports relational tables and JSON
 documents making it possible to use both tables and collections at the same
 time.
 
 For general information about the X DevAPI, please refer to documentation on
-http://dev.mysql.com/doc/x-devapi-userguide/en/.
+[https://dev.mysql.com/doc/x-devapi-userguide/en/](https://dev.mysql.com/doc/x-devapi-userguide/en/).
 
 ## Requirements
 
-This library requires at least Node.js 4.2.x and MySQL 5.7.12.
+This library requires at least Node.js 4.2.x and MySQL 5.7.19 or later.
 
 ## Installation
 
-This library is organized in a way that it can be installed using Node.js's npm
-tool into your project:
-  `npm install mysql-connector-nodejs-1.0.6.tar.gz`
-or directly from npmjs.com:
-  `npm install @mysql/xdevapi`
-Please refer to http://npmjs.com for more information on npm.
+This library is organized in a way that it can be installed into your project using Node.js's npm tool. Choose one of the following methods to get and install MySQL Connector/node.js:
+
+* manually download the package from [https://dev.mysql.com/downloads/connector/nodejs/](https://dev.mysql.com/downloads/connector/nodejs/) and import the library using npm:
+```sh
+$ npm install mysql-connector-nodejs-8.0.7.tar.gz`
+```
+* use the @mysql/xdevapi package from [https://npmjs.com](https://npmjs.com) and install it:
+```sh
+$ npm install @mysql/xdevapi
+```
+
+Please refer to [https://npmjs.com](https://npmjs.com) for more information on npm.
 
 ## Getting Started
 
@@ -40,17 +46,17 @@ mysql
     })
     .then(session => {
         console.log('Session created');
-        
+
         return session.createSchema('test_schema');
     })
     .then(schema => {
         console.log('Schema created');
-        
+
         return schema.createCollection('myCollection');
     })
     .then(collection => {
         console.log('Collection created')
-        
+
         return Promise.all([
             collection
                 .add({ baz: { foo: 'bar' } }, { foo: { bar: 'baz' } })
