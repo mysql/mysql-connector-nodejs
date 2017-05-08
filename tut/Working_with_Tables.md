@@ -122,3 +122,113 @@ mysqlx.getSession('mysqlx://localhost:33060')
         console.log(result); // []
     });
 ```
+
+### Updating rows that match a given criteria
+
+#### Without `where()`
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .getSchema('testSchema')
+            .getTable('testTable')
+            // The criteria is defined through the expression.
+            .update('`name` == "foo"')
+            .set('age', 50)
+            .execute()
+            .then(() => table)
+    })
+    .then(table => {
+        let resultSet = [];
+
+        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet)
+    })
+    .then(result => {
+        console.log(result); // [ [ 'foo', 50 ], [ 'bar', 42 ] ]
+    });
+```
+
+#### With `where()`
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .getSchema('testSchema')
+            .getTable('testTable')
+            // The criteria is defined through the expression.
+            .update()
+            .where('`name` == "bar"')
+            .set('age', 50)
+            .execute()
+            .then(() => table)
+    })
+    .then(table => {
+        let resultSet = [];
+
+        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet)
+    })
+    .then(result => {
+        console.log(result); // [ [ 'foo', 23 ] [ 'bar', 50 ] ]
+    });
+```
+
+### Deleting all rows
+
+#### Without `where()`
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .getSchema('testSchema')
+            .getTable('testTable')
+            // The expression should evaluate to `true`.
+            .update('true')
+            .set('age', 50)
+            .execute()
+            .then(() => table)
+    })
+    .then(table => {
+        let resultSet = [];
+
+        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet)
+    })
+    .then(result => {
+        console.log(result); // [ [ 'foo', 50 ] [ 'bar', 50 ] ]
+    });
+```
+
+#### With `where()`
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .getSchema('testSchema')
+            .getTable('testTable')
+            // The expression should evaluate to `true`.
+            .update()
+            .where('true')
+            .set('name', 'qux')
+            .execute()
+            .then(() => table)
+    })
+    .then(table => {
+        let resultSet = [];
+
+        return table.select().orderBy('age ASC').execute(doc => resultSet.push(doc)).then(() => resultSet)
+    })
+    .then(result => {
+        console.log(result); // [ [ 'qux', 23 ] [ 'qux', 50 ] ]
+    });
+```

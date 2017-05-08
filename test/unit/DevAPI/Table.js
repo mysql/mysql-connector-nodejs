@@ -7,6 +7,7 @@ const Table = require('lib/DevAPI/Table');
 const TableDelete = require('lib/DevAPI/TableDelete');
 const TableInsert = require('lib/DevAPI/TableInsert');
 const TableSelect = require('lib/DevAPI/TableSelect');
+const TableUpdate = require('lib/DevAPI/TableUpdate');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -194,6 +195,23 @@ describe('Table', () => {
             const instance = (new Table(session, schema, table)).delete(query);
 
             expect(instance).to.be.an.instanceOf(TableDelete);
+            expect(instance._session).to.deep.equal(session);
+            expect(instance._schema).to.deep.equal(schema);
+            expect(instance._table).to.deep.equal(table);
+            expect(instance._query).to.deep.equal(query);
+            expect(instance.where).to.be.a('function');
+        });
+    });
+
+    context('update()', () => {
+        it('should return an operation instance for a valid condition query', () => {
+            const session = 'foo';
+            const schema = 'bar';
+            const table = 'baz';
+            const query = 'true';
+            const instance = (new Table(session, schema, table)).update(query);
+
+            expect(instance).to.be.an.instanceOf(TableUpdate);
             expect(instance._session).to.deep.equal(session);
             expect(instance._schema).to.deep.equal(schema);
             expect(instance._table).to.deep.equal(table);
