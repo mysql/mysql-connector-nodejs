@@ -5,8 +5,13 @@
 const CollectionAdd = require('lib/DevAPI/CollectionAdd');
 const Client = require('lib/Protocol/Client');
 const Result = require('lib/DevAPI/Result');
-const expect = require('chai').expect;
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
 const td = require('testdouble');
+
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
 
 describe('CollectionAdd', () => {
     let crudInsert, fakeSchema, fakeSession, getName, idGenerator;
@@ -76,7 +81,7 @@ describe('CollectionAdd', () => {
 
             td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify(documents[0])], [JSON.stringify(documents[1])]])).thenResolve(state);
 
-            return query.execute().should.eventually.deep.equal(expected);
+            return expect(query.execute()).to.eventually.deep.equal(expected);
         });
 
         it('should generate an id for documents that do not have one', () => {
@@ -87,7 +92,7 @@ describe('CollectionAdd', () => {
             td.when(idGenerator()).thenReturn('baz');
             td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify({ foo: 'bar', _id: 'baz' })]])).thenResolve(state);
 
-            return query.execute().should.eventually.deep.equal(expected);
+            return expect(query.execute()).to.eventually.deep.equal(expected);
         });
 
         it('should append the ids of the added documents to the response state', () => {
@@ -97,16 +102,36 @@ describe('CollectionAdd', () => {
             td.when(idGenerator()).thenReturn('baz');
             td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify({ foo: 'bar', _id: 'baz' })]])).thenResolve(state);
 
-            return query.execute().then(result => expect(result.getDocumentIds()).to.deep.equal(['baz']));
+            return expect(query.execute()).to.be.fulfilled
+                .then(result => expect(result.getDocumentIds()).to.deep.equal(['baz']));
         });
 
         it('should return early if no documents were provided', () => {
             const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection', []));
 
-            return query.execute().then(() => {
-                td.verify(idGenerator(), { times: 0 });
-                td.verify(crudInsert(), { ignoreExtraArgs: true, times: 0 });
-            });
+            td.when(idGenerator(), { ignoreExtraArgs: true }).thenReturn();
+            td.when(crudInsert(), { ignoreExtraArgs: true }).thenResolve();
+
+            return expect(query.execute()).to.be.fulfilled
+                .then(() => {
+                    expect(td.explain(idGenerator).callCount).to.equal(0);
+                    expect(td.explain(crudInsert).callCount).to.equal(0);
+                });
+        });
+
+        it('should not generate an id for documents with `_id` equal to `0`', () => {
+            const expected = [0];
+            const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection', [{ _id: expected[0], name: 'foo' }]));
+
+            td.when(idGenerator(), { ignoreExtraArgs: true }).thenReturn();
+            td.when(getName()).thenReturn('bar');
+            td.when(crudInsert('bar', 'collection', Client.dataModel.DOCUMENT), { ignoreExtraArgs: true }).thenResolve({});
+
+            return expect(query.execute()).to.be.fulfilled
+                .then(result => {
+                    expect(td.explain(idGenerator).callCount).to.equal(0);
+                    expect(result._state.doc_ids).to.deep.equal(expected);
+                });
         });
     });
 });
