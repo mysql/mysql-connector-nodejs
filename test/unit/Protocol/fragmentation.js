@@ -1,54 +1,63 @@
-"use strict";
-/*global
- describe, context, beforeEach, afterEach, it, chai, Client, Encoding, Messages, nullStream
- */
+'use strict';
 
-chai.should();
+/* eslint-env node, mocha */
+/* global nullStream */
 
-const assert = require("assert");
+const Client = require('lib/Protocol/Client');
+const Encoding = require('lib/Protocol/Encoding');
+const Messages = require('lib/Protocol/Messages');
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
 
-describe('Client', function () {
-    describe('fragmentation', function () {
-        it('should handle fragmented after the header', function () {
-            var protocol = new Client(nullStream);
-            var promise = protocol.crudModify("schema", "collection", Client.dataModel.DOCUMENT, "", []);
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
+
+describe('Client', () => {
+    context('fragmentation', () => {
+        it('should handle fragmented after the header', () => {
+            const protocol = new Client(nullStream);
+            const promise = protocol.crudModify('schema', 'collection', Client.dataModel.DOCUMENT, '', []);
             const complete = Encoding.encodeMessage(Messages.ServerMessages.ERROR, {
                 code: 1,
-                sql_state: "0000",
-                msg: "Unknown error"
+                sql_state: '0000',
+                msg: 'Unknown error'
             }, Encoding.serverMessages);
+
             protocol.handleNetworkFragment(complete.slice(0, 14));
             protocol.handleNetworkFragment(complete.slice(14));
-            return promise.should.be.rejected;
+
+            return expect(promise).to.eventually.be.rejected;
         });
-        it('should handle fragmented within the header', function () {
-            var protocol = new Client(nullStream);
-            var promise = protocol.crudModify("schema", "collection", Client.dataModel.DOCUMENT, "", []);
+
+        it('should handle fragmented within the header', () => {
+            const protocol = new Client(nullStream);
+            const promise = protocol.crudModify('schema', 'collection', Client.dataModel.DOCUMENT, '', []);
             const complete = Encoding.encodeMessage(Messages.ServerMessages.ERROR, {
                 code: 1,
-                sql_state: "0000",
-                msg: "Unknown error"
+                sql_state: '0000',
+                msg: 'Unknown error'
             }, Encoding.serverMessages);
 
             protocol.handleNetworkFragment(complete.slice(0, 1));
             protocol.handleNetworkFragment(complete.slice(1));
-            return promise.should.be.rejected;
+
+            return expect(promise).to.eventually.be.rejected;
         });
-        it('should handle complete package after fragmented package', function () {
-            var protocol = new Client(nullStream);
-            var promise = Promise.all([
-                protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 123 }]]),
-                protocol.crudInsert("schema", "collection", Client.dataModel.DOCUMENT, [[{ _id: 456 }]])
+
+        it('should handle complete package after fragmented package', () => {
+            const protocol = new Client(nullStream);
+            const promise = Promise.all([
+                protocol.crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[{ _id: 123 }]]),
+                protocol.crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[{ _id: 456 }]])
             ]);
 
             const complete = Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages);
 
             protocol.handleNetworkFragment(complete.slice(0, 1));
-            protocol.handleNetworkFragment(complete.slice(1));
+            protocol.handleNetworkFragment(Buffer.concat([complete.slice(1), complete]));
 
-            protocol.handleNetworkFragment(complete);
-
-            return promise.should.eventually.deep.equal([{},{}]);
+            return expect(promise).to.eventually.deep.equal([{}, {}]);
         });
     });
 });
