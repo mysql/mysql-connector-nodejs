@@ -67,5 +67,35 @@ describe('@integration session schema', () => {
             return expect(schema.dropCollection(null)).to.eventually.be.rejected;
         });
     });
+
+    context('dropping tables', () => {
+        it('should allow to drop an existing table', () => {
+            const table = 'test';
+
+            return expect(Promise.all([
+                expect(schema.getTables()).to.eventually.be.empty,
+                schema.createTable(table).addColumn(schema.columnDef('foo', schema.Type.Varchar, 5)).execute(),
+                expect(schema.getTables()).to.eventually.not.be.empty,
+                schema.dropTable(table),
+                expect(schema.getTables()).to.eventually.be.empty
+            ])).to.eventually.be.fulfilled;
+        });
+
+        it('should not fail to drop non-existent tables', () => {
+            return expect(schema.dropTable('test')).to.eventually.be.fulfilled;
+        });
+
+        it('should fail to drop a table with an empty name', () => {
+            return expect(schema.dropTable('')).to.eventually.be.rejected;
+        });
+
+        it('should fail to drop a table with an invalid name', () => {
+            return expect(schema.dropTable(' ')).to.eventually.be.rejected;
+        });
+
+        it('should fail to drop a table with name set to `null`', () => {
+            return expect(schema.dropTable(null)).to.eventually.be.rejected;
+        });
+    });
 });
 

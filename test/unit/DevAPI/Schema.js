@@ -180,30 +180,36 @@ describe('Schema', () => {
 
     context('dropTable()', () => {
         it('should return true if the table was dropped', () => {
-            const schema = new Schema();
-            const drop = td.function();
-            const getTable = td.function();
+            const name = 'foo';
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+            const table = 'bar';
 
-            schema.getTable = getTable;
+            td.when(sqlStmtExecute(`DROP TABLE \`${name}\`.\`${table}\``)).thenResolve();
 
-            td.when(drop()).thenResolve(true);
-            td.when(schema.getTable('foo')).thenReturn({ drop });
+            return expect(schema.dropTable(table)).to.eventually.be.true;
+        });
 
-            return expect(schema.dropTable('foo')).to.eventually.be.true;
+        it('should return true if the table does not exist', () => {
+            const name = 'foo';
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+            const table = 'bar';
+            const error = new Error();
+            error.info = { code: 1051 };
+
+            td.when(sqlStmtExecute(`DROP TABLE \`${name}\`.\`${table}\``)).thenReject(error);
+
+            return expect(schema.dropTable(table)).to.eventually.be.true;
         });
 
         it('should fail if an unexpected error was thrown', () => {
-            const schema = new Schema();
-            const drop = td.function();
-            const getTable = td.function();
+            const name = 'foo';
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+            const table = 'bar';
             const error = new Error('foobar');
 
-            schema.getTable = getTable;
+            td.when(sqlStmtExecute(`DROP TABLE \`${name}\`.\`${table}\``)).thenReject(error);
 
-            td.when(drop()).thenReject(error);
-            td.when(schema.getTable('foo')).thenReturn({ drop });
-
-            return expect(schema.dropTable('foo')).to.eventually.be.rejectedWith(error);
+            return expect(schema.dropTable(table)).to.eventually.be.rejectedWith(error);
         });
     });
 

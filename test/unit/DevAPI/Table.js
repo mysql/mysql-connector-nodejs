@@ -132,27 +132,6 @@ describe('Table', () => {
         });
     });
 
-    context('drop()', () => {
-        it('should return true if the table was dropped', () => {
-            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(sqlStmtExecute('DROP TABLE `bar`.`foo`')).thenResolve();
-
-            return expect(table.drop()).to.eventually.be.true;
-        });
-
-        it('should fail if an expected error is thrown', () => {
-            const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');
-            const error = new Error('foobar');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(sqlStmtExecute('DROP TABLE `bar`.`foo`')).thenReject(error);
-
-            return expect(table.drop()).to.eventually.be.rejectedWith(error);
-        });
-    });
-
     context('count()', () => {
         it('should return the number of records found', () => {
             const table = new Table({ _client: { sqlStmtExecute } }, { getName }, 'foo');

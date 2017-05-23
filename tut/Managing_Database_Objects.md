@@ -25,3 +25,24 @@ mysqlx
         return schema.dropCollection('bar');
     });
 ```
+
+### Dropping a table
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/foo')
+    .then(session => {
+        const schema = session.getSchema('foo');
+
+        return schema
+            .createTable('bar')
+            .addColumn('foo', schema.Type.Varchar, 5)
+            .execute()
+            .then(() => schema);
+    })
+    .then(schema => {
+        return schema.dropTable('bar');
+    });
+```

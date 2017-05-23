@@ -297,21 +297,6 @@ describe('Session', () => {
                 return expect(session.dropSchema(schema)).to.eventually.be.true;
             });
         });
-
-        context('dropTable()', () => {
-            it('should try to drop a collection', () => {
-                const session = new Session({});
-                const expected = { ok: true };
-                const dropTable = td.function();
-
-                session.getSchema = td.function();
-
-                td.when(dropTable('qux')).thenResolve(expected);
-                td.when(session.getSchema('baz')).thenReturn({ dropTable });
-
-                return expect(session.dropTable('baz', 'qux')).to.eventually.deep.equal(expected);
-            });
-        });
     });
 
     context('idGenerator()', () => {
