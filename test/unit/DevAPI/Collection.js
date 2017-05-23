@@ -68,27 +68,6 @@ describe('Collection', () => {
         });
     });
 
-    context('drop()', () => {
-        it('should return true if the collection was dropped', () => {
-            const collection = new Collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(sqlStmtExecute('drop_collection', ['bar', 'foo'], null, null, 'xplugin')).thenResolve();
-
-            return expect(collection.drop()).to.eventually.be.true;
-        });
-
-        it('should fail if an expected error is thrown', () => {
-            const collection = new Collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
-            const error = new Error('foobar');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(sqlStmtExecute('drop_collection', ['bar', 'foo'], null, null, 'xplugin')).thenReject(error);
-
-            return expect(collection.drop()).to.eventually.be.rejectedWith(error);
-        });
-    });
-
     context('count()', () => {
         it('should return the number of documents in a collection', () => {
             const collection = new Collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');

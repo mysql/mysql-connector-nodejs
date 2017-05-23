@@ -298,21 +298,6 @@ describe('Session', () => {
             });
         });
 
-        context('dropCollection()', () => {
-            it('should try to drop a collection', () => {
-                const session = new Session({});
-                const expected = { ok: true };
-                const dropCollection = td.function();
-
-                session.getSchema = td.function();
-
-                td.when(dropCollection('qux')).thenResolve(expected);
-                td.when(session.getSchema('baz')).thenReturn({ dropCollection });
-
-                return expect(session.dropCollection('baz', 'qux')).to.eventually.deep.equal(expected);
-            });
-        });
-
         context('dropTable()', () => {
             it('should try to drop a collection', () => {
                 const session = new Session({});

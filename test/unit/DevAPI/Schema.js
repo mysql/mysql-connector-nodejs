@@ -117,30 +117,36 @@ describe('Schema', () => {
 
     context('dropCollection()', () => {
         it('should return true if the collection was dropped', () => {
-            const schema = new Schema();
-            const drop = td.function();
-            const getCollection = td.function();
+            const name = 'foo';
+            const schema = new Schema({ _client: { sqlStmtExecute } }, name);
+            const collection = 'bar';
 
-            schema.getCollection = getCollection;
+            td.when(sqlStmtExecute('drop_collection', [name, collection], null, null, 'xplugin')).thenResolve();
 
-            td.when(drop()).thenResolve(true);
-            td.when(schema.getCollection('foo')).thenReturn({ drop });
+            return expect(schema.dropCollection(collection)).to.eventually.be.true;
+        });
 
-            return expect(schema.dropCollection('foo')).to.eventually.be.true;
+        it('should return true if the collection does not exist', () => {
+            const name = 'foo';
+            const schema = new Schema({ _client: { sqlStmtExecute } }, name);
+            const collection = 'bar';
+            const error = new Error();
+            error.info = { code: 1051 };
+
+            td.when(sqlStmtExecute('drop_collection', [name, collection], null, null, 'xplugin')).thenReject(error);
+
+            return expect(schema.dropCollection(collection)).to.eventually.be.true;
         });
 
         it('should fail if an unexpected error was thrown', () => {
-            const schema = new Schema();
-            const drop = td.function();
-            const getCollection = td.function();
+            const name = 'foo';
+            const schema = new Schema({ _client: { sqlStmtExecute } }, name);
+            const collection = 'bar';
             const error = new Error('foobar');
 
-            schema.getCollection = getCollection;
+            td.when(sqlStmtExecute('drop_collection', [name, collection], null, null, 'xplugin')).thenReject(error);
 
-            td.when(drop()).thenReject(error);
-            td.when(schema.getCollection('foo')).thenReturn({ drop });
-
-            return expect(schema.dropCollection('foo')).to.eventually.be.rejectedWith(error);
+            return expect(schema.dropCollection(collection)).to.eventually.be.rejectedWith(error);
         });
     });
 

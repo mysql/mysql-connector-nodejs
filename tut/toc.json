@@ -2,6 +2,9 @@
     "Getting_Started": {
         "title": "Getting Started"
     },
+    "Managing_Database_Objects": {
+        "title": "Managing Database Objects"
+    },
     "Table_Creation_API": {
         "title": "Table Creation API"
     },
