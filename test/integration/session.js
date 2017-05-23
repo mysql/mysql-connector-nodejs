@@ -87,7 +87,7 @@ describe('@integration X plugin session', () => {
 
         it('should not connect to the server if neither none or all failover addresses have explicit priority', () => {
             const failoverConfig = Object.assign({}, config);
-            const hosts = [`${failoverConfig.host}, ([::1], priority=100)`];
+            const hosts = [`${failoverConfig.host}, (address=[::1], priority=100)`];
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
@@ -99,7 +99,7 @@ describe('@integration X plugin session', () => {
 
         it('should not connect to the server if any address priority is out of bounds', () => {
             const failoverConfig = Object.assign({}, config);
-            const hosts = [`(${failoverConfig.host}, priority=100), ([::1], priority=101)`];
+            const hosts = [`(address=${failoverConfig.host}, priority=100), (address=[::1], priority=101)`];
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
@@ -161,7 +161,7 @@ describe('@integration X plugin session', () => {
 
         it('should connect to the server if an address is not reachable but there is a failover available', () => {
             const failoverConfig = Object.assign({}, config);
-            const hosts = [`(${failoverConfig.host}:${failoverConfig.port}, priority=99), (${failoverConfig.host}:${failoverConfig.port}, priority=100)`];
+            const hosts = [`(address=${failoverConfig.host}:${failoverConfig.port}, priority=99), (address=${failoverConfig.host}:${failoverConfig.port}, priority=100)`];
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
@@ -173,7 +173,7 @@ describe('@integration X plugin session', () => {
 
         it('should not connect to the server if neither none or all failover addresses have explicit priority', () => {
             const failoverConfig = Object.assign({}, config);
-            const hosts = [`(${failoverConfig.host}), ([::1], priority=100)`];
+            const hosts = [`(address=${failoverConfig.host}), (address=[::1], priority=100)`];
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
@@ -185,7 +185,7 @@ describe('@integration X plugin session', () => {
 
         it('should not connect to the server if any address priority is out of bounds', () => {
             const failoverConfig = Object.assign({}, config);
-            const hosts = [`(${failoverConfig.host}, priority=-1), ([::1], priority=100)`];
+            const hosts = [`(address=${failoverConfig.host}, priority=-1), (address=[::1], priority=100)`];
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 

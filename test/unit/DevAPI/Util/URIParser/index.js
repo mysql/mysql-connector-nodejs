@@ -257,14 +257,14 @@ describe('parseUri', () => {
                     }
                 };
 
-                expect(parseUri('mysqlx://user:password@[(127.0.0.1, priority=99), (localhost:3357, priority=0), ([::1], priority=100)]/schema')).to.deep.equal(expected);
+                expect(parseUri('mysqlx://user:password@[(address=127.0.0.1, priority=99), (address=localhost:3357, priority=0), (address=[::1], priority=100)]/schema')).to.deep.equal(expected);
             });
 
             it('should throw an error if any but not all addresses have a priority', () => {
                 [
-                    '[127.0.0.1, ([::1], priority=100)]',
-                    '[(127.0.0.1), ([::1], 100)]',
-                    '[(127.0.0.1, foo), ([::1], priority=100)]'
+                    '[127.0.0.1, (address=[::1], priority=100)]',
+                    '[(address=127.0.0.1), (address=[::1], 100)]',
+                    '[(address=127.0.0.1, foo), (address=[::1], priority=100)]'
                 ].forEach(invalid => {
                     expect(() => parseUri(`mysqlx://user:password@${invalid}/schema`)).to.throw('You must either assign no priority to any of the routers or give a priority for every router');
                 });
@@ -272,8 +272,8 @@ describe('parseUri', () => {
 
             it('should throw an error if any priority is out of range', () => {
                 [
-                    '[(127.0.0.1, priority=-1), ([::1], priority=-2)]',
-                    '[(127.0.0.1, priority=100), ([::1], priority=101)]'
+                    '[(address=127.0.0.1, priority=-1), (address=[::1], priority=-2)]',
+                    '[(address=127.0.0.1, priority=100), (address=[::1], priority=101)]'
                 ].forEach(invalid => {
                     expect(() => parseUri(`mysqlx://user:password@${invalid}/schema`)).to.throw('The priorities must be between 0 and 100');
                 });
@@ -644,15 +644,15 @@ describe('parseUri', () => {
                     }
                 };
 
-                expect(parseUri('user:password@[(127.0.0.1:3357, priority=98), (localhost:3357, priority=100), ([::1], priority=97)]/schema')).to.deep.equal(expected);
+                expect(parseUri('user:password@[(address=127.0.0.1:3357, priority=98), (address=localhost:3357, priority=100), (address=[::1], priority=97)]/schema')).to.deep.equal(expected);
             });
 
             it('should throw an error if any but not all addresses have a priority', () => {
                 [
-                    '[127.0.0.1, ([::1], 100)]',
-                    '[(127.0.0.1), ([::1], priority=100)]',
-                    '[(127.0.0.1, foo), ([::1], priority=100)]',
-                    '[(127.0.0.1, foo=bar), ([::1], 100)]'
+                    '[127.0.0.1, (address=[::1], 100)]',
+                    '[(address=127.0.0.1), (address=[::1], priority=100)]',
+                    '[(address=127.0.0.1, foo), (address=[::1], priority=100)]',
+                    '[(address=127.0.0.1, foo=bar), (address=[::1], 100)]'
                 ].forEach(invalid => {
                     expect(() => parseUri(`user:password@${invalid}/schema`)).to.throw('You must either assign no priority to any of the routers or give a priority for every router');
                 });
@@ -660,8 +660,8 @@ describe('parseUri', () => {
 
             it('should throw an error if any priority is out of range', () => {
                 [
-                    '[(127.0.0.1, priority=-1), ([::1], priority=-2)]',
-                    '[(127.0.0.1, priority=100), ([::1], priority=101)]'
+                    '[(address=127.0.0.1, priority=-1), (address=[::1], priority=-2)]',
+                    '[(address=127.0.0.1, priority=100), (address=[::1], priority=101)]'
                 ].forEach(invalid => {
                     expect(() => parseUri(`user:password@${invalid}/schema`)).to.throw('The priorities must be between 0 and 100');
                 });

@@ -291,7 +291,7 @@ Explicit priorities should start at `0` (lowest priority) and finish at `100` (h
 var sessionPromise = xdevapi.getSession('mysqlx://root@[localhost:33060, 127.0.0.1:33060]');
 
 // Explicit priority
-var sessionPromise = xdevapi.getSession('mysqlx://root@[(127.0.0.1:33060, priority=99), (localhost:33060, priority=100)]');
+var sessionPromise = xdevapi.getSession('mysqlx://root@[(address=127.0.0.1:33060, priority=99), (address=localhost:33060, priority=100)]');
 ```
 
 ### Script hangs
