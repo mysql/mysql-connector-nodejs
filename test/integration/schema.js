@@ -97,5 +97,49 @@ describe('@integration session schema', () => {
             return expect(schema.dropTable(null)).to.eventually.be.rejected;
         });
     });
-});
 
+    context('dropping views', () => {
+        it('should allow to drop an existing view', () => {
+            const table = 'foo';
+            const view = 'bar';
+            const column = 'baz';
+
+            return expect(schema.getTables()).to.eventually.be.empty
+                .then(() => {
+                    return schema
+                        .createTable(table)
+                        .addColumn(schema.columnDef(column, schema.Type.Varchar, 5))
+                        .execute();
+                })
+                .then(() => {
+                    const tableInstance = schema.getTable(table);
+                    const select = tableInstance.select(column);
+
+                    return schema.createView(view).definedAs(select).execute();
+                })
+                .then(() => {
+                    return expect(Promise.all([
+                        expect(schema.getTables()).to.eventually.have.all.keys([table, view]),
+                        schema.dropView(view),
+                        expect(schema.getTables()).to.eventually.have.all.keys([table])
+                    ])).to.eventually.be.fulfilled;
+                });
+        });
+
+        it('should not fail to drop non-existent views', () => {
+            return expect(schema.dropView('test')).to.eventually.be.fulfilled;
+        });
+
+        it('should fail to drop a view with an empty name', () => {
+            return expect(schema.dropView('')).to.eventually.be.rejected;
+        });
+
+        it('should fail to drop a view with an invalid name', () => {
+            return expect(schema.dropView(' ')).to.eventually.be.rejected;
+        });
+
+        it('should fail to drop a view with name set to `null`', () => {
+            return expect(schema.dropView(null)).to.eventually.be.rejected;
+        });
+    });
+});

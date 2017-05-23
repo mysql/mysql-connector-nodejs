@@ -213,6 +213,41 @@ describe('Schema', () => {
         });
     });
 
+    context('dropView()', () => {
+        it('should return true if the view was dropped', () => {
+            const name = 'foo';
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+            const view = 'bar';
+
+            td.when(sqlStmtExecute(`DROP VIEW \`${name}\`.\`${view}\``)).thenResolve();
+
+            return expect(schema.dropView(view)).to.eventually.be.true;
+        });
+
+        it('should return true if the view does not exist', () => {
+            const name = 'foo';
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+            const view = 'bar';
+            const error = new Error();
+            error.info = { code: 1051 };
+
+            td.when(sqlStmtExecute(`DROP VIEW \`${name}\`.\`${view}\``)).thenReject(error);
+
+            return expect(schema.dropView(view)).to.eventually.be.true;
+        });
+
+        it('should fail if an unexpected error was thrown', () => {
+            const name = 'foo';
+            const schema = new Schema({ _client: { sqlStmtExecute } }, 'foo');
+            const view = 'bar';
+            const error = new Error('foobar');
+
+            td.when(sqlStmtExecute(`DROP VIEW \`${name}\`.\`${view}\``)).thenReject(error);
+
+            return expect(schema.dropView(view)).to.eventually.be.rejectedWith(error);
+        });
+    });
+
     context('inspect()', () => {
         it('should hide internals', () => {
             const schema = new Schema(null, 'foobar');

@@ -46,3 +46,33 @@ mysqlx
         return schema.dropTable('bar');
     });
 ```
+
+### Dropping a view
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/foo')
+    .then(session => {
+        const schema = session.getSchema('foo');
+
+        return schema
+            .createTable('bar')
+            .addColumn('foo', schema.Type.Varchar, 5)
+            .execute()
+            .then(() => schema);
+    })
+    .then(schema => {
+        const select = schema.getTable('bar').select('foo');
+
+        return schema
+            .createView('baz')
+            .definedAs(select)
+            .execute()
+            .then(() => schema);
+    })
+    .then(schema => {
+        return schema.dropView('baz');
+    });
+```
