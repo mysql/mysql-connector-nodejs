@@ -21,14 +21,6 @@ exports.setup = function () {
         .then(() => {
             return session.createSchema(config.schema);
         })
-        .catch(err => {
-            // Nonexistent databases should not result in errors.
-            if (err.info && err.info.code === 1008) {
-                return session.createSchema(config.schema);
-            }
-
-            throw err;
-        })
         .then(schema => {
             return { session, schema };
         });

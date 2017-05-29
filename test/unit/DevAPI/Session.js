@@ -286,7 +286,7 @@ describe('Session', () => {
         });
 
         context('dropSchema()', () => {
-            it('should drop a schema', () => {
+            it('should return true if the schema was dropped', () => {
                 const session = new Session({});
                 const schema = 'foobar';
 
@@ -295,6 +295,31 @@ describe('Session', () => {
                 td.when(sqlStmtExecute(`DROP DATABASE \`${schema}\``)).thenResolve(true);
 
                 return expect(session.dropSchema(schema)).to.eventually.be.true;
+            });
+
+            it('should return true if the schema does not exist', () => {
+                const session = new Session({});
+                const schema = 'foobar'
+                const error = new Error();
+                error.info = { code: 1008 };
+
+                session._client = Object.assign({}, this._client, { sqlStmtExecute });
+
+                td.when(sqlStmtExecute(`DROP DATABASE \`${schema}\``)).thenReject(error);
+
+                return expect(session.dropSchema(schema)).to.eventually.be.true;
+            });
+
+            it('should fail if an unexpected error was thrown', () => {
+                const session = new Session({});
+                const schema = 'foobar';
+                const error = new Error('foobar');
+
+                session._client = Object.assign({}, this._client, { sqlStmtExecute });
+
+                td.when(sqlStmtExecute(`DROP DATABASE \`${schema}\``)).thenReject(error);
+
+                return expect(session.dropSchema(schema)).to.eventually.be.rejectedWith(error);
             });
         });
     });

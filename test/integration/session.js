@@ -275,4 +275,32 @@ describe('@integration X plugin session', () => {
             });
         });
     });
+
+    context('database management', () => {
+        it('should allow to drop an existing schema', () => {
+            return mysqlx.getSession(config)
+                .then(session => expect(session.dropSchema(config.schema)).to.be.fulfilled);
+        });
+
+        it('should not fail to drop a non-existent schema', () => {
+            return mysqlx.getSession(config)
+                .then(session => session.dropSchema(config.schema).then(() => session))
+                .then(session => expect(session.dropSchema(config.schema)).to.be.fulfilled);
+        });
+
+        it('should fail to drop a schema with an empty name', () => {
+            return mysqlx.getSession(config)
+                .then(session => expect(session.dropSchema('')).to.be.rejected);
+        });
+
+        it('should fail to drop a schema with an invalid name', () => {
+            return mysqlx.getSession(config)
+                .then(session => expect(session.dropSchema(' ')).to.be.rejected);
+        });
+
+        it('should fail to drop a schema with name set to `null`', () => {
+            return mysqlx.getSession(config)
+                .then(session => expect(session.dropSchema(null)).to.be.rejected);
+        });
+    });
 });
