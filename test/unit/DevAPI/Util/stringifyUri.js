@@ -31,6 +31,10 @@ describe('stringifyUri', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', socket: 'baz' })).to.equal('mysqlx://bar:foo@(baz)');
         });
 
+        it('should stringify an URI containing a password less username', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', socket: 'bar' })).to.equal('mysqlx://foo:@(bar)');
+        });
+
         it('should stringify an URI containing a username and a schema', () => {
             expect(stringifyUri({ dbUser: 'foo', schema: 'bar', socket: 'baz' })).to.equal('mysqlx://foo@(baz)/bar');
         });
@@ -47,16 +51,32 @@ describe('stringifyUri', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', schema: 'baz', socket: 'qux' })).to.equal('mysqlx://bar:foo@(qux)/baz');
         });
 
+        it('should stringify an URI containing a password less username and a schema', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', schema: 'bar', socket: 'baz' })).to.equal('mysqlx://foo:@(baz)/bar');
+        });
+
         it('should stringify an insecure URI containing a username and a password', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', socket: 'baz', ssl: false })).to.equal('mysqlx://bar:foo@(baz)?ssl-mode=DISABLED');
+        });
+
+        it('should stringify an insecure URI containing a password less username and a password', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', socket: 'bar', ssl: false })).to.equal('mysqlx://foo:@(bar)?ssl-mode=DISABLED');
         });
 
         it('should stringify an URI containing a username, a password and security options', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', socket: 'baz', ssl: true, sslOptions: { ca: 'qux' } })).to.equal('mysqlx://bar:foo@(baz)?ssl-mode=VERIFY_CA&ssl-ca=(qux)');
         });
 
+        it('should stringify an URI containing a password less username, a password and security options', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', socket: 'bar', ssl: true, sslOptions: { ca: 'baz' } })).to.equal('mysqlx://foo:@(bar)?ssl-mode=VERIFY_CA&ssl-ca=(baz)');
+        });
+
         it('should stringify an URI containing a username, a password, a schema and security options', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', schema: 'baz', socket: 'qux', ssl: true, sslOptions: { ca: 'quux' } })).to.equal('mysqlx://bar:foo@(qux)/baz?ssl-mode=VERIFY_CA&ssl-ca=(quux)');
+        });
+
+        it('should stringify an URI containing a password less username, a password, a schema and security options', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', schema: 'bar', socket: 'baz', ssl: true, sslOptions: { ca: 'qux' } })).to.equal('mysqlx://foo:@(baz)/bar?ssl-mode=VERIFY_CA&ssl-ca=(qux)');
         });
     });
 
@@ -87,6 +107,10 @@ describe('stringifyUri', () => {
 
         it('should stringify an URI containing a username and a password', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', host: 'baz' })).to.equal('mysqlx://bar:foo@baz');
+        });
+
+        it('should stringify an URI containing a password less username', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', host: 'bar' })).to.equal('mysqlx://foo:@bar');
         });
 
         it('should stringify an URI containing a username and a port', () => {
@@ -125,16 +149,32 @@ describe('stringifyUri', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', host: 'baz', port: 3357 })).to.equal('mysqlx://bar:foo@baz:3357');
         });
 
+        it('should stringify an URI containing a password less username and a port', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', host: 'bar', port: 3357 })).to.equal('mysqlx://foo:@bar:3357');
+        });
+
         it('should stringify an URI containing a username, a password and a schema', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', host: 'baz', schema: 'qux' })).to.equal('mysqlx://bar:foo@baz/qux');
+        });
+
+        it('should stringify an URI containing a password less username and a schema', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', host: 'bar', schema: 'baz' })).to.equal('mysqlx://foo:@bar/baz');
         });
 
         it('should stringify an insecure URI containing a username, a password and and a schema', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', host: 'baz', schema: 'qux', ssl: false })).to.equal('mysqlx://bar:foo@baz/qux?ssl-mode=DISABLED');
         });
 
+        it('should stringify an insecure URI containing a password less username and a schema', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', host: 'bar', schema: 'baz', ssl: false })).to.equal('mysqlx://foo:@bar/baz?ssl-mode=DISABLED');
+        });
+
         it('should stringify an URI containing a username, a password and security options', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', host: 'baz', ssl: true, sslOptions: { ca: 'qux', crl: 'quux' } })).to.equal('mysqlx://bar:foo@baz?ssl-mode=VERIFY_CA&ssl-ca=(qux)&ssl-crl=(quux)');
+        });
+
+        it('should stringify an URI containing a password less username and security options', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', host: 'bar', ssl: true, sslOptions: { ca: 'baz', crl: 'qux' } })).to.equal('mysqlx://foo:@bar?ssl-mode=VERIFY_CA&ssl-ca=(baz)&ssl-crl=(qux)');
         });
 
         it('should stringify an URI containing a username, a port and a schema', () => {
@@ -157,8 +197,16 @@ describe('stringifyUri', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', host: 'baz', port: 3357, schema: 'qux' })).to.equal('mysqlx://bar:foo@baz:3357/qux');
         });
 
+        it('should stringify an URI containing a password less username, a port and a schema', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', host: 'bar', port: 3357, schema: 'baz' })).to.equal('mysqlx://foo:@bar:3357/baz');
+        });
+
         it('should stringify an insecure URI containing a username, a password, a port and a schema', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', host: 'baz', port: 3357, schema: 'qux', ssl: false })).to.equal('mysqlx://bar:foo@baz:3357/qux?ssl-mode=DISABLED');
+        });
+
+        it('should stringify an insecure URI containing a password less username, a port and a schema', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', host: 'bar', port: 3357, schema: 'baz', ssl: false })).to.equal('mysqlx://foo:@bar:3357/baz?ssl-mode=DISABLED');
         });
 
         it('should stringify an URI containing a username, a password, a port and security options', () => {
@@ -167,6 +215,10 @@ describe('stringifyUri', () => {
 
         it('should stringify an URI containing a username, a password, a port, a schema and security options', () => {
             expect(stringifyUri({ dbPassword: 'foo', dbUser: 'bar', host: 'baz', port: 3357, schema: 'qux', ssl: true, sslOptions: { ca: 'quux' } })).to.equal('mysqlx://bar:foo@baz:3357/qux?ssl-mode=VERIFY_CA&ssl-ca=(quux)');
+        });
+
+        it('should stringify an URI containing a password less username, a port, a schema and security options', () => {
+            expect(stringifyUri({ dbPassword: '', dbUser: 'foo', host: 'bar', port: 3357, schema: 'baz', ssl: true, sslOptions: { ca: 'qux' } })).to.equal('mysqlx://foo:@bar:3357/baz?ssl-mode=VERIFY_CA&ssl-ca=(qux)');
         });
     });
 

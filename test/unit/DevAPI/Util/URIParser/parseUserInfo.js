@@ -13,9 +13,11 @@ describe('parseUserInfo', () => {
     });
 
     it('should parse a userinfo segment containing just the username', () => {
-        ['foo:', 'foo'].forEach(username => {
-            expect(parseUserInfo(username)).to.deep.equal({ username: 'foo', password: undefined });
-        });
+        expect(parseUserInfo('foo')).to.deep.equal({ username: 'foo', password: undefined });
+    });
+
+    it('should parse a userinfo segment containing a password less user', () => {
+        expect(parseUserInfo('foo:')).to.deep.equal({ username: 'foo', password: '' });
     });
 
     it('should parse an userinfo segment with encoded usernames or passwords', () => {

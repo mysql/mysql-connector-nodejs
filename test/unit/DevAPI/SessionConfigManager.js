@@ -98,6 +98,23 @@ describe('SessionConfigManager', () => {
                         expect(parseUri(session.getUri()).dbPassword).to.not.exist;
                     });
             });
+
+            it('should not retrieve password from handler for password less users', () => {
+                const uri = 'mysqlx://bar:@baz:qux';
+                const sessionName = 'foo';
+
+                td.when(load(sessionName), { times: 1 }).thenResolve({ uri });
+
+                const config = configManager().setPersistenceHandler({ load }).setPasswordHandler({ load });
+
+                return expect(config.get(sessionName)).to.be.fulfilled
+                    .then(session => {
+                        expect(td.explain(load).callCount).to.equal(1);
+                        expect(session.getName()).to.equal(sessionName);
+                        expect(session.getUri()).to.equal(uri);
+                        expect(parseUri(session.getUri()).dbPassword).to.equal('');
+                    });
+            });
         });
 
         it('should return a configuration object containing application-specific data', () => {
@@ -380,6 +397,21 @@ describe('SessionConfigManager', () => {
                 const uri = 'mysqlx://bar';
 
                 td.when(save(sessionName, { uri, appdata: {} }), { times: 1 }).thenResolve();
+
+                const config = configManager().setPersistenceHandler({ save }).setPasswordHandler({ save });
+
+                return expect(config.save(sessionName, uri)).to.be.fulfilled
+                    .then(result => {
+                        expect(td.explain(save).callCount).to.equal(1);
+                        expect(result.getUri()).to.equal(uri);
+                    });
+            });
+
+            it('should not use an existing IPasswordHandler implementation if the user does not have a password', () => {
+                const sessionName = 'foo';
+                const uri = 'mysqlx://bar:@baz';
+
+                td.when(save(sessionName, { uri: 'mysqlx://bar@baz', appdata: {} }), { times: 1 }).thenResolve();
 
                 const config = configManager().setPersistenceHandler({ save }).setPasswordHandler({ save });
 

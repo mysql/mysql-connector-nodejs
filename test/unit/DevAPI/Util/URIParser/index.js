@@ -473,7 +473,7 @@ describe('parseUri', () => {
         it('should parse a connection string if the password is empty', () => {
             const expected = {
                 dbUser: 'user',
-                dbPassword: undefined,
+                dbPassword: '',
                 endpoints: [{
                     host: 'hostname',
                     port: 3357,
