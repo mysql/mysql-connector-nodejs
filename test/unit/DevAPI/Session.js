@@ -93,7 +93,8 @@ describe('Session', () => {
 
                 td.when(capabilitiesGet()).thenResolve({});
 
-                return session.connect().then(session => expect(session.inspect()).to.deep.include(expected));
+                return expect(session.connect()).to.be.fulfilled
+                    .then(session => expect(session.inspect()).to.deep.include(expected));
             });
 
             it('should close the internal stream if there is an error', () => {
@@ -101,14 +102,14 @@ describe('Session', () => {
                 const properties = { socketFactory: { createSocket } };
                 const session = new Session(properties);
                 const stream = new Duplex();
+                const streamStub = td.function();
 
-                stream.end = td.function();
+                stream.end = streamStub;
 
                 td.when(createSocket(), { ignoreExtraArgs: true }).thenResolve(stream);
 
-                return session.connect().catch(() => {
-                    td.verify(stream.end(), { times: 1 });
-                });
+                return expect(session.connect()).to.be.rejected
+                    .then(() => expect(td.explain(streamStub).callCount).to.equal(1));
             });
 
             context('secure connection', () => {
@@ -128,9 +129,8 @@ describe('Session', () => {
                     td.when(enableSSL({})).thenResolve();
                     td.when(capabilitiesGet()).thenResolve(expected);
 
-                    return session.connect().then(() => {
-                        expect(session._serverCapabilities).to.deep.equal(expected);
-                    });
+                    return expect(session.connect()).to.be.fulfilled
+                        .then(() => expect(session._serverCapabilities).to.deep.equal(expected));
                 });
 
                 it('should not try to setup a SSL/TLS connection if no such intent is specified', () => {
@@ -140,10 +140,11 @@ describe('Session', () => {
                     td.when(enableSSL(), { ignoreExtraArgs: true }).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({});
 
-                    return session.connect().then(() => {
-                        expect(td.explain(enableSSL).callCount).to.equal(0);
-                        expect(session._serverCapabilities).to.be.empty;
-                    });
+                    return expect(session.connect()).to.be.fulfilled
+                        .then(() => {
+                            expect(td.explain(enableSSL).callCount).to.equal(0);
+                            expect(session._serverCapabilities).to.be.empty;
+                        });
                 });
 
                 it('should fail if an error is thrown in the SSL setup', () => {
@@ -153,9 +154,8 @@ describe('Session', () => {
                     td.when(enableSSL({})).thenReject(new Error());
                     td.when(capabilitiesGet()).thenResolve({ foo: 'bar' });
 
-                    return session.connect().catch(() => {
-                        expect(session._serverCapabilities).to.be.empty;
-                    });
+                    return expect(session.connect()).to.be.rejected
+                        .then(() => expect(session._serverCapabilities).to.be.empty);
                 });
 
                 it('should pass down any custom SSL/TLS-related option', () => {
@@ -165,7 +165,7 @@ describe('Session', () => {
                     td.when(enableSSL({ foo: 'bar' })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({});
 
-                    return session.connect();
+                    return expect(session.connect()).to.be.fulfilled;
                 });
 
                 it('should enable TLS/SSL if the server supports it', () => {
@@ -175,7 +175,8 @@ describe('Session', () => {
                     td.when(enableSSL({})).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ tls: true });
 
-                    return session.connect().then(session => expect(session.inspect()).to.deep.include({ ssl: true }));
+                    return expect(session.connect()).to.be.fulfilled
+                        .then(session => expect(session.inspect()).to.deep.include({ ssl: true }));
                 });
 
                 it('should fail if the server does not support TLS/SSL', () => {
@@ -205,7 +206,8 @@ describe('Session', () => {
                     td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
                     td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
 
-                    return session.connect().then(session => expect(session.inspect()).to.deep.include(expected));
+                    return expect(session.connect()).to.be.fulfilled
+                        .then(session => expect(session.inspect()).to.deep.include(expected));
                 });
 
                 it('should fail if there are no remaining failover addresses', () => {
