@@ -1,10 +1,17 @@
 version: '2.1'
 
 services:
-    mysql:
+    base:
         environment:
             MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
             MYSQL_DATABASE: nodejsmysqlxtest
             MYSQL_PASSWORD: bar
             MYSQL_USER: foo
+
+    mysql:
+        extends: base
         image: mysql/mysql-server:${MYSQL_VERSION:-latest}
+
+    mysql8:
+        extends: base
+        image: mysql/mysql-server:8.0
