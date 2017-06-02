@@ -6,6 +6,7 @@ const Session = require('lib/DevAPI/Session');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
+const fixtures = require('test/fixtures');
 const fs = require('fs');
 const mysqlx = require('index');
 const os = require('os');
@@ -20,13 +21,15 @@ describe('@integration X plugin session', () => {
         it('should connect to the server in a new session', () => {
             const tcpConfig = Object.assign({}, config);
 
-            return expect(mysqlx.getSession(tcpConfig)).to.be.fulfilled;
+            return expect(mysqlx.getSession(tcpConfig)).to.be.fulfilled
+                .then(session => session.close());
         });
 
         it('should connect to the server with an IPv6 host', () => {
             const ipv6Config = Object.assign({}, config, { host: '::1' });
 
-            return expect(mysqlx.getSession(ipv6Config)).to.be.fulfilled;
+            return expect(mysqlx.getSession(ipv6Config)).to.be.fulfilled
+                .then(session => session.close());
         });
 
         it('should connect to the server using SSL/TLS by default', () => {
@@ -35,6 +38,8 @@ describe('@integration X plugin session', () => {
 
             return expect(mysqlx.getSession(secureConfig)).to.be.fulfilled.then(session => {
                 expect(session.inspect()).to.have.property('ssl', true);
+
+                return session.close();
             });
         });
 
@@ -43,6 +48,8 @@ describe('@integration X plugin session', () => {
 
             return expect(mysqlx.getSession(insecureConfig)).to.be.fulfilled.then(session => {
                 expect(session.inspect()).to.have.property('ssl', false);
+
+                return session.close();
             });
         });
 
@@ -63,18 +70,23 @@ describe('@integration X plugin session', () => {
             const uri = `mysqlx://${ipv6Config.dbUser}:${ipv6Config.dbPassword}@[${ipv6Config.host}]:${ipv6Config.port}`;
             const expected = { dbUser: ipv6Config.dbUser, host: ipv6Config.host, port: ipv6Config.port, socket: undefined, ssl: true };
 
-            return mysqlx.getSession(uri).then(result => {
-                expect(result).to.be.an.instanceof(Session);
-                expect(result.inspect()).to.deep.equal(expected);
+            return mysqlx.getSession(uri).then(session => {
+                expect(session).to.be.an.instanceof(Session);
+                expect(session.inspect()).to.deep.equal(expected);
+
+                return session.close();
             });
         });
 
         it('should connect to the server in the default port', () => {
             const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}`;
 
-            return mysqlx
-                .getSession(uri)
-                .then(result => expect(result.inspect()).to.include({ port: config.port }));
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.include({ port: config.port });
+
+                    return session.close();
+                });
         });
 
         it('should not connect if the port is out of bounds', () => {
@@ -82,25 +94,31 @@ describe('@integration X plugin session', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${invalidConfig.dbUser}:${invalidConfig.dbPassword}@${invalidConfig.host}:${invalidConfig.port}`;
 
-            return mysqlx.getSession(uri).should.be.rejectedWith('Port must be between 0 and 65536');
+            return expect(mysqlx.getSession(uri)).to.be.rejectedWith('Port must be between 0 and 65536');
         });
 
         it('should connect to the server using SSL/TLS by default', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}`;
 
-            return mysqlx
-                .getSession(uri)
-                .then(result => expect(result.inspect()).to.have.property('ssl', true));
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.have.property('ssl', true);
+
+                    return session.close();
+                });
         });
 
         it('should connect to the server insecurely if SSL/TLS is disabled explicitly', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}?ssl-mode=DISABLED`;
 
-            return mysqlx
-                .getSession(uri)
-                .then(result => expect(result.inspect()).to.have.property('ssl', false));
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.have.property('ssl', false);
+
+                    return session.close();
+                });
         });
 
         it('should connect to the server if an address is not reachable but there is a failover available', () => {
@@ -109,10 +127,13 @@ describe('@integration X plugin session', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
-            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
-                expect(session.inspect().host).to.deep.equal(failoverConfig.host);
-                expect(session.inspect().port).to.deep.equal(failoverConfig.port);
-            });
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect().host).to.deep.equal(failoverConfig.host);
+                    expect(session.inspect().port).to.deep.equal(failoverConfig.port);
+
+                    return session.close();
+                });
         });
 
         it('should not connect to the server if neither none or all failover addresses have explicit priority', () => {
@@ -121,10 +142,11 @@ describe('@integration X plugin session', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
-            return mysqlx.getSession(uri).should.be.rejected.then(err => {
-                expect(err.message).to.equal('You must either assign no priority to any of the routers or give a priority for every router');
-                expect(err.errno).to.equal(4000);
-            });
+            return expect(mysqlx.getSession(uri)).to.be.rejected
+                .then(err => {
+                    expect(err.message).to.equal('You must either assign no priority to any of the routers or give a priority for every router');
+                    expect(err.errno).to.equal(4000);
+                });
         });
 
         it('should not connect to the server if any address priority is out of bounds', () => {
@@ -133,10 +155,11 @@ describe('@integration X plugin session', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
-            return mysqlx.getSession(uri).should.be.rejected.then(err => {
-                expect(err.message).to.equal('The priorities must be between 0 and 100');
-                expect(err.errno).to.equal(4007);
-            });
+            return expect(mysqlx.getSession(uri)).to.be.rejected
+                .then(err => {
+                    expect(err.message).to.equal('The priorities must be between 0 and 100');
+                    expect(err.errno).to.equal(4007);
+                });
         });
 
         it('should connect to the server with a local UNIX socket', function () {
@@ -148,9 +171,12 @@ describe('@integration X plugin session', () => {
             const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@(${config.socket})`;
             const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
 
-            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
-                expect(session.inspect()).to.deep.equal(expected);
-            });
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.deep.equal(expected);
+
+                    return session.close();
+                });
         });
 
         it('should ignore security options using a local UNIX socket', function () {
@@ -162,9 +188,12 @@ describe('@integration X plugin session', () => {
             const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@(${config.socket})?ssl-mode=REQUIRED&ssl-ca=(/path/to/ca.pem)?ssl-crl=(/path/to/crl.pem)`;
             const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
 
-            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
-                expect(session.inspect()).to.deep.equal(expected);
-            });
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.deep.equal(expected);
+
+                    return session.close();
+                });
         });
     });
 
@@ -173,18 +202,24 @@ describe('@integration X plugin session', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${config.dbUser}:${config.dbPassword}@${config.host}:${config.port}/${config.schema}`;
 
-            return mysqlx
-                .getSession(uri)
-                .then(session => session.getSchemas())
-                .then(result => expect(result).to.include.keys(config.schema));
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => session.getSchemas().then(schemas => ({ schemas, session })))
+                .then(result => {
+                    expect(result.schemas).to.include.keys(config.schema);
+
+                    return result.session.close();
+                });
         });
 
         it('should connect to the server in the default port', () => {
             const uri = `${config.dbUser}:${config.dbPassword}@${config.host}`;
 
-            return mysqlx
-                .getSession(uri)
-                .then(result => expect(result.inspect()).to.include({ port: config.port }));
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.include({ port: config.port });
+
+                    return session.close();
+                });
         });
 
         it('should not connect if the port is out of bounds', () => {
@@ -192,25 +227,31 @@ describe('@integration X plugin session', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${invalidConfig.dbUser}:${invalidConfig.dbPassword}@${invalidConfig.host}:${invalidConfig.port}`;
 
-            return mysqlx.getSession(uri).should.be.rejectedWith('Port must be between 0 and 65536');
+            return expect(mysqlx.getSession(uri)).to.be.rejectedWith('Port must be between 0 and 65536');
         });
 
         it('should connect to the server using SSL/TLS by default', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${config.dbUser}:${config.dbPassword}@${config.host}`;
 
-            return mysqlx
-                .getSession(uri)
-                .then(result => expect(result.inspect()).to.have.property('ssl', true));
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.have.property('ssl', true);
+
+                    return session.close();
+                });
         });
 
         it('should connect to the server insecurely if SSL/TLS is disabled explicitly', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${config.dbUser}:${config.dbPassword}@${config.host}?ssl-mode=DISABLED`;
 
-            return mysqlx
-                .getSession(uri)
-                .then(result => expect(result.inspect()).to.have.property('ssl', false));
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.have.property('ssl', false);
+
+                    return session.close();
+                });
         });
 
         it('should connect to the server if an address is not reachable but there is a failover available', () => {
@@ -219,10 +260,13 @@ describe('@integration X plugin session', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
-            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
-                expect(session.inspect().host).to.deep.equal(failoverConfig.host);
-                expect(session.inspect().port).to.deep.equal(failoverConfig.port);
-            });
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect().host).to.deep.equal(failoverConfig.host);
+                    expect(session.inspect().port).to.deep.equal(failoverConfig.port);
+
+                    return session.close();
+                });
         });
 
         it('should not connect to the server if neither none or all failover addresses have explicit priority', () => {
@@ -231,10 +275,11 @@ describe('@integration X plugin session', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
-            return mysqlx.getSession(uri).should.be.rejected.then(err => {
-                expect(err.message).to.equal('You must either assign no priority to any of the routers or give a priority for every router');
-                expect(err.errno).to.equal(4000);
-            });
+            return expect(mysqlx.getSession(uri)).to.be.rejected
+                .then(err => {
+                    expect(err.message).to.equal('You must either assign no priority to any of the routers or give a priority for every router');
+                    expect(err.errno).to.equal(4000);
+                });
         });
 
         it('should not connect to the server if any address priority is out of bounds', () => {
@@ -243,10 +288,11 @@ describe('@integration X plugin session', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
-            return mysqlx.getSession(uri).should.be.rejected.then(err => {
-                expect(err.message).to.equal('The priorities must be between 0 and 100');
-                expect(err.errno).to.equal(4007);
-            });
+            return expect(mysqlx.getSession(uri)).to.be.rejected
+                .then(err => {
+                    expect(err.message).to.equal('The priorities must be between 0 and 100');
+                    expect(err.errno).to.equal(4007);
+                });
         });
 
         it('should connect to the server with a local UNIX socket', function () {
@@ -258,9 +304,12 @@ describe('@integration X plugin session', () => {
             const uri = `${config.dbUser}:${config.dbPassword}@(${config.socket})`;
             const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
 
-            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
-                expect(session.inspect()).to.deep.equal(expected);
-            });
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.deep.equal(expected);
+
+                    return session.close();
+                });
         });
 
         it('should ignore security options using a local UNIX socket', function () {
@@ -272,9 +321,12 @@ describe('@integration X plugin session', () => {
             const uri = `${config.dbUser}:${config.dbPassword}@(${config.socket})?ssl-mode=REQUIRED&ssl-ca=(/path/to/ca.pem)?ssl-crl=(/path/to/crl.pem)`;
             const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
 
-            return mysqlx.getSession(uri).should.be.fulfilled.then(session => {
-                expect(session.inspect()).to.deep.equal(expected);
-            });
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => {
+                    expect(session.inspect()).to.deep.equal(expected);
+
+                    return session.close();
+                });
         });
     });
 
@@ -298,7 +350,11 @@ describe('@integration X plugin session', () => {
 
                 return expect(mysqlx.config.get(config.dbUser)).to.be.fulfilled
                     .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, config.dbPassword)).to.be.fulfilled)
-                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+                    .then(session => {
+                        expect(session.inspect()).to.deep.equal(expected);
+
+                        return session.close();
+                    });
             });
         });
 
@@ -307,21 +363,33 @@ describe('@integration X plugin session', () => {
                 const expected = { dbUser: config.dbUser, host: config.host, port: config.port, socket: undefined, ssl: true };
 
                 return expect(mysqlx.getSession({ dbPassword: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
-                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+                    .then(session => {
+                        expect(session.inspect()).to.deep.equal(expected);
+
+                        return session.close();
+                    });
             });
 
             it('should connect by loading and overriding an existing session with the given properties', () => {
                 const expected = { dbUser: config.dbUser, host: '::1', port: config.port, socket: undefined, ssl: true };
 
                 return expect(mysqlx.getSession({ host: '::1', dbPassword: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
-                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+                    .then(session => {
+                        expect(session.inspect()).to.deep.equal(expected);
+
+                        return session.close();
+                    });
             });
 
             it('should connect using known property aliases', () => {
                 const expected = { dbUser: config.dbUser, host: '::1', port: config.port, socket: undefined, ssl: true };
 
                 return expect(mysqlx.getSession({ host: '::1', password: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
-                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+                    .then(session => {
+                        expect(session.inspect()).to.deep.equal(expected);
+
+                        return session.close();
+                    });
             });
         });
 
@@ -331,7 +399,11 @@ describe('@integration X plugin session', () => {
                 const expected = { dbUser: config.dbUser, host: config.host, port: config.port, socket: undefined, ssl: true };
 
                 return expect(mysqlx.getSession(json)).to.be.fulfilled
-                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+                    .then(session => {
+                        expect(session.inspect()).to.deep.equal(expected);
+
+                        return session.close();
+                    });
             });
 
             it('should connect by loading and overriding an existing session with the given properties', () => {
@@ -339,7 +411,11 @@ describe('@integration X plugin session', () => {
                 const expected = { dbUser: config.dbUser, host: '::1', port: config.port, socket: undefined, ssl: true };
 
                 return expect(mysqlx.getSession(json)).to.be.fulfilled
-                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+                    .then(session => {
+                        expect(session.inspect()).to.deep.equal(expected);
+
+                        return session.close();
+                    });
             });
 
             it('should connect using known property aliases', () => {
@@ -347,7 +423,11 @@ describe('@integration X plugin session', () => {
                 const expected = { dbUser: config.dbUser, host: '::1', port: config.port, socket: undefined, ssl: true };
 
                 return expect(mysqlx.getSession(json)).to.be.fulfilled
-                    .then(session => expect(session.inspect()).to.deep.equal(expected));
+                    .then(session => {
+                        expect(session.inspect()).to.deep.equal(expected);
+
+                        return session.close();
+                    });
             });
         });
 
@@ -379,7 +459,11 @@ describe('@integration X plugin session', () => {
 
                     return expect(mysqlx.config.save('test', data)).to.be.fulfilled
                         .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled)
-                        .then(session => expect(session.inspect()).to.deep.equal(expected));
+                        .then(session => {
+                            expect(session.inspect()).to.deep.equal(expected);
+
+                            return session.close();
+                        });
                 });
 
                 // TODO(Rui): only makes sense with appdata.
@@ -393,7 +477,11 @@ describe('@integration X plugin session', () => {
 
                     return expect(mysqlx.config.save('test', JSON.stringify(data))).to.be.fulfilled
                         .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled)
-                        .then(session => expect(session.inspect()).to.deep.equal(expected));
+                        .then(session => {
+                            expect(session.inspect()).to.deep.equal(expected);
+
+                            return session.close();
+                        });
                 });
 
                 it('should save the session details the using name a URI and additional appdata', () => {
@@ -407,7 +495,11 @@ describe('@integration X plugin session', () => {
 
                             return expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled;
                         })
-                        .then(session => expect(session.inspect()).to.deep.equal(expected));
+                        .then(session => {
+                            expect(session.inspect()).to.deep.equal(expected);
+
+                            return session.close();
+                        });
                 });
             });
 
@@ -426,6 +518,8 @@ describe('@integration X plugin session', () => {
                         })
                         .then(session => {
                             expect(session.inspect()).to.deep.equal(expected);
+
+                            return session.close();
                         });
                 });
             });
@@ -466,6 +560,10 @@ describe('@integration X plugin session', () => {
     });
 
     context('database management', () => {
+        afterEach('clear context', () => {
+            return fixtures.teardown();
+        });
+
         it('should allow to drop an existing schema', () => {
             return mysqlx.getSession(config)
                 .then(session => expect(session.dropSchema(config.schema)).to.be.fulfilled);
