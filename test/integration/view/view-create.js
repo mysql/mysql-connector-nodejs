@@ -17,7 +17,7 @@ describe('@integration view create', () => {
     });
 
     afterEach('clear context', () => {
-        return fixtures.teardown(session);
+        return fixtures.teardown(session, schema);
     });
 
     context('collection views', () => {

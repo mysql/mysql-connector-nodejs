@@ -6,11 +6,12 @@ const expect = require('chai').expect;
 const fixtures = require('test/fixtures');
 
 describe('@integration relational table update', () => {
-    let schema, table;
+    let session, schema, table;
 
     beforeEach('set context', () => {
         return fixtures.setup().then(suite => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            session = suite.session;
             schema = suite.schema;
         });
     });
@@ -38,7 +39,7 @@ describe('@integration relational table update', () => {
     });
 
     afterEach('clear context', () => {
-        return fixtures.teardown();
+        return fixtures.teardown(session, schema);
     });
 
     context('with truthy condition', () => {

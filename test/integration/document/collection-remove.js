@@ -33,7 +33,7 @@ describe('@integration document collection remove', () => {
     });
 
     afterEach('clear context', () => {
-        return fixtures.teardown(session);
+        return fixtures.teardown(session, schema);
     });
 
     context('with truthy condition', () => {

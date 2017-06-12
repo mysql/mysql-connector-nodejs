@@ -11,17 +11,18 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('@integration session schema', () => {
-    let schema;
+    let session, schema;
 
     beforeEach('set context', () => {
         return fixtures.setup().then(suite => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            session = suite.session;
             schema = suite.schema;
         });
     });
 
     afterEach('clear context', () => {
-        return fixtures.teardown();
+        return fixtures.teardown(session, schema);
     });
 
     it('should allow to create collections', () => {

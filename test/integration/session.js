@@ -6,8 +6,8 @@ const Session = require('lib/DevAPI/Session');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
-const fixtures = require('test/fixtures');
 const fs = require('fs');
+const fixtures = require('test/fixtures');
 const mysqlx = require('index');
 const os = require('os');
 const path = require('path');
@@ -563,34 +563,37 @@ describe('@integration X plugin session', () => {
     });
 
     context('database management', () => {
+        let session;
+
+        beforeEach('set context', () => {
+            return fixtures.setup().then(suite => {
+                session = suite.session;
+            });
+        });
+
         afterEach('clear context', () => {
-            return fixtures.teardown();
+            return fixtures.teardown(session);
         });
 
         it('should allow to drop an existing schema', () => {
-            return mysqlx.getSession(config)
-                .then(session => expect(session.dropSchema(config.schema)).to.be.fulfilled);
+            return expect(session.dropSchema(config.schema)).to.be.fulfilled;
         });
 
         it('should not fail to drop a non-existent schema', () => {
-            return mysqlx.getSession(config)
-                .then(session => session.dropSchema(config.schema).then(() => session))
-                .then(session => expect(session.dropSchema(config.schema)).to.be.fulfilled);
+            return session.dropSchema(config.schema)
+                .then(() => expect(session.dropSchema(config.schema)).to.be.fulfilled);
         });
 
         it('should fail to drop a schema with an empty name', () => {
-            return mysqlx.getSession(config)
-                .then(session => expect(session.dropSchema('')).to.be.rejected);
+            return expect(session.dropSchema('')).to.be.rejected;
         });
 
         it('should fail to drop a schema with an invalid name', () => {
-            return mysqlx.getSession(config)
-                .then(session => expect(session.dropSchema(' ')).to.be.rejected);
+            return expect(session.dropSchema(' ')).to.be.rejected;
         });
 
         it('should fail to drop a schema with name set to `null`', () => {
-            return mysqlx.getSession(config)
-                .then(session => expect(session.dropSchema(null)).to.be.rejected);
+            return expect(session.dropSchema(null)).to.be.rejected;
         });
     });
 });

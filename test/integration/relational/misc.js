@@ -8,17 +8,18 @@ const fixtures = require('test/fixtures');
 
 // TODO(rui.quelhas): extract tests into proper self-contained suites.
 describe('@integration relational miscellaneous tests', () => {
-    let session;
+    let session, schema;
 
     beforeEach('set context', () => {
         return fixtures.setup().then(suite => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             session = suite.session;
+            schema = suite.schema;
         });
     });
 
     afterEach('clear context', () => {
-        return fixtures.teardown();
+        return fixtures.teardown(session, schema);
     });
 
     context('raw SQL query', () => {
