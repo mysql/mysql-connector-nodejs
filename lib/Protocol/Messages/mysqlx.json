@@ -1,13 +1,4 @@
 {
-  "imports": [
-    "mysqlx_sql.proto",
-    "mysqlx_resultset.proto",
-    "mysqlx_crud.proto",
-    "mysqlx_session.proto",
-    "mysqlx_connection.proto",
-    "mysqlx_expect.proto",
-    "mysqlx_notice.proto"
-  ],
   "options": {
     "java_package": "com.mysql.cj.mysqlx.protobuf"
   },
@@ -28,7 +19,10 @@
           "CRUD_UPDATE": 19,
           "CRUD_DELETE": 20,
           "EXPECT_OPEN": 24,
-          "EXPECT_CLOSE": 25
+          "EXPECT_CLOSE": 25,
+          "CRUD_CREATE_VIEW": 30,
+          "CRUD_MODIFY_VIEW": 31,
+          "CRUD_DROP_VIEW": 32
         }
       },
       "fields": {}

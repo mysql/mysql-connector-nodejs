@@ -10,6 +10,19 @@
     "DataModel": {
       "DOCUMENT": 1,
       "TABLE": 2
+    },
+    "ViewAlgorithm": {
+      "UNDEFINED": 1,
+      "MERGE": 2,
+      "TEMPTABLE": 3
+    },
+    "ViewSqlSecurity": {
+      "INVOKER": 1,
+      "DEFINER": 2
+    },
+    "ViewCheckOption": {
+      "LOCAL": 1,
+      "CASCADED": 2
     }
   },
   "messages": {
@@ -57,11 +70,6 @@
           "rule": "optional",
           "type": "string",
           "tag": 2
-        },
-        "alias": {
-          "rule": "optional",
-          "type": "string",
-          "tag": 3
         }
       }
     },
@@ -132,36 +140,13 @@
         }
       }
     },
-    "Join": {
+    "Find": {
       "enums": {
-        "Operation": {
-          "LEFT": 0,
-          "RIGHT": 1,
-          "INNER": 2
+        "RowLock": {
+          "SHARED_LOCK": 1,
+          "EXCLUSIVE_LOCK": 2
         }
       },
-      "fields": {
-        "collection": {
-          "rule": "required",
-          "type": "Collection",
-          "tag": 1
-        },
-        "match": {
-          "rule": "required",
-          "type": "Mysqlx.Expr.Expr",
-          "tag": 2
-        },
-        "operation": {
-          "rule": "optional",
-          "type": "Operation",
-          "tag": 3,
-          "options": {
-            "default": "LEFT"
-          }
-        }
-      }
-    },
-    "Find": {
       "fields": {
         "collection": {
           "rule": "required",
@@ -208,10 +193,10 @@
           "type": "Mysqlx.Expr.Expr",
           "tag": 9
         },
-        "join": {
-          "rule": "repeated",
-          "type": "Join",
-          "tag": 10
+        "locking": {
+          "rule": "optional",
+          "type": "RowLock",
+          "tag": 12
         }
       }
     },
@@ -252,6 +237,14 @@
           "rule": "repeated",
           "type": "Mysqlx.Datatypes.Scalar",
           "tag": 5
+        },
+        "upsert": {
+          "rule": "optional",
+          "type": "bool",
+          "tag": 6,
+          "options": {
+            "default": false
+          }
         }
       }
     },
@@ -325,6 +318,115 @@
           "rule": "repeated",
           "type": "Order",
           "tag": 5
+        }
+      }
+    },
+    "CreateView": {
+      "fields": {
+        "collection": {
+          "rule": "required",
+          "type": "Collection",
+          "tag": 1
+        },
+        "definer": {
+          "rule": "optional",
+          "type": "string",
+          "tag": 2
+        },
+        "algorithm": {
+          "rule": "optional",
+          "type": "ViewAlgorithm",
+          "tag": 3,
+          "options": {
+            "default": "UNDEFINED"
+          }
+        },
+        "security": {
+          "rule": "optional",
+          "type": "ViewSqlSecurity",
+          "tag": 4,
+          "options": {
+            "default": "DEFINER"
+          }
+        },
+        "check": {
+          "rule": "optional",
+          "type": "ViewCheckOption",
+          "tag": 5
+        },
+        "column": {
+          "rule": "repeated",
+          "type": "string",
+          "tag": 6
+        },
+        "stmt": {
+          "rule": "required",
+          "type": "Find",
+          "tag": 7
+        },
+        "replace_existing": {
+          "rule": "optional",
+          "type": "bool",
+          "tag": 8,
+          "options": {
+            "default": false
+          }
+        }
+      }
+    },
+    "ModifyView": {
+      "fields": {
+        "collection": {
+          "rule": "required",
+          "type": "Collection",
+          "tag": 1
+        },
+        "definer": {
+          "rule": "optional",
+          "type": "string",
+          "tag": 2
+        },
+        "algorithm": {
+          "rule": "optional",
+          "type": "ViewAlgorithm",
+          "tag": 3
+        },
+        "security": {
+          "rule": "optional",
+          "type": "ViewSqlSecurity",
+          "tag": 4
+        },
+        "check": {
+          "rule": "optional",
+          "type": "ViewCheckOption",
+          "tag": 5
+        },
+        "column": {
+          "rule": "repeated",
+          "type": "string",
+          "tag": 6
+        },
+        "stmt": {
+          "rule": "optional",
+          "type": "Find",
+          "tag": 7
+        }
+      }
+    },
+    "DropView": {
+      "fields": {
+        "collection": {
+          "rule": "required",
+          "type": "Collection",
+          "tag": 1
+        },
+        "if_exists": {
+          "rule": "optional",
+          "type": "bool",
+          "tag": 2,
+          "options": {
+            "default": false
+          }
         }
       }
     }
