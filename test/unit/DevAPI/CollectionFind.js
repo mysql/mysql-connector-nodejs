@@ -85,6 +85,22 @@ describe('DevAPI Collection Find', () => {
         });
     });
 
+    context('lockShared()', () => {
+        it('should set the correct locking mode', () => {
+            const query = (new CollectionFind()).lockShared();
+
+            expect(query._lockingMode).to.equal(1);
+        });
+    });
+
+    context('lockExclusive()', () => {
+        it('should set the correct locking mode', () => {
+            const query = (new CollectionFind()).lockExclusive();
+
+            expect(query._lockingMode).to.equal(2);
+        });
+    });
+
     context('execute()', () => {
         let fakeSession, fakeSchema;
 
@@ -130,6 +146,33 @@ describe('DevAPI Collection Find', () => {
             const query = (new CollectionFind(fakeSession, fakeSchema)).bind('foo', 'bar');
             const any = td.matchers.anything();
             const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, any, any, any, { foo: 'bar' });
+
+            td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
+
+            return expect(query.execute()).eventually.deep.equal(expected);
+        });
+
+        it('should set the correct default locking mode', () => {
+            const state = { ok: true };
+            const expected = new Result(state);
+            const query = (new CollectionFind(fakeSession, fakeSchema));
+            // default locking mode
+            const mode = 0;
+            const any = td.matchers.anything();
+            const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, any, any, any, any, any, mode);
+
+            td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
+
+            return expect(query.execute()).eventually.deep.equal(expected);
+        });
+
+        it('should include the latest specified locking mode', () => {
+            const state = { ok: true };
+            const expected = new Result(state);
+            const query = (new CollectionFind(fakeSession, fakeSchema)).lockShared().lockExclusive();
+            const mode = 2;
+            const any = td.matchers.anything();
+            const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, any, any, any, any, any, mode);
 
             td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
 

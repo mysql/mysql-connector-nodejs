@@ -6,19 +6,25 @@
 const Client = require('lib/Protocol/Client');
 const WorkQueue = require('lib/WorkQueue');
 const SqlResultHandler = require('lib/Protocol/ResponseHandler').SqlResultHandler;
-const expect = require('chai').expect;
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
 const isEqual = require('lodash.isequal');
 const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
+
 describe('Client', () => {
-    let on, sendMessage;
+    let on, sendMessage, fakeSendMessage;
 
     beforeEach('create fakes', () => {
         on = td.function();
+        fakeSendMessage = td.function();
 
         sendMessage = SqlResultHandler.prototype.sendMessage;
-        SqlResultHandler.prototype.sendMessage = td.function();
+        SqlResultHandler.prototype.sendMessage = fakeSendMessage;
     });
 
     afterEach('reset fakes', () => {
@@ -249,6 +255,36 @@ describe('Client', () => {
             client.crudFind();
 
             td.verify(handler.sendMessage(client._workQueue, client._stream, 'foobar'), { times: 1 });
+        });
+
+        it('shoud encode the row locking mode', () => {
+            const client = new Client({ on });
+            const encodeMessage = td.function();
+            const mode = 1;
+            const message = new Buffer('foobar');
+
+            client.encodeMessage = encodeMessage;
+
+            td.when(encodeMessage(Messages.ClientMessages.CRUD_FIND, td.matchers.contains({ locking: mode }))).thenReturn(message);
+            td.when(fakeSendMessage(client._workQueue, client._stream, message)).thenResolve();
+
+            return expect(client.crudFind(null, null, null, null, null, null, null, null, null, null, null, null, null, null, mode)).to.eventually.be.fulfilled;
+        });
+
+        it('should not encode the row locking mode for `NONE`', () => {
+            const client = new Client({ on });
+            const encodeMessage = td.function();
+            const mode = 0;
+            const message = new Buffer('foobar');
+
+            client.encodeMessage = encodeMessage;
+
+            const matcher = td.matchers.argThat(data => !data.locking);
+
+            td.when(encodeMessage(Messages.ClientMessages.CRUD_FIND, matcher)).thenReturn(message);
+            td.when(fakeSendMessage(client._workQueue, client._stream, message)).thenResolve();
+
+            return expect(client.crudFind(null, null, null, null, null, null, null, null, null, null, null, null, null, null, mode)).to.eventually.be.fulfilled;
         });
     });
 
