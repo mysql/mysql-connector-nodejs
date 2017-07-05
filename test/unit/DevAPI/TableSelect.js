@@ -36,6 +36,22 @@ describe('TableSelect', () => {
         });
     });
 
+    context('lockShared()', () => {
+        it('should set the correct locking mode', () => {
+            const query = (new TableSelect()).lockShared();
+
+            expect(query._lockingMode).to.equal(1);
+        });
+    });
+
+    context('lockExclusive()', () => {
+        it('should set the correct locking mode', () => {
+            const query = (new TableSelect()).lockExclusive();
+
+            expect(query._lockingMode).to.equal(2);
+        });
+    });
+
     context('execute()', () => {
         it('should acknowledge the projection values', () => {
             const state = { ok: true };
@@ -46,6 +62,33 @@ describe('TableSelect', () => {
             td.when(call, { ignoreExtraArgs: true }).thenResolve(state);
 
             return query.execute().should.eventually.deep.equal(expected);
+        });
+
+        it('should set the correct default locking mode', () => {
+            const state = { ok: true };
+            const expected = new Result(state);
+            const query = (new TableSelect(fakeSession, fakeSchema));
+            // default locking mode
+            const mode = 0;
+            const any = td.matchers.anything();
+            const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, any, any, any, any, any, mode);
+
+            td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
+
+            return expect(query.execute()).eventually.deep.equal(expected);
+        });
+
+        it('should include the latest specified locking mode', () => {
+            const state = { ok: true };
+            const expected = new Result(state);
+            const query = (new TableSelect(fakeSession, fakeSchema)).lockShared().lockExclusive();
+            const mode = 2;
+            const any = td.matchers.anything();
+            const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, any, any, any, any, any, mode);
+
+            td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
+
+            return expect(query.execute()).eventually.deep.equal(expected);
         });
     });
 

@@ -29,5 +29,11 @@ describe('Utils', () => {
 
             expect(parseExpressionInputs(['foo as fst', 'bar as snd'])).to.deep.equal(expected);
         });
+
+        it('should allow empty or undefined inputs', () => {
+            ['', undefined, null].forEach(input => {
+                return expect(parseExpressionInputs(input)).to.be.empty;
+            });
+        });
     });
 });
