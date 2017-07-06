@@ -4,10 +4,7 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const Table = require('lib/DevAPI/Table');
-const TableDelete = require('lib/DevAPI/TableDelete');
 const TableInsert = require('lib/DevAPI/TableInsert');
-const TableSelect = require('lib/DevAPI/TableSelect');
-const TableUpdate = require('lib/DevAPI/TableUpdate');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -79,21 +76,21 @@ describe('Table', () => {
         it('should return an instance of the proper class', () => {
             const instance = (new Table()).select();
 
-            expect(instance).to.be.an.instanceof(TableSelect);
+            expect(instance.getClassName()).to.equal('TableSelect');
         });
 
         it('should set the projection parameters provided as an array', () => {
             const expressions = ['foo', 'bar'];
             const instance = (new Table()).select(expressions);
 
-            expect(instance._projection).to.deep.equal(expressions);
+            expect(instance.getProjection()).to.deep.equal(expressions);
         });
 
         it('should set the projection parameters provided as multiple arguments', () => {
             const expressions = ['foo', 'bar'];
             const instance = (new Table()).select(expressions[0], expressions[1]);
 
-            expect(instance._projection).to.deep.equal(expressions);
+            expect(instance.getProjection()).to.deep.equal(expressions);
         });
     });
 
@@ -101,28 +98,28 @@ describe('Table', () => {
         it('should return an instance of the proper class', () => {
             const instance = (new Table()).insert([]);
 
-            expect(instance).to.be.an.instanceof(TableInsert);
+            expect(instance.getClassName()).to.equal('TableInsert');
         });
 
         it('should set field names provided as an array', () => {
             const expressions = ['foo', 'bar'];
             const instance = (new Table()).insert(expressions);
 
-            expect(instance._fields).to.deep.equal(expressions);
+            expect(instance.getFields()).to.deep.equal(expressions);
         });
 
         it('should set field names provided as multiple arguments', () => {
             const expressions = ['foo', 'bar'];
             const instance = (new Table()).insert(expressions[0], expressions[1]);
 
-            expect(instance._fields).to.deep.equal(expressions);
+            expect(instance.getFields()).to.deep.equal(expressions);
         });
 
         it('should set field names provided as object keys', () => {
             const expressions = ['foo', 'bar'];
             const instance = (new Table()).insert({ foo: 'baz', bar: 'qux' });
 
-            expect(instance._fields).to.deep.equal(expressions);
+            expect(instance.getFields()).to.deep.equal(expressions);
         });
 
         it('should throw an error if the fields are invalid', () => {
@@ -173,12 +170,7 @@ describe('Table', () => {
             const query = 'true';
             const instance = (new Table(session, schema, table)).delete(query);
 
-            expect(instance).to.be.an.instanceOf(TableDelete);
-            expect(instance._session).to.deep.equal(session);
-            expect(instance._schema).to.deep.equal(schema);
-            expect(instance._table).to.deep.equal(table);
-            expect(instance._query).to.deep.equal(query);
-            expect(instance.where).to.be.a('function');
+            expect(instance.getClassName()).to.equal('TableDelete');
         });
     });
 
@@ -190,12 +182,7 @@ describe('Table', () => {
             const query = 'true';
             const instance = (new Table(session, schema, table)).update(query);
 
-            expect(instance).to.be.an.instanceOf(TableUpdate);
-            expect(instance._session).to.deep.equal(session);
-            expect(instance._schema).to.deep.equal(schema);
-            expect(instance._table).to.deep.equal(table);
-            expect(instance._query).to.deep.equal(query);
-            expect(instance.where).to.be.a('function');
+            expect(instance.getClassName()).to.equal('TableUpdate');
         });
     });
 });

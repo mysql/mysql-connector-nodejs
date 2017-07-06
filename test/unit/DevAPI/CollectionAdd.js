@@ -2,11 +2,11 @@
 
 /* eslint-env node, mocha */
 
-const CollectionAdd = require('lib/DevAPI/CollectionAdd');
 const Client = require('lib/Protocol/Client');
 const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
+const collectionAdd = require('lib/DevAPI/CollectionAdd');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -36,39 +36,45 @@ describe('CollectionAdd', () => {
         td.reset();
     });
 
+    context('getClassName()', () => {
+        it('should return the correct class name (to avoid duck typing)', () => {
+            expect(collectionAdd().getClassName()).to.equal('CollectionAdd');
+        });
+    });
+
     context('add()', () => {
         it('should be fluent', () => {
-            const query = (new CollectionAdd()).add({ foo: 'bar' });
+            const query = collectionAdd().add({ foo: 'bar' });
 
-            expect(query).to.be.an.instanceOf(CollectionAdd);
+            expect(query.add).to.be.a('function');
         });
 
         it('should include the documents provided as an array', () => {
             const expected = [{ foo: 'bar' }, { foo: 'baz' }];
-            const query = (new CollectionAdd()).add(expected);
+            const query = collectionAdd().add(expected);
 
-            expect(query._document).to.deep.equal(expected);
+            expect(query.getDocuments()).to.deep.equal(expected);
         });
 
         it('should include all the documents provided as multiple arguments', () => {
             const expected = [{ foo: 'bar' }, { foo: 'baz' }];
-            const query = (new CollectionAdd()).add(expected[0], expected[1]);
+            const query = collectionAdd().add(expected[0], expected[1]);
 
-            expect(query._document).to.deep.equal(expected);
+            expect(query.getDocuments()).to.deep.equal(expected);
         });
 
         it('should append documents to existing ones', () => {
             const expected = [{ foo: 'bar' }, { foo: 'baz' }];
-            const query = (new CollectionAdd(fakeSession, fakeSchema, null, [{ foo: 'bar' }])).add({ foo: 'baz' });
+            const query = collectionAdd(fakeSession, fakeSchema, null, [{ foo: 'bar' }]).add({ foo: 'baz' });
 
-            expect(query._document).to.deep.equal(expected);
+            expect(query.getDocuments()).to.deep.equal(expected);
         });
 
         it('should append documents provided on multiple calls', () => {
             const expected = [{ foo: 'bar' }, { foo: 'baz' }];
-            const query = (new CollectionAdd()).add({ foo: 'bar' }).add({ foo: 'baz' });
+            const query = collectionAdd().add({ foo: 'bar' }).add({ foo: 'baz' });
 
-            expect(query._document).to.deep.equal(expected);
+            expect(query.getDocuments()).to.deep.equal(expected);
         });
     });
 
@@ -77,7 +83,7 @@ describe('CollectionAdd', () => {
             const documents = [{ _id: 'foo', foo: 'bar' }, { _id: 'bar', bar: 'baz' }];
             const state = { ok: true };
             const expected = new Result(state);
-            const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection')).add([documents[0]]).add(documents[1]);
+            const query = collectionAdd(fakeSession, fakeSchema, 'collection').add([documents[0]]).add(documents[1]);
 
             td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify(documents[0])], [JSON.stringify(documents[1])]])).thenResolve(state);
 
@@ -87,7 +93,7 @@ describe('CollectionAdd', () => {
         it('should generate an id for documents that do not have one', () => {
             const state = { ok: true };
             const expected = new Result(state);
-            const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection', [{ foo: 'bar' }]));
+            const query = collectionAdd(fakeSession, fakeSchema, 'collection', [{ foo: 'bar' }]);
 
             td.when(idGenerator()).thenReturn('baz');
             td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify({ foo: 'bar', _id: 'baz' })]])).thenResolve(state);
@@ -97,7 +103,7 @@ describe('CollectionAdd', () => {
 
         it('should append the ids of the added documents to the response state', () => {
             const state = { ok: true };
-            const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection', [{ foo: 'bar' }]));
+            const query = collectionAdd(fakeSession, fakeSchema, 'collection', [{ foo: 'bar' }]);
 
             td.when(idGenerator()).thenReturn('baz');
             td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify({ foo: 'bar', _id: 'baz' })]])).thenResolve(state);
@@ -107,7 +113,7 @@ describe('CollectionAdd', () => {
         });
 
         it('should return early if no documents were provided', () => {
-            const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection', []));
+            const query = collectionAdd(fakeSession, fakeSchema, 'collection', []);
 
             td.when(idGenerator(), { ignoreExtraArgs: true }).thenReturn();
             td.when(crudInsert(), { ignoreExtraArgs: true }).thenResolve();
@@ -121,7 +127,7 @@ describe('CollectionAdd', () => {
 
         it('should not generate an id for documents with `_id` equal to `0`', () => {
             const expected = [0];
-            const query = (new CollectionAdd(fakeSession, fakeSchema, 'collection', [{ _id: expected[0], name: 'foo' }]));
+            const query = collectionAdd(fakeSession, fakeSchema, 'collection', [{ _id: expected[0], name: 'foo' }]);
 
             td.when(idGenerator(), { ignoreExtraArgs: true }).thenReturn();
             td.when(getName()).thenReturn('bar');

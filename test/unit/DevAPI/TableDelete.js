@@ -4,10 +4,10 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const Client = require('lib/Protocol/Client');
-const TableDelete = require('lib/DevAPI/TableDelete');
 const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
+const tableDelete = require('lib/DevAPI/TableDelete');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -27,36 +27,40 @@ describe('TableDelete', () => {
         td.reset();
     });
 
+    context('getClassName()', () => {
+        it('should return the correct class name (to avoid duck typing)', () => {
+            expect(tableDelete().getClassName()).to.equal('TableDelete');
+        });
+    });
+
     context('where()', () => {
         it('should set the operation condition', () => {
             const query = 'foo';
-            const operation = (new TableDelete()).where(query);
+            const operation = tableDelete().where(query);
 
-            expect(operation._query).to.equal(query);
+            expect(operation.getCriteria()).to.equal(query);
         });
     });
 
     context('execute()', () => {
         it('should fail if a condition query is not provided', () => {
-            const operation = new TableDelete();
-
-            return expect(operation.execute()).to.eventually.be.rejectedWith('delete needs a valid condition');
+            return expect(tableDelete().execute()).to.eventually.be.rejectedWith('delete needs a valid condition');
         });
 
         it('should fail if a condition query is empty', () => {
-            const operation = new TableDelete(null, null, null, '');
+            const operation = tableDelete(null, null, null, '');
 
             return expect(operation.execute()).to.eventually.be.rejectedWith('delete needs a valid condition');
         });
 
         it('should fail if a condition query is not valid', () => {
-            const operation = new TableDelete(null, null, null, ' ');
+            const operation = tableDelete(null, null, null, ' ');
 
             return expect(operation.execute()).to.eventually.be.rejectedWith('delete needs a valid condition');
         });
 
         it('should fail if the operation results in an error', () => {
-            const operation = new TableDelete({ _client: { crudRemove } }, { getName }, 'foo', 'bar');
+            const operation = tableDelete({ _client: { crudRemove } }, { getName }, 'foo', 'bar');
             const error = new Error('foobar');
 
             td.when(getName()).thenReturn('baz');
@@ -66,7 +70,7 @@ describe('TableDelete', () => {
         });
 
         it('should succeed if the operation succeed with the state of the operation', () => {
-            const operation = new TableDelete({ _client: { crudRemove } }, { getName }, 'foo', 'bar');
+            const operation = tableDelete({ _client: { crudRemove } }, { getName }, 'foo', 'bar');
             const state = { foo: 'bar' };
             const expected = new Result(state);
 

@@ -4,9 +4,6 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const Collection = require('lib/DevAPI/Collection');
-const CollectionAdd = require('lib/DevAPI/CollectionAdd');
-const CollectionModify = require('lib/DevAPI/CollectionModify');
-const CollectionRemove = require('lib/DevAPI/CollectionRemove');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -104,21 +101,21 @@ describe('Collection', () => {
         it('should return an instance of the proper class', () => {
             const instance = (new Collection()).add({});
 
-            expect(instance).to.be.an.instanceof(CollectionAdd);
+            expect(instance.getClassName()).to.equal('CollectionAdd');
         });
 
         it('should acknowledge documents provided as an array', () => {
             const documents = [{ foo: 'bar' }, { foo: 'baz' }];
             const instance = (new Collection()).add(documents);
 
-            expect(instance._document).to.deep.equal(documents);
+            expect(instance.getDocuments()).to.deep.equal(documents);
         });
 
         it('should acknowledge documents provided as multiple arguments', () => {
             const documents = [{ foo: 'bar' }, { foo: 'baz' }];
             const instance = (new Collection()).add(documents[0], documents[1]);
 
-            expect(instance._document).to.deep.equal(documents);
+            expect(instance.getDocuments()).to.deep.equal(documents);
         });
     });
 
@@ -130,11 +127,7 @@ describe('Collection', () => {
             const query = 'true';
             const instance = (new Collection(session, schema, collection)).remove(query);
 
-            expect(instance).to.be.an.instanceOf(CollectionRemove);
-            expect(instance._session).to.deep.equal(session);
-            expect(instance._schema).to.deep.equal(schema);
-            expect(instance._collection).to.deep.equal(collection);
-            expect(instance._query).to.deep.equal(query);
+            expect(instance.getClassName()).to.equal('CollectionRemove');
         });
     });
 
@@ -146,11 +139,7 @@ describe('Collection', () => {
             const query = 'true';
             const instance = (new Collection(session, schema, collection)).modify(query);
 
-            expect(instance).to.be.an.instanceOf(CollectionModify);
-            expect(instance._session).to.deep.equal(session);
-            expect(instance._schema).to.deep.equal(schema);
-            expect(instance._collection).to.deep.equal(collection);
-            expect(instance._query).to.deep.equal(query);
+            expect(instance.getClassName()).to.equal('CollectionModify');
         });
     });
 });

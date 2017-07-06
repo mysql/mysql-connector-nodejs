@@ -4,10 +4,10 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const Client = require('lib/Protocol/Client');
-const CollectionModify = require('lib/DevAPI/CollectionModify');
 const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
+const collectionModify = require('lib/DevAPI/CollectionModify');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -27,27 +27,33 @@ describe('CollectionModify', () => {
         td.reset();
     });
 
+    context('getClassName()', () => {
+        it('should return the correct class name (to avoid duck typing)', () => {
+            expect(collectionModify().getClassName()).to.equal('CollectionModify');
+        });
+    });
+
     context('execute()', () => {
         it('should fail if a condition query is not provided', () => {
-            const operation = new CollectionModify();
+            const operation = collectionModify();
 
             return expect(operation.execute()).to.eventually.be.rejectedWith('remove needs a valid condition');
         });
 
         it('should fail if a condition query is empty', () => {
-            const operation = new CollectionModify(null, null, null, '');
+            const operation = collectionModify(null, null, null, '');
 
             return expect(operation.execute()).to.eventually.be.rejectedWith('remove needs a valid condition');
         });
 
         it('should fail if the condition is not valid', () => {
-            const operation = new CollectionModify(null, null, null, ' ');
+            const operation = collectionModify(null, null, null, ' ');
 
             return expect(operation.execute()).to.eventually.be.rejectedWith('remove needs a valid condition');
         });
 
         it('should fail if the operation results in an error', () => {
-            const operation = new CollectionModify({ _client: { crudModify } }, { getName }, 'foo', 'bar');
+            const operation = collectionModify({ _client: { crudModify } }, { getName }, 'foo', 'bar');
             const error = new Error('foobar');
 
             td.when(getName()).thenReturn('baz');
@@ -57,7 +63,7 @@ describe('CollectionModify', () => {
         });
 
         it('should succeed if the operation succeed with the state of the operation', () => {
-            const operation = new CollectionModify({ _client: { crudModify } }, { getName }, 'foo', 'bar');
+            const operation = collectionModify({ _client: { crudModify } }, { getName }, 'foo', 'bar');
             const state = { foo: 'bar' };
             const expected = new Result(state);
 

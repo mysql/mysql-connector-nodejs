@@ -28,10 +28,10 @@ which resolves to a {@link Collection} object on success.
 ## Creating Relational Tables
 
 For creating relational tables more options are available. Therefore
-a builder object of type {@link TableCreater} has to be used. The easiest
+a builder object of type {@link TableFactory} has to be used. The easiest
 way to get such an object is via {@link Schema#createTable}. On this object
 the table structure is defined before the creation is invoked using
-{@link TableCreater#execute}.
+{@link TableFactory#execute}.
 
 ```
 const schema = session.getSchema("test");

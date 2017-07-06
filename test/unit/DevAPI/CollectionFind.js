@@ -3,52 +3,51 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const BaseQuery = require('lib/DevAPI/BaseQuery');
-const CollectionFind = require('lib/DevAPI/CollectionFind');
 const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
+const collectionFind = require('lib/DevAPI/CollectionFind');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
-describe('DevAPI Collection Find', () => {
-    context('constructor', () => {
-        it('should be an instance of BaseQuery', () => {
-            expect(new CollectionFind()).to.be.an.instanceof(BaseQuery);
+describe('DevAPI CollectionFind', () => {
+    context('getClassName()', () => {
+        it('should return the correct class name (to avoid duck typing)', () => {
+            expect(collectionFind().getClassName()).to.equal('CollectionFind');
         });
     });
 
     context('bind()', () => {
         it('should be fluent', () => {
-            const query = (new CollectionFind()).bind('foo', 'bar');
+            const query = (collectionFind()).bind('foo', 'bar');
 
-            expect(query).to.be.an.instanceof(CollectionFind);
+            expect(query.bind).to.be.a('function');
         });
 
         it('should do nothing if no argument is provided', () => {
-            const query = new CollectionFind();
-            const bounds = Object.assign({}, query._bounds);
+            const query = collectionFind();
+            const mapping = Object.assign({}, query.getBindings());
 
             query.bind();
 
-            expect(query._bounds).to.deep.equal(bounds);
+            expect(query.getBindings()).to.deep.equal(mapping);
         });
 
         it('should add a mapping entry to a map', () => {
             const expected = { foo: 'bar' };
-            const query = (new CollectionFind()).bind({ foo: 'bar' });
+            const query = (collectionFind()).bind({ foo: 'bar' });
 
-            expect(query._bounds).to.deep.equal(expected);
+            expect(query.getBindings()).to.deep.equal(expected);
         });
 
         it('should add a named parameter to a map', () => {
             const expected = { foo: 'bar' };
-            const query = (new CollectionFind()).bind('foo', 'bar');
+            const query = (collectionFind()).bind('foo', 'bar');
 
-            expect(query._bounds).to.deep.equal(expected);
+            expect(query.getBindings()).to.deep.equal(expected);
         });
 
         it('should add multiple named parameters to a map', () => {
@@ -56,20 +55,20 @@ describe('DevAPI Collection Find', () => {
                 foo: 'bar',
                 baz: 'qux'
             };
-            const query = (new CollectionFind())
+            const query = (collectionFind())
                 .bind('foo', 'bar')
                 .bind('baz', 'qux');
 
-            expect(query._bounds).to.deep.equal(expected);
+            expect(query.getBindings()).to.deep.equal(expected);
         });
 
         it('should replace any previously set binding', () => {
             const expected = { foo: 'baz' };
-            const query = (new CollectionFind())
+            const query = (collectionFind())
                 .bind('foo', 'bar')
                 .bind('foo', 'baz');
 
-            expect(query._bounds).to.deep.equal(expected);
+            expect(query.getBindings()).to.deep.equal(expected);
         });
 
         it('should mix and match both type of parameters', () => {
@@ -77,27 +76,27 @@ describe('DevAPI Collection Find', () => {
                 'foo': 'bar',
                 'bar': 'baz'
             };
-            const query = (new CollectionFind())
+            const query = (collectionFind())
                 .bind('foo', 'bar')
                 .bind({ bar: 'baz' });
 
-            expect(query._bounds).to.deep.equal(expected);
+            expect(query.getBindings()).to.deep.equal(expected);
         });
     });
 
     context('lockShared()', () => {
         it('should set the correct locking mode', () => {
-            const query = (new CollectionFind()).lockShared();
+            const query = (collectionFind()).lockShared();
 
-            expect(query._lockingMode).to.equal(1);
+            expect(query.getLockingMode()).to.equal(1);
         });
     });
 
     context('lockExclusive()', () => {
         it('should set the correct locking mode', () => {
-            const query = (new CollectionFind()).lockExclusive();
+            const query = (collectionFind()).lockExclusive();
 
-            expect(query._lockingMode).to.equal(2);
+            expect(query.getLockingMode()).to.equal(2);
         });
     });
 
@@ -119,7 +118,7 @@ describe('DevAPI Collection Find', () => {
         it('should include the criteria', () => {
             const state = { ok: true };
             const expected = new Result(state);
-            const query = (new CollectionFind(fakeSession, fakeSchema, null, '1 == 1'));
+            const query = collectionFind(fakeSession, fakeSchema, null, '1 == 1');
             const any = td.matchers.anything();
             const execute = fakeSession._client.crudFind(any, any, any, any, any, '1 == 1');
 
@@ -131,7 +130,7 @@ describe('DevAPI Collection Find', () => {
         it('should include the limit count and offset', () => {
             const state = { ok: true };
             const expected = new Result(state);
-            const query = (new CollectionFind(fakeSession, fakeSchema)).limit(10, 0);
+            const query = collectionFind(fakeSession, fakeSchema).limit(10, 0);
             const any = td.matchers.anything();
             const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, { row_count: 10, offset: 0 });
 
@@ -140,10 +139,10 @@ describe('DevAPI Collection Find', () => {
             return expect(query.execute()).to.eventually.deep.equal(expected);
         });
 
-        it('should include the bounds', () => {
+        it('should include the value mapping', () => {
             const state = { ok: true };
             const expected = new Result(state);
-            const query = (new CollectionFind(fakeSession, fakeSchema)).bind('foo', 'bar');
+            const query = collectionFind(fakeSession, fakeSchema).bind('foo', 'bar');
             const any = td.matchers.anything();
             const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, any, any, any, { foo: 'bar' });
 
@@ -155,7 +154,7 @@ describe('DevAPI Collection Find', () => {
         it('should set the correct default locking mode', () => {
             const state = { ok: true };
             const expected = new Result(state);
-            const query = (new CollectionFind(fakeSession, fakeSchema));
+            const query = collectionFind(fakeSession, fakeSchema);
             // default locking mode
             const mode = 0;
             const any = td.matchers.anything();
@@ -169,7 +168,7 @@ describe('DevAPI Collection Find', () => {
         it('should include the latest specified locking mode', () => {
             const state = { ok: true };
             const expected = new Result(state);
-            const query = (new CollectionFind(fakeSession, fakeSchema)).lockShared().lockExclusive();
+            const query = collectionFind(fakeSession, fakeSchema).lockShared().lockExclusive();
             const mode = 2;
             const any = td.matchers.anything();
             const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, any, any, any, any, any, mode);
