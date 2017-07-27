@@ -60,7 +60,7 @@ describe('Session', () => {
         it('should return a Schema instance', () => {
             const schema = (new Session({})).getSchema('foobar');
 
-            expect(schema).to.be.an.instanceof(Schema);
+            expect(schema.getClassName()).to.equal('Schema');
         });
 
         it('should return a schema with the given name', () => {

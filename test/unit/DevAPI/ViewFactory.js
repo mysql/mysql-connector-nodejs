@@ -4,7 +4,7 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const collectionFind = require('lib/DevAPI/CollectionFind');
-const ViewCreate = require('lib/DevAPI/ViewCreate');
+const ViewFactory = require('lib/DevAPI/ViewFactory');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const tableSelect = require('lib/DevAPI/TableSelect');
@@ -14,10 +14,10 @@ chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
-describe('ViewCreate', () => {
+describe('ViewFactory', () => {
     context('definedAs()', () => {
         it('should throw an error for collection queries', () => {
-            const origin = new ViewCreate();
+            const origin = new ViewFactory();
             const query = collectionFind();
 
             expect(() => (origin).definedAs(query)).to.throw();
@@ -37,12 +37,14 @@ describe('ViewCreate', () => {
         });
 
         it('should force immutable definitions', () => {
-            const schema = { getName, _session: { _client: { sqlStmtExecute } } };
+            const getSession = td.function();
+            const schema = { getName, getSession };
             const query = tableSelect(null, schema, 'bar', ['qux', 'quux']);
 
             td.when(getName()).thenReturn('foo');
+            td.when(getSession()).thenReturn({ _client: { sqlStmtExecute } });
 
-            const origin = (new ViewCreate(schema, 'baz')).definedAs(query);
+            const origin = (new ViewFactory(schema, 'baz')).definedAs(query);
             const statement = 'SELECT qux, quux FROM foo.bar';
             const view = `CREATE  ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW \`foo\`.\`baz\` AS ${statement} WITH CASCADED CHECK OPTION`;
 

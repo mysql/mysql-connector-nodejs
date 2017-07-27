@@ -27,16 +27,17 @@ describe('@integration session schema', () => {
 
     it('should allow to create collections', () => {
         const collections = ['test1', 'test2'];
-        const expected = {
-            [collections[0]]: schema.getCollection(collections[0]),
-            [collections[1]]: schema.getCollection(collections[1])
-        };
 
         return expect(Promise.all([
             schema.createCollection(collections[0]),
             schema.createCollection(collections[1]),
-            expect(schema.getCollections()).to.eventually.deep.equal(expected)
-        ])).to.be.fulfilled;
+            schema.getCollections()
+        ])).to.be.fulfilled.then(result => {
+            expect(Object.keys(result[2])).to.have.lengthOf(2);
+            expect(result[2]).to.have.keys(collections);
+            expect(result[2][collections[0]].inspect()).to.deep.equal(result[0].inspect());
+            expect(result[2][collections[1]].inspect()).to.deep.equal(result[1].inspect());
+        });
     });
 
     context('dropping collections', () => {
