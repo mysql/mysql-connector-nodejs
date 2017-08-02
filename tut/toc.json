@@ -8,6 +8,9 @@
     "Persistent_Session_Configuration": {
         "title": "Persistent Session Configuration"
     },
+    "Row_Locking": {
+        "title": "Row Locking"
+    },
     "Table_Creation_API": {
         "title": "Table Creation API"
     },
