@@ -39,9 +39,10 @@ describe('TableInsert', () => {
             const state = { ok: true };
             const expected = new Result(state);
             const query = tableInsert(fakeSession, fakeSchema, 'table', ['foo', 'bar']).values(['baz', 'qux']);
-            const projection = [{ name: 'foo' }, { name: 'bar' }];
+            const columns = [{ name: 'foo' }, { name: 'bar' }];
+            const rows = [['baz', 'qux']];
 
-            td.when(crudInsert('schema', 'table', Client.dataModel.TABLE, [['baz', 'qux']], projection)).thenResolve(state);
+            td.when(crudInsert('schema', 'table', Client.dataModel.TABLE, { columns, rows })).thenResolve(state);
 
             return query.execute().should.eventually.deep.equal(expected);
         });

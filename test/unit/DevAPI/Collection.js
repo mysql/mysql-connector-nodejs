@@ -245,4 +245,71 @@ describe('Collection', () => {
             return expect(instance.replaceOne(documentId, { prop: 'qux' })).to.eventually.be.rejectedWith(error);
         });
     });
+
+    context('addOrReplaceOne()', () => {
+        let crudInsert;
+
+        beforeEach('create fakes', () => {
+            crudInsert = td.function();
+        });
+
+        it('should return the result of executing a "upsert" operation for a given document', () => {
+            const collectionName = 'foobar';
+            const rows = [[JSON.stringify({ name: 'bar', _id: 'foo' })]];
+            const state = { doc_ids: ['foo'] };
+            const expected = new Result(state);
+            const schemaName = 'baz';
+            const session = { _client: { crudInsert } };
+            const instance = collection(session, { getName }, collectionName);
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudInsert(schemaName, collectionName, Client.dataModel.DOCUMENT, { rows }, { upsert: true })).thenResolve(state);
+
+            return expect(instance.addOrReplaceOne('foo', { name: 'bar' })).to.eventually.deep.equal(expected);
+        });
+
+        it('should escape the id value', () => {
+            const collectionName = 'foobar';
+            const rows = [[JSON.stringify({ name: 'bar', _id: 'fo"o' })]];
+            const state = { doc_ids: ['fo"o'] };
+            const expected = new Result(state);
+            const schemaName = 'baz';
+            const session = { _client: { crudInsert } };
+            const instance = collection(session, { getName }, collectionName);
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudInsert(schemaName, collectionName, Client.dataModel.DOCUMENT, { rows }, { upsert: true })).thenResolve(state);
+
+            return expect(instance.addOrReplaceOne('fo"o', { name: 'bar' })).to.eventually.deep.equal(expected);
+        });
+
+        it('should ignore any additional `_id` property', () => {
+            const collectionName = 'foobar';
+            const rows = [[JSON.stringify({ _id: 'foo', name: 'bar' })]];
+            const state = { doc_ids: ['foo'] };
+            const expected = new Result(state);
+            const schemaName = 'baz';
+            const session = { _client: { crudInsert } };
+            const instance = collection(session, { getName }, collectionName);
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudInsert(schemaName, collectionName, Client.dataModel.DOCUMENT, { rows }, { upsert: true })).thenResolve(state);
+
+            return expect(instance.addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })).to.eventually.deep.equal(expected);
+        });
+
+        it('should fail if an unexpected error is thrown', () => {
+            const collectionName = 'foobar';
+            const rows = [[JSON.stringify({ name: 'bar', _id: 'foo' })]];
+            const schemaName = 'baz';
+            const session = { _client: { crudInsert } };
+            const instance = collection(session, { getName }, collectionName);
+            const error = new Error('bazqux');
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudInsert(schemaName, collectionName, Client.dataModel.DOCUMENT, { rows }, { upsert: true })).thenReject(error);
+
+            return expect(instance.addOrReplaceOne('foo', { name: 'bar' })).to.eventually.be.rejectedWith(error);
+        });
+    });
 });

@@ -48,8 +48,8 @@ describe('Client', () => {
         it('should handle complete package after fragmented package', () => {
             const protocol = new Client(nullStream);
             const promise = Promise.all([
-                protocol.crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[{ _id: 123 }]]),
-                protocol.crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[{ _id: 456 }]])
+                protocol.crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, { rows: [[{ _id: 123 }]] }),
+                protocol.crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, { rows: [[{ _id: 456 }]] })
             ]);
 
             const complete = Encoding.encodeMessage(Messages.ServerMessages.SQL_STMT_EXECUTE_OK, {}, Encoding.serverMessages);

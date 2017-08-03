@@ -301,17 +301,17 @@ describe('Client', () => {
         it('should encode field names correctly', () => {
             const expected = { ok: true };
             const client = new Client({ on });
-            const fields = ['foo', 'bar'];
+            const columns = ['foo', 'bar'];
             const message = new Buffer('foobar');
             const encodeMessage = td.function();
-            const match = td.matchers.argThat(data => isEqual(data.projection, fields));
+            const match = td.matchers.argThat(data => isEqual(data.projection, columns));
 
             client.encodeMessage = encodeMessage;
 
             td.when(encodeMessage(Messages.ClientMessages.CRUD_INSERT, match)).thenReturn(message);
             td.when(fakeSendMessage(client._workQueue, client._stream, message)).thenResolve(expected);
 
-            return expect(client.crudInsert(null, null, null, [['baz', 'qux']], fields)).to.eventually.deep.equal(expected);
+            return expect(client.crudInsert(null, null, null, { columns, rows: [['baz', 'qux']] })).to.eventually.deep.equal(expected);
         });
 
         it('should encode row values correctly', () => {
@@ -345,7 +345,7 @@ describe('Client', () => {
             td.when(encodeMessage(Messages.ClientMessages.CRUD_INSERT, matcher)).thenReturn(message);
             td.when(fakeSendMessage(client._workQueue, client._stream, message)).thenResolve(expected);
 
-            return expect(client.crudInsert(null, null, null, [['foo', 'bar']])).to.eventually.deep.equal(expected);
+            return expect(client.crudInsert(null, null, null, { rows: [['foo', 'bar']] })).to.eventually.deep.equal(expected);
         });
 
         it('should fail if no documents are provided', () => {
@@ -375,7 +375,7 @@ describe('Client', () => {
             td.when(encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
             td.when(fakeSendMessage(), { ignoreExtraArgs: true }).thenReject(error);
 
-            return expect(client.crudInsert(null, null, null, [['foo', 'bar']])).to.eventually.be.rejectedWith(error);
+            return expect(client.crudInsert(null, null, null, { rows: [['foo', 'bar']] })).to.eventually.be.rejectedWith(error);
         });
     });
 });

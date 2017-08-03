@@ -176,3 +176,145 @@ mysqlx
         console.log(data); // [ { _id: '1', name: 'foo' }, { _id: '2', name: 'bar' } ]
     });
 ```
+
+### Creating or updating a single document
+
+C/Node.js also provides an additional utility method - `Collection.addOrReplaceOne()` - that allows to seamlessly either create a document with a given `_id` and properties or automatically replace an existing matching document.
+
+So, if a document with the given `_id` already exists in a collection, the behavior is the same as with `Collection.replaceOne()`.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+let data = [];
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/test_schema')
+    .then(session => {
+        return session
+            .getSchema('test_schema')
+            .getCollection('test_collection')
+            .addOrReplaceOne('1', { name: 'baz', age: 23 });
+    })
+    .then(result => {
+        // the existing row is re-created (leading to two different operations)
+        // see https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
+        console.log(result.getAffectedItemsCount()); // 2
+
+        return collection
+            .find()
+            .execute(doc => data.push(doc));
+    })
+    .then(() => {
+        console.log(data); // [ { _id: '1', name: 'baz', age: 23 }, { _id: '2', name: 'bar' } ]
+    });
+```
+
+If no such document exists, a new one will be created.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+let data = [];
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/test_schema')
+    .then(session => {
+        return session
+            .getSchema('test_schema')
+            .getCollection('test_collection')
+            .addOrReplaceOne('3', { name: 'baz', age: 23 });
+    })
+    .then(result => {
+        console.log(result.getAffectedItemsCount()); // 1
+
+        return collection
+            .find()
+            .execute(doc => data.push(doc));
+    })
+    .then(() => {
+        console.log(data); // [ { _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz', age: 23 } ]
+    });
+```
+
+When additional unique key constraints exist for a collection, a few additional scenarios are brought up. Assuming, the `name` property has a unique key constraint established by a [auto-generated column](https://dev.mysql.com/doc/refman/5.7/en/create-table-secondary-indexes.html#json-column-indirect-index).
+
+```sql
+ALTER TABLE test_schema.test_collection ADD COLUMN name VARCHAR(3) GENERATED ALWAYS AS (JSON_UNQUOTE(JSON_EXTRACT(doc, '$.name'))) VIRTUAL UNIQUE KEY NOT NULL
+```
+
+Existing documents will be updated with the given properties, provided that there are no unique key constraint violations with other documents.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+let data = [];
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/test_schema')
+    .then(session => {
+         return session
+            .getSchema('test_schema')
+            .getCollection('test_collection')
+            .addOrReplaceOne('1', { name: 'baz' });
+    })
+    .then(result => {
+        // the existing row is re-created (leading to two different operations)
+        // see https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
+        console.log(result.getAffectedItemsCount()); // 2
+
+        return collection
+            .find()
+            .execute(doc => data.push(doc));
+    })
+    .then(() => {
+        console.log(data); // [ { _id: '1', name: 'baz' }, { _id: '2', name: 'bar' } ]
+    });
+```
+
+Unique key values themselves can also be updated with the same restrictions.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+let data = [];
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/test_schema')
+    .then(session => {
+         return session
+            .getSchema('test_schema')
+            .getCollection('test_collection')
+            .addOrReplaceOne('1', { name: 'foo', age: 23 });
+    })
+    .then(result => {
+        // the existing row is re-created (leading to two different operations)
+        // see https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
+        console.log(result.getAffectedItemsCount()); // 2
+
+        return collection
+            .find()
+            .execute(doc => data.push(doc));
+    })
+    .then(() => {
+        console.log(data); // [ { _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar' } ]
+    });
+```
+
+Unique key constraint violations will, of course, result in an error.
+
+```js
+const mysqlx = require('@mysql/xdevapi')
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/test_schema')
+    .then(session => {
+         return session
+            .getSchema('test_schema')
+            .getCollection('test_collection')
+            .addOrReplaceOne('1', { name: 'bar' });
+    })
+    .catch(err => {
+        console.log(err.message);
+    })
+```

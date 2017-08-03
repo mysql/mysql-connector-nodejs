@@ -81,32 +81,35 @@ describe('CollectionAdd', () => {
     context('execute()', () => {
         it('should include all documents that were added', () => {
             const documents = [{ _id: 'foo', foo: 'bar' }, { _id: 'bar', bar: 'baz' }];
-            const state = { ok: true };
+            const state = { doc_ids: ['foo', 'bar'] };
             const expected = new Result(state);
             const query = collectionAdd(fakeSession, fakeSchema, 'collection').add([documents[0]]).add(documents[1]);
+            const rows = [[JSON.stringify(documents[0])], [JSON.stringify(documents[1])]];
 
-            td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify(documents[0])], [JSON.stringify(documents[1])]])).thenResolve(state);
+            td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, { rows }, { upsert: false })).thenResolve(state);
 
             return expect(query.execute()).to.eventually.deep.equal(expected);
         });
 
         it('should generate an id for documents that do not have one', () => {
-            const state = { ok: true };
+            const state = { doc_ids: ['baz'] };
             const expected = new Result(state);
             const query = collectionAdd(fakeSession, fakeSchema, 'collection', [{ foo: 'bar' }]);
+            const rows = [[JSON.stringify({ foo: 'bar', _id: 'baz' })]];
 
             td.when(idGenerator()).thenReturn('baz');
-            td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify({ foo: 'bar', _id: 'baz' })]])).thenResolve(state);
+            td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, { rows }, { upsert: false })).thenResolve(state);
 
             return expect(query.execute()).to.eventually.deep.equal(expected);
         });
 
         it('should append the ids of the added documents to the response state', () => {
-            const state = { ok: true };
+            const state = {};
             const query = collectionAdd(fakeSession, fakeSchema, 'collection', [{ foo: 'bar' }]);
+            const rows = [[JSON.stringify({ foo: 'bar', _id: 'baz' })]];
 
             td.when(idGenerator()).thenReturn('baz');
-            td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, [[JSON.stringify({ foo: 'bar', _id: 'baz' })]])).thenResolve(state);
+            td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, { rows }, { upsert: false })).thenResolve(state);
 
             return expect(query.execute()).to.be.fulfilled
                 .then(result => expect(result.getDocumentIds()).to.deep.equal(['baz']));
@@ -138,6 +141,19 @@ describe('CollectionAdd', () => {
                     expect(td.explain(idGenerator).callCount).to.equal(0);
                     expect(result._state.doc_ids).to.deep.equal(expected);
                 });
+        });
+
+        it('should be able to generate an "upsert" message', () => {
+            const doc = { _id: 'foo', name: 'bar' };
+            const state = { doc_ids: ['foo'] };
+            const expected = new Result(state);
+            const rows = [[JSON.stringify(doc)]];
+            const options = { upsert: true };
+            const query = collectionAdd(fakeSession, fakeSchema, 'collection', null, options).add(doc);
+
+            td.when(crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, { rows }, options)).thenResolve(state);
+
+            return expect(query.execute()).to.eventually.deep.equal(expected);
         });
     });
 });
