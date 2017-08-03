@@ -3,6 +3,8 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
+const Client = require('lib/Protocol/Client');
+const Result = require('lib/DevAPI/Result');
 const collection = require('lib/DevAPI/Collection');
 const expect = require('chai').expect;
 const td = require('testdouble');
@@ -138,6 +140,109 @@ describe('Collection', () => {
             const instance = collection(session, schema, name).modify(query);
 
             expect(instance.getClassName()).to.equal('CollectionModify');
+        });
+    });
+
+    context('replaceOne()', () => {
+        let crudFind, crudModify;
+
+        beforeEach('create fakes', () => {
+            crudFind = td.function();
+            crudModify = td.function();
+        });
+
+        afterEach('reset fakes', () => {
+            td.reset();
+        });
+
+        it('should return the result of executing a modify operation for a given document', () => {
+            const collectionName = 'foo';
+            const documentId = 'bar';
+            const schemaName = 'baz';
+            const type = Client.dataModel.DOCUMENT;
+            const criteria = `$._id == "${documentId}"`;
+            const state = { rows_affected: 1 };
+            const expected = new Result(state);
+            const session = { _client: { crudFind, crudModify } };
+            const instance = collection(session, { getName }, collectionName);
+
+            const any = td.matchers.anything();
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudFind(session), { ignoreExtraArgs: true }).thenResolve();
+            td.when(crudModify(schemaName, collectionName, type, criteria), { ignoreExtraArgs: true }).thenResolve(state);
+
+            return expect(instance.replaceOne(documentId, { prop: 'qux' })).to.eventually.deep.equal(expected);
+        });
+
+        it('should escape the id value', () => {
+            const collectionName = 'foo';
+            const documentId = 'b\\\"ar';
+            const schemaName = 'baz';
+            const type = Client.dataModel.DOCUMENT;
+            const criteria = `$._id == "b\\\\"ar"`;
+            const state = { rows_affected: 1 };
+            const expected = new Result(state);
+            const session = { _client: { crudFind, crudModify } };
+            const instance = collection(session, { getName }, collectionName);
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudFind(session), { ignoreExtraArgs: true }).thenResolve();
+            td.when(crudModify(schemaName, collectionName, type, criteria), { ignoreExtraArgs: true }).thenResolve(state);
+
+            return expect(instance.replaceOne(documentId, { prop: 'qux' })).to.eventually.deep.equal(expected);
+        });
+
+        it('should ignore any additional `_id` property', () => {
+            const collectionName = 'foo';
+            const documentId = 'bar';
+            const schemaName = 'baz';
+            const type = Client.dataModel.DOCUMENT;
+            const criteria = `$._id == "${documentId}"`;
+            const state = { rows_affected: 1 };
+            const expected = new Result(state);
+            const session = { _client: { crudFind, crudModify } };
+            const instance = collection(session, { getName }, collectionName);
+
+            const operation = {
+                source: {
+                    document_path: [{
+                        type: 1,
+                        value: 'prop'
+                    }]
+                },
+                operation: 3,
+                value: {
+                    type: 2,
+                    literal: {
+                        type: 8,
+                        v_string: {
+                            value: 'quux'
+                        }
+                    }
+                }
+            };
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudFind(session), { ignoreExtraArgs: true }).thenResolve();
+            td.when(crudModify(schemaName, collectionName, type, criteria, [operation]), { ignoreExtraArgs: true }).thenResolve(state);
+
+            return expect(instance.replaceOne(documentId, { _id: 'qux', prop: 'quux' })).to.eventually.deep.equal(expected);
+        });
+
+        it('should fail if an unexpected error is thrown', () => {
+            const collectionName = 'foo';
+            const documentId = 'bar';
+            const schemaName = 'baz';
+            const error = new Error('foobar');
+            const session = { _client: { crudFind, crudModify } };
+            const instance = collection(session, { getName }, collectionName);
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudFind(session), { ignoreExtraArgs: true }).thenResolve();
+            td.when(crudModify(schemaName, collectionName, Client.dataModel.DOCUMENT, `$._id == "${documentId}"`), { ignoreExtraArgs: true }).thenReject(error);
+
+            return expect(instance.replaceOne(documentId, { prop: 'qux' })).to.eventually.be.rejectedWith(error);
         });
     });
 });

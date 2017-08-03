@@ -26,9 +26,9 @@ describe('@integration document collection modify', () => {
 
     beforeEach('add fixtures', () => {
         return collection
-            .add({ _id: 1, name: 'foo' })
-            .add({ _id: 2, name: 'bar' })
-            .add({ _id: 3, name: 'baz' })
+            .add({ _id: '1', name: 'foo' })
+            .add({ _id: '2', name: 'bar' })
+            .add({ _id: '3', name: 'baz' })
             .execute();
     });
 
@@ -38,7 +38,7 @@ describe('@integration document collection modify', () => {
 
     context('with truthy condition', () => {
         it('should updated all documents in a collection', () => {
-            const expected = [{ _id: 1, name: 'qux' }, { _id: 2, name: 'qux' }, { _id: 3, name: 'qux' }];
+            const expected = [{ _id: '1', name: 'qux' }, { _id: '2', name: 'qux' }, { _id: '3', name: 'qux' }];
             let actual = [];
 
             return collection
@@ -52,7 +52,7 @@ describe('@integration document collection modify', () => {
 
     context('with filtering condition', () => {
         it('should update the documents from a collection that match the criteria', () => {
-            const expected = [{ _id: 1, name: 'foo' }, { _id: 2, name: 'qux' }, { _id: 3, name: 'baz' }];
+            const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'qux' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
             return collection
@@ -66,7 +66,7 @@ describe('@integration document collection modify', () => {
 
     context('with limit', () => {
         it('should modify a given number of documents', () => {
-            const expected = [{ _id: 1, name: 'qux' }, { _id: 2, name: 'bar' }, { _id: 3, name: 'baz' }];
+            const expected = [{ _id: '1', name: 'qux' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
             return collection
@@ -75,6 +75,40 @@ describe('@integration document collection modify', () => {
                 .limit(1)
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('single document replacement', () => {
+        it('should replace the entire document if it exists', () => {
+            const expected = [{ _id: '1', age: 23 }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .replaceOne('1', { _id: '3', age: 23 })
+                .then(result => {
+                    expect(result.getAffectedItemsCount()).to.equal(1);
+
+                    return collection
+                        .find()
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should do nothing if the document does not exist', () => {
+            const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .replaceOne('4', { _id: '1', name: 'baz', age: 23 })
+                .then(result => {
+                    expect(result.getAffectedItemsCount()).to.equal(0);
+
+                    return collection
+                        .find()
+                        .execute(doc => actual.push(doc));
+                })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
