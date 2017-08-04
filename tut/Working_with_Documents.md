@@ -354,3 +354,57 @@ mysqlx
         console.log(doc); // null
     });
 ```
+
+### Removing a single document
+
+One can also remove a specific document from a collection given its `id` - `Collection.removeOne()`. If no such document exists, the operation succeeds, but nothing really happens.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+let data = [];
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/test_schema')
+    .then(session => {
+        return session
+            .getSchema('test_schema')
+            .getCollection('test_collection')
+            .removeOne('1');
+    })
+    .then(result => {
+        console.log(result.getAffectedItemsCount()); // 1
+
+        return collection
+            .find()
+            .execute(doc => data.push(doc));
+    })
+    .then(() => {
+        console.log(data); // [ { _id: '2', name: 'bar' } ]
+    });
+```
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+let data = [];
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/test_schema')
+    .then(session => {
+        return session
+            .getSchema('test_schema')
+            .getCollection('test_collection')
+            .removeOne('3');
+    })
+    .then(result => {
+        console.log(result.getAffectedItemsCount()); // 0
+
+        return collection
+            .find(doc => data.push(doc))
+            .execute();
+    })
+    .then(() => {
+        console.log(data); // [ { _id: '1', name: 'foo' }, { _id: '2', name: 'bar' } ]
+    });
+```

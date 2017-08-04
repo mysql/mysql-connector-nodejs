@@ -26,9 +26,9 @@ describe('@integration document collection remove', () => {
 
     beforeEach('add fixtures', () => {
         return collection
-            .add({ _id: 1, name: 'foo' })
-            .add({ _id: 2, name: 'bar' })
-            .add({ _id: 3, name: 'baz' })
+            .add({ _id: '1', name: 'foo' })
+            .add({ _id: '2', name: 'bar' })
+            .add({ _id: '3', name: 'baz' })
             .execute();
     });
 
@@ -56,7 +56,7 @@ describe('@integration document collection remove', () => {
 
     context('with filtering condition', () => {
         it('should remove the documents from a collection that match the criteria', () => {
-            const expected = [{ _id: 2, name: 'bar' }, { _id: 3, name: 'baz' }];
+            const expected = [{ _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
             return collection
@@ -69,7 +69,7 @@ describe('@integration document collection remove', () => {
 
     context('with limit', () => {
         it('should remove a given number of documents', () => {
-            const expected = [{ _id: 3, name: 'baz' }];
+            const expected = [{ _id: '3', name: 'baz' }];
             let actual = [];
 
             return collection
@@ -77,6 +77,40 @@ describe('@integration document collection remove', () => {
                 .limit(2)
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('single document removal', () => {
+        it('should remove an existing document with the given id', () => {
+            const expected = [{ _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .removeOne('1')
+                .then(result => {
+                    expect(result.getAffectedItemsCount()).to.equal(1);
+
+                    return collection
+                        .find()
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should do nothing if no document exists with the given id', () => {
+            const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .removeOne('4')
+                .then(result => {
+                    expect(result.getAffectedItemsCount()).to.equal(0);
+
+                    return collection
+                        .find()
+                        .execute(doc => actual.push(doc));
+                })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });

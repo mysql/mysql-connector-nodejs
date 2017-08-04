@@ -369,4 +369,65 @@ describe('Collection', () => {
             return expect(instance.getOne(documentId)).to.eventually.be.null;
         });
     });
+
+    context('removeOne()', () => {
+        let crudRemove;
+
+        beforeEach('create fakes', () => {
+            crudRemove = td.function();
+        });
+
+        it('should return the document instance if it exists', () => {
+            const collectionName = 'foobar';
+            const documentId = 'foo';
+            const state = { rows_affected: 1 };
+            const expected = new Result(state);
+            const schemaName = 'baz';
+            const type = Client.dataModel.DOCUMENT;
+            const criteria = `$._id == "${documentId}"`;
+            const instance = collection({ _client: { crudRemove } }, { getName }, collectionName);
+
+            const any = td.matchers.anything();
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudRemove(schemaName, collectionName, type, criteria, any, any)).thenResolve(state);
+
+            return expect(instance.removeOne(documentId)).to.eventually.deep.equal(expected);
+        });
+
+        it('should escape the id value', () => {
+            const collectionName = 'foobar';
+            const documentId = 'fo\\"o';
+            const state = { rows_affected: 1 };
+            const expected = new Result(state);
+            const schemaName = 'baz';
+            const type = Client.dataModel.DOCUMENT;
+            const criteria = `$._id == "fo\\\\"o"`;
+            const instance = collection({ _client: { crudRemove } }, { getName }, collectionName);
+
+            const any = td.matchers.anything();
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudRemove(schemaName, collectionName, type, criteria, any, any)).thenResolve(state);
+
+            return expect(instance.removeOne(documentId)).to.eventually.deep.equal(expected);
+        });
+
+        it('should fail if an unexpected error is thrown', () => {
+            const collectionName = 'foobar';
+            const documentId = 'foo';
+            const schemaName = 'baz';
+            const type = Client.dataModel.DOCUMENT;
+            const criteria = `$._id == "${documentId}"`;
+            const instance = collection({ _client: { crudRemove } }, { getName }, collectionName);
+            const error = new Error('bazqux');
+
+            const any = td.matchers.anything();
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudRemove(schemaName, collectionName, type, criteria, any, any)).thenReject(error);
+
+            return expect(instance.removeOne(documentId)).to.eventually.be.rejectedWith(error);
+        });
+    });
 });
