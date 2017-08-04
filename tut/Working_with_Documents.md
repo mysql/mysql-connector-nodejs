@@ -318,3 +318,39 @@ mysqlx
         console.log(err.message);
     })
 ```
+
+### Retrieving a single document
+
+There's also an utility method to retrieve a single document from a collection, given its `id` - `Collection.getOne()`. The method returns a `Promise` which resolves to the document instance (in the form of a literal object), if it exists or `null`, if it does not.
+
+```js
+const mysqlx = require('@mysql/xdevapi')
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/test_schema')
+    .then(session => {
+        return session
+            .getSchema('test_schema')
+            .getCollection('test_collection')
+            .getOne('1');
+    })
+    .then(doc => {
+        console.log(doc); // { _id: '1', name: 'foo' }
+    });
+```
+
+```js
+const mysqlx = require('@mysql/xdevapi')
+
+mysqlx
+    .getSession('mysqlx://localhost:33060/test_schema')
+    .then(session => {
+        return session
+            .getSchema('test_schema')
+            .getCollection('test_collection')
+            .getOne('3');
+    })
+    .then(doc => {
+        console.log(doc); // null
+    });
+```

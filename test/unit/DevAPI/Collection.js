@@ -151,10 +151,6 @@ describe('Collection', () => {
             crudModify = td.function();
         });
 
-        afterEach('reset fakes', () => {
-            td.reset();
-        });
-
         it('should return the result of executing a modify operation for a given document', () => {
             const collectionName = 'foo';
             const documentId = 'bar';
@@ -310,6 +306,67 @@ describe('Collection', () => {
             td.when(crudInsert(schemaName, collectionName, Client.dataModel.DOCUMENT, { rows }, { upsert: true })).thenReject(error);
 
             return expect(instance.addOrReplaceOne('foo', { name: 'bar' })).to.eventually.be.rejectedWith(error);
+        });
+    });
+
+    context('getOne()', () => {
+        let crudFind;
+
+        beforeEach('create fakes', () => {
+            crudFind = td.function();
+        });
+
+        it('should return the document instance if it exists', () => {
+            const collectionName = 'foobar';
+            const documentId = 'foo';
+            const expected = { _id: documentId, name: 'bar' };
+            const schemaName = 'baz';
+            const type = Client.dataModel.DOCUMENT;
+            const criteria = `$._id == "${documentId}"`;
+            const session = { _client: { crudFind } };
+            const instance = collection(session, { getName }, collectionName);
+
+            const any = td.matchers.anything();
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudFind(session, schemaName, collectionName, type, [], criteria, any, any, any, any, td.callback([expected])), { ignoreExtraArgs: true }).thenResolve();
+
+            return expect(instance.getOne(documentId)).to.eventually.deep.equal(expected);
+        });
+
+        it('should escape the id value', () => {
+            const collectionName = 'foobar';
+            const documentId = 'fo\\"o';
+            const expected = { _id: documentId, name: 'bar' };
+            const schemaName = 'baz';
+            const type = Client.dataModel.DOCUMENT;
+            const criteria = `$._id == "fo\\\\"o"`;
+            const session = { _client: { crudFind } };
+            const instance = collection(session, { getName }, collectionName);
+
+            const any = td.matchers.anything();
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudFind(session, schemaName, collectionName, type, [], criteria, any, any, any, any, td.callback([expected])), { ignoreExtraArgs: true }).thenResolve();
+
+            return expect(instance.getOne(documentId)).to.eventually.deep.equal(expected);
+        });
+
+        it('should return `null` if the document does not exist', () => {
+            const collectionName = 'foobar';
+            const documentId = 'foo';
+            const schemaName = 'baz';
+            const type = Client.dataModel.DOCUMENT;
+            const criteria = `$._id == "${documentId}"`;
+            const session = { _client: { crudFind } };
+            const instance = collection(session, { getName }, collectionName);
+
+            const any = td.matchers.anything();
+
+            td.when(getName()).thenReturn(schemaName);
+            td.when(crudFind(session, schemaName, collectionName, type, [], criteria, any, any, any, any, td.callback([])), { ignoreExtraArgs: true }).thenResolve();
+
+            return expect(instance.getOne(documentId)).to.eventually.be.null;
         });
     });
 });

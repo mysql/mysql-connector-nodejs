@@ -116,4 +116,27 @@ describe('@integration document collection find', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('single document retrieval', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo' })
+                .add({ _id: '2', name: 'bar' })
+                .execute();
+        });
+
+        it('should return an existing document with the given id', () => {
+            const expected = { _id: '1', name: 'foo' };
+
+            return collection
+                .getOne('1')
+                .then(doc => expect(doc).to.deep.equal(expected));
+        });
+
+        it('should return null if a document with the given id does not exist', () => {
+            return collection
+                .getOne('3')
+                .then(doc => expect(doc).to.be.null);
+        });
+    });
 });
