@@ -87,11 +87,11 @@ describe('Session', () => {
 
         context('connect()', () => {
             it('should return a clean object with the session properties', () => {
-                const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: false };
+                const properties = { auth: 'PLAIN', dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: false };
                 const session = new Session(properties);
                 const expected = { dbUser: 'foo' };
 
-                td.when(capabilitiesGet()).thenResolve({});
+                td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                 return expect(session.connect()).to.be.fulfilled
                     .then(session => expect(session.inspect()).to.deep.include(expected));
@@ -124,7 +124,7 @@ describe('Session', () => {
                 it('should be able to setup a SSL/TLS connection', () => {
                     const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: true };
                     const session = new Session(properties);
-                    const expected = { foo: 'bar' };
+                    const expected = { 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] };
 
                     td.when(enableSSL({})).thenResolve();
                     td.when(capabilitiesGet()).thenResolve(expected);
@@ -138,12 +138,12 @@ describe('Session', () => {
                     const session = new Session(properties);
 
                     td.when(enableSSL(), { ignoreExtraArgs: true }).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({});
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     return expect(session.connect()).to.be.fulfilled
                         .then(() => {
                             expect(td.explain(enableSSL).callCount).to.equal(0);
-                            expect(session._serverCapabilities).to.be.empty;
+                            expect(session._serverCapabilities.tls).to.be.undefined;
                         });
                 });
 
@@ -152,7 +152,7 @@ describe('Session', () => {
                     const session = new Session(properties);
 
                     td.when(enableSSL({})).thenReject(new Error());
-                    td.when(capabilitiesGet()).thenResolve({ foo: 'bar' });
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     return expect(session.connect()).to.be.rejected
                         .then(() => expect(session._serverCapabilities).to.be.empty);
@@ -163,7 +163,7 @@ describe('Session', () => {
                     const session = new Session(properties);
 
                     td.when(enableSSL({ foo: 'bar' })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({});
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     return expect(session.connect()).to.be.fulfilled;
                 });
@@ -173,7 +173,7 @@ describe('Session', () => {
                     const session = new Session(properties);
 
                     td.when(enableSSL({})).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({ tls: true });
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
 
                     return expect(session.connect()).to.be.fulfilled
                         .then(session => expect(session.inspect()).to.deep.include({ ssl: true }));
@@ -186,13 +186,55 @@ describe('Session', () => {
                     error.info = { code: 5001 };
 
                     td.when(enableSSL({})).thenReject(error);
-                    td.when(capabilitiesGet()).thenResolve({});
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     return expect(session.connect()).to.be.rejected;
+                });
+
+                it('should select the default authentication mechanism', () => {
+                    const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
+                    const session = new Session(properties);
+
+                    td.when(enableSSL({})).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+
+                    return expect(session.connect()).to.be.fulfilled
+                        .then(session => expect(session.inspect()).to.deep.include({ auth: 'PLAIN' }));
+                });
+
+                it('should override the default authentication mechanism with the one provided by the user', () => {
+                    const properties = { auth: 'MYSQL41', dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket } };
+                    const session = new Session(properties);
+
+                    td.when(enableSSL({})).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+
+                    return expect(session.connect()).to.be.fulfilled
+                        .then(session => expect(session.inspect()).to.deep.include({ auth: 'MYSQL41' }));
+                });
+            });
+
+            context('insecure connections', () => {
+                it('should select the default authentication mechanism', () => {
+                    const properties = { dbUser: 'foo', dbPassword: 'bar', socketFactory: { createSocket }, ssl: false };
+                    const session = new Session(properties);
+
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+
+                    return expect(session.connect()).to.be.fulfilled
+                        .then(session => expect(session.inspect()).to.deep.include({ auth: 'MYSQL41' }));
                 });
             });
 
             context('failover', () => {
+                let enableSSL;
+
+                beforeEach('create fakes', () => {
+                    enableSSL = td.function();
+
+                    Client.prototype.enableSSL = enableSSL;
+                });
+
                 it('should failover to the next available address if the connection fails', () => {
                     const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
                     const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, socketFactory: { createSocket }, ssl: false };
@@ -202,7 +244,7 @@ describe('Session', () => {
                     const error = new Error();
                     error.code = 'ENOTFOUND';
 
-                    td.when(capabilitiesGet()).thenResolve({});
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
                     td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
                     td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
 
@@ -246,13 +288,67 @@ describe('Session', () => {
                     const error = new Error();
                     error.code = 'ENOTFOUND';
 
-                    td.when(capabilitiesGet()).thenResolve({});
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
                     // failover restarts from the highest priority address
                     td.when(createSocket(), { ignoreExtraArgs: true }).thenResolve(new Duplex());
                     td.when(createSocket(), { ignoreExtraArgs: true, times: 2 }).thenReject(error);
 
                     return expect(session.connect()).to.be.rejectedWith('All routers failed.')
                         .then(() => expect(session.connect()).to.be.fulfilled)
+                        .then(session => expect(session.inspect()).to.deep.include(expected));
+                });
+
+                it('should select the default authentication mechanism for secure connections', () => {
+                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, socketFactory: { createSocket }, ssl: true };
+                    const session = new Session(properties);
+                    const expected = { auth: 'PLAIN', dbUser: 'baz', host: 'bar', port: 2, ssl: true };
+
+                    const error = new Error();
+                    error.code = 'ENOTFOUND';
+
+                    td.when(enableSSL({})).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
+                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
+
+                    return expect(session.connect()).to.be.fulfilled
+                        .then(session => expect(session.inspect()).to.deep.include(expected));
+                });
+
+                it('should select the default authentication mechanism for insecure connections', () => {
+                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, socketFactory: { createSocket }, ssl: false };
+                    const session = new Session(properties);
+                    const expected = { auth: 'MYSQL41', dbUser: 'baz', host: 'bar', port: 2, ssl: false };
+
+                    const error = new Error();
+                    error.code = 'ENOTFOUND';
+
+                    td.when(enableSSL({})).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
+                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
+
+                    return expect(session.connect()).to.be.fulfilled
+                        .then(session => expect(session.inspect()).to.deep.include(expected));
+                });
+
+                it('should override the default authentication mechanism with the one provided by the user', () => {
+                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const properties = { auth: 'MYSQL41', dbUser: 'baz', dbPassword: 'qux', endpoints, socketFactory: { createSocket }, ssl: true };
+                    const session = new Session(properties);
+                    const expected = { auth: 'MYSQL41', dbUser: 'baz', host: 'bar', port: 2, ssl: true };
+
+                    const error = new Error();
+                    error.code = 'ENOTFOUND';
+
+                    td.when(enableSSL({})).thenResolve();
+                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
+                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
+
+                    return expect(session.connect()).to.be.fulfilled
                         .then(session => expect(session.inspect()).to.deep.include(expected));
                 });
             });

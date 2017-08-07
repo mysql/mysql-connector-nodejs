@@ -19,14 +19,14 @@ const expect = chai.expect;
 describe('@integration X plugin session', () => {
     context('using a configuration object', () => {
         it('should connect to the server in a new session', () => {
-            const tcpConfig = Object.assign({}, config);
+            const tcpConfig = Object.assign({}, config, { socket: undefined });
 
             return expect(mysqlx.getSession(tcpConfig)).to.be.fulfilled
                 .then(session => session.close());
         });
 
         it('should connect to the server with an IPv6 host', () => {
-            const ipv6Config = Object.assign({}, config, { host: '::1' });
+            const ipv6Config = Object.assign({}, config, { host: '::1', socket: undefined });
 
             return expect(mysqlx.getSession(ipv6Config)).to.be.fulfilled
                 .then(session => session.close());
@@ -45,7 +45,7 @@ describe('@integration X plugin session', () => {
         });
 
         it('should connect to the server insecurely if SSL/TLS is disabled explicitly', () => {
-            const insecureConfig = Object.assign({}, config, { ssl: false });
+            const insecureConfig = Object.assign({}, config, { ssl: false, socket: undefined });
 
             return expect(mysqlx.getSession(insecureConfig)).to.be.fulfilled
                 .then(session => {
@@ -75,7 +75,7 @@ describe('@integration X plugin session', () => {
             return expect(mysqlx.getSession(uri)).to.be.fulfilled
                 .then(session => {
                     expect(session).to.be.an.instanceof(Session);
-                    expect(session.inspect()).to.deep.equal(expected);
+                    expect(session.inspect()).to.deep.include(expected);
 
                     return session.close();
                 });
@@ -166,17 +166,17 @@ describe('@integration X plugin session', () => {
         });
 
         it('should connect to the server with a local UNIX socket', function () {
-            if (!config.socket) {
+            if (!config.socket || os.platform() === 'win32') {
                 return this.skip();
             }
 
-            // Uses the default socket allocated for MySQL.
-            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@(${config.socket})`;
+            // Uses the default socket allocated for MySQL and a working authentication method.
+            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@(${config.socket})?auth=MYSQL41`;
             const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
 
             return expect(mysqlx.getSession(uri)).to.be.fulfilled
                 .then(session => {
-                    expect(session.inspect()).to.deep.equal(expected);
+                    expect(session.inspect()).to.deep.include(expected);
 
                     return session.close();
                 });
@@ -188,12 +188,12 @@ describe('@integration X plugin session', () => {
             }
 
             // Uses the default socket allocated for MySQL.
-            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@(${config.socket})?ssl-mode=REQUIRED&ssl-ca=(/path/to/ca.pem)?ssl-crl=(/path/to/crl.pem)`;
+            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@(${config.socket})?ssl-mode=REQUIRED&ssl-ca=(/path/to/ca.pem)?ssl-crl=(/path/to/crl.pem)&auth=MYSQL41`;
             const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
 
             return expect(mysqlx.getSession(uri)).to.be.fulfilled
                 .then(session => {
-                    expect(session.inspect()).to.deep.equal(expected);
+                    expect(session.inspect()).to.deep.include(expected);
 
                     return session.close();
                 });
@@ -299,17 +299,17 @@ describe('@integration X plugin session', () => {
         });
 
         it('should connect to the server with a local UNIX socket', function () {
-            if (!config.socket) {
+            if (!config.socket || os.platform() === 'win32') {
                 return this.skip();
             }
 
             // Uses the default socket allocated for MySQL.
-            const uri = `${config.dbUser}:${config.dbPassword}@(${config.socket})`;
+            const uri = `${config.dbUser}:${config.dbPassword}@(${config.socket})?auth=MYSQL41`;
             const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
 
             return expect(mysqlx.getSession(uri)).to.be.fulfilled
                 .then(session => {
-                    expect(session.inspect()).to.deep.equal(expected);
+                    expect(session.inspect()).to.deep.include(expected);
 
                     return session.close();
                 });
@@ -321,12 +321,12 @@ describe('@integration X plugin session', () => {
             }
 
             // Uses the default socket allocated for MySQL.
-            const uri = `${config.dbUser}:${config.dbPassword}@(${config.socket})?ssl-mode=REQUIRED&ssl-ca=(/path/to/ca.pem)?ssl-crl=(/path/to/crl.pem)`;
+            const uri = `${config.dbUser}:${config.dbPassword}@(${config.socket})?ssl-mode=REQUIRED&ssl-ca=(/path/to/ca.pem)?ssl-crl=(/path/to/crl.pem)&auth=MYSQL41`;
             const expected = { dbUser: config.dbUser, host: undefined, port: undefined, socket: config.socket, ssl: false };
 
             return expect(mysqlx.getSession(uri)).to.be.fulfilled
                 .then(session => {
-                    expect(session.inspect()).to.deep.equal(expected);
+                    expect(session.inspect()).to.deep.include(expected);
 
                     return session.close();
                 });
@@ -354,7 +354,7 @@ describe('@integration X plugin session', () => {
                 return expect(mysqlx.config.get(config.dbUser)).to.be.fulfilled
                     .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, config.dbPassword)).to.be.fulfilled)
                     .then(session => {
-                        expect(session.inspect()).to.deep.equal(expected);
+                        expect(session.inspect()).to.deep.include(expected);
 
                         return session.close();
                     });
@@ -367,7 +367,7 @@ describe('@integration X plugin session', () => {
 
                 return expect(mysqlx.getSession({ dbPassword: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
                     .then(session => {
-                        expect(session.inspect()).to.deep.equal(expected);
+                        expect(session.inspect()).to.deep.include(expected);
 
                         return session.close();
                     });
@@ -378,7 +378,7 @@ describe('@integration X plugin session', () => {
 
                 return expect(mysqlx.getSession({ host: '::1', dbPassword: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
                     .then(session => {
-                        expect(session.inspect()).to.deep.equal(expected);
+                        expect(session.inspect()).to.deep.include(expected);
 
                         return session.close();
                     });
@@ -389,7 +389,7 @@ describe('@integration X plugin session', () => {
 
                 return expect(mysqlx.getSession({ host: '::1', password: config.dbPassword, sessionName: config.dbUser })).to.be.fulfilled
                     .then(session => {
-                        expect(session.inspect()).to.deep.equal(expected);
+                        expect(session.inspect()).to.deep.include(expected);
 
                         return session.close();
                     });
@@ -403,7 +403,7 @@ describe('@integration X plugin session', () => {
 
                 return expect(mysqlx.getSession(json)).to.be.fulfilled
                     .then(session => {
-                        expect(session.inspect()).to.deep.equal(expected);
+                        expect(session.inspect()).to.deep.include(expected);
 
                         return session.close();
                     });
@@ -415,7 +415,7 @@ describe('@integration X plugin session', () => {
 
                 return expect(mysqlx.getSession(json)).to.be.fulfilled
                     .then(session => {
-                        expect(session.inspect()).to.deep.equal(expected);
+                        expect(session.inspect()).to.deep.include(expected);
 
                         return session.close();
                     });
@@ -427,7 +427,7 @@ describe('@integration X plugin session', () => {
 
                 return expect(mysqlx.getSession(json)).to.be.fulfilled
                     .then(session => {
-                        expect(session.inspect()).to.deep.equal(expected);
+                        expect(session.inspect()).to.deep.include(expected);
 
                         return session.close();
                     });
@@ -463,7 +463,7 @@ describe('@integration X plugin session', () => {
                     return expect(mysqlx.config.save('test', data)).to.be.fulfilled
                         .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled)
                         .then(session => {
-                            expect(session.inspect()).to.deep.equal(expected);
+                            expect(session.inspect()).to.deep.include(expected);
 
                             return session.close();
                         });
@@ -481,7 +481,7 @@ describe('@integration X plugin session', () => {
                     return expect(mysqlx.config.save('test', JSON.stringify(data))).to.be.fulfilled
                         .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled)
                         .then(session => {
-                            expect(session.inspect()).to.deep.equal(expected);
+                            expect(session.inspect()).to.deep.include(expected);
 
                             return session.close();
                         });
@@ -499,7 +499,7 @@ describe('@integration X plugin session', () => {
                             return expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled;
                         })
                         .then(session => {
-                            expect(session.inspect()).to.deep.equal(expected);
+                            expect(session.inspect()).to.deep.include(expected);
 
                             return session.close();
                         });
@@ -520,7 +520,7 @@ describe('@integration X plugin session', () => {
                             return expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled;
                         })
                         .then(session => {
-                            expect(session.inspect()).to.deep.equal(expected);
+                            expect(session.inspect()).to.deep.include(expected);
 
                             return session.close();
                         });

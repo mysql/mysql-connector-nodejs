@@ -5,7 +5,7 @@
 const parseSecurityOptions = require('lib/DevAPI/Util/URIParser/parseSecurityOptions');
 const expect = require('chai').expect;
 
-describe('@connections-secure-by-default parseSecurityOptions', () => {
+describe('parseSecurityOptions', () => {
     it('should enable ssl if any of the security related properties are provided', () => {
         // TODO(Rui): add `ssl-mode=VERIFY_CA`, `ssl-mode=VERIFY_IDENTITY` and/or `ssl-mode=VERIFY_CRL`?
         ['ssl-mode=REQUIRED', 'ssl-ca=foo', 'ssl-crl=bar'].forEach(pair => {

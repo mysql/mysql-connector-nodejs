@@ -103,3 +103,205 @@ mysqlx
         console.log(session.inspect()); // { host: 'foobar', ssl: true }
     });
 ```
+
+## Authentication mechanisms
+
+Currently, the MySQL X plugin supports the following authentication methods:
+
+- [`MYSQL41`](https://dev.mysql.com/doc/internals/en/x-protocol-authentication-authentication.html#x-protocol-authentication-mysql41-authentication) (available for any kind of connection)
+- [`PLAIN`](https://dev.mysql.com/doc/internals/en/x-protocol-authentication-authentication.html#x-protocol-authentication-plain-authentication) (requires TLS)
+
+Since C/Node.js server connections are secure by default, unless one explicitely disables TLS support, the connection will use the `PLAIN` authentication method. The same happens if the server connection is established via a local UNIX socket (which does not support TLS). On the other hand, connections established via regular unencrypted TCP links will use the `MYSQL41` authentication method by default.
+
+The user is allowed to override this automatic choice, and fallback to `MYSQL41` on secure connections. The same does not apply to insecure connections because the `PLAIN` authentication method requires TLS to be enabled.
+
+#### Default security options (SSL enabled) and authentication mechanism
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+const options = {
+    dbUser: 'foo',
+    dbPassword: 'bar',
+    host: 'localhost',
+    port: 33060
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().auth); // 'PLAIN'
+    });
+```
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://foo:bar@localhost:33060')
+    .then(session => {
+        console.log(session.inspect().auth); // 'PLAIN'
+    });
+```
+
+### SSL disabled and default authentication mechanism
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+const options = {
+    dbUser: 'foo',
+    dbPassword: 'bar',
+    host: 'localhost',
+    port: 33060,
+    ssl: false
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().auth); // 'MYSQL41'
+    });
+```
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://foo:bar@localhost:33060?ssl-mode=DISABLED')
+    .then(session => {
+        console.log(session.inspect().auth); // 'MYSQL41'
+    });
+```
+
+### SSL enabled and default authentication mechanism
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+const options = {
+    dbUser: 'foo',
+    dbPassword: 'bar',
+    host: 'localhost',
+    port: 33060,
+    ssl: true
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().auth); // 'PLAIN'
+    });
+```
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://foo:bar@localhost:33060?ssl-mode=REQUIRED')
+    .then(session => {
+        console.log(session.inspect().auth); // 'PLAIN'
+    });
+```
+
+### SSL enabled and custom authentication mechanism
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+const options = {
+    auth: 'MYSQL41',
+    dbUser: 'foo',
+    dbPassword: 'bar',
+    host: 'localhost',
+    port: 33060,
+    ssl: true
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().auth); // 'MYSQL41'
+    });
+```
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://foo:bar@localhost:33060?ssl-mode=REQUIRED&auth=MYSQL41')
+    .then(session => {
+        console.log(session.inspect().auth); // 'MYSQL41'
+    });
+```
+
+### Local socket connection and default authentication mechanism
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+const options = {
+    dbUser: 'foo',
+    dbPassword: 'bar',
+    host: 'localhost',
+    port: 33060,
+    socket: '/path/to/socket'
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().auth); // 'PLAIN'
+    });
+```
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://foo:bar@(/path/to/socket)')
+    .then(session => {
+        console.log(session.inspect().auth); // 'PLAIN'
+    });
+```
+
+### Local socket connection and custom authentication mechanism
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+const options = {
+    auth: 'MYSQL41',
+    dbUser: 'foo',
+    dbPassword: 'bar',
+    host: 'localhost',
+    port: 33060,
+    socket: '/path/to/socket'
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().auth); // 'MYSQL41'
+    });
+```
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://foo:bar@(/path/to/socket)?auth=MYSQL41')
+    .then(session => {
+        console.log(session.inspect().auth); // 'MYSQL41'
+    });
+```
+
+### Failover with TLS enabled
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://foo:bar@[localhost:33060, 127.0.0.1:33061]')
+    .then(session => {
+        console.log(session.inspect().auth); // 'PLAIN'
+    });
+```
+
+### Failover with TLS disabled
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://foo:bar@[localhost:33060, 127.0.0.1:33061]?ssl-mode=DISABLED')
+    .then(session => {
+        console.log(session.inspect().auth); // 'MYSQL41'
+    });
+```

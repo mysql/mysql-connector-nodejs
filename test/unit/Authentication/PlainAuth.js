@@ -56,4 +56,11 @@ describe('PlainAuth', () => {
 
         expect(result.slice(username.length + 2, username.length + 2 + password.length).toString()).to.equal(password);
     });
+
+    it('should allow empty passwords', () => {
+        const username = 'foo';
+        const auth = new PlainAuth({ dbUser: username });
+
+        return expect(auth.getInitialAuthData()).to.not.throw;
+    });
 });

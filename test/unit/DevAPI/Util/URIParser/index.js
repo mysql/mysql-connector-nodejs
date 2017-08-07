@@ -9,6 +9,7 @@ describe('parseUri', () => {
     context('for RFC-3986 URIs', () => {
         it('should parse an URI with a hostname', () => {
             const expected = {
+                auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
                 endpoints: [{
@@ -29,6 +30,7 @@ describe('parseUri', () => {
 
         it('should parse an URI with an arbitrary IPv4 host', () => {
             const expected = {
+                auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
                 endpoints: [{
@@ -49,6 +51,7 @@ describe('parseUri', () => {
 
         it('should parse an URI with a loopback IPv6 host', () => {
             const expected = {
+                auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
                 endpoints: [{
@@ -69,6 +72,7 @@ describe('parseUri', () => {
 
         it('should parse an URI with an arbitrary IPv6 host', () => {
             const expected = {
+                auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
                 endpoints: [{
@@ -89,6 +93,7 @@ describe('parseUri', () => {
 
         it('should parse an URI containing just the hostname', () => {
             const expected = {
+                auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
                 endpoints: [{
@@ -109,6 +114,7 @@ describe('parseUri', () => {
 
         it('should parse an URI string containing just the IPv4 address', () => {
             const expected = {
+                auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
                 endpoints: [{
@@ -129,6 +135,7 @@ describe('parseUri', () => {
 
         it('should parse an URI containing just the IPv6 address', () => {
             const expected = {
+                auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
                 endpoints: [{
@@ -149,6 +156,7 @@ describe('parseUri', () => {
 
         it('should parse an URI with an empty path', () => {
             const expected = {
+                auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
                 endpoints: [{
@@ -169,6 +177,7 @@ describe('parseUri', () => {
 
         it('should parse a complete URI', () => {
             const expected = {
+                auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
                 endpoints: [{
@@ -189,6 +198,7 @@ describe('parseUri', () => {
 
         it('should parse a URI with an invalid port type (validation is done somewhere else)', () => {
             const expected = {
+                auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
                 endpoints: [{
@@ -210,6 +220,7 @@ describe('parseUri', () => {
         context('route failover', () => {
             it('should parse an URI containing failover addresses without priority', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -234,6 +245,7 @@ describe('parseUri', () => {
 
             it('should parse an URI containing failover addresses with priority', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -283,6 +295,7 @@ describe('parseUri', () => {
         context('SSL/TLS properties', () => {
             it('should parse a URI that requires SSL/TLS', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -303,6 +316,7 @@ describe('parseUri', () => {
 
             it('should parse a URI that disables SSL/TLS', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -323,6 +337,7 @@ describe('parseUri', () => {
 
             it('should parse an URI with encoded paths to validation PEM files', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -343,6 +358,7 @@ describe('parseUri', () => {
 
             it('should parse an URI with custom paths to validation PEM files', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -363,6 +379,7 @@ describe('parseUri', () => {
 
             it('should parse empty paths to validation PEM files', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -383,6 +400,7 @@ describe('parseUri', () => {
 
             it('should parse empty custom paths to validation PEM files', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -405,6 +423,7 @@ describe('parseUri', () => {
         context('local sockets', () => {
             it('should parse an URI with a pct-encoded UNIX socket', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -425,6 +444,7 @@ describe('parseUri', () => {
 
             it('should parse an URI with a custom-encoded UNIX socket', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -444,6 +464,29 @@ describe('parseUri', () => {
             });
         });
 
+        context('authentication method', () => {
+            it('should parse an URI with a specific authentication method', () => {
+                const expected = {
+                    auth: 'AUTHMETHOD',
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    endpoints: [{
+                        host: 'localhost',
+                        port: 33060,
+                        socket: undefined
+                    }],
+                    schema: undefined,
+                    ssl: true,
+                    sslOptions: {
+                        ca: undefined,
+                        crl: undefined
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@localhost:33060?auth=authMethod')).to.deep.equal(expected);
+            });
+        });
+
         it('should throw an error if the host is not valid', () => {
             expect(() => parseUri('mysql#x')).to.throw(Error, 'Invalid URI');
         });
@@ -452,6 +495,7 @@ describe('parseUri', () => {
     context('for a unified connection string', () => {
         it('should parse a connection string if the password is not provided', () => {
             const expected = {
+                auth: '',
                 dbUser: 'user',
                 dbPassword: undefined,
                 endpoints: [{
@@ -472,6 +516,7 @@ describe('parseUri', () => {
 
         it('should parse a connection string if the password is empty', () => {
             const expected = {
+                auth: '',
                 dbUser: 'user',
                 dbPassword: '',
                 endpoints: [{
@@ -492,6 +537,7 @@ describe('parseUri', () => {
 
         it('should parse a connection string if the port is not provided', () => {
             const expected = {
+                auth: '',
                 dbUser: 'user',
                 dbPassword: undefined,
                 endpoints: [{
@@ -512,6 +558,7 @@ describe('parseUri', () => {
 
         it('should parse a connection string if the port is empty', () => {
             const expected = {
+                auth: '',
                 dbUser: 'user',
                 dbPassword: undefined,
                 endpoints: [{
@@ -532,6 +579,7 @@ describe('parseUri', () => {
 
         it('should parse a connection string containing just the hostname', () => {
             const expected = {
+                auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
                 endpoints: [{
@@ -552,6 +600,7 @@ describe('parseUri', () => {
 
         it('should parse a connection string containing just the IPv4 address', () => {
             const expected = {
+                auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
                 endpoints: [{
@@ -572,6 +621,7 @@ describe('parseUri', () => {
 
         it('should parse a connection string containing just the IPv6 address', () => {
             const expected = {
+                auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
                 endpoints: [{
@@ -592,6 +642,7 @@ describe('parseUri', () => {
 
         it('should parse a URI with an invalid port type (validation is done somewhere else)', () => {
             const expected = {
+                auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
                 endpoints: [{
@@ -613,6 +664,7 @@ describe('parseUri', () => {
         context('route failover', () => {
             it('should parse a connection string containing failover addresses without priority', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -641,6 +693,7 @@ describe('parseUri', () => {
 
             it('should parse a connection string containing failover addresses with priority', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -691,6 +744,7 @@ describe('parseUri', () => {
         context('SSL/TLS properties', () => {
             it('should parse a connection string that requires SSL/TLS', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -711,6 +765,7 @@ describe('parseUri', () => {
 
             it('should parse a connection string that disables SSL/TLS', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -731,6 +786,7 @@ describe('parseUri', () => {
 
             it('should parse a connection string with encoded paths to validation PEM files', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -751,6 +807,7 @@ describe('parseUri', () => {
 
             it('should parse a connection string with custom paths to validation PEM files', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -771,6 +828,7 @@ describe('parseUri', () => {
 
             it('should parse empty paths to validation PEM files', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -791,6 +849,7 @@ describe('parseUri', () => {
 
             it('should parse empty custom paths to validation PEM files', () => {
                 const expected = {
+                    auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
                     endpoints: [{
@@ -810,44 +869,71 @@ describe('parseUri', () => {
             });
         });
 
-        it('should parse a connection string with a pct-encoded UNIX socket', () => {
-            const expected = {
-                dbUser: 'user',
-                dbPassword: 'password',
-                endpoints: [{
-                    host: undefined,
-                    port: undefined,
-                    socket: './path/to/socket'
-                }],
-                schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
-                }
-            };
+        context('local sockets', () => {
+            it('should parse a connection string with a pct-encoded UNIX socket', () => {
+                const expected = {
+                    auth: '',
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    endpoints: [{
+                        host: undefined,
+                        port: undefined,
+                        socket: './path/to/socket'
+                    }],
+                    schema: undefined,
+                    ssl: true,
+                    sslOptions: {
+                        ca: undefined,
+                        crl: undefined
+                    }
+                };
 
-            expect(parseUri('user:password@.%2Fpath%2Fto%2Fsocket')).to.deep.equal(expected);
+                expect(parseUri('user:password@.%2Fpath%2Fto%2Fsocket')).to.deep.equal(expected);
+            });
+
+            it('should parse an URI with a custom-encoded UNIX socket', () => {
+                const expected = {
+                    auth: '',
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    endpoints: [{
+                        host: undefined,
+                        port: undefined,
+                        socket: './path/to/socket'
+                    }],
+                    schema: 'schema',
+                    ssl: true,
+                    sslOptions: {
+                        ca: undefined,
+                        crl: undefined
+                    }
+                };
+
+                expect(parseUri('user:password@(./path/to/socket)/schema')).to.deep.equal(expected);
+            });
         });
 
-        it('should parse an URI with a custom-encoded UNIX socket', () => {
-            const expected = {
-                dbUser: 'user',
-                dbPassword: 'password',
-                endpoints: [{
-                    host: undefined,
-                    port: undefined,
-                    socket: './path/to/socket'
-                }],
-                schema: 'schema',
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
-                }
-            };
+        context('authentication method', () => {
+            it('should parse an URI with a specific authentication method', () => {
+                const expected = {
+                    auth: 'AUTHMETHOD',
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    endpoints: [{
+                        host: 'localhost',
+                        port: 33060,
+                        socket: undefined
+                    }],
+                    schema: undefined,
+                    ssl: true,
+                    sslOptions: {
+                        ca: undefined,
+                        crl: undefined
+                    }
+                };
 
-            expect(parseUri('user:password@(./path/to/socket)/schema')).to.deep.equal(expected);
+                expect(parseUri('user:password@localhost:33060?auth=authMethod')).to.deep.equal(expected);
+            });
         });
 
         it('should throw an error if the host is empty', () => {

@@ -11,6 +11,9 @@
     "Row_Locking": {
         "title": "Row Locking"
     },
+    "Secure_Sessions": {
+        "title": "Secure Sessions"
+    },
     "Table_Creation_API": {
         "title": "Table Creation API"
     },
