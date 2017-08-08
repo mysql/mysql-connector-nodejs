@@ -348,23 +348,6 @@ describe('Client', () => {
             return expect(client.crudInsert(null, null, null, { rows: [['foo', 'bar']] })).to.eventually.deep.equal(expected);
         });
 
-        it('should fail if no documents are provided', () => {
-            const client = new Client({ on });
-            const encodeMessage = td.function();
-
-            client.encodeMessage = encodeMessage;
-
-            td.when(encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
-            td.when(fakeSendMessage(), { ignoreExtraArgs: true }).thenResolve();
-
-            return expect(client.crudInsert('schema', 'collection', Client.dataModel.DOCUMENT, {})).to.eventually.be.rejected
-                .then(err => {
-                    expect(err.message).to.equal('No document provided for Crud::Insert');
-                    expect(td.explain(encodeMessage).callCount).to.equal(0);
-                    expect(td.explain(fakeSendMessage).callCount).to.equal(0);
-                });
-        });
-
         it('should fail if the message cannot be sent', () => {
             const client = new Client({ on });
             const error = new Error('foo');
