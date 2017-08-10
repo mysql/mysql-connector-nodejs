@@ -64,7 +64,7 @@ describe('@integration collection miscellaneous tests', () => {
             collection.add(document).execute(),
             collection.modify(`$._id == '${document._id}'`).set('$.here', 'all is gone').execute()
         ]).then(() => {
-            collection.find().execute(actual => expect(actual).to.deep.equal(expected));
+            return collection.find().execute(actual => expect(actual).to.deep.equal(expected));
         });
     });
 
@@ -83,7 +83,7 @@ describe('@integration collection miscellaneous tests', () => {
             collection.find().execute(),
             collection.remove(`$._id == '${document._id}'`).execute()
         ]).then(() => {
-            collection.find().execute(actual => expect(actual).to.be.empty);
+            return collection.find().execute(actual => expect(actual).to.be.undefined);
         });
     });
 
@@ -95,7 +95,7 @@ describe('@integration collection miscellaneous tests', () => {
             collection.add([document1, document2]).execute(),
             collection.remove('true').limit(1).execute()
         ]).then(() => {
-            collection.find().execute(actual => expect(actual).to.deep.equal(document2));
+            return collection.find().execute(actual => expect(actual).to.deep.equal(document2));
         });
     });
 
