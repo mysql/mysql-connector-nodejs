@@ -130,6 +130,8 @@ parser.addNamedPlaceholder = function (name) {
 <INITIAL>"LIKE" return 'like';
 <INITIAL>"not" return 'not';
 <INITIAL>"NOT" return 'not';
+<INITIAL>"in" return 'in';
+<INITIAL>"IN" return 'in';
 
 <INITIAL>'?' return '?';
 
@@ -164,6 +166,10 @@ parser.addNamedPlaceholder = function (name) {
 <INITIAL>'[' return '[';
 
 <INITIAL>']' return ']';
+
+<INITIAL>'{' return '{';
+
+<INITIAL>'}' return '}';
 
 <INITIAL>'?' return '?';
 
@@ -316,6 +322,24 @@ Expression
       }
     }
   }%
+  | Expression in Expression %{
+    $$ = {
+      type: 5,
+      operator: {
+        name: 'cont_in',
+        param: [ $1, $3 ]
+      }
+    }
+  }%
+  | Expression not in Expression %{
+    $$ = {
+      type: 5,
+      operator: {
+        name: 'not_cont_in',
+        param: [ $1, $4 ]
+      }
+    }
+  }%
   | DocPath
   | JSONExpression
   | '(' Expression ')' { $$ = $2; }
@@ -389,12 +413,22 @@ DocPath
   ;
 
 JSONExpression
-  : JSONDocument
-  | '[' Expression ( ',' Expression )* ']'
+  : '{' KeyValuePairs '}' { $$ = { type: 7, object: { fld: $2 } } }
+  | '[' Expressions ']' { $$ = { type: 8, array: { value: $2 } }; }
   ;
 
-JSONDocument
-  : '{' StringLiteral ':' Expression ( ',' StringLiteral ':' Expression )* '}'
+Expressions
+  : Expression { $$ = [ $1 ]; }
+  | Expressions ',' Expression { $$ = $1; $$.push($3); }
+  ;
+
+KeyValuePairs
+  : KeyValuePair { $$ = [ $1 ] }
+  | KeyValuePairs ',' KeyValuePair { $$ = $1; $$.push($3); }
+  ;
+
+KeyValuePair
+  : StringLiteral ':' Expression { $$ = { key: $1, value: $3 } }
   ;
 
 int

@@ -172,7 +172,7 @@
             },
             "value": {
               "rule": "required",
-              "type": "Expr",
+              "type": "Mysqlx.Expr.Expr",
               "tag": 2
             }
           }
