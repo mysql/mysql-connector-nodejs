@@ -457,8 +457,8 @@ describe('@integration X plugin session', () => {
             context('given a session name and a configuration object', () => {
                 it('should save the session details using the given name', () => {
                     // TODO(Rui): maybe add some appdata to the object.
-                    const data = Object.assign({}, config);
-                    const expected = { dbUser: data.dbUser, host: data.host, port: data.port, socket: undefined, ssl: true };
+                    const data = Object.assign({}, config, { socket: undefined });
+                    const expected = { dbUser: data.dbUser, host: data.host, port: data.port, socket: data.socket, ssl: true };
 
                     return expect(mysqlx.config.save('test', data)).to.be.fulfilled
                         .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled)
@@ -475,8 +475,8 @@ describe('@integration X plugin session', () => {
 
             context('given a session name and configuration string', () => {
                 it('should save the session details the using name and a JSON config', () => {
-                    const data = Object.assign({}, config, { ssl: false });
-                    const expected = { dbUser: data.dbUser, host: data.host, port: data.port, socket: undefined, ssl: false };
+                    const data = Object.assign({}, config, { socket: undefined, ssl: false });
+                    const expected = { dbUser: data.dbUser, host: data.host, port: data.port, socket: data.socket, ssl: false };
 
                     return expect(mysqlx.config.save('test', JSON.stringify(data))).to.be.fulfilled
                         .then(sessionConfig => expect(mysqlx.getSession(sessionConfig, data.dbPassword)).to.be.fulfilled)
@@ -509,8 +509,8 @@ describe('@integration X plugin session', () => {
             context('given a session configuration instance', () => {
                 it('should save the session details', () => {
                     // TODO(Rui): maybe add some appdata to the object.
-                    const data = Object.assign({}, config, { ssl: false });
-                    const expected = { dbUser: data.dbUser, host: data.host, port: data.port, socket: undefined, ssl: false };
+                    const data = Object.assign({}, config, { ssl: false, socket: undefined });
+                    const expected = { dbUser: data.dbUser, host: data.host, port: data.port, socket: data.socket, ssl: false };
 
                     return expect(mysqlx.config.save('test', data)).to.be.fulfilled
                         .then(sessionConfig => {

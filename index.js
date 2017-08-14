@@ -71,9 +71,13 @@ function loadSession (properties, overrides) {
     }
 
     const base = parseUri(properties.getUri());
-    delete base.endpoints;
-
-    const configuration = Object.assign({}, base, overrides);
+    const configuration = Object.assign({}, base, overrides, {
+        endpoints: [{
+            host: overrides.host || base.endpoints[0].host,
+            port: overrides.port || base.endpoints[0].port,
+            socket: overrides.socket || base.endpoints[0].socket
+        }]
+    });
 
     return createSession(configuration);
 }
