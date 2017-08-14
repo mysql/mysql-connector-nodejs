@@ -97,6 +97,9 @@ describe('DefaultPersistenceHandler', () => {
             let platform, systemConfigFile, userConfigFile;
 
             beforeEach('set environment variables', () => {
+                process.env.APPDATA = process.env.APPDATA || '%APPDATA%';
+                process.env.PROGRAMDATA = process.env.PROGRAMDATA || '%PROGRAMDATA%';
+
                 platform = process.platform;
                 Object.defineProperty(process, 'platform', { value: 'win32' });
             });
@@ -104,8 +107,8 @@ describe('DefaultPersistenceHandler', () => {
             beforeEach('set scope variables', () => {
                 const filename = 'sessions.json';
 
-                systemConfigFile = path.resolve(os.homedir(), 'PROGRAMDATA', 'MySQL', filename);
-                userConfigFile = path.resolve(os.homedir(), 'APPDATA', 'MySQL', filename);
+                systemConfigFile = path.join(process.env.PROGRAMDATA, 'MySQL', filename);
+                userConfigFile = path.join(process.env.APPDATA, 'MySQL', filename);
             });
 
             afterEach('reset environment variables', () => {
@@ -274,12 +277,14 @@ describe('DefaultPersistenceHandler', () => {
             let platform, userConfigFile;
 
             beforeEach('set environment variables', () => {
+                process.env.APPDATA = process.env.APPDATA || '%APPDATA%';
+
                 platform = process.platform;
                 Object.defineProperty(process, 'platform', { value: 'win32' });
             });
 
             beforeEach('set scope variables', () => {
-                userConfigFile = path.resolve(os.homedir(), 'APPDATA', 'MySQL', 'sessions.json');
+                userConfigFile = path.join(process.env.APPDATA, 'MySQL', 'sessions.json');
             });
 
             afterEach('reset environment variables', () => {
@@ -370,12 +375,14 @@ describe('DefaultPersistenceHandler', () => {
             let platform, userConfigFile;
 
             beforeEach('set environment variables', () => {
+                process.env.APPDATA = process.env.APPDATA || '%APPDATA%';
+
                 platform = process.platform;
                 Object.defineProperty(process, 'platform', { value: 'win32' });
             });
 
             beforeEach('set scope variables', () => {
-                userConfigFile = path.resolve(os.homedir(), 'APPDATA', 'MySQL', 'sessions.json');
+                userConfigFile = path.join(process.env.APPDATA, 'MySQL', 'sessions.json');
             });
 
             afterEach('reset environment variables', () => {
