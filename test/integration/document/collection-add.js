@@ -2,8 +2,13 @@
 
 /* eslint-env node, mocha */
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
 const fixtures = require('test/fixtures');
+
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
 
 describe('@integration document collection add', () => {
     let session, schema, collection;

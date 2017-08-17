@@ -5,9 +5,14 @@
 // npm `test` script was updated to use NODE_PATH=.
 const Client = require('lib/Protocol/Client');
 const Result = require('lib/DevAPI/Result');
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
 const collection = require('lib/DevAPI/Collection');
-const expect = require('chai').expect;
 const td = require('testdouble');
+
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
 
 describe('Collection', () => {
     let sqlStmtExecute, getName;
