@@ -123,4 +123,40 @@ describe('@integration relational table update', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('multi-option expressions', () => {
+        it('should update all documents that match a criteria specified by a grouped expression', () => {
+            const expected = [['foo', 50], ['bar', 50], ['baz', 42]];
+            let actual = [];
+
+            return table
+                .update()
+                .where("`name` in ('foo', 'bar')")
+                .set('age', 50)
+                .execute()
+                .then(() => {
+                    return table
+                        .select()
+                        .execute(row => row && row.length && actual.push(row));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should update all documents that do not match a criteria specified by a grouped expression', () => {
+            const expected = [['foo', 42], ['qux', 23], ['baz', 42]];
+            let actual = [];
+
+            return table
+                .update()
+                .where('`age` not in (42, 50)')
+                .set('name', 'qux')
+                .execute()
+                .then(() => {
+                    return table
+                        .select()
+                        .execute(row => row && row.length && actual.push(row));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });

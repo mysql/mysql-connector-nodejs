@@ -112,4 +112,38 @@ describe('@integration document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('multi-option expressions', () => {
+        it('should modify all documents that match a criteria specified by a grouped expression', () => {
+            const expected = [{ _id: '1', name: 'qux' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'qux' }];
+            let actual = [];
+
+            return collection
+                .modify("$._id in ('1', '3')")
+                .set('$.name', 'qux')
+                .execute()
+                .then(() => {
+                    return collection
+                        .find()
+                        .execute(doc => doc && actual.push(doc));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should modify all documents that do not match a criteria specified by a grouped expression', () => {
+            const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'qux' }, { _id: '3', name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .modify("$._id not in ('1', '3')")
+                .set('$.name', 'qux')
+                .execute()
+                .then(() => {
+                    return collection
+                        .find()
+                        .execute(doc => doc && actual.push(doc));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });

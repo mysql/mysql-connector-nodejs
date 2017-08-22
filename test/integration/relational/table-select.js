@@ -240,4 +240,40 @@ describe('@integration relational table select', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('multi-option expressions', () => {
+        beforeEach('add fixtures', () => {
+            return schema
+                .getTable('test')
+                .insert(['test2', 'test3'])
+                .values(['foo', 42])
+                .values(['bar', 23])
+                .values(['baz', 42])
+                .execute();
+        });
+
+        it('should return all documents that match a criteria specified by a grouped expression', () => {
+            const expected = [[1, 'foo', 42], [3, 'baz', 42]];
+            let actual = [];
+
+            return schema
+                .getTable('test')
+                .select()
+                .where("`test2` in ('foo', 'baz')")
+                .execute(row => row && row.length && actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should return all documents that do not match a criteria specified by a grouped expression', () => {
+            const expected = [[2, 'bar', 23]];
+            let actual = [];
+
+            return schema
+                .getTable('test')
+                .select()
+                .where('`test3` not in (50, 42)')
+                .execute(row => row && row.length && actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });

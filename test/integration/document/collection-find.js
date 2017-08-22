@@ -139,4 +139,34 @@ describe('@integration document collection find', () => {
                 .then(doc => expect(doc).to.be.null);
         });
     });
+
+    context('multi-option expressions', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo' })
+                .add({ _id: '2', name: 'bar' })
+                .add({ _id: '3', name: 'baz' })
+                .execute();
+        });
+
+        it('should return all documents that match a criteria specified by a grouped expression', () => {
+            const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .find("$._id in ('1', '3')")
+                .execute(doc => doc && actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should return all documents that do not match a criteria specified by a grouped expression', () => {
+            const expected = [{ _id: '2', name: 'bar' }];
+            let actual = [];
+
+            return collection
+                .find("$._id not in ('1', '3')")
+                .execute(doc => doc && actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });

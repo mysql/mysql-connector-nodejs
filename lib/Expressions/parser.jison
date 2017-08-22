@@ -322,6 +322,24 @@ Expression
       }
     }
   }%
+  | Expression in argsList %{
+    $$ = {
+      type: 5,
+      operator: {
+        name: 'in',
+        param: [ $1 ].concat($3)
+      }
+    }
+  }%
+  | Expression not in argsList %{
+    $$ = {
+      type: 5,
+      operator: {
+        name: 'not_in',
+        param: [ $1 ].concat($4)
+      }
+    }
+  }%
   | Expression in Expression %{
     $$ = {
       type: 5,
@@ -410,6 +428,10 @@ DocPath
       }
     }
   }%
+  ;
+
+argsList
+  : '(' Expressions ')' { $$ = $2 }
   ;
 
 JSONExpression
