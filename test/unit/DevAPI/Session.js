@@ -535,4 +535,32 @@ describe('Session', () => {
             expect(session.sql('foo')).to.equal('bar');
         });
     });
+
+    context('close()', () => {
+        let close;
+
+        beforeEach('create fakes', () => {
+            close = td.function();
+        });
+
+        it('should succeed if the client closes the connection', () => {
+            const session = new Session({});
+            session._client = { close };
+
+            td.when(close()).thenResolve();
+
+            return expect(session.close()).to.eventually.be.fulfilled;
+        });
+
+        it('should fail if the client cannot close the connection', () => {
+            const session = new Session({});
+            session._client = { close };
+
+            const error = new Error('foobar');
+
+            td.when(close()).thenReject(error);
+
+            return expect(session.close()).to.eventually.be.rejectedWith(error);
+        });
+    });
 });

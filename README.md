@@ -35,54 +35,56 @@ Using the MySQL document-store is as easy as follows:
 const mysqlx = require('@mysql/xdevapi');
 
 const options = {
-    host: 'localhost',
-    port: 33060,
-    password: '<passwd>',
-    user: 'root'
+  host: 'localhost',
+  port: 33060,
+  password: '<passwd>',
+  user: 'root',
+  schema: 'mySchema' // created by default
 };
 
-mysqlx
-    .getSession(options)
-    .then(session => {
-        return session
-            .createSchema('mySchema')
-            .then(schema => ({ schema, session }))
-    })
-    .then(ctx => {
-        return ctx.schema
-            .createCollection('myCollection')
-            .then(collection => Object.assign(ctx, { collection }))
-    })
-    .then(ctx => {
-        return Promise
-            .all([
-                ctx.collection
-                    .add({ baz: { foo: 'bar' } }, { foo: { bar: 'baz' } })
-                    .execute(),
-                ctx.collection
-                    .find('baz.foo = "bar"')
-                    .execute(row => console.log(row)),
-                ctx.collection
-                    .remove('foo.bar = "baz"')
-                    .execute(),
-                ctx.schema
-                    .dropCollection('myCollection')
-            ])
-            .then(() => ctx)
-    })
-    .then(ctx => {
-        return ctx.session
-            .dropSchema('mySchema')
-            .then(() => ctx);
-    })
-    .then(ctx => {
-        ctx.session.close();
-        process.exit(0);
-    })
-    .catch(err => {
-        console.log(err.stack);
-        process.exit(1);
-    });
+mysqlx.getSession(options)
+  .then(session => {
+    return session
+      .getSchema(options.schema)
+      .createCollection('myCollection');
+  })
+  .then(collection => {
+    return collection
+      .add({ foo: 'bar' }, { baz: { qux: 'quux' } })
+      .execute()
+      .then(() => {
+        return collection
+          .find('foo = :value')
+          .bind('value', 'bar')
+          .execute(console.log);
+      })
+      .then(() => {
+        return collection
+          .remove('baz.qux = :value')
+          .bind('value', 'quux')
+          .execute();
+      })
+      .then(() => {
+        return collection
+          .getSession()
+          .getSchema(options.schema)
+          .dropCollection('myCollection');
+      })
+      .then(() => {
+        return collection
+          .getSession()
+          .dropSchema('myCollection');
+      })
+      .then(() => {
+        return collection
+          .getSession()
+          .close();
+      });
+  })
+  .catch(err => {
+    console.error(err.stack);
+    process.exit(1);
+  });
 ```
 
 Check out the official [documentation](https://dev.mysql.com/doc/dev/connector-nodejs/) for more details.
