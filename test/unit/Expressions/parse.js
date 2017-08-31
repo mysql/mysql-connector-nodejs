@@ -5,7 +5,7 @@ var parse = require('../../../lib/Expressions').parse;
 require('chai').should();
 
 
-describe.only('MySQLx Expression parsing', function () {
+describe('MySQLx Expression parsing', function () {
     [
         {
             should: 'return empty tree for empty input',
@@ -193,6 +193,23 @@ describe.only('MySQLx Expression parsing', function () {
                         {
                             type: 2,
                             literal: Datatype.encodeScalar("Johannes")
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            should: 'allow negation',
+            in: '!false',
+            exp: {
+
+                type: 5,
+                operator: {
+                    name: '!',
+                    param: [
+                        {
+                            type: 2,
+                            literal: Datatype.encodeScalar(false)
                         }
                     ]
                 }

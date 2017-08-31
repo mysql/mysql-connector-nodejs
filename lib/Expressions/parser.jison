@@ -270,6 +270,15 @@ Expression
   | ':' StringLiteral %{
     $$ = parser.addNamedPlaceholder($2);
   }%
+  | '!' Expression %{
+    $$ = {
+      type: 5,
+      operator: {
+        name: $1,
+        param: [ $2 ]
+      }
+    }
+  }%
   | '@' SQLVariable
   | column %{
     $$ = {
