@@ -132,6 +132,8 @@ parser.addNamedPlaceholder = function (name) {
 <INITIAL>"NOT" return 'not';
 <INITIAL>"in" return 'in';
 <INITIAL>"IN" return 'in';
+<INITIAL>"NULL" return 'null';
+<INITIAL>"null" return 'null';
 
 <INITIAL>'?' return '?';
 
@@ -256,6 +258,7 @@ Literal
    : StringOrNumber
    | true { $$ = { type: 2, literal: Datatype.encodeScalar(true) } }
    | false { $$ = { type: 2, literal: Datatype.encodeScalar(false) } }
+   | null { $$ = { type: 2, literal: Datatype.encodeScalar(null) } }
    ;
 
 Expression

@@ -5,7 +5,7 @@ var parse = require('../../../lib/Expressions').parse;
 require('chai').should();
 
 
-describe('MySQLx Expression parsing', function () {
+describe.only('MySQLx Expression parsing', function () {
     [
         {
             should: 'return empty tree for empty input',
@@ -28,6 +28,22 @@ describe('MySQLx Expression parsing', function () {
 
                 type: 2,
                 literal: Datatype.encodeScalar(false)
+            }
+        },
+        {
+            should: 'allow lowercase null',
+            in: 'null',
+            exp: {
+                type: 2,
+                literal: Datatype.encodeScalar(null)
+            }
+        },
+        {
+            should: 'allow uppercase null',
+            in: 'NULL',
+            exp: {
+                type: 2,
+                literal: Datatype.encodeScalar(null)
             }
         },
         {
