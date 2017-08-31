@@ -74,6 +74,24 @@ describe.only('MySQLx Expression parsing', function () {
             }
         },
         {
+            should: 'allow empty quoted strings',
+            in: "''",
+            exp: {
+
+                type: 2,
+                literal: Datatype.encodeScalar('')
+            }
+        },
+        {
+            should: 'allow empty double quoted strings',
+            in: '""',
+            exp: {
+
+                type: 2,
+                literal: Datatype.encodeScalar('')
+            }
+        },
+        {
             should: 'allow escaped quotes within strings',
             in: '"foo\\\"bar"',
             exp: {

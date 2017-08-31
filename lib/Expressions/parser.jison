@@ -472,7 +472,8 @@ column_quoted
   ;
 
 string
-  : QUOTE string_quoted QUOTE { $$ = $2; }
+  : QUOTE QUOTE { $$ = ''; }
+  | QUOTE string_quoted QUOTE { $$ = $2; }
   ;
 
 string_quoted
