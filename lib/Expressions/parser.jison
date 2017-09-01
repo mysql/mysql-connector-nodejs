@@ -122,6 +122,7 @@ parser.addNamedPlaceholder = function (name) {
 <INITIAL>'(' return '(';
 <INITIAL>')' return ')';
 
+<INITIAL>"0" return 'Number';
 <INITIAL>{dec}  return 'Number';
 
 <INITIAL>"true" return 'true';

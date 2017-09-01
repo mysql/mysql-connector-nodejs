@@ -47,6 +47,14 @@ describe('MySQLx Expression parsing', function () {
             }
         },
         {
+            should: 'allow zero',
+            in: '0',
+            exp: {
+                type: 2,
+                literal: Datatype.encodeScalar(0)
+            }
+        },
+        {
             should: 'allow whitespaces within strings',
             in: '"foo bar"',
             exp: {
