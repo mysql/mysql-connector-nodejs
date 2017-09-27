@@ -35,66 +35,81 @@ Please refer to [https://npmjs.com](https://npmjs.com) for more information on n
 Here's a small example of how to leverage the library using MySQL as a document-store.
 
 ```js
-const mysql = require('@mysql/xdevapi');
+'use strict';
 
-mysql
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
     .getSession({
+        dbPassword: '<passwd>',
+        dbUser: 'root',
         host: 'localhost',
-        port: 33060,
-        dbUser: 'user',
-        dbPassword: 'passwd'
+        port: 33060
     })
     .then(session => {
-        console.log('Session created');
+        console.log('A new session has been created.');
 
-        return session.createSchema('test_schema');
+        return session
+            .createSchema('mySchema')
+            .then(schema => ({ schema, session }))
     })
-    .then(schema => {
-        console.log('Schema created');
+    .then(ctx => {
+        console.log('The schema has been created.');
 
-        return schema.createCollection('myCollection');
+        return ctx.schema
+            .createCollection('myCollection')
+            .then(collection => Object.assign(ctx, { collection }))
     })
-    .then(collection => {
-        console.log('Collection created')
+    .then(ctx => {
+        console.log('The collection has been created.')
 
-        return Promise.all([
-            collection
-                .add({ baz: { foo: 'bar' } }, { foo: { bar: 'baz' } })
-                .execute(),
-            collection
-                .find('baz.foo = "bar"')
-                .execute(row => {
-                    console.log('Found row: %j', row);
-                })
-                .then(res => {
-                    console.log('Collection find finished');
-                }),
-            collection
-                .remove('foo.bar = "baz"')
-                .execute()
-                .then(() => {
-                    console.log('Document deleted');
-                }),
-            collection
-                .drop()
-                .then(() => {
-                    console.log('Collection deleted');
-                })
-        ]);
+        return Promise
+            .all([
+                ctx.collection
+                    .add({ baz: { foo: 'bar' } }, { foo: { bar: 'baz' } })
+                    .execute()
+                    .then(() => {
+                        console.log('The documents where added to the collection.');
+                    }),
+                ctx.collection
+                    .find('baz.foo = "bar"')
+                    .execute(row => {
+                        console.log('A row has been found: %j', row);
+                    })
+                    .then(() => {
+                        console.log('The collection find operation has finished.');
+                    }),
+                ctx.collection
+                    .remove('foo.bar = "baz"')
+                    .execute()
+                    .then(() => {
+                        console.log('The document has been removed from the collection.');
+                    }),
+                ctx.schema
+                    .dropCollection('myCollection')
+                    .then(() => {
+                        console.log('The collection has been deleted.');
+                    })
+            ])
+            .then(() => ctx)
+    })
+    .then(ctx => {
+        return ctx.session
+            .dropSchema('mySchema')
+            .then(() => ctx);
+    })
+    .then(ctx => {
+        console.log('The schema has been deleted.');
+
+        return ctx.session.close();
     })
     .then(() => {
-        return session.dropSchema('test_schema');
-    })
-    .then(() => {
-        console.log('Schema deleted');
-
-        return session.close();
-    })
-    .then(() => {
-        console.log('Session destroyed');
+        console.log('The session has been closed.');
+        process.exit(0);
     })
     .catch(err => {
         console.log(err.stack);
+        process.exit(1);
     });
 ```
 
