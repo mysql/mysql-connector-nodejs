@@ -178,10 +178,12 @@ describe('Collection', () => {
 
         it('should escape the id value', () => {
             const collectionName = 'foo';
-            const documentId = 'b\\\"ar';
+            /* eslint-disable no-useless-escape */
+            const documentId = 'b\"ar';
+            /* eslint-enable no-useless-escape */
             const schemaName = 'baz';
             const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "b\\\\"ar"`;
+            const criteria = `$._id == "b\\"ar"`;
             const state = { rows_affected: 1 };
             const expected = new Result(state);
             const session = { _client: { crudFind, crudModify } };
@@ -341,11 +343,13 @@ describe('Collection', () => {
 
         it('should escape the id value', () => {
             const collectionName = 'foobar';
-            const documentId = 'fo\\"o';
+            /* eslint-disable no-useless-escape */
+            const documentId = 'fo\"o';
+            /* eslint-enable no-useless-escape */
             const expected = { _id: documentId, name: 'bar' };
             const schemaName = 'baz';
             const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "fo\\\\"o"`;
+            const criteria = `$._id == "fo\\"o"`;
             const session = { _client: { crudFind } };
             const instance = collection(session, { getName }, collectionName);
 
@@ -401,16 +405,13 @@ describe('Collection', () => {
         });
 
         it('should escape the id value', () => {
-            const collectionName = 'foobar';
-            const documentId = 'fo\\"o';
+            /* eslint-disable no-useless-escape */
+            const documentId = 'fo\"o';
+            /* eslint-enable no-useless-escape */
             const state = { rows_affected: 1 };
             const expected = new Result(state);
-            const schemaName = 'baz';
-            const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "fo\\\\"o"`;
-            const instance = collection({ _client: { crudRemove } }, { getName }, collectionName);
-
-            const any = td.matchers.anything();
+            const criteria = `$._id == "fo\\"o"`;
+            const instance = collection('bar', 'baz', 'qux');
 
             td.when(getName()).thenReturn(schemaName);
             td.when(crudRemove(schemaName, collectionName, type, criteria, any, any)).thenResolve(state);

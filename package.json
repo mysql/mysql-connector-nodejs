@@ -30,7 +30,10 @@
     "url": "http://bugs.mysql.com"
   },
   "scripts": {},
-  "dependencies": {},
+  "dependencies": {
+    "google-protobuf": "3.4.0",
+    "parsimmon": "1.6.2"
+  },
   "engines": {
     "node": ">=4.2.0"
   }
