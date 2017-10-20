@@ -189,4 +189,12 @@ describe('Table', () => {
             expect(instance.getClassName()).to.equal('TableUpdate');
         });
     });
+
+    context('escapeIdentifier()', () => {
+        it('should escape and wrap the identifier with a set of backticks', () => {
+            expect(table.escapeIdentifier('foo')).to.equal('`foo`');
+            expect(table.escapeIdentifier('fo`o')).to.equal('`fo``o`');
+            expect(table.escapeIdentifier('fo``o-ba``r')).to.equal('`fo````o-ba````r`');
+        });
+    });
 });

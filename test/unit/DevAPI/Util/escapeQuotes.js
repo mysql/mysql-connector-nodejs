@@ -17,4 +17,10 @@ describe('escapeQuotes', () => {
     it('should ignore empty strings', () => {
         return expect(escapeQuotes('')).to.be.empty;
     });
+
+    it('should escape backticks', () => {
+        expect(escapeQuotes('foo')).to.equal('foo');
+        expect(escapeQuotes('fo`o')).to.equal('fo``o');
+        expect(escapeQuotes('fo``o-ba``r')).to.equal('fo````o-ba````r');
+    })
 });

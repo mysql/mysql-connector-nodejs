@@ -419,6 +419,60 @@ describe('Session', () => {
                 return expect(session.dropSchema('foo')).to.eventually.be.rejectedWith(error);
             });
         });
+
+        context('setSavepoint()', () => {
+            it('should create a savepoint with a generated name if no name is passed', () => {
+                const session = new Session({});
+                td.when(execute()).thenResolve(true);
+                td.when(stmtExecute(session, td.matchers.contains(/^SAVEPOINT \`connector\-nodejs\-[A-F0-9]{32}\`$/))).thenReturn({ execute });
+                return expect(session.setSavepoint()).to.eventually.be.a('string').and.not.be.empty;
+            });
+
+            it('should create a savepoint with the given name', () => {
+                const session = new Session({});
+                td.when(execute()).thenResolve(true);
+                td.when(stmtExecute(session, td.matchers.contains(/^SAVEPOINT \`foo\`$/))).thenReturn({ execute });
+                return expect(session.setSavepoint('foo')).to.eventually.be.equal('foo');
+            });
+
+            it('should throw an error if name provided is invalid', () => {
+                return expect((new Session({})).setSavepoint(null)).to.be.rejected;
+            });
+        });
+
+        context('releaseSavepoint()', () => {
+            it('should release the savepoint', () => {
+                const session = new Session({});
+                td.when(execute()).thenResolve(true);
+                td.when(stmtExecute(session, td.matchers.contains(/^RELEASE SAVEPOINT \`foo\`$/))).thenReturn({ execute });
+                return expect(session.releaseSavepoint('foo')).to.be.fulfilled;
+            });
+
+            it('should throw an error if name is not provided', () => {
+                return expect((new Session({})).releaseSavepoint()).to.be.rejected;
+            });
+
+            it('should throw an error if name provided is invalid', () => {
+                return expect((new Session({})).releaseSavepoint(null)).to.be.rejected;
+            });
+        });
+
+        context('rollbackTo()', () => {
+            it('should rolback to the savepoint', () => {
+                const session = new Session({});
+                td.when(execute()).thenResolve(true);
+                td.when(stmtExecute(session, td.matchers.contains(/^ROLLBACK TO SAVEPOINT \`foo\`$/))).thenReturn({ execute });
+                return expect(session.rollbackTo('foo')).to.be.fulfilled;
+            });
+
+            it('should throw an error if name is not provided', () => {
+                return expect((new Session({})).rollbackTo()).to.be.rejected;
+            });
+
+            it('should throw an error if name provided is invalid', () => {
+                return expect((new Session({})).rollbackTo(null)).to.be.rejected;
+            });
+        });
     });
 
     context('idGenerator()', () => {
