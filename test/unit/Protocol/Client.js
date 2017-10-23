@@ -223,142 +223,30 @@ describe('Client', () => {
         });
     });
 
-    context('crudFind()', () => {
-        it('should encode grouping expressions correctly', () => {
-            const client = new Client({ on });
-            const expected = { ok: true };
-            const grouping = [{
-                type: 1,
-                identifier: {
-                    name: 'foo'
-                }
-            }, {
-                type: 1,
-                identifier: {
-                    name: 'bar'
-                }
-            }];
-            const message = new Buffer('foobar');
-            const encodeMessage = td.function();
-            const matcher = td.matchers.argThat(data => isEqual(data.grouping, grouping));
-
-            client.encodeMessage = encodeMessage;
-
-            td.when(encodeMessage(Messages.ClientMessages.CRUD_FIND, matcher)).thenReturn(message);
-            td.when(fakeSendMessage(client._workQueue, client._stream, message)).thenResolve(expected);
-
-            return expect(client.crudFind(null, null, null, null, null, null, ['foo', 'bar'])).to.eventually.deep.equal(expected);
+    // TODO(Rui): add tests when the remaining Client interface is refactored.
+    context('CRUD message encoding', () => {
+        context('crudInsert', () => {
+            it('should send an encoded message to the server');
+            it('should fail if the message cannot be encoded');
+            it('should fail if an unexpected error occurs');
         });
 
-        it('shoud encode a specific row locking mode', () => {
-            const expected = { ok: true };
-            const client = new Client({ on });
-            const encodeMessage = td.function();
-            const mode = 1;
-            const message = new Buffer('foobar');
-
-            client.encodeMessage = encodeMessage;
-
-            td.when(encodeMessage(Messages.ClientMessages.CRUD_FIND, td.matchers.contains({ locking: mode }))).thenReturn(message);
-            td.when(fakeSendMessage(client._workQueue, client._stream, message)).thenResolve(expected);
-
-            return expect(client.crudFind(null, null, null, null, null, null, null, null, null, null, null, null, null, null, mode)).to.eventually.deep.equal(expected);
+        context('crudFind()', () => {
+            it('should send an encoded message to the server');
+            it('should fail if the message cannot be encoded');
+            it('should fail if an unexpected error occurs');
         });
 
-        it('should not encode the default row locking mode', () => {
-            const expected = { ok: true };
-            const client = new Client({ on });
-            const encodeMessage = td.function();
-            const mode = 0;
-            const message = new Buffer('foobar');
-
-            client.encodeMessage = encodeMessage;
-
-            const matcher = td.matchers.argThat(data => !data.locking);
-
-            td.when(encodeMessage(Messages.ClientMessages.CRUD_FIND, matcher)).thenReturn(message);
-            td.when(fakeSendMessage(client._workQueue, client._stream, message)).thenResolve(expected);
-
-            return expect(client.crudFind(null, null, null, null, null, null, null, null, null, null, null, null, null, null, mode)).to.eventually.deep.equal(expected);
+        context('crudDelete', () => {
+            it('should send an encoded message to the server');
+            it('should fail if the message cannot be encoded');
+            it('should fail if an unexpected error occurs');
         });
 
-        it('should fail if the message cannot be sent', () => {
-            const error = new Error('foobar');
-            const client = new Client({ on });
-            const encodeMessage = td.function();
-            const message = new Buffer('foobar');
-
-            client.encodeMessage = encodeMessage;
-
-            td.when(encodeMessage(Messages.ClientMessages.CRUD_FIND, td.matchers.anything())).thenReturn(message);
-            td.when(fakeSendMessage(client._workQueue, client._stream, message)).thenReject(error);
-
-            return expect(client.crudFind()).to.eventually.be.rejectedWith(error);
-        });
-    });
-
-    context('crudInsert()', () => {
-        it('should encode field names correctly', () => {
-            const expected = { ok: true };
-            const client = new Client({ on });
-            const columns = ['foo', 'bar'];
-            const message = new Buffer('foobar');
-            const encodeMessage = td.function();
-            const match = td.matchers.argThat(data => isEqual(data.projection, columns));
-
-            client.encodeMessage = encodeMessage;
-
-            td.when(encodeMessage(Messages.ClientMessages.CRUD_INSERT, match)).thenReturn(message);
-            td.when(fakeSendMessage(client._workQueue, client._stream, message)).thenResolve(expected);
-
-            return expect(client.crudInsert(null, null, null, { columns, rows: [['baz', 'qux']] })).to.eventually.deep.equal(expected);
-        });
-
-        it('should encode row values correctly', () => {
-            const expected = { ok: true };
-            const client = new Client({ on });
-            const message = new Buffer('foobar');
-            const encodeMessage = td.function();
-            const rows = [{
-                field: [{
-                    type: 2,
-                    literal: {
-                        type: 8,
-                        v_string: {
-                            value: 'foo'
-                        }
-                    }
-                }, {
-                    type: 2,
-                    literal: {
-                        type: 8,
-                        v_string: {
-                            value: 'bar'
-                        }
-                    }
-                }]
-            }];
-            const matcher = td.matchers.argThat(data => isEqual(data.row, rows));
-
-            client.encodeMessage = encodeMessage;
-
-            td.when(encodeMessage(Messages.ClientMessages.CRUD_INSERT, matcher)).thenReturn(message);
-            td.when(fakeSendMessage(client._workQueue, client._stream, message)).thenResolve(expected);
-
-            return expect(client.crudInsert(null, null, null, { rows: [['foo', 'bar']] })).to.eventually.deep.equal(expected);
-        });
-
-        it('should fail if the message cannot be sent', () => {
-            const client = new Client({ on });
-            const error = new Error('foo');
-            const encodeMessage = td.function();
-
-            client.encodeMessage = encodeMessage;
-
-            td.when(encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
-            td.when(fakeSendMessage(), { ignoreExtraArgs: true }).thenReject(error);
-
-            return expect(client.crudInsert(null, null, null, { rows: [['foo', 'bar']] })).to.eventually.be.rejectedWith(error);
+        context('crudUpdate', () => {
+            it('should send an encoded message to the server');
+            it('should fail if the message cannot be encoded');
+            it('should fail if an unexpected error occurs');
         });
     });
 });

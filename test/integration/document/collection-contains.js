@@ -66,7 +66,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
         let actual = [];
 
         return collection
-            .find("'DocumentStore' in $.categories")
+            .find("'DocumentStore' in categories")
             .execute(post => post && actual.push(post))
             .then(() => expect(actual).to.deep.equal(expected));
     });
@@ -83,7 +83,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
         let actual = [];
 
         return collection
-            .find("'DocumentStore' not in $.categories")
+            .find("'DocumentStore' not in categories")
             .execute(post => post && actual.push(post))
             .then(() => expect(actual).to.deep.equal(expected));
     });
@@ -101,7 +101,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
         let actual = [];
 
         return collection
-            .find('$.author in $.reviewers')
+            .find('author in reviewers')
             .execute(post => post && actual.push(post))
             .then(() => expect(actual).to.deep.equal(expected));
     });
@@ -115,7 +115,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
         let actual = [];
 
         return collection
-            .find('$.author not in $.reviewers')
+            .find('author not in reviewers')
             .execute(post => post && actual.push(post))
             .then(() => expect(actual).to.deep.equal(expected));
     });
@@ -132,7 +132,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
         let actual = [];
 
         return collection
-            .find('$.author in [45, 46]')
+            .find('author in [45, 46]')
             .execute(post => post && actual.push(post))
             .then(() => expect(actual).to.deep.equal(expected));
     });
@@ -146,7 +146,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
         let actual = [];
 
         return collection
-            .find('$.author not in [45, 46]')
+            .find('author not in [45, 46]')
             .execute(post => post && actual.push(post))
             .then(() => expect(actual).to.deep.equal(expected));
     });
@@ -160,7 +160,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
         let actual = [];
 
         return collection
-            .find('{ foo: "bar" } in $.meta')
+            .find('{ "foo": "bar" } in meta')
             .execute(post => post && actual.push(post))
             .then(() => expect(actual).to.deep.equal(expected));
     });
@@ -174,7 +174,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
         let actual = [];
 
         return collection
-            .find('{ foo: "bar" } not in $.meta')
+            .find('{ "foo": "bar" } not in meta')
             .execute(post => post && actual.push(post))
             .then(() => expect(actual).to.deep.equal(expected));
     });

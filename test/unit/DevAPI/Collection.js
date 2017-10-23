@@ -3,11 +3,10 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Client = require('lib/Protocol/Client');
 const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const collection = require('lib/DevAPI/Collection');
+const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -15,11 +14,15 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('Collection', () => {
-    let sqlStmtExecute, getName;
+    let collection, collectionRemove, sqlStmtExecute;
 
     beforeEach('create fakes', () => {
+        collectionRemove = td.function();
         sqlStmtExecute = td.function();
-        getName = td.function();
+
+        collection = proxyquire('lib/DevAPI/Collection', {
+            './CollectionRemove': collectionRemove
+        });
     });
 
     afterEach('reset fakes', () => {
@@ -29,16 +32,6 @@ describe('Collection', () => {
     context('getName()', () => {
         it('should return the collection name', () => {
             expect(collection(null, null, 'foobar').getName()).to.equal('foobar');
-        });
-    });
-
-    context('getSchema()', () => {
-        it('should return the associated schema', () => {
-            const instance = collection(null, { getName });
-
-            td.when(getName()).thenReturn('foobar');
-
-            expect(instance.getSchema().getName()).to.equal('foobar');
         });
     });
 
@@ -52,19 +45,17 @@ describe('Collection', () => {
 
     context('existsInDatabase()', () => {
         it('should return true if exists in database', () => {
-            const instance = collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const instance = collection({ _client: { sqlStmtExecute } }, 'foo', 'bar');
 
-            td.when(getName()).thenReturn('bar');
-            td.when(sqlStmtExecute('list_objects', ['bar', 'foo'], td.callback(['foo']), null, 'xplugin')).thenResolve();
+            td.when(sqlStmtExecute('list_objects', ['foo', 'bar'], td.callback(['bar']), null, 'xplugin')).thenResolve();
 
             return expect(instance.existsInDatabase()).to.eventually.be.true;
         });
 
         it('should return false if it does not exist in database', () => {
-            const instance = collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const instance = collection({ _client: { sqlStmtExecute } }, 'foo', 'bar');
 
-            td.when(getName()).thenReturn('bar');
-            td.when(sqlStmtExecute('list_objects', ['bar', 'foo'], td.callback([]), null, 'xplugin')).thenResolve();
+            td.when(sqlStmtExecute('list_objects', ['foo', 'bar'], td.callback([]), null, 'xplugin')).thenResolve();
 
             return expect(instance.existsInDatabase()).to.eventually.be.false;
         });
@@ -72,20 +63,18 @@ describe('Collection', () => {
 
     context('count()', () => {
         it('should return the number of documents in a collection', () => {
-            const instance = collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const instance = collection({ _client: { sqlStmtExecute } }, 'foo', 'bar');
 
-            td.when(getName()).thenReturn('bar');
-            td.when(sqlStmtExecute('SELECT COUNT(*) FROM `bar`.`foo`', [], td.callback([1]))).thenResolve();
+            td.when(sqlStmtExecute('SELECT COUNT(*) FROM `foo`.`bar`', [], td.callback([1]))).thenResolve();
 
             return expect(instance.count()).to.eventually.equal(1);
         });
 
         it('should fail if an unexpected error is thrown', () => {
-            const instance = collection({ _client: { sqlStmtExecute } }, { getName }, 'foo');
+            const instance = collection({ _client: { sqlStmtExecute } }, 'foo', 'bar');
             const error = new Error('foobar');
 
-            td.when(getName()).thenReturn('bar');
-            td.when(sqlStmtExecute('SELECT COUNT(*) FROM `bar`.`foo`', [], td.callback([1]))).thenReject(error);
+            td.when(sqlStmtExecute('SELECT COUNT(*) FROM `foo`.`bar`', [], td.callback([1]))).thenReject(error);
 
             return expect(instance.count()).to.eventually.be.rejectedWith(error);
         });
@@ -93,10 +82,8 @@ describe('Collection', () => {
 
     context('inspect()', () => {
         it('should hide internals', () => {
-            const instance = collection(null, { getName }, 'foo');
-            const expected = { schema: 'bar', collection: 'foo' };
-
-            td.when(getName()).thenReturn('bar');
+            const instance = collection(null, 'foo', 'bar');
+            const expected = { schema: 'foo', collection: 'bar' };
 
             expect(instance.inspect()).to.deep.equal(expected);
         });
@@ -113,26 +100,14 @@ describe('Collection', () => {
             const documents = [{ foo: 'bar' }, { foo: 'baz' }];
             const instance = collection().add(documents);
 
-            expect(instance.getDocuments()).to.deep.equal(documents);
+            expect(instance.getItems()).to.deep.equal(documents);
         });
 
         it('should acknowledge documents provided as multiple arguments', () => {
             const documents = [{ foo: 'bar' }, { foo: 'baz' }];
             const instance = collection().add(documents[0], documents[1]);
 
-            expect(instance.getDocuments()).to.deep.equal(documents);
-        });
-    });
-
-    context('remove()', () => {
-        it('should return an operation instance for a valid condition query', () => {
-            const session = 'foo';
-            const schema = 'bar';
-            const name = 'baz';
-            const query = 'true';
-            const instance = collection(session, schema, name).remove(query);
-
-            expect(instance.getClassName()).to.equal('CollectionRemove');
+            expect(instance.getItems()).to.deep.equal(documents);
         });
     });
 
@@ -149,194 +124,145 @@ describe('Collection', () => {
     });
 
     context('replaceOne()', () => {
-        let crudFind, crudModify;
+        let collection, collectionModify, execute, setDouble;
 
         beforeEach('create fakes', () => {
-            crudFind = td.function();
-            crudModify = td.function();
+            collectionModify = td.function();
+            execute = td.function();
+            setDouble = td.function();
+
+            collection = proxyquire('lib/DevAPI/Collection', {
+                './CollectionModify': collectionModify
+            });
         });
 
         it('should return the result of executing a modify operation for a given document', () => {
-            const collectionName = 'foo';
-            const documentId = 'bar';
-            const schemaName = 'baz';
-            const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "${documentId}"`;
-            const state = { rows_affected: 1 };
+            const instance = collection('foo', 'bar', 'baz');
+            const state = { ok: true };
             const expected = new Result(state);
-            const session = { _client: { crudFind, crudModify } };
-            const instance = collection(session, { getName }, collectionName);
 
-            const any = td.matchers.anything();
+            td.when(execute()).thenResolve(expected);
+            td.when(setDouble('$', { a: 'quux' })).thenReturn({ execute });
+            td.when(collectionModify('foo', 'bar', 'baz', '_id = "qux"')).thenReturn({ set: setDouble });
 
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudFind(session), { ignoreExtraArgs: true }).thenResolve();
-            td.when(crudModify(schemaName, collectionName, type, criteria), { ignoreExtraArgs: true }).thenResolve(state);
-
-            return expect(instance.replaceOne(documentId, { prop: 'qux' })).to.eventually.deep.equal(expected);
+            return expect(instance.replaceOne('qux', { a: 'quux' })).to.eventually.deep.equal(expected);
         });
 
         it('should escape the id value', () => {
-            const collectionName = 'foo';
             /* eslint-disable no-useless-escape */
             const documentId = 'b\"ar';
             /* eslint-enable no-useless-escape */
-            const schemaName = 'baz';
-            const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "b\\"ar"`;
-            const state = { rows_affected: 1 };
+            const criteria = `_id = "b\\"ar"`;
+            const instance = collection('foo', 'bar', 'baz');
+            const state = { ok: true };
             const expected = new Result(state);
-            const session = { _client: { crudFind, crudModify } };
-            const instance = collection(session, { getName }, collectionName);
 
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudFind(session), { ignoreExtraArgs: true }).thenResolve();
-            td.when(crudModify(schemaName, collectionName, type, criteria), { ignoreExtraArgs: true }).thenResolve(state);
+            td.when(execute()).thenResolve(expected);
+            td.when(setDouble(), { ignoreExtraArgs: true }).thenReturn({ execute });
+            td.when(collectionModify('foo', 'bar', 'baz', criteria)).thenReturn({ set: setDouble });
 
-            return expect(instance.replaceOne(documentId, { prop: 'qux' })).to.eventually.deep.equal(expected);
+            return expect(instance.replaceOne(documentId, { a: 'a' })).to.eventually.deep.equal(expected);
         });
 
-        it('should ignore any additional `_id` property', () => {
-            const collectionName = 'foo';
-            const documentId = 'bar';
-            const schemaName = 'baz';
-            const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "${documentId}"`;
-            const state = { rows_affected: 1 };
-            const expected = new Result(state);
-            const session = { _client: { crudFind, crudModify } };
-            const instance = collection(session, { getName }, collectionName);
-
-            const operation = {
-                source: {
-                    document_path: [{
-                        type: 1,
-                        value: 'prop'
-                    }]
-                },
-                operation: 3,
-                value: {
-                    type: 2,
-                    literal: {
-                        type: 8,
-                        v_string: {
-                            value: 'quux'
-                        }
-                    }
-                }
-            };
-
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudFind(session), { ignoreExtraArgs: true }).thenResolve();
-            td.when(crudModify(schemaName, collectionName, type, criteria, [operation]), { ignoreExtraArgs: true }).thenResolve(state);
-
-            return expect(instance.replaceOne(documentId, { _id: 'qux', prop: 'quux' })).to.eventually.deep.equal(expected);
-        });
-
-        it('should fail if an unexpected error is thrown', () => {
-            const collectionName = 'foo';
-            const documentId = 'bar';
-            const schemaName = 'baz';
+        it('should fail if an unexpected error is thrown when modifying the document', () => {
+            const instance = collection('foo', 'bar', 'baz');
             const error = new Error('foobar');
-            const session = { _client: { crudFind, crudModify } };
-            const instance = collection(session, { getName }, collectionName);
 
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudFind(session), { ignoreExtraArgs: true }).thenResolve();
-            td.when(crudModify(schemaName, collectionName, Client.dataModel.DOCUMENT, `$._id == "${documentId}"`), { ignoreExtraArgs: true }).thenReject(error);
+            td.when(execute()).thenReject(error);
+            td.when(setDouble(), { ignoreExtraArgs: true }).thenReturn({ execute });
+            td.when(collectionModify('foo', 'bar', 'baz', '_id = "qux"')).thenReturn({ set: setDouble });
 
-            return expect(instance.replaceOne(documentId, { prop: 'qux' })).to.eventually.be.rejectedWith(error);
+            return expect(instance.replaceOne('qux', { a: 'quux' })).to.eventually.be.rejectedWith(error);
         });
     });
 
     context('addOrReplaceOne()', () => {
-        let crudInsert;
+        let collectionAdd, collectionDouble, execute;
 
         beforeEach('create fakes', () => {
-            crudInsert = td.function();
+            collectionAdd = td.function();
+            execute = td.function();
+
+            collectionDouble = proxyquire('lib/DevAPI/Collection', {
+                './CollectionAdd': collectionAdd
+            });
         });
 
         it('should return the result of executing a "upsert" operation for a given document', () => {
-            const collectionName = 'foobar';
-            const rows = [[JSON.stringify({ name: 'bar', _id: 'foo' })]];
-            const state = { doc_ids: ['foo'] };
-            const expected = new Result(state);
-            const schemaName = 'baz';
-            const session = { _client: { crudInsert } };
-            const instance = collection(session, { getName }, collectionName);
+            const expected = { ok: 'true' };
+            const name = 'foo';
+            const schema = 'baz';
+            const session = 'qux';
+            const instance = collectionDouble(session, schema, name);
 
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudInsert(schemaName, collectionName, Client.dataModel.DOCUMENT, { rows }, { upsert: true })).thenResolve(state);
+            td.when(execute()).thenResolve(expected);
+            td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
             return expect(instance.addOrReplaceOne('foo', { name: 'bar' })).to.eventually.deep.equal(expected);
         });
 
         it('should escape the id value', () => {
-            const collectionName = 'foobar';
-            const rows = [[JSON.stringify({ name: 'bar', _id: 'fo"o' })]];
-            const state = { doc_ids: ['fo"o'] };
-            const expected = new Result(state);
-            const schemaName = 'baz';
-            const session = { _client: { crudInsert } };
-            const instance = collection(session, { getName }, collectionName);
+            const expected = { ok: 'true' };
+            const name = 'foo';
+            const schema = 'baz';
+            const session = 'qux';
+            const instance = collectionDouble(session, schema, name);
 
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudInsert(schemaName, collectionName, Client.dataModel.DOCUMENT, { rows }, { upsert: true })).thenResolve(state);
+            td.when(execute()).thenResolve(expected);
+            td.when(collectionAdd(session, schema, name, [{ _id: 'fo\\"o', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
             return expect(instance.addOrReplaceOne('fo"o', { name: 'bar' })).to.eventually.deep.equal(expected);
         });
 
         it('should ignore any additional `_id` property', () => {
-            const collectionName = 'foobar';
-            const rows = [[JSON.stringify({ _id: 'foo', name: 'bar' })]];
-            const state = { doc_ids: ['foo'] };
-            const expected = new Result(state);
-            const schemaName = 'baz';
-            const session = { _client: { crudInsert } };
-            const instance = collection(session, { getName }, collectionName);
+            const expected = { ok: 'true' };
+            const name = 'foo';
+            const schema = 'baz';
+            const session = 'qux';
+            const instance = collectionDouble(session, schema, name);
 
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudInsert(schemaName, collectionName, Client.dataModel.DOCUMENT, { rows }, { upsert: true })).thenResolve(state);
+            td.when(execute()).thenResolve(expected);
+            td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
             return expect(instance.addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })).to.eventually.deep.equal(expected);
         });
 
         it('should fail if an unexpected error is thrown', () => {
-            const collectionName = 'foobar';
-            const rows = [[JSON.stringify({ name: 'bar', _id: 'foo' })]];
-            const schemaName = 'baz';
-            const session = { _client: { crudInsert } };
-            const instance = collection(session, { getName }, collectionName);
-            const error = new Error('bazqux');
+            const error = new Error('foobar');
+            const name = 'foo';
+            const schema = 'baz';
+            const session = 'qux';
+            const instance = collectionDouble(session, schema, name);
 
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudInsert(schemaName, collectionName, Client.dataModel.DOCUMENT, { rows }, { upsert: true })).thenReject(error);
+            td.when(execute()).thenReject(error);
+            td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
-            return expect(instance.addOrReplaceOne('foo', { name: 'bar' })).to.eventually.be.rejectedWith(error);
+            return expect(instance.addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })).to.eventually.be.rejectedWith(error);
         });
     });
 
     context('getOne()', () => {
-        let crudFind;
+        let collectionFind, execute;
 
         beforeEach('create fakes', () => {
-            crudFind = td.function();
+            collectionFind = td.function();
+            collection = proxyquire('lib/DevAPI/Collection', {
+                './CollectionFind': collectionFind
+            });
+            execute = td.function();
         });
 
         it('should return the document instance if it exists', () => {
             const collectionName = 'foobar';
             const documentId = 'foo';
+            const criteria = `_id = "${documentId}"`;
             const expected = { _id: documentId, name: 'bar' };
-            const schemaName = 'baz';
-            const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "${documentId}"`;
-            const session = { _client: { crudFind } };
-            const instance = collection(session, { getName }, collectionName);
+            const schema = 'baz';
+            const session = 'qux';
+            const instance = collection(session, schema, collectionName);
 
-            const any = td.matchers.anything();
-
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudFind(session, schemaName, collectionName, type, [], criteria, any, any, any, any, td.callback([expected])), { ignoreExtraArgs: true }).thenResolve();
+            td.when(execute(td.callback(expected))).thenResolve();
+            td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ execute });
 
             return expect(instance.getOne(documentId)).to.eventually.deep.equal(expected);
         });
@@ -346,17 +272,14 @@ describe('Collection', () => {
             /* eslint-disable no-useless-escape */
             const documentId = 'fo\"o';
             /* eslint-enable no-useless-escape */
+            const criteria = `_id = "fo\\"o"`;
             const expected = { _id: documentId, name: 'bar' };
-            const schemaName = 'baz';
-            const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "fo\\"o"`;
-            const session = { _client: { crudFind } };
-            const instance = collection(session, { getName }, collectionName);
+            const schema = 'baz';
+            const session = 'qux';
+            const instance = collection(session, schema, collectionName);
 
-            const any = td.matchers.anything();
-
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudFind(session, schemaName, collectionName, type, [], criteria, any, any, any, any, td.callback([expected])), { ignoreExtraArgs: true }).thenResolve();
+            td.when(execute(td.callback(expected))).thenResolve();
+            td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ execute });
 
             return expect(instance.getOne(documentId)).to.eventually.deep.equal(expected);
         });
@@ -364,42 +287,34 @@ describe('Collection', () => {
         it('should return `null` if the document does not exist', () => {
             const collectionName = 'foobar';
             const documentId = 'foo';
-            const schemaName = 'baz';
-            const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "${documentId}"`;
-            const session = { _client: { crudFind } };
-            const instance = collection(session, { getName }, collectionName);
+            const criteria = `_id = "${documentId}"`;
+            const schema = 'baz';
+            const session = 'qux';
+            const instance = collection(session, schema, collectionName);
 
-            const any = td.matchers.anything();
-
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudFind(session, schemaName, collectionName, type, [], criteria, any, any, any, any, td.callback([])), { ignoreExtraArgs: true }).thenResolve();
+            td.when(execute(td.callback())).thenResolve();
+            td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ execute });
 
             return expect(instance.getOne(documentId)).to.eventually.be.null;
         });
     });
 
     context('removeOne()', () => {
-        let crudRemove;
+        let execute;
 
         beforeEach('create fakes', () => {
-            crudRemove = td.function();
+            execute = td.function();
         });
 
         it('should return the document instance if it exists', () => {
-            const collectionName = 'foobar';
             const documentId = 'foo';
             const state = { rows_affected: 1 };
             const expected = new Result(state);
-            const schemaName = 'baz';
-            const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "${documentId}"`;
-            const instance = collection({ _client: { crudRemove } }, { getName }, collectionName);
+            const criteria = `_id = "${documentId}"`;
+            const instance = collection('bar', 'baz', 'qux');
 
-            const any = td.matchers.anything();
-
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudRemove(schemaName, collectionName, type, criteria, any, any)).thenResolve(state);
+            td.when(execute()).thenResolve(expected);
+            td.when(collectionRemove('bar', 'baz', 'qux', criteria)).thenReturn({ execute });
 
             return expect(instance.removeOne(documentId)).to.eventually.deep.equal(expected);
         });
@@ -410,28 +325,23 @@ describe('Collection', () => {
             /* eslint-enable no-useless-escape */
             const state = { rows_affected: 1 };
             const expected = new Result(state);
-            const criteria = `$._id == "fo\\"o"`;
+            const criteria = `_id = "fo\\"o"`;
             const instance = collection('bar', 'baz', 'qux');
 
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudRemove(schemaName, collectionName, type, criteria, any, any)).thenResolve(state);
+            td.when(execute()).thenResolve(expected);
+            td.when(collectionRemove('bar', 'baz', 'qux', criteria)).thenReturn({ execute });
 
             return expect(instance.removeOne(documentId)).to.eventually.deep.equal(expected);
         });
 
         it('should fail if an unexpected error is thrown', () => {
-            const collectionName = 'foobar';
             const documentId = 'foo';
-            const schemaName = 'baz';
-            const type = Client.dataModel.DOCUMENT;
-            const criteria = `$._id == "${documentId}"`;
-            const instance = collection({ _client: { crudRemove } }, { getName }, collectionName);
+            const criteria = `_id = "${documentId}"`;
+            const instance = collection('bar', 'baz', 'qux');
             const error = new Error('bazqux');
 
-            const any = td.matchers.anything();
-
-            td.when(getName()).thenReturn(schemaName);
-            td.when(crudRemove(schemaName, collectionName, type, criteria, any, any)).thenReject(error);
+            td.when(execute()).thenReject(error);
+            td.when(collectionRemove('bar', 'baz', 'qux', criteria)).thenReturn({ execute });
 
             return expect(instance.removeOne(documentId)).to.eventually.be.rejectedWith(error);
         });

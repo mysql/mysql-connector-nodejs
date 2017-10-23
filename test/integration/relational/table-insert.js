@@ -19,8 +19,8 @@ describe('@integration relational table insert', () => {
     beforeEach('create table', () => {
         return schema
             .createTable('test')
-            .addColumn(schema.columnDef('test1', schema.Type.Varchar, 255))
-            .addColumn(schema.columnDef('test2', schema.Type.Int))
+            .addColumn(schema.columnDef('name', schema.Type.Varchar, 3))
+            .addColumn(schema.columnDef('age', schema.Type.Int))
             .execute();
     });
 
@@ -34,62 +34,87 @@ describe('@integration relational table insert', () => {
 
     context('with an array of columns', () => {
         it('should insert values provided as an array', () => {
-            const expected = [['value1', 42]];
+            const expected = [['foo', 23], ['bar', 42]];
             let actual = [];
 
             return table
-                .insert(['test1', 'test2'])
+                .insert(['name', 'age'])
                 .values(expected[0])
+                .values(expected[1])
                 .execute()
-                .then(() => table.select().execute(row => actual.push(row)))
+                .then(() => {
+                    return table
+                        .select()
+                        .orderBy('age')
+                        .execute(row => actual.push(row))
+                })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
         it('should insert values provided as multiple arguments', () => {
-            const expected = [['value1', 42]];
+            const expected = [['foo', 23], ['bar', 42]];
             let actual = [];
 
             return table
-                .insert(['test1', 'test2'])
+                .insert(['name', 'age'])
                 .values(expected[0][0], expected[0][1])
+                .values(expected[1][0], expected[1][1])
                 .execute()
-                .then(() => table.select().execute(row => actual.push(row)))
+                .then(() => {
+                    return table
+                        .select()
+                        .orderBy('age')
+                        .execute(row => actual.push(row))
+                })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
 
     context('with multiple column arguments', () => {
         it('should insert values provided as an array', () => {
-            const expected = [['value1', 42]];
+            const expected = [['foo', 23], ['bar', 42]];
             let actual = [];
 
             return table
-                .insert('test1', 'test2')
+                .insert('name', 'age')
                 .values(expected[0])
+                .values(expected[1])
                 .execute()
-                .then(() => table.select().execute(row => actual.push(row)))
+                .then(() => {
+                    return table
+                        .select()
+                        .orderBy('age')
+                        .execute(row => actual.push(row))
+                })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
         it('should insert values provided as multiple arguments', () => {
-            const expected = [['value1', 42]];
+            const expected = [['foo', 23], ['bar', 42]];
             let actual = [];
 
             return table
-                .insert('test1', 'test2')
+                .insert('name', 'age')
                 .values(expected[0][0], expected[0][1])
+                .values(expected[1][0], expected[1][1])
                 .execute()
-                .then(() => table.select().execute(row => actual.push(row)))
+                .then(() => {
+                    return table
+                        .select()
+                        .orderBy('age')
+                        .execute(row => actual.push(row))
+                })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
 
+    // TODO(Rui): remove support for this functionality since its not described by the EBNF.
     it('should insert values provided as a mapping object to each column', () => {
-        const expected = [['value1', 42]];
+        const expected = [['foo', 23]];
         let actual = [];
 
         return table
-            .insert({ test1: 'value1', test2: 42 })
+            .insert({ name: 'foo', age: 23 })
             .execute()
             .then(() => table.select().execute(row => actual.push(row)))
             .then(() => expect(actual).to.deep.equal(expected));

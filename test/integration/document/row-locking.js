@@ -91,7 +91,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .lockExclusive()
                     .execute(doc => samplesA.push(doc));
             })
@@ -99,8 +99,8 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .modify('$._id == "1"')
-                    .set('$.a', samplesA[0].a + 1)
+                    .modify('_id = "1"')
+                    .set('a', samplesA[0].a + 1)
                     .execute();
             })
             .then(() => {
@@ -113,7 +113,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionB
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .lockExclusive()
                     .execute(doc => samplesB.push(doc));
             })
@@ -121,9 +121,9 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionB
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .modify('$._id == "1"')
-                    .set('$.a', samplesB[0].a + 1)
-                    .set('$.b', 'foo')
+                    .modify('_id = "1"')
+                    .set('a', samplesB[0].a + 1)
+                    .set('b', 'foo')
                     .execute();
             })
             .then(() => {
@@ -136,7 +136,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .execute(doc => actual.push(doc));
             });
 
@@ -162,7 +162,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .lockShared()
                     .execute(doc => samplesA.push(doc));
             })
@@ -170,8 +170,8 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .modify('$._id == "1"')
-                    .set('$.a', samplesA[0].a + 1)
+                    .modify('_id = "1"')
+                    .set('a', samplesA[0].a + 1)
                     .execute();
             })
             .then(() => {
@@ -184,7 +184,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionB
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .lockShared()
                     .execute(doc => samplesB.push(doc));
             })
@@ -192,9 +192,9 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionB
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .modify('$._id == "1"')
-                    .set('$.a', samplesB[0].a + 1)
-                    .set('$.b', 'foo')
+                    .modify('_id = "1"')
+                    .set('a', samplesB[0].a + 1)
+                    .set('b', 'foo')
                     .execute();
             })
             .then(() => {
@@ -204,7 +204,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .execute(doc => actual.push(doc));
             });
 
@@ -228,7 +228,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .lockShared()
                     .execute();
             })
@@ -236,9 +236,9 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .modify('$._id == "1"')
-                    .set('$.a', 2)
-                    .set('$.b', 'foo')
+                    .modify('_id = "1"')
+                    .set('a', 2)
+                    .set('b', 'foo')
                     .execute();
             })
             .then(() => {
@@ -248,7 +248,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 const read = sessionB
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .lockShared()
                     .execute(doc => actual.push(doc));
 
@@ -286,16 +286,16 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .execute();
             })
             .then(() => {
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .modify('$._id == "1"')
-                    .set('$.a', 2)
-                    .set('$.b', 'foo')
+                    .modify('_id = "1"')
+                    .set('a', 2)
+                    .set('b', 'foo')
                     .execute();
             })
             .then(() => {
@@ -305,7 +305,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionB
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .execute(doc => actual.push(doc));
             })
             .then(() => {
@@ -332,7 +332,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionA
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .lockShared()
                     .execute();
             })
@@ -343,7 +343,7 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                 return sessionB
                     .getSchema(config.schema)
                     .getCollection('test')
-                    .find('$._id == "1"')
+                    .find('_id = "1"')
                     .lockShared()
                     .execute();
             })
@@ -352,15 +352,15 @@ describe('@integration row locking in collection transactions (MySQL 8.0.3)', ()
                     sessionA
                         .getSchema(config.schema)
                         .getCollection('test')
-                        .modify('$._id == "1"')
-                        .set('$.a', 2)
+                        .modify('_id = "1"')
+                        .set('a', 2)
                         .execute(),
                     sessionB
                         .getSchema(config.schema)
                         .getCollection('test')
-                        .modify('$._id == "1"')
-                        .set('$.a', 3)
-                        .set('$.b', 'foo')
+                        .modify('_id = "1"')
+                        .set('a', 3)
+                        .set('b', 'foo')
                         .execute()
                 ]);
             });

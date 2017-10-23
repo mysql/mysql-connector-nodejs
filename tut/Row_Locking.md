@@ -45,7 +45,7 @@ const transactionA = mysqlx
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .lockExclusive()
             .execute(doc => samplesA.push(doc));
     })
@@ -53,8 +53,8 @@ const transactionA = mysqlx
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .modify('$._id == "1"')
-            .set('$.a', samplesA[0].a + 1)
+            .modify('_id = "1"')
+            .set('a', samplesA[0].a + 1)
             .execute();
     })
     .then(() => {
@@ -72,7 +72,7 @@ const transactionB = mysqlx
         return sessionB
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .lockExclusive()
             .execute(doc => samplesB.push(doc));
     })
@@ -80,9 +80,9 @@ const transactionB = mysqlx
         return sessionB
             .getSchema(config.schema)
             .getCollection('test')
-            .modify('$._id == "1"')
-            .set('$.a', samplesB[0].a + 1)
-            .set('$.b', 'foo')
+            .modify('_id = "1"')
+            .set('a', samplesB[0].a + 1)
+            .set('b', 'foo')
             .execute();
     })
     .then(() => {
@@ -95,7 +95,7 @@ Promise
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .execute(doc => result.push(doc));
     })
     .then(() => {
@@ -127,7 +127,7 @@ mysqlx
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .lockShared()
             .execute(doc => samplesA.push(doc));
     })
@@ -135,8 +135,8 @@ mysqlx
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .modify('$._id == "1"')
-            .set('$.a', samplesA[0].a + 1)
+            .modify('_id = "1"')
+            .set('a', samplesA[0].a + 1)
             .execute();
     })
     .then(() => {
@@ -154,7 +154,7 @@ mysqlx
         return sessionB
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .lockShared()
             .execute(doc => samplesB.push(doc));
     })
@@ -162,9 +162,9 @@ mysqlx
         return sessionB
             .getSchema(config.schema)
             .getCollection('test')
-            .modify('$._id == "1"')
-            .set('$.a', samplesB[0].a + 1)
-            .set('$.b', 'foo')
+            .modify('_id = "1"')
+            .set('a', samplesB[0].a + 1)
+            .set('b', 'foo')
             .execute();
     })
     .then(() => {
@@ -174,7 +174,7 @@ mysqlx
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .execute(doc => result.push(doc));
     })
     .then(() => {
@@ -205,7 +205,7 @@ mysqlx
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .lockShared()
             .execute();
     })
@@ -213,9 +213,9 @@ mysqlx
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .modify('$._id == "1"')
-            .set('$.a', 2)
-            .set('$.b', 'foo')
+            .modify('_id = "1"')
+            .set('a', 2)
+            .set('b', 'foo')
             .execute();
     })
     .then(() => {
@@ -230,7 +230,7 @@ mysqlx
         const read = sessionB
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .lockShared()
             .execute(doc => result.push(doc));
 
@@ -274,16 +274,16 @@ mysqlx
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .execute();
     })
     .then(() => {
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .modify('$._id == "1"')
-            .set('$.a', 2)
-            .set('$.b', 'foo')
+            .modify('_id = "1"')
+            .set('a', 2)
+            .set('b', 'foo')
             .execute();
     })
     .then(() => {
@@ -298,7 +298,7 @@ mysqlx
         return sessionB
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .execute(doc => result.push(doc));
     })
     .then(() => {
@@ -332,7 +332,7 @@ mysqlx
         return sessionA
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .lockShared()
             .execute();
     })
@@ -348,7 +348,7 @@ mysqlx
         return sessionB
             .getSchema(config.schema)
             .getCollection('test')
-            .find('$._id == "1"')
+            .find('_id = "1"')
             .lockShared()
             .execute();
     })
@@ -357,15 +357,15 @@ mysqlx
             sessionA
                 .getSchema(config.schema)
                 .getCollection('test')
-                .modify('$._id == "1"')
-                .set('$.a', 2)
+                .modify('_id = "1"')
+                .set('a', 2)
                 .execute(),
             sessionB
                 .getSchema(config.schema)
                 .getCollection('test')
-                .modify('$._id == "1"')
-                .set('$.a', 3)
-                .set('$.b', 'foo')
+                .modify('_id = "1"')
+                .set('a', 3)
+                .set('b', 'foo')
                 .execute()
         ]);
     })

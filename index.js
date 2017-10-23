@@ -26,11 +26,12 @@
 
 'use strict';
 
-const Session = require('./lib/DevAPI/Session');
-const Expressions = require('./lib/Expressions');
 const Authentication = require('./lib/Authentication');
+const Session = require('./lib/DevAPI/Session');
+const Expr = require('./lib/Protocol/Encoder/Expr');
 const configManager = require('./lib/DevAPI/SessionConfigManager');
 const parseUri = require('./lib/DevAPI/Util/URIParser');
+const query = require('./lib/DevAPI/Query');
 
 /**
  * @module mysqlx
@@ -126,13 +127,27 @@ exports.getSession = function (properties, password) {
 exports.config = config;
 
 /**
- * Parse an expression into parse tree
- * @param {String} exp Expression
- * @eturn {Expression}
+ * Additional parser options.
+ * @typedef {Object} ParserOptions
+ * @prop {Mode} [mode] - the parsing mode (DOCUMENT or TABLE)
  */
-exports.expr = function (exp) {
-    return Expressions.parse(exp);
+
+/**
+ * Parse an expression string into a Mysqlx.Expr.Expr.
+ * @param {string} expr - expression string
+ * @param {ParserOptions} options - additional options
+ * @return {proto.Mysqlx.Expr.Expr} The protobuf encoded object.
+ */
+exports.expr = function (expr, options) {
+    return Expr.encodeExpr(expr, options);
 };
+
+/**
+ * Database entity types.
+ * @type {Mode}
+ * @const
+ */
+exports.Mode = query.Type;
 
 /**
  * Get available auth methods.

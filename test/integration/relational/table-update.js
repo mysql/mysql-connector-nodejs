@@ -51,13 +51,12 @@ describe('@integration relational table update', () => {
                 .update('true')
                 .set('age', 50)
                 .execute()
-                .then(() => table.select().orderBy('name ASC').execute(row => {
-                    if (!row || !row.length) {
-                        return;
-                    }
-
-                    actual.push(row);
-                }))
+                .then(() => {
+                    return table
+                        .select()
+                        .orderBy('name ASC')
+                        .execute(row => actual.push(row));
+                })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
@@ -70,13 +69,12 @@ describe('@integration relational table update', () => {
                 .set('name', 'foo')
                 .where('true')
                 .execute()
-                .then(() => table.select().orderBy('age ASC').execute(row => {
-                    if (!row || !row.length) {
-                        return;
-                    }
-
-                    actual.push(row);
-                }))
+                .then(() => {
+                    return table
+                        .select()
+                        .orderBy('age ASC')
+                        .execute(row => actual.push(row));
+                })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
@@ -88,10 +86,15 @@ describe('@integration relational table update', () => {
 
             return table
                 .update()
-                .where('`name` == "foo"')
+                .where('name = "foo"')
                 .set('age', 50)
                 .execute()
-                .then(() => table.select().orderBy('age ASC').execute(row => actual.push(row)))
+                .then(() => {
+                    return table
+                        .select()
+                        .orderBy('age ASC')
+                        .execute(row => actual.push(row));
+                })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
@@ -101,7 +104,7 @@ describe('@integration relational table update', () => {
 
             return table
                 .update()
-                .where('`age` == 42')
+                .where('age = 42')
                 .set('name', 'foo')
                 .execute()
                 .then(() => table.select().orderBy('age ASC').execute(row => actual.push(row)))
@@ -118,8 +121,14 @@ describe('@integration relational table update', () => {
                 .update('true')
                 .set('name', 'qux')
                 .limit(1)
+                .orderBy('name DESC')
                 .execute()
-                .then(() => table.select().orderBy('name ASC').execute(row => actual.push(row)))
+                .then(() => {
+                    return table
+                        .select()
+                        .orderBy('name ASC')
+                        .execute(row => actual.push(row));
+                })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
@@ -131,30 +140,32 @@ describe('@integration relational table update', () => {
 
             return table
                 .update()
-                .where("`name` in ('foo', 'bar')")
+                .where("name in ('foo', 'bar')")
                 .set('age', 50)
                 .execute()
                 .then(() => {
                     return table
                         .select()
-                        .execute(row => row && row.length && actual.push(row));
+                        .orderBy('age DESC', 'name DESC')
+                        .execute(row => actual.push(row));
                 })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
         it('should update all documents that do not match a criteria specified by a grouped expression', () => {
-            const expected = [['foo', 42], ['qux', 23], ['baz', 42]];
+            const expected = [['baz', 42], ['foo', 42], ['qux', 23]];
             let actual = [];
 
             return table
                 .update()
-                .where('`age` not in (42, 50)')
+                .where('age not in (42, 50)')
                 .set('name', 'qux')
                 .execute()
                 .then(() => {
                     return table
                         .select()
-                        .execute(row => row && row.length && actual.push(row));
+                        .orderBy('name ASC')
+                        .execute(row => actual.push(row));
                 })
                 .then(() => expect(actual).to.deep.equal(expected));
         });

@@ -102,7 +102,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .lockExclusive()
                     .execute(doc => samplesA.push(doc));
             })
@@ -111,7 +111,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .update()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .set('a', samplesA[0][1] + 1)
                     .execute();
             })
@@ -126,7 +126,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .lockExclusive()
                     .execute(doc => samplesB.push(doc));
             })
@@ -135,7 +135,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .update()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .set('a', samplesB[0][1] + 1)
                     .set('b', 'foo')
                     .execute();
@@ -151,7 +151,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .execute(doc => actual.push(doc));
             });
 
@@ -178,7 +178,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .lockShared()
                     .execute(doc => samplesA.push(doc));
             })
@@ -187,7 +187,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .update()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .set('a', samplesA[0][1] + 1)
                     .execute();
             })
@@ -202,7 +202,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .lockShared()
                     .execute(doc => samplesB.push(doc));
             })
@@ -211,7 +211,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .update()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .set('a', samplesB[0][1] + 1)
                     .set('b', 'foo')
                     .execute();
@@ -224,7 +224,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .execute(doc => actual.push(doc));
             });
 
@@ -249,7 +249,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .lockShared()
                     .execute();
             })
@@ -258,7 +258,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .update()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .set('a', 2)
                     .set('b', 'foo')
                     .execute();
@@ -271,7 +271,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .lockShared()
                     .execute(doc => actual.push(doc));
 
@@ -310,7 +310,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .execute();
             })
             .then(() => {
@@ -318,7 +318,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .update()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .set('a', 2)
                     .set('b', 'foo')
                     .execute();
@@ -331,7 +331,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .execute(doc => actual.push(doc));
             })
             .then(() => {
@@ -359,7 +359,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .lockShared()
                     .execute();
             })
@@ -371,7 +371,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                     .getSchema(config.schema)
                     .getTable('test')
                     .select()
-                    .where('`_id` == "1"')
+                    .where('_id = "1"')
                     .lockShared()
                     .execute();
             })
@@ -381,14 +381,14 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
                         .getSchema(config.schema)
                         .getTable('test')
                         .update()
-                        .where('`_id` == "1"')
+                        .where('_id = "1"')
                         .set('a', 2)
                         .execute(),
                     sessionB
                         .getSchema(config.schema)
                         .getTable('test')
                         .update()
-                        .where('`_id` == "1"')
+                        .where('_id = "1"')
                         .set('a', 3)
                         .set('b', 'foo')
                         .execute()

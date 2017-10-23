@@ -1,34 +1,15 @@
 'use strict';
 
 /* eslint-env node, mocha */
-/* global Client */
 
 // npm `test` script was updated to use NODE_PATH=.
 const Result = require('lib/DevAPI/Result');
 const expect = require('chai').expect;
-const parseExpressionInputs = require('lib/DevAPI/Util/parseExpressionInputs');
 const tableSelect = require('lib/DevAPI/TableSelect');
 const td = require('testdouble');
+const proxyquire = require('proxyquire');
 
 describe('TableSelect', () => {
-    let crudFind, getName, fakeSchema, fakeSession;
-
-    beforeEach('create fake session', () => {
-        crudFind = td.function();
-        fakeSession = { _client: { crudFind } };
-    });
-
-    beforeEach('create fake schema', () => {
-        getName = td.function();
-        fakeSchema = { getName };
-
-        td.when(getName()).thenReturn('schema');
-    });
-
-    afterEach('reset fakes', () => {
-        td.reset();
-    });
-
     context('getClassName()', () => {
         it('should return the correct class name (to avoid duck typing)', () => {
             expect(tableSelect().getClassName()).to.equal('TableSelect');
@@ -36,79 +17,94 @@ describe('TableSelect', () => {
     });
 
     context('lockShared()', () => {
-        it('should set the correct locking mode', () => {
-            const query = tableSelect().lockShared();
-
-            expect(query.getLockingMode()).to.equal(1);
+        it('should include the method', () => {
+            expect(tableSelect().lockShared).to.be.a('function');
         });
     });
 
     context('lockExclusive()', () => {
-        it('should set the correct locking mode', () => {
-            const query = tableSelect().lockExclusive();
-
-            expect(query.getLockingMode()).to.equal(2);
+        it('should include the method', () => {
+            expect(tableSelect().lockExclusive).to.be.a('function');
         });
     });
 
     context('execute()', () => {
-        it('should acknowledge the projection values', () => {
-            const state = { ok: true };
-            const expected = new Result(state);
-            const query = tableSelect(fakeSession, fakeSchema, 'table', ['foo', 'bar']);
+        let crudFind;
 
-            const call = crudFind(fakeSession, 'schema', 'table', Client.dataModel.TABLE, parseExpressionInputs(['foo', 'bar']));
-            td.when(call, { ignoreExtraArgs: true }).thenResolve(state);
-
-            return query.execute().should.eventually.deep.equal(expected);
+        beforeEach('create fakes', () => {
+            crudFind = td.function();
         });
 
-        it('should set the correct default locking mode', () => {
-            const state = { ok: true };
-            const expected = new Result(state);
-            const query = tableSelect(fakeSession, fakeSchema);
-            // default locking mode
-            const mode = 0;
-            const any = td.matchers.anything();
-            const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, any, any, any, any, any, mode);
-
-            td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
-
-            return expect(query.execute()).eventually.deep.equal(expected);
+        afterEach('reset fakes', () => {
+            td.reset();
         });
 
-        it('should include the latest specified locking mode', () => {
+        it('should pass itself to the client implementation', () => {
             const state = { ok: true };
             const expected = new Result(state);
-            const query = tableSelect(fakeSession, fakeSchema).lockShared().lockExclusive();
-            const mode = 2;
-            const any = td.matchers.anything();
-            const execute = fakeSession._client.crudFind(any, any, any, any, any, any, any, any, any, any, any, any, any, any, mode);
+            const query = tableSelect({ _client: { crudFind } });
 
-            td.when(execute, { ignoreExtraArgs: true }).thenResolve(state);
+            td.when(crudFind(query, undefined, undefined)).thenResolve(state);
 
-            return expect(query.execute()).eventually.deep.equal(expected);
+            return expect(query.execute()).to.eventually.deep.equal(expected);
+        });
+
+        it('should use a custom cursor to handle result set data', () => {
+            const state = { ok: true };
+            const expected = new Result(state);
+            const query = tableSelect({ _client: { crudFind } });
+            const sideEffects = [];
+            const callback = value => sideEffects.push(value);
+
+            td.when(crudFind(query, td.callback('foo'), undefined)).thenResolve(state);
+
+            return expect(query.execute(callback)).to.eventually.deep.equal(expected).then(() => {
+                return expect(sideEffects).to.deep.equal(['foo']);
+            });
+        });
+
+        it('should use a custom cursor to handle operation metadata', () => {
+            const state = { ok: true };
+            const expected = new Result(state);
+            const metaCB = td.function();
+            const tableSelectDouble = proxyquire('lib/DevAPI/TableSelect', { './Column': { metaCB } });
+            const query = tableSelectDouble({ _client: { crudFind } });
+            const callback = 'foo';
+
+            td.when(metaCB(callback)).thenReturn('bar');
+            td.when(crudFind(query, null, 'bar')).thenResolve(state);
+
+            return expect(query.execute(null, callback)).to.eventually.deep.equal(expected);
+        });
+
+        it('should fail if an unexpected error occurs', () => {
+            const error = new Error('foobar');
+            const query = tableSelect({ _client: { crudFind } });
+
+            td.when(crudFind(query), { ignoreExtraArgs: true }).thenReject(error);
+
+            return expect(query.execute()).to.eventually.be.rejectedWith(error);
         });
     });
 
     context('getViewDefinition()', () => {
         it('should generate a simple projection table view query', () => {
-            const expected = 'SELECT foo, bar FROM schema.table';
-            const query = tableSelect(fakeSession, fakeSchema, 'table', ['foo', 'bar']);
+            const expected = 'SELECT foo, bar FROM baz.qux';
+            const query = tableSelect(null, 'baz', 'qux', ['foo', 'bar']);
 
             expect(query.getViewDefinition()).to.equal(expected);
         });
 
         it('should generate a filtered table view query', () => {
-            const expected = 'SELECT * FROM schema.table WHERE foo = "baz"';
-            const query = tableSelect(fakeSession, fakeSchema, 'table', ['*']).where('foo = "baz"');
+            const expected = 'SELECT * FROM foo.bar WHERE baz == "qux"';
+            const query = tableSelect(null, 'foo', 'bar', ['*']).where('baz == "qux"');
 
             expect(query.getViewDefinition()).to.equal(expected);
         });
 
         it('should generate a ordered table view query', () => {
-            const expected = 'SELECT foo FROM schema.table ORDER BY bar';
-            const query = tableSelect(fakeSession, fakeSchema, 'table', ['foo']).orderBy(['bar']);
+            const expected = 'SELECT baz FROM foo.bar ORDER BY qux';
+            const query = tableSelect(null, 'foo', 'bar', ['baz']).orderBy(['qux']);
 
             expect(query.getViewDefinition()).to.equal(expected);
         });
@@ -125,14 +121,14 @@ describe('TableSelect', () => {
             const parameters = ['foo desc', 'bar desc'];
             const query = tableSelect().orderBy(parameters);
 
-            expect(query.getOrderBy()).to.deep.equal(parameters);
+            expect(query.getOrderings()).to.deep.equal(parameters);
         });
 
         it('should set the order parameters provided as multiple arguments', () => {
             const parameters = ['foo desc', 'bar desc'];
             const query = tableSelect().orderBy(parameters[0], parameters[1]);
 
-            expect(query.getOrderBy()).to.deep.equal(parameters);
+            expect(query.getOrderings()).to.deep.equal(parameters);
         });
     });
 
@@ -147,14 +143,14 @@ describe('TableSelect', () => {
             const grouping = ['foo', 'bar'];
             const query = tableSelect().groupBy(grouping);
 
-            expect(query.getGroupBy()).to.deep.equal(grouping);
+            expect(query.getGroupings()).to.deep.equal(grouping);
         });
 
         it('should set the grouping columns provided as an array', () => {
             const grouping = ['foo', 'bar'];
             const query = tableSelect().groupBy(grouping[0], grouping[1]);
 
-            expect(query.getGroupBy()).to.deep.equal(grouping);
+            expect(query.getGroupings()).to.deep.equal(grouping);
         });
     });
 });

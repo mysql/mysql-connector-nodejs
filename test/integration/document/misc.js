@@ -62,7 +62,7 @@ describe('@integration collection miscellaneous tests', () => {
 
         return Promise.all([
             collection.add(document).execute(),
-            collection.modify(`$._id == '${document._id}'`).set('$.here', 'all is gone').execute()
+            collection.modify(`_id = '${document._id}'`).set('here', 'all is gone').execute()
         ]).then(() => {
             return collection.find().execute(actual => expect(actual).to.deep.equal(expected));
         });
@@ -81,7 +81,7 @@ describe('@integration collection miscellaneous tests', () => {
         return Promise.all([
             collection.add(document).execute(),
             collection.find().execute(),
-            collection.remove(`$._id == '${document._id}'`).execute()
+            collection.remove(`_id = '${document._id}'`).execute()
         ]).then(() => {
             return collection.find().execute(actual => expect(actual).to.be.undefined);
         });
@@ -115,6 +115,6 @@ describe('@integration collection miscellaneous tests', () => {
     it('should create a collection within the appropriate schema', () => {
         return schema
             .createCollection('foobar')
-            .then(collection => expect(collection.getSchema()).to.deep.equal(schema));
+            .then(collection => expect(collection.getSchema()).to.deep.equal(schema.getName()));
     });
 });

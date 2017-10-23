@@ -3,7 +3,6 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Client = require('lib/Protocol/Client');
 const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
@@ -15,12 +14,10 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('CollectionModify', () => {
-    let crudModify, getName;
-    let type = Client.dataModel.DOCUMENT;
+    let crudModify;
 
     beforeEach('create fakes', () => {
         crudModify = td.function();
-        getName = td.function();
     });
 
     afterEach('reset fakes', () => {
@@ -35,42 +32,40 @@ describe('CollectionModify', () => {
 
     context('execute()', () => {
         it('should fail if a condition query is not provided', () => {
-            const operation = collectionModify();
+            const query = collectionModify();
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('remove needs a valid condition');
+            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `modify()`');
         });
 
         it('should fail if a condition query is empty', () => {
-            const operation = collectionModify(null, null, null, '');
+            const query = collectionModify(null, null, null, '');
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('remove needs a valid condition');
+            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `modify()`');
         });
 
         it('should fail if the condition is not valid', () => {
-            const operation = collectionModify(null, null, null, ' ');
+            const query = collectionModify(null, null, null, ' ');
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('remove needs a valid condition');
+            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `modify()`');
         });
 
-        it('should fail if the operation results in an error', () => {
-            const operation = collectionModify({ _client: { crudModify } }, { getName }, 'foo', 'bar');
+        it('should fail if the query results in an error', () => {
+            const query = collectionModify({ _client: { crudModify } }, 'foo', 'bar', 'baz');
             const error = new Error('foobar');
 
-            td.when(getName()).thenReturn('baz');
-            td.when(crudModify('baz', 'foo', type, 'bar'), { ignoreExtraArgs: true }).thenReject(error);
+            td.when(crudModify(query)).thenReject(error);
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith(error);
+            return expect(query.execute()).to.eventually.be.rejectedWith(error);
         });
 
-        it('should succeed if the operation succeed with the state of the operation', () => {
-            const operation = collectionModify({ _client: { crudModify } }, { getName }, 'foo', 'bar');
+        it('should succeed if the query succeed with the state of the query', () => {
+            const query = collectionModify({ _client: { crudModify } }, 'foo', 'bar', 'baz');
             const state = { foo: 'bar' };
             const expected = new Result(state);
 
-            td.when(getName()).thenReturn('baz');
-            td.when(crudModify('baz', 'foo', type, 'bar'), { ignoreExtraArgs: true }).thenResolve(state);
+            td.when(crudModify(query)).thenResolve(state);
 
-            return expect(operation.execute()).to.eventually.deep.equal(expected);
+            return expect(query.execute()).to.eventually.deep.equal(expected);
         });
     });
 });

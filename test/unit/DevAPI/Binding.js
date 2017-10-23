@@ -3,21 +3,61 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const binding = require('lib/DevAPI/Binding');
 const expect = require('chai').expect;
+const proxyquire = require('proxyquire');
+const td = require('testdouble');
 
 describe('DevAPI Binding', () => {
-    context('bind()', () => {
-        it('should assign a value to parameter when both are provided as arguments', () => {
-            const query = binding({ bindings: { foo: 'bar' } }).bind('baz', 'qux');
+    let binding, parse;
 
-            expect(query.getBindings()).to.deep.equal({ foo: 'bar', baz: 'qux' });
+    beforeEach('create fakes', () => {
+        parse = td.function();
+        binding = proxyquire('lib/DevAPI/Binding', { '../ExprParser': { parse } });
+    });
+
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
+    context('bind()', () => {
+        it('should be fluent', () => {
+            const query = binding().bind('foo', 'bar');
+
+            expect(query.bind).to.be.a('function');
         });
 
-        it('should merge key-valye object to the current mappings', () => {
-            const query = binding({ bindings: { foo: 'bar' } }).bind({ baz: 'qux' });
+        it('should do nothing if no argument is provided', () => {
+            expect(binding().bind().getBindings()).to.deep.equal({});
+        });
 
-            expect(query.getBindings()).to.deep.equal({ foo: 'bar', baz: 'qux' });
+        context('using unordered mapping dictionaries', () => {
+            it('should replace duplicates', () => {
+                const query = binding().bind({ foo: 'qux' });
+
+                expect(query.getBindings()).to.deep.equal({ foo: 'qux' });
+
+                query.bind({ foo: 'quux' });
+
+                expect(query.getBindings()).to.deep.equal({ foo: 'quux' });
+            });
+        });
+
+        context('using multiple unordered calls', () => {
+            it('should replace duplicates', () => {
+                const query = binding().bind('foo', 'qux');
+
+                expect(query.getBindings()).to.deep.equal({ foo: 'qux' });
+
+                query.bind('foo', 'quux');
+
+                expect(query.getBindings()).to.deep.equal({ foo: 'quux' });
+            });
+        });
+
+        it('should mix and match both type of parameters', () => {
+            const query = binding().bind('foo', 'qux').bind({ 'bar': 'quux' });
+
+            expect(query.getBindings()).to.deep.equal({ foo: 'qux', bar: 'quux' });
         });
     });
 });

@@ -60,7 +60,32 @@ describe('@integration document collection remove', () => {
             let actual = [];
 
             return collection
-                .remove('$.name == "foo"')
+                .remove('name = "foo"')
+                .execute()
+                .then(() => collection.find().execute(doc => actual.push(doc)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should remove the documents from a collection that match a multi-stage bindable criteria', () => {
+            const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .remove('name = :name && _id = :id')
+                .bind('id', '2')
+                .bind('name', 'bar')
+                .execute()
+                .then(() => collection.find().execute(doc => actual.push(doc)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should remove the documents from a collection that match an object bindable criteria', () => {
+            const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .remove('name = :name && _id = :id')
+                .bind({ id: '2', name: 'bar' })
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.deep.equal(expected));
@@ -121,7 +146,7 @@ describe('@integration document collection remove', () => {
             let actual = [];
 
             return collection
-                .remove("$._id in ('1', '3')")
+                .remove("_id in ('1', '3')")
                 .execute()
                 .then(() => {
                     return collection
@@ -136,7 +161,7 @@ describe('@integration document collection remove', () => {
             let actual = [];
 
             return collection
-                .remove("$._id not in ('1', '3')")
+                .remove("_id not in ('1', '3')")
                 .execute()
                 .then(() => {
                     return collection

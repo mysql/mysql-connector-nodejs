@@ -35,7 +35,7 @@ describe('@integration document collection add', () => {
 
     context('with a single call', () => {
         it('should add documents provided as an array', () => {
-            const documents = [{ foo: 'bar' }, { foo: 'baz' }];
+            const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
             let actual = [];
 
             return collection
@@ -44,12 +44,12 @@ describe('@integration document collection add', () => {
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => {
                     expect(actual).to.have.lengthOf(documents.length);
-                    actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'foo'));
+                    actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'age', 'name'));
                 });
         });
 
         it('should add documents provided as multiple arguments', () => {
-            const documents = [{ foo: 'bar' }, { foo: 'baz' }];
+            const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
             let actual = [];
 
             return collection
@@ -58,14 +58,14 @@ describe('@integration document collection add', () => {
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => {
                     expect(actual).to.have.lengthOf(documents.length);
-                    actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'foo'));
+                    actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'age', 'name'));
                 });
         });
     });
 
     context('with multiple calls', () => {
         it('should add documents provided as an array', () => {
-            const documents = [{ foo: 'bar' }, { foo: 'baz' }, { foo: 'qux' }];
+            const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }, { name: 'baz', age: 50 }];
             let actual = [];
 
             return collection
@@ -75,12 +75,12 @@ describe('@integration document collection add', () => {
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => {
                     expect(actual).to.have.lengthOf(documents.length);
-                    actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'foo'));
+                    actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'age', 'name'));
                 });
         });
 
         it('should add documents provided as multiple arguments', () => {
-            const documents = [{ foo: 'bar' }, { foo: 'baz' }, { foo: 'qux' }];
+            const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }, { name: 'baz', age: 50 }];
             let actual = [];
 
             return collection
@@ -90,7 +90,7 @@ describe('@integration document collection add', () => {
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => {
                     expect(actual).to.have.lengthOf(documents.length);
-                    actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'foo'));
+                    actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'age', 'name'));
                 });
         });
     });
@@ -116,14 +116,14 @@ describe('@integration document collection add', () => {
             let actual = [];
 
             return collection
-                .add({ foo: 'bar' })
+                .add({ name: 'foo' })
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual[0]._id).to.match(/^[A-F0-9]{32}$/));
         });
 
         it('should not generate a v1 UUID if the document already provides an id', () => {
-            const documents = [{ _id: 'foo', name: 'bar' }];
+            const documents = [{ _id: '1', name: 'foo' }];
             let actual = [];
 
             return collection

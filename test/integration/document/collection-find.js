@@ -65,7 +65,7 @@ describe('@integration document collection find', () => {
             let actual = [];
 
             return collection
-                .find('$.size == :size')
+                .find('size = :size')
                 .bind('size', 42)
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
@@ -76,7 +76,7 @@ describe('@integration document collection find', () => {
             let actual = [];
 
             return collection
-                .find('$.size == :size')
+                .find('size = :size')
                 .bind({ size: 42 })
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
@@ -154,7 +154,7 @@ describe('@integration document collection find', () => {
             let actual = [];
 
             return collection
-                .find("$._id in ('1', '3')")
+                .find("_id in ('1', '3')")
                 .execute(doc => doc && actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
@@ -164,7 +164,7 @@ describe('@integration document collection find', () => {
             let actual = [];
 
             return collection
-                .find("$._id not in ('1', '3')")
+                .find("_id not in ('1', '3')")
                 .execute(doc => doc && actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
         });

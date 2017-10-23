@@ -62,7 +62,7 @@ mysql
                 .add({ baz: { foo: 'bar' } }, { foo: { bar: 'baz' } })
                 .execute(),
             collection
-                .find("$.baz.foo == 'bar'")
+                .find('baz.foo = "bar"')
                 .execute(row => {
                     console.log('Found row: %j', row);
                 })
@@ -70,7 +70,7 @@ mysql
                     console.log('Collection find finished');
                 }),
             collection
-                .remove("($.foo.bar) == 'baz'")
+                .remove('foo.bar = "baz"')
                 .execute()
                 .then(() => {
                     console.log('Document deleted');

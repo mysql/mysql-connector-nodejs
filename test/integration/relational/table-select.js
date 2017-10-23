@@ -19,14 +19,9 @@ describe('@integration relational table select', () => {
     beforeEach('create table', () => {
         return schema
             .createTable('test')
-            .addColumn(schema
-                .columnDef('test1', schema.Type.Bigint)
-                .notNull()
-                .autoIncrement()
-                .primaryKey()
-            )
-            .addColumn(schema.columnDef('test2', schema.Type.Varchar, 255))
-            .addColumn(schema.columnDef('test3', schema.Type.Int))
+            .addColumn(schema.columnDef('id', schema.Type.Int))
+            .addColumn(schema.columnDef('name', schema.Type.Varchar, 4))
+            .addColumn(schema.columnDef('age', schema.Type.Int))
             .execute();
     });
 
@@ -38,25 +33,21 @@ describe('@integration relational table select', () => {
         beforeEach('add fixtures', () => {
             return schema
                 .getTable('test')
-                .insert(['test2', 'test3'])
-                .values(['value2', 23])
-                .values(['value1', 42])
+                .insert(['id', 'name', 'age'])
+                .values([1, 'bar', 23])
+                .values([2, 'foo', 42])
                 .execute();
         });
 
         it('should include all columns without projection', () => {
-            const expected = [[1, 'value2', 23], [2, 'value1', 42]];
+            const expected = [[1, 'bar', 23], [2, 'foo', 42]];
             let actual = [];
 
             return schema
                 .getTable('test')
                 .select()
-                .execute(row => {
-                    actual.push(row);
-                })
-                .then(() => {
-                    expect(actual).to.deep.include.members(expected);
-                });
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.include.members(expected));
         });
     });
 
@@ -64,40 +55,32 @@ describe('@integration relational table select', () => {
         beforeEach('add fixtures', () => {
             return schema
                 .getTable('test')
-                .insert(['test2', 'test3'])
-                .values(['value2', 23])
-                .values(['value1', 42])
+                .insert(['id', 'name', 'age'])
+                .values([1, 'bar', 23])
+                .values([2, 'foo', 42])
                 .execute();
         });
 
         it('should include only columns provided as an expression array', () => {
-            const expected = [['value2', 23], ['value1', 42]];
+            const expected = [['bar', 23], ['foo', 42]];
             let actual = [];
 
             return schema
                 .getTable('test')
-                .select(['test2', 'test3'])
-                .execute(row => {
-                    actual.push(row);
-                })
-                .then(() => {
-                    expect(actual).to.deep.include.members(expected);
-                });
+                .select(['name', 'age'])
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.include.members(expected));
         });
 
         it('should include only columns provided as expression arguments', () => {
-            const expected = [['value2', 23], ['value1', 42]];
+            const expected = [['bar', 23], ['foo', 42]];
             let actual = [];
 
             return schema
                 .getTable('test')
-                .select('test2', 'test3')
-                .execute(row => {
-                    actual.push(row);
-                })
-                .then(() => {
-                    expect(actual).to.deep.include.members(expected);
-                });
+                .select('name', 'age')
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.include.members(expected));
         });
     });
 
@@ -105,47 +88,35 @@ describe('@integration relational table select', () => {
         beforeEach('add fixtures', () => {
             return schema
                 .getTable('test')
-                .insert(['test2', 'test3'])
-                .values(['value1', 42])
-                .values(['value1', 23])
-                .values(['value2', 23])
+                .insert(['id', 'name', 'age'])
+                .values([1, 'foo', 42])
+                .values([2, 'foo', 23])
+                .values([3, 'bar', 23])
                 .execute();
         });
 
         it('should sort by columns provided as an expression array', () => {
-            const expected = [['value2', 23], ['value1', 23], ['value1', 42]];
+            const expected = [['foo', 23], ['foo', 42], ['bar', 23]];
             let actual = [];
 
             return schema
                 .getTable('test')
-                .select('test2', 'test3')
-                .orderBy(['test2 desc', 'test3 asc'])
-                .execute(row => {
-                    actual.push(row);
-                })
-                .then(() => {
-                    actual.forEach((row, index) => {
-                        expect(row).to.deep.equal(expected[index]);
-                    });
-                });
+                .select('name', 'age')
+                .orderBy(['name desc', 'age asc'])
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
         });
 
         it('should sort by columns provided as expression arguments', () => {
-            const expected = [['value1', 42], ['value2', 23], ['value1', 23]];
+            const expected = [['foo', 42], ['foo', 23], ['bar', 23]];
             let actual = [];
 
             return schema
                 .getTable('test')
-                .select('test2', 'test3')
-                .orderBy('test3 desc', 'test2 desc')
-                .execute(row => {
-                    actual.push(row);
-                })
-                .then(() => {
-                    actual.forEach((row, index) => {
-                        expect(row).to.deep.equal(expected[index]);
-                    });
-                });
+                .select('name', 'age')
+                .orderBy('age desc', 'name desc')
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
         });
     });
 
@@ -153,53 +124,87 @@ describe('@integration relational table select', () => {
         beforeEach('add fixtures', () => {
             return schema
                 .getTable('test')
-                .insert(['test2', 'test3'])
-                .values(['value1', 42])
-                .values(['value2', 23])
-                .values(['value1', 42])
-                .values(['value1', 23])
-                .values(['value2', 23])
-                .values(['value2', 42])
+                .insert(['id', 'name', 'age'])
+                .values([1, 'foo', 42])
+                .values([2, 'bar', 23])
+                .values([3, 'foo', 42])
+                .values([4, 'foo', 23])
+                .values([5, 'bar', 23])
+                .values([6, 'bar', 42])
                 .execute();
         });
 
         it('should group columns provided as an expression array', () => {
-            const expected = [['value1', 42], ['value1', 23], ['value2', 42], ['value2', 23]];
+            const expected = [['bar', 42], ['bar', 23], ['foo', 42], ['foo', 23]];
             let actual = [];
 
             return schema
                 .getTable('test')
-                .select('test2', 'test3')
-                .groupBy(['test2', 'test3'])
-                // MySQL 8.0.1 does not ensure GROUP BY order
-                .orderBy(['test2 ASC', 'test3 DESC'])
-                .execute(row => {
-                    actual.push(row);
-                })
-                .then(() => {
-                    expect(actual).to.deep.equal(expected);
-                });
+                .select('name', 'age')
+                .groupBy(['name', 'age'])
+                // MySQL 8 does not ensure GROUP BY order
+                .orderBy(['name ASC', 'age DESC'])
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
         });
 
         it('should group columns provided as expression arguments', () => {
-            const expected = [['value1', 23], ['value2', 23], ['value1', 42], ['value2', 42]];
+            const expected = [['bar', 23], ['foo', 23], ['bar', 42], ['foo', 42]];
             let actual = [];
 
             return schema
                 .getTable('test')
-                .select('test2', 'test3')
-                .groupBy('test3', 'test2')
-                // MySQL 8.0.1 does not ensure GROUP BY order
-                .orderBy('test3 ASC', 'test2 ASC')
-                .execute(row => {
-                    actual.push(row);
-                })
-                .then(() => {
-                    expect(actual).to.have.lengthOf(expected.length);
-                    actual.forEach((row, index) => {
-                        expect(row).to.deep.equal(expected[index]);
-                    });
-                });
+                .select('name', 'age')
+                .groupBy('age', 'name')
+                // MySQL 8 does not ensure GROUP BY order
+                .orderBy('age ASC', 'name ASC')
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('with grouping criteria', () => {
+        beforeEach('add fixtures', () => {
+            return schema
+                .getTable('test')
+                .insert(['id', 'name', 'age'])
+                .values([1, 'foo', 42])
+                .values([2, 'bar', 23])
+                .values([3, 'foo', 42])
+                .values([4, 'foo', 23])
+                .values([5, 'bar', 23])
+                .values([6, 'bar', 42])
+                .execute();
+        });
+
+        it('should group columns provided as an expression array', () => {
+            const expected = [['bar', 42], ['foo', 42]];
+            let actual = [];
+
+            return schema
+                .getTable('test')
+                .select('name', 'age')
+                .groupBy(['name', 'age'])
+                .having('age > 23')
+                // MySQL 8 does not ensure GROUP BY order
+                .orderBy(['name ASC', 'age DESC'])
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should group columns provided as expression arguments', () => {
+            const expected = [['bar', 23], ['foo', 23]];
+            let actual = [];
+
+            return schema
+                .getTable('test')
+                .select('name', 'age')
+                .groupBy('age', 'name')
+                .having('age = 23')
+                // MySQL 8 does not ensure GROUP BY order
+                .orderBy('age ASC', 'name ASC')
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
         });
     });
 
@@ -207,12 +212,12 @@ describe('@integration relational table select', () => {
         beforeEach('add fixtures', () => {
             return schema
                 .getTable('test')
-                .insert(['test2', 'test3'])
-                .values(['foo', 42])
-                .values(['bar', 23])
-                .values(['baz', 42])
-                .values(['qux', 23])
-                .values(['quux', 23])
+                .insert(['id', 'name', 'age'])
+                .values([1, 'foo', 42])
+                .values([2, 'bar', 23])
+                .values([3, 'baz', 42])
+                .values([4, 'qux', 23])
+                .values([5, 'quux', 23])
                 .execute();
         });
 
@@ -224,6 +229,7 @@ describe('@integration relational table select', () => {
                 .getTable('test')
                 .select()
                 .limit(3)
+                .orderBy('id')
                 .execute(row => actual.push(row))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
@@ -236,6 +242,7 @@ describe('@integration relational table select', () => {
                 .getTable('test')
                 .select()
                 .limit(2, 2)
+                .orderBy('id')
                 .execute(row => actual.push(row))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
@@ -245,10 +252,10 @@ describe('@integration relational table select', () => {
         beforeEach('add fixtures', () => {
             return schema
                 .getTable('test')
-                .insert(['test2', 'test3'])
-                .values(['foo', 42])
-                .values(['bar', 23])
-                .values(['baz', 42])
+                .insert(['id', 'name', 'age'])
+                .values([1, 'foo', 42])
+                .values([2, 'bar', 23])
+                .values([3, 'baz', 42])
                 .execute();
         });
 
@@ -259,8 +266,9 @@ describe('@integration relational table select', () => {
             return schema
                 .getTable('test')
                 .select()
-                .where("`test2` in ('foo', 'baz')")
-                .execute(row => row && row.length && actual.push(row))
+                .where("name in ('foo', 'baz')")
+                .orderBy('id')
+                .execute(row => actual.push(row))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
@@ -271,8 +279,9 @@ describe('@integration relational table select', () => {
             return schema
                 .getTable('test')
                 .select()
-                .where('`test3` not in (50, 42)')
-                .execute(row => row && row.length && actual.push(row))
+                .where('age not in (50, 42)')
+                .orderBy('id')
+                .execute(row => actual.push(row))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });

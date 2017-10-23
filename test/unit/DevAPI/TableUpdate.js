@@ -3,7 +3,6 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Client = require('lib/Protocol/Client');
 const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
@@ -15,18 +14,6 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('TableUpdate', () => {
-    let crudModify, getName;
-    let type = Client.dataModel.TABLE;
-
-    beforeEach('create fakes', () => {
-        crudModify = td.function();
-        getName = td.function();
-    });
-
-    afterEach('reset fakes', () => {
-        td.reset();
-    });
-
     context('getClassName()', () => {
         it('should return the correct class name (to avoid duck typing)', () => {
             expect(tableUpdate().getClassName()).to.equal('TableUpdate');
@@ -34,52 +21,59 @@ describe('TableUpdate', () => {
     });
 
     context('where()', () => {
-        it('should set the operation condition', () => {
-            const query = 'foo';
-            const operation = tableUpdate().where(query);
+        it('should set the query criteria', () => {
+            const criteria = 'foo';
 
-            expect(operation.getCriteria()).to.equal(query);
+            expect(tableUpdate().where(criteria).getCriteria()).to.equal(criteria);
         });
     });
 
     context('execute()', () => {
-        it('should fail if a condition query is not provided', () => {
-            const operation = tableUpdate();
+        let crudModify;
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('update needs a valid condition');
+        beforeEach('create fakes', () => {
+            crudModify = td.function();
+        });
+
+        afterEach('reset fakes', () => {
+            td.reset();
+        });
+
+        it('should fail if a condition query is not provided', () => {
+            const query = tableUpdate();
+
+            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `update()` or `where()`');
         });
 
         it('should fail if a condition query is empty', () => {
-            const operation = tableUpdate(null, null, null, '');
+            const query = tableUpdate(null, null, null, '');
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('update needs a valid condition');
+            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `update()` or `where()`');
         });
 
         it('should fail if a condition query is not valid', () => {
-            const operation = tableUpdate(null, null, null, ' ');
+            const query = tableUpdate(null, null, null, ' ');
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('update needs a valid condition');
+            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `update()` or `where()`');
         });
 
-        it('should fail if the operation results in an error', () => {
-            const operation = tableUpdate({ _client: { crudModify } }, { getName }, 'foo', 'bar');
+        it('should fail if the query results in an error', () => {
+            const query = tableUpdate({ _client: { crudModify } }, 'foo', 'bar', 'baz');
             const error = new Error('foobar');
 
-            td.when(getName()).thenReturn('baz');
-            td.when(crudModify('baz', 'foo', type, 'bar'), { ignoreExtraArgs: true }).thenReject(error);
+            td.when(crudModify(query)).thenReject(error);
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith(error);
+            return expect(query.execute()).to.eventually.be.rejectedWith(error);
         });
 
-        it('should succeed if the operation succeed with the state of the operation', () => {
-            const operation = tableUpdate({ _client: { crudModify } }, { getName }, 'foo', 'bar');
+        it('should succeed if the query succeed with the state of the query', () => {
+            const query = tableUpdate({ _client: { crudModify } }, 'foo', 'bar', 'baz');
             const state = { foo: 'bar' };
             const expected = new Result(state);
 
-            td.when(getName()).thenReturn('baz');
-            td.when(crudModify('baz', 'foo', type, 'bar'), { ignoreExtraArgs: true }).thenResolve(state);
+            td.when(crudModify(query)).thenResolve(state);
 
-            return expect(operation.execute()).to.eventually.deep.equal(expected);
+            return expect(query.execute()).to.eventually.deep.equal(expected);
         });
     });
 });

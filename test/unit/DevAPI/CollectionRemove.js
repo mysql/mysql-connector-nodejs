@@ -3,7 +3,6 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Client = require('lib/Protocol/Client');
 const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
@@ -15,18 +14,6 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('CollectionRemove', () => {
-    let crudRemove, getName;
-    let type = Client.dataModel.DOCUMENT;
-
-    beforeEach('create fakes', () => {
-        crudRemove = td.function();
-        getName = td.function();
-    });
-
-    afterEach('reset fakes', () => {
-        td.reset();
-    });
-
     context('getClassName()', () => {
         it('should return the correct class name (to avoid duck typing)', () => {
             expect(collectionRemove().getClassName()).to.equal('CollectionRemove');
@@ -34,41 +21,49 @@ describe('CollectionRemove', () => {
     });
 
     context('execute()', () => {
-        it('should fail if a condition query is not provided', () => {
+        let crudRemove;
+
+        beforeEach('create fakes', () => {
+            crudRemove = td.function();
+        });
+
+        afterEach('reset fakes', () => {
+            td.reset();
+        });
+
+        it('should fail if a criteria is not provided', () => {
             const operation = collectionRemove();
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('remove needs a valid condition');
+            return expect(operation.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `remove()`');
         });
 
         it('should fail if a condition query is empty', () => {
             const operation = collectionRemove(null, null, null, '');
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('remove needs a valid condition');
+            return expect(operation.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `remove()`');
         });
 
         it('should fail if the condition is not valid', () => {
             const operation = collectionRemove(null, null, null, ' ');
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('remove needs a valid condition');
+            return expect(operation.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `remove()`');
         });
 
         it('should fail if the operation results in an error', () => {
-            const operation = collectionRemove({ _client: { crudRemove } }, { getName }, 'foo', 'bar');
             const error = new Error('foobar');
+            const operation = collectionRemove({ _client: { crudRemove } }, 'foo', 'bar', 'baz');
 
-            td.when(getName()).thenReturn('baz');
-            td.when(crudRemove('baz', 'foo', type, 'bar'), { ignoreExtraArgs: true }).thenReject(error);
+            td.when(crudRemove(operation)).thenReject(error);
 
             return expect(operation.execute()).to.eventually.be.rejectedWith(error);
         });
 
         it('should succeed if the operation succeed with the state of the operation', () => {
-            const operation = collectionRemove({ _client: { crudRemove } }, { getName }, 'foo', 'bar');
-            const state = { foo: 'bar' };
+            const operation = collectionRemove({ _client: { crudRemove } }, 'foo', 'bar', 'baz');
+            const state = { ok: true };
             const expected = new Result(state);
 
-            td.when(getName()).thenReturn('baz');
-            td.when(crudRemove('baz', 'foo', type, 'bar'), { ignoreExtraArgs: true }).thenResolve(state);
+            td.when(crudRemove(operation)).thenResolve(state);
 
             return expect(operation.execute()).to.eventually.deep.equal(expected);
         });

@@ -39,7 +39,7 @@ describe('ViewFactory', () => {
         it('should force immutable definitions', () => {
             const getSession = td.function();
             const schema = { getName, getSession };
-            const query = tableSelect(null, schema, 'bar', ['qux', 'quux']);
+            const query = tableSelect(null, 'foo', 'bar', ['qux', 'quux']);
 
             td.when(getName()).thenReturn('foo');
             td.when(getSession()).thenReturn({ _client: { sqlStmtExecute } });

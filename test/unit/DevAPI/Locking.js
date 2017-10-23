@@ -10,14 +10,14 @@ describe('DevAPI locking', () => {
     it('should set the default locking mode to `NONE` by default', () => {
         const query = locking();
 
-        expect(query.getLockingMode()).to.equal(0);
+        expect(query.getRowLock()).to.equal(locking.Type.NONE);
     });
 
     context('lockShared()', () => {
         it('should set the correct locking mode', () => {
             const query = locking().lockShared();
 
-            expect(query.getLockingMode()).to.equal(1);
+            expect(query.getRowLock()).to.equal(locking.Type.SHARED_LOCK);
         });
     });
 
@@ -25,7 +25,7 @@ describe('DevAPI locking', () => {
         it('should set the correct locking mode', () => {
             const query = locking().lockExclusive();
 
-            expect(query.getLockingMode()).to.equal(2);
+            expect(query.getRowLock()).to.equal(locking.Type.EXCLUSIVE_LOCK);
         });
     });
 });

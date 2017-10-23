@@ -43,7 +43,7 @@ describe('@integration document collection modify', () => {
 
             return collection
                 .modify('true')
-                .set('$.name', 'qux')
+                .set('name', 'qux')
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.deep.equal(expected));
@@ -56,8 +56,8 @@ describe('@integration document collection modify', () => {
             let actual = [];
 
             return collection
-                .modify('$.name == "bar"')
-                .set('$.name', 'qux')
+                .modify('name = "bar"')
+                .set('name', 'qux')
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.deep.equal(expected));
@@ -71,7 +71,7 @@ describe('@integration document collection modify', () => {
 
             return collection
                 .modify('true')
-                .set('$.name', 'qux')
+                .set('name', 'qux')
                 .limit(1)
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
@@ -119,8 +119,8 @@ describe('@integration document collection modify', () => {
             let actual = [];
 
             return collection
-                .modify("$._id in ('1', '3')")
-                .set('$.name', 'qux')
+                .modify("_id in ('1', '3')")
+                .set('name', 'qux')
                 .execute()
                 .then(() => {
                     return collection
@@ -135,8 +135,8 @@ describe('@integration document collection modify', () => {
             let actual = [];
 
             return collection
-                .modify("$._id not in ('1', '3')")
-                .set('$.name', 'qux')
+                .modify("_id not in ('1', '3')")
+                .set('name', 'qux')
                 .execute()
                 .then(() => {
                     return collection
