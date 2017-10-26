@@ -83,6 +83,37 @@ describe('@integration document collection find', () => {
         });
     });
 
+    context('with projection', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo', size: 42 })
+                .add({ _id: '2', name: 'bar', size: 23 })
+                .execute();
+        });
+
+        it('should include only columns provided as an expression array', () => {
+            const expected = [{ name: 'foo', size: 42 }, { name: 'bar', size: 23 }];
+            let actual = [];
+
+            return collection
+                .find()
+                .fields(['name', 'size'])
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should include only columns provided as expression arguments', () => {
+            const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }];
+            let actual = [];
+
+            return collection
+                .find()
+                .fields('_id', 'name')
+                .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
     context('with limit', () => {
         beforeEach('add fixtures', () => {
             return collection

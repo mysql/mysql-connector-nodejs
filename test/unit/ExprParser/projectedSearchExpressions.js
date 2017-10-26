@@ -20,6 +20,8 @@ describe('ExprParser', () => {
             expect(pathItems).to.have.lengthOf(1);
             expect(pathItems[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
             expect(pathItems[0].getValue()).to.equal('foo');
+
+            expect(crud.output.getAlias()).to.equal('foo');
         });
 
         it('should parse lower-case alias', () => {
@@ -30,6 +32,7 @@ describe('ExprParser', () => {
             expect(pathItems).to.have.lengthOf(1);
             expect(pathItems[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
             expect(pathItems[0].getValue()).to.equal('bar');
+
             expect(crud.output.getAlias()).to.equal('baz');
         });
 
@@ -41,6 +44,7 @@ describe('ExprParser', () => {
             expect(pathItems).to.have.lengthOf(1);
             expect(pathItems[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
             expect(pathItems[0].getValue()).to.equal('baz');
+
             expect(crud.output.getAlias()).to.equal('qux');
         });
     });
