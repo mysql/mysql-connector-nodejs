@@ -8,6 +8,7 @@ const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const collectionModify = require('lib/DevAPI/CollectionModify');
 const td = require('testdouble');
+const updating = require('lib/DevAPI/Updating');
 
 chai.use(chaiAsPromised);
 
@@ -66,6 +67,24 @@ describe('CollectionModify', () => {
             td.when(crudModify(query)).thenResolve(state);
 
             return expect(query.execute()).to.eventually.deep.equal(expected);
+        });
+    });
+
+    context('patch()', () => {
+        it('should update the operation list with the correct operation', () => {
+            const doc = { foo: 'bar', baz: { 'qux': 'quux' } };
+            const expected = [{ source: '$', type: updating.Operation.MERGE_PATCH, value: doc }];
+
+            expect(collectionModify().patch(doc).getOperations()).to.deep.equal(expected);
+        });
+
+        it('should not delete any previously added operation', () => {
+            const existing = [{ foo: 'bar' }];
+            const doc = { baz: 'qux' };
+            const expected = [{ foo: 'bar' }, { source: '$', type: updating.Operation.MERGE_PATCH, value: doc }];
+            const query = collectionModify();
+
+            expect(query.setOperations(existing).patch(doc).getOperations()).to.deep.equal(expected);
         });
     });
 });

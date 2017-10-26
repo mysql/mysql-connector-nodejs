@@ -54,10 +54,16 @@ Considering a collection `testSchema.testCollection` containing the following do
 ```json
 [{
     "_id": 1,
-    "name": "foo"
+    "name": "foo",
+    "meta": {
+        "nested": "bar"
+    }
 }, {
     "_id": 2,
-    "name": "bar"
+    "name": "bar",
+    "meta": {
+        "nested": "baz"
+    }
 }]
 ```
 
@@ -89,7 +95,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
         return query.execute(doc => resultSet.push(doc)).then(() => resultSet)
     })
     .then(result => {
-        console.log(result); // [{ _id: 2, name: 'bar' }]
+        console.log(result); // [{ _id: 2, name: 'bar', meta: { nested: 'baz' } }]
     });
 ```
 
@@ -142,7 +148,11 @@ mysqlx.getSession('mysqlx://localhost:33060')
         return query.execute(doc => resultSet.push(doc)).then(() => resultSet)
     })
     .then(result => {
-        console.log(result); // [{ _id: 1, name: 'baz' }, { _id: 2, name: 'bar' }]
+        console.log(result);
+        // [
+        //      { _id: 1, name: 'baz', meta: { nested: 'bar' } },
+        //      { _id: 2, name: 'bar', meta: { nested: 'baz' } }
+        // ]
     });
 ```
 
@@ -159,6 +169,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
             // The expression should evaluate to `true`.
             .modify('true')
             .set('name', 'baz')
+            .set('meta.nested', 'quux')
             .execute()
             .then(() => collection)
     })
@@ -169,6 +180,46 @@ mysqlx.getSession('mysqlx://localhost:33060')
         return query.execute(doc => resultSet.push(doc)).then(() => resultSet)
     })
     .then(result => {
-        console.log(result); // [{ _id: 1, name: 'baz' }, { _id: 2, name: 'baz' }]
+        console.log(result);
+        // [
+        //      { _id: 1, name: 'baz', meta: { nested: 'quux' } },
+        //      { _id: 2, name: 'baz', meta: { nested: 'quux' } }
+        // ]
     });
 ```
+
+### Bulk-updating multiple document properties
+
+Additionaly, instead of explicitly updating individual document properties using `set()`, you can update multiple properties in a single call, by using `patch()`.
+
+Using `patch()` will, remove properties set to `null`, add previously nonexisting properties and update the existing ones. This behavior also applies to nested properties.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .getSchema('testSchema')
+            .getCollection('testCollection')
+            .modify('_id = 1')
+            .patch({ name: 'qux', meta: { nested: null, other: 'quux' } })
+            .execute()
+            .then(() => collection)
+    })
+    .then(collection => {
+        const query = collection.find();
+        let resultSet = [];
+
+        return query.execute(doc => resultSet.push(doc)).then(() => resultSet)
+    })
+    .then(result => {
+        console.log(result);
+        // [
+        //      { _id: 1, name: 'qux', meta: { other: 'quux' } },
+        //      { _id: 2, name: 'bar', meta: { nested: 'baz' } }
+        // ]
+    });
+```
+
+Note: the criteria expression string provided via `modify()` establishes the filtering rules, thus any `_id` value provided as part of the properties to be updated will simply be ignored (and will not be updated).
