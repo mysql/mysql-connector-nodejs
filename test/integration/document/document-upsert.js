@@ -63,7 +63,7 @@ describe('@integration single document upsert', () => {
             return expect(collection.addOrReplaceOne('1', { _id: '3', age: 23 })).to.be.fulfilled
                 .then(result => {
                     // the existing row is re-created (leading to two different operations)
-                    // see https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
+                    // see https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
                     expect(result.getAffectedItemsCount()).to.equal(2);
 
                     return collection
@@ -112,7 +112,7 @@ describe('@integration single document upsert', () => {
             return expect(collection.addOrReplaceOne('1', { _id: '3', name: 'baz' })).to.be.fulfilled
                 .then(result => {
                     // the existing row is re-created (leading to two different operations)
-                    // see https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
+                    // see https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
                     expect(result.getAffectedItemsCount()).to.equal(2);
 
                     return collection
@@ -129,7 +129,7 @@ describe('@integration single document upsert', () => {
             return expect(collection.addOrReplaceOne('1', { _id: '3', name: 'foo', age: 23 })).to.be.fulfilled
                 .then(result => {
                     // the existing row is re-created (leading to two different operations)
-                    // see https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
+                    // see https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
                     expect(result.getAffectedItemsCount()).to.equal(2);
 
                     return collection
