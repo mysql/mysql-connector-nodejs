@@ -198,7 +198,7 @@ mysqlx
     })
     .then(result => {
         // the existing row is re-created (leading to two different operations)
-        // see https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
+        // see https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
         console.log(result.getAffectedItemsCount()); // 2
 
         return collection
@@ -237,7 +237,7 @@ mysqlx
     });
 ```
 
-When additional unique key constraints exist for a collection, a few additional scenarios are brought up. Assuming, the `name` property has a unique key constraint established by a [auto-generated column](https://dev.mysql.com/doc/refman/5.7/en/create-table-secondary-indexes.html#json-column-indirect-index).
+When additional unique key constraints exist for a collection, a few additional scenarios are brought up. Assuming, the `name` property has a unique key constraint established by a [auto-generated column](https://dev.mysql.com/doc/refman/8.0/en/create-table-secondary-indexes.html#json-column-indirect-index).
 
 ```sql
 ALTER TABLE test_schema.test_collection ADD COLUMN name VARCHAR(3) GENERATED ALWAYS AS (JSON_UNQUOTE(JSON_EXTRACT(doc, '$.name'))) VIRTUAL UNIQUE KEY NOT NULL
@@ -260,7 +260,7 @@ mysqlx
     })
     .then(result => {
         // the existing row is re-created (leading to two different operations)
-        // see https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
+        // see https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
         console.log(result.getAffectedItemsCount()); // 2
 
         return collection
@@ -289,7 +289,7 @@ mysqlx
     })
     .then(result => {
         // the existing row is re-created (leading to two different operations)
-        // see https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
+        // see https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
         console.log(result.getAffectedItemsCount()); // 2
 
         return collection

@@ -1,17 +1,16 @@
-# MySQL Connector/Node.JS
+# MySQL Connector/Node.js
 
-Connector/NJS is a connector for the asynchronous Node.JS platform in
-version 4.2 written in 100% JavaScript speaking the X DevAPI Protocol.
-(no support for the traditional MySQL protocol)
+MySQL Connector/Node.js is a connector for the asynchronous Node.js platform in
+version 4.2 written in 100% JavaScript speaking the X DevAPI Protocol (no support for the traditional MySQL protocol).
 
 ## Requirements:
 
- * MySQL 5.7.12 or higher, with the X plugin enabled
- * Node.JS 4.2
+ * MySQL 8.0.3 or higher
+ * Node.js 4.2 or higher
 
-## Putting c/NJS in place:
+## Installation:
 
-The Node.JS runtime follows a specific structure where packages are put in a
+The Node.js runtime follows a specific structure where packages are put in a
 [`node_modules`](https://nodejs.org/api/modules.html#modules_loading_from_node_modules_folders)
 directory from which they can be loaded. This can be done with the `npm` tool from your
 project's directory:
@@ -297,7 +296,7 @@ var sessionPromise = xdevapi.getSession('mysqlx://root@[(address=127.0.0.1:33060
 ### Script hangs
 
 If you run a custom script and it hangs most likely you didn't close your
-session using [`session.close()`]{@link Session#close} as Node.JS doesn't
+session using [`session.close()`]{@link Session#close} as Node.js doesn't
 terminate a script as long as a connection is open. This is often caused by an
 error which wasn't handled properly. Check your script for code paths where
 a `Promise` has no `catch` routine defined or where no `close` happens
