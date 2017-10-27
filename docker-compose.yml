@@ -1,10 +1,17 @@
 version: '2.1'
 
 services:
+    mysql:
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+            MYSQL_DATABASE: nodejsmysqlxtest
+            MYSQL_PASSWORD: bar
+            MYSQL_USER: foo
+        image: mysql/mysql-server:${MYSQL_VERSION:-8.0}
+
     mysql-with-ssl:
         command: mysqld --plugin-load=mysqlx=mysqlx.so --ssl-key=/ssl/key.pem --ssl-cert=/ssl/cert.pem
         extends:
-            file: common-services.yml
             service: mysql
         ports:
             - 3306:3306
@@ -15,7 +22,6 @@ services:
     mysql-without-ssl:
         command: mysqld --plugin-load=mysqlx=mysqlx.so --port=3307 --mysqlx-port=33061 --skip-ssl
         extends:
-            file: common-services.yml
             service: mysql
         ports:
             - 3307:3307
@@ -24,8 +30,7 @@ services:
     mysql-with-sha256:
         command: mysqld --plugin-load=mysqlx=mysqlx.so --port=3308 --mysqlx-port=33062 --default-authentication-plugin=sha256_password
         extends:
-            file: common-services.yml
-            service: mysql8
+            service: mysql
         ports:
             - 3308:3308
             - 33062:33062

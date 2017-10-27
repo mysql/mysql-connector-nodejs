@@ -10,14 +10,10 @@ chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
-describe('@integration document collection contains (MySQL 8.0.3)', () => {
+describe('@integration document collection contains', () => {
     let session, schema, collection;
 
-    beforeEach('set context', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    beforeEach('set context', () => {
         return fixtures.setup().then(suite => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             session = suite.session;
@@ -25,27 +21,15 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
         });
     });
 
-    beforeEach('create collection', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    beforeEach('create collection', () => {
         return schema.createCollection('test');
     });
 
-    beforeEach('update context', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    beforeEach('update context', () => {
         collection = schema.getCollection('test');
     });
 
-    beforeEach('add fixtures', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    beforeEach('add fixtures', () => {
         return collection
             .add({ _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } })
             .add({ _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } })
@@ -57,11 +41,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
         return fixtures.teardown(session, schema);
     });
 
-    it('should return all documents where some field contains a given value', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should return all documents where some field contains a given value', () => {
         const expected = [{ _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } }];
         let actual = [];
 
@@ -71,11 +51,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where some field does not contain a given value', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should return all documents where some field does not contain a given value', () => {
         const expected = [
             { _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } },
             { _id: 3, categories: ['MySQL', 'Shell'], author: 48, reviewers: [48, 48] }
@@ -88,11 +64,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where some field contains the value of another field', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should return all documents where some field contains the value of another field', () => {
         const expected = [
             { _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } },
             { _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } },
@@ -106,11 +78,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where some field does not contain the value of another field', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should return all documents where some field does not contain the value of another field', () => {
         const expected = [];
         let actual = [];
 
@@ -120,11 +88,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where the value of some field exists in a given set of values', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should return all documents where the value of some field exists in a given set of values', () => {
         const expected = [
             { _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } },
             { _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } }
@@ -137,11 +101,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where the value of some field does not exist in a given set of values', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should return all documents where the value of some field does not exist in a given set of values', () => {
         const expected = [{ _id: 3, categories: ['MySQL', 'Shell'], author: 48, reviewers: [48, 48] }];
         let actual = [];
 
@@ -151,11 +111,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where some nested field contains a given value', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should return all documents where some nested field contains a given value', () => {
         const expected = [{ _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } }];
         let actual = [];
 
@@ -165,11 +121,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where some nested field does not contain a given value', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should return all documents where some nested field does not contain a given value', () => {
         const expected = [{ _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } }];
         let actual = [];
 
@@ -179,11 +131,7 @@ describe('@integration document collection contains (MySQL 8.0.3)', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should fail if the left-side operand is not castable to JSON', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should fail if the left-side operand is not castable to JSON', () => {
         return expect(collection.find('(1+2) in [1, 2, 3]').execute()).to.be.rejected
             .then(err => {
                 expect(err.info).to.include.keys('code');

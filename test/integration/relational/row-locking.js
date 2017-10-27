@@ -12,14 +12,10 @@ chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
-describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
+describe('@integration row locking in table transactions', () => {
     let sessionA, sessionB;
 
-    beforeEach('set context', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    beforeEach('set context', () => {
         return mysqlx
             .getSession(config)
             .then(session => {
@@ -37,11 +33,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
             });
     });
 
-    beforeEach('create table', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    beforeEach('create table', () => {
         const schema = sessionA.getSchema(config.schema);
 
         return schema
@@ -56,11 +48,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
             .execute();
     });
 
-    beforeEach('add fixtures', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    beforeEach('add fixtures', () => {
         return sessionA
             .getSchema(config.schema)
             .getTable('test')
@@ -85,11 +73,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
             });
     });
 
-    it('should allow to consistently modify row data for sessions with exclusive locks', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should allow to consistently modify row data for sessions with exclusive locks', () => {
         const expected = [ [ '1', 3, 'foo' ] ];
         let samplesA = [];
         let samplesB = [];
@@ -161,11 +145,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
             });
     });
 
-    it('should allow to consistently modify row data for sessions with a shared lock when no other transaction is active', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should allow to consistently modify row data for sessions with a shared lock when no other transaction is active', () => {
         const expected = [ [ '1', 3, 'foo' ] ];
         let samplesA = [];
         let samplesB = [];
@@ -234,11 +214,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
             });
     });
 
-    it('should allow a session to wait before consistently reading row data when a transaction from a different session with the same shared lock until it is committed', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should allow a session to wait before consistently reading row data when a transaction from a different session with the same shared lock until it is committed', () => {
         const expected = [ [ '1', 2, 'foo' ] ];
         let actual = [];
 
@@ -295,11 +271,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
             });
     });
 
-    it('should prevent a session without any lock from consistently reading row data when a transaction from a different session was not committed', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should prevent a session without any lock from consistently reading row data when a transaction from a different session was not committed', () => {
         const expected = [{ _id: '1', a: 2, b: 'foo' }];
         let actual = [];
 
@@ -347,11 +319,7 @@ describe('@integration row locking in table transactions (MySQL 8.0.3)', () => {
             });
     });
 
-    it('should fail if a session tries to modify row data before a transaction with shared lock from a different session gets committed', function () {
-        if (process.env.NODE_TEST_MYSQL_VERSION !== '8.0.3') {
-            return this.skip();
-        }
-
+    it('should fail if a session tries to modify row data before a transaction with shared lock from a different session gets committed', () => {
         const deadlock = sessionA
             .startTransaction()
             .then(() => {
