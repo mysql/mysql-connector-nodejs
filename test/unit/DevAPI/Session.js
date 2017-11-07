@@ -4,11 +4,9 @@
 
 const Client = require('lib/Protocol/Client');
 const Duplex = require('stream').Duplex;
-const Schema = require('lib/DevAPI/Schema');
-const Session = require('lib/DevAPI/Session');
-const Statement = require('lib/DevAPI/Statement');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
+const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -16,18 +14,16 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('Session', () => {
-    let clientProto, sqlStmtExecute;
+    let Session, execute, stmtExecute;
 
     beforeEach('create fakes', () => {
-        sqlStmtExecute = td.function();
+        execute = td.function();
+        stmtExecute = td.function();
 
-        clientProto = Object.assign({}, Client.prototype);
-        Client.prototype.sqlStmtExecute = sqlStmtExecute;
+        Session = proxyquire('lib/DevAPI/Session', { './StmtExecute': stmtExecute });
     });
 
     afterEach('reset fakes', () => {
-        Client.prototype = clientProto;
-
         td.reset();
     });
 
@@ -71,9 +67,11 @@ describe('Session', () => {
     });
 
     context('server access methods', () => {
-        let authenticate, capabilitiesGet, createSocket;
+        let authenticate, capabilitiesGet, clientProto, createSocket;
 
         beforeEach('create fakes', () => {
+            clientProto = Object.assign({}, Client.prototype);
+
             authenticate = td.function();
             capabilitiesGet = td.function();
             createSocket = td.function();
@@ -83,6 +81,10 @@ describe('Session', () => {
 
             td.when(authenticate(), { ignoreExtraArgs: true }).thenResolve();
             td.when(createSocket(), { ignoreExtraArgs: true }).thenResolve(new Duplex());
+        });
+
+        afterEach(() => {
+            Client.prototype = clientProto;
         });
 
         context('connect()', () => {
@@ -361,10 +363,10 @@ describe('Session', () => {
                 const expected = { foobar: { schema } };
 
                 session.getSchema = td.function();
-                session._client = Object.assign({}, this._client, { sqlStmtExecute });
 
+                td.when(execute(td.callback([schema]))).thenResolve(expected);
+                td.when(stmtExecute(session, 'SHOW DATABASES')).thenReturn({ execute });
                 td.when(session.getSchema(schema)).thenReturn({ schema });
-                td.when(sqlStmtExecute('SHOW DATABASES', [], td.callback([schema]))).thenResolve();
 
                 return expect(session.getSchemas()).to.eventually.deep.equal(expected);
             });
@@ -377,10 +379,10 @@ describe('Session', () => {
                 const expected = { schema };
 
                 session.getSchema = td.function();
-                session._client = Object.assign({}, this._client, { sqlStmtExecute });
 
+                td.when(execute()).thenResolve();
+                td.when(stmtExecute(session, `CREATE DATABASE \`${schema}\``)).thenReturn({ execute });
                 td.when(session.getSchema(schema)).thenReturn(expected);
-                td.when(sqlStmtExecute(`CREATE DATABASE \`${schema}\``)).thenResolve();
 
                 return expect(session.createSchema(schema)).to.eventually.deep.equal(expected);
             });
@@ -389,38 +391,32 @@ describe('Session', () => {
         context('dropSchema()', () => {
             it('should return true if the schema was dropped', () => {
                 const session = new Session({});
-                const schema = 'foobar';
 
-                session._client = Object.assign({}, this._client, { sqlStmtExecute });
+                td.when(execute()).thenResolve(true);
+                td.when(stmtExecute(session, 'DROP DATABASE `foo`')).thenReturn({ execute });
 
-                td.when(sqlStmtExecute(`DROP DATABASE \`${schema}\``)).thenResolve(true);
-
-                return expect(session.dropSchema(schema)).to.eventually.be.true;
+                return expect(session.dropSchema('foo')).to.eventually.be.true;
             });
 
             it('should return true if the schema does not exist', () => {
                 const session = new Session({});
-                const schema = 'foobar'
                 const error = new Error();
                 error.info = { code: 1008 };
 
-                session._client = Object.assign({}, this._client, { sqlStmtExecute });
+                td.when(execute()).thenReject(error);
+                td.when(stmtExecute(session, 'DROP DATABASE `foo`')).thenReturn({ execute });
 
-                td.when(sqlStmtExecute(`DROP DATABASE \`${schema}\``)).thenReject(error);
-
-                return expect(session.dropSchema(schema)).to.eventually.be.true;
+                return expect(session.dropSchema('foo')).to.eventually.be.true;
             });
 
             it('should fail if an unexpected error was thrown', () => {
                 const session = new Session({});
-                const schema = 'foobar';
                 const error = new Error('foobar');
 
-                session._client = Object.assign({}, this._client, { sqlStmtExecute });
+                td.when(execute()).thenReject(error);
+                td.when(stmtExecute(session, 'DROP DATABASE `foo`')).thenReturn({ execute });
 
-                td.when(sqlStmtExecute(`DROP DATABASE \`${schema}\``)).thenReject(error);
-
-                return expect(session.dropSchema(schema)).to.eventually.be.rejectedWith(error);
+                return expect(session.dropSchema('foo')).to.eventually.be.rejectedWith(error);
             });
         });
     });
@@ -434,41 +430,34 @@ describe('Session', () => {
     });
 
     context('executeSql()', () => {
-        it('should return an instance of Statement', () => {
+        it('should create a StmtExecute query with a given statement', () => {
             const session = new Session({});
 
-            expect(session.executeSql('foo')).to.be.an.instanceOf(Statement);
+            td.when(stmtExecute(session, 'foo')).thenReturn();
+
+            session.executeSql('foo');
+
+            expect(td.explain(stmtExecute).callCount).to.equal(1);
         });
 
-        it('should create a Statement using the session client', () => {
+        it('should create a StmtExecute query with optional arguments', () => {
             const session = new Session({});
 
-            session._client = 'foo';
+            td.when(stmtExecute(session, 'foo', ['bar', 'baz'])).thenReturn();
 
-            const statement = session.executeSql();
+            session.executeSql('foo', 'bar', 'baz');
 
-            expect(statement._client).to.equal('foo');
+            expect(td.explain(stmtExecute).callCount).to.equal(1);
         });
 
-        it('should create a Statement using the provided query', () => {
+        it('should create a StmtExecute query with optional arguments provided as an array', () => {
             const session = new Session({});
-            const statement = session.executeSql('foo');
 
-            expect(statement._query).to.equal('foo');
-        });
+            td.when(stmtExecute(session, 'foo', ['bar', 'baz'])).thenReturn();
 
-        it('should create a Statement using the data provided as arguments', () => {
-            const session = new Session({});
-            const statement = session.executeSql('foo', 'bar', 'baz');
+            session.executeSql('foo', ['bar', 'baz']);
 
-            expect(statement._args).to.deep.equal(['bar', 'baz']);
-        });
-
-        it('should create a Statement using the data provided as an array', () => {
-            const session = new Session({});
-            const statement = session.executeSql('foo', ['bar', 'baz']);
-
-            expect(statement._args).to.deep.equal(['bar', 'baz']);
+            expect(td.explain(stmtExecute).callCount).to.equal(1);
         });
     });
 

@@ -9,7 +9,7 @@ const Result = require('lib/DevAPI/Result');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-describe('Statement', () => {
+describe.skip('Statement', () => {
     let sqlStmtExecute;
 
     beforeEach('create fakes', () => {

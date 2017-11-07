@@ -14,7 +14,8 @@ chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
-describe('ViewFactory', () => {
+// TODO(Rui): this module will be removed.
+describe.skip('ViewFactory', () => {
     context('definedAs()', () => {
         it('should throw an error for collection queries', () => {
             const origin = new ViewFactory();

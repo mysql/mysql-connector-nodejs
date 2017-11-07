@@ -14,14 +14,16 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('Collection', () => {
-    let collection, collectionRemove, sqlStmtExecute;
+    let collection, collectionRemove, execute, stmtExecute;
 
     beforeEach('create fakes', () => {
         collectionRemove = td.function();
-        sqlStmtExecute = td.function();
+        execute = td.function();
+        stmtExecute = td.function();
 
         collection = proxyquire('lib/DevAPI/Collection', {
-            './CollectionRemove': collectionRemove
+            './CollectionRemove': collectionRemove,
+            './StmtExecute': stmtExecute
         });
     });
 
@@ -45,17 +47,19 @@ describe('Collection', () => {
 
     context('existsInDatabase()', () => {
         it('should return true if exists in database', () => {
-            const instance = collection({ _client: { sqlStmtExecute } }, 'foo', 'bar');
+            const instance = collection('foo', 'bar', 'baz');
 
-            td.when(sqlStmtExecute('list_objects', ['foo', 'bar'], td.callback(['bar']), null, 'xplugin')).thenResolve();
+            td.when(execute(td.callback(['baz']))).thenResolve();
+            td.when(stmtExecute('foo', 'list_objects', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
 
             return expect(instance.existsInDatabase()).to.eventually.be.true;
         });
 
         it('should return false if it does not exist in database', () => {
-            const instance = collection({ _client: { sqlStmtExecute } }, 'foo', 'bar');
+            const instance = collection('foo', 'bar', 'baz');
 
-            td.when(sqlStmtExecute('list_objects', ['foo', 'bar'], td.callback([]), null, 'xplugin')).thenResolve();
+            td.when(execute(td.callback([]))).thenResolve();
+            td.when(stmtExecute('foo', 'list_objects', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
 
             return expect(instance.existsInDatabase()).to.eventually.be.false;
         });
@@ -63,18 +67,20 @@ describe('Collection', () => {
 
     context('count()', () => {
         it('should return the number of documents in a collection', () => {
-            const instance = collection({ _client: { sqlStmtExecute } }, 'foo', 'bar');
+            const instance = collection('foo', 'bar', 'baz');
 
-            td.when(sqlStmtExecute('SELECT COUNT(*) FROM `foo`.`bar`', [], td.callback([1]))).thenResolve();
+            td.when(execute(td.callback([1]))).thenResolve();
+            td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
             return expect(instance.count()).to.eventually.equal(1);
         });
 
         it('should fail if an unexpected error is thrown', () => {
-            const instance = collection({ _client: { sqlStmtExecute } }, 'foo', 'bar');
+            const instance = collection('foo', 'bar', 'baz');
             const error = new Error('foobar');
 
-            td.when(sqlStmtExecute('SELECT COUNT(*) FROM `foo`.`bar`', [], td.callback([1]))).thenReject(error);
+            td.when(execute(td.callback([1]))).thenReject(error);
+            td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
             return expect(instance.count()).to.eventually.be.rejectedWith(error);
         });

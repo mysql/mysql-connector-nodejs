@@ -5,7 +5,7 @@
 // npm `test` script was updated to use NODE_PATH=.
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const table = require('lib/DevAPI/Table');
+const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -13,10 +13,13 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('Table', () => {
-    let sqlStmtExecute;
+    let execute, stmtExecute, table;
 
     beforeEach('create fakes', () => {
-        sqlStmtExecute = td.function();
+        execute = td.function();
+        stmtExecute = td.function();
+
+        table = proxyquire('lib/DevAPI/Table', { './StmtExecute': stmtExecute });
     });
 
     afterEach('reset fakes', () => {
@@ -33,19 +36,21 @@ describe('Table', () => {
 
     context('existsInDatabase()', () => {
         it('should return true if the table exists in database', () => {
-            const instance = table({ _client: { sqlStmtExecute } }, 'foo', 'bar');
+            const instance = table('foo', 'bar', 'baz');
             const query = 'SELECT COUNT(*) cnt FROM information_schema.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
 
-            td.when(sqlStmtExecute(query, ['def', 'foo', 'bar'], td.callback(['bar']))).thenResolve();
+            td.when(execute(td.callback(['bar']))).thenResolve();
+            td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
             return expect(instance.existsInDatabase()).to.eventually.be.true;
         });
 
         it('should return false if the table does not exist in database', () => {
-            const instance = table({ _client: { sqlStmtExecute } }, 'foo', 'bar');
+            const instance = table('foo', 'bar', 'baz');
             const query = 'SELECT COUNT(*) cnt FROM information_schema.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
 
-            td.when(sqlStmtExecute(query, ['def', 'foo', 'bar'], td.callback([]))).thenResolve();
+            td.when(execute(td.callback([]))).thenResolve();
+            td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
             return expect(instance.existsInDatabase()).to.eventually.be.false;
         });
@@ -53,19 +58,21 @@ describe('Table', () => {
 
     context('isView()', () => {
         it('should return true if the table exists in database', () => {
-            const instance = table({ _client: { sqlStmtExecute } }, 'foo', 'bar');
+            const instance = table('foo', 'bar', 'baz');
             const query = 'SELECT COUNT(*) cnt FROM information_schema.VIEWS WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
 
-            td.when(sqlStmtExecute(query, ['def', 'foo', 'bar'], td.callback(['bar']))).thenResolve();
+            td.when(execute(td.callback(['bar']))).thenResolve();
+            td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
             return expect(instance.isView()).to.eventually.be.true;
         });
 
         it('should return false if the table does not exist in database', () => {
-            const instance = table({ _client: { sqlStmtExecute } }, 'foo', 'bar');
+            const instance = table('foo', 'bar', 'baz');
             const query = 'SELECT COUNT(*) cnt FROM information_schema.VIEWS WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
 
-            td.when(sqlStmtExecute(query, ['def', 'foo', 'bar'], td.callback([]))).thenResolve();
+            td.when(execute(td.callback([]))).thenResolve();
+            td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
             return expect(instance.isView()).to.eventually.be.false;
         });
@@ -130,19 +137,21 @@ describe('Table', () => {
 
     context('count()', () => {
         it('should return the number of records found', () => {
-            const instance = table({ _client: { sqlStmtExecute } }, 'foo', 'bar');
+            const instance = table('foo', 'bar', 'baz');
             const count = 3;
 
-            td.when(sqlStmtExecute('SELECT COUNT(*) FROM `foo`.`bar`', [], td.callback([count]))).thenResolve();
+            td.when(execute(td.callback([count]))).thenResolve();
+            td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
             return expect(instance.count()).to.eventually.equal(count);
         });
 
         it('should fail if an expected error is thrown', () => {
-            const instance = table({ _client: { sqlStmtExecute } }, 'foo', 'bar');
+            const instance = table('foo', 'bar', 'baz');
             const error = new Error('foobar');
 
-            td.when(sqlStmtExecute('SELECT COUNT(*) FROM `foo`.`bar`'), { ignoreExtraArgs: true }).thenReject(error);
+            td.when(execute(), { ignoreExtraArgs: true }).thenReject(error);
+            td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
             return expect(instance.count()).to.eventually.be.rejectedWith(error);
         });

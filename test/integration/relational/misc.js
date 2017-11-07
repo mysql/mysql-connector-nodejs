@@ -6,13 +6,13 @@ const Column = require('lib/DevAPI/Column');
 const expect = require('chai').expect;
 const fixtures = require('test/fixtures');
 
-// TODO(rui.quelhas): extract tests into proper self-contained suites.
+// TODO(Rui): extract tests into proper self-contained suites.
 describe('@integration relational miscellaneous tests', () => {
     let session, schema;
 
     beforeEach('set context', () => {
         return fixtures.setup().then(suite => {
-            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            // TODO(Rui): use ES6 destructuring assignment for node >=6.0.0
             session = suite.session;
             schema = suite.schema;
         });
