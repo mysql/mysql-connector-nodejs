@@ -5,6 +5,7 @@ chai.should();
 var assert = require("assert");
 
 describe('Client', function () {
+    // TODO(Rui): update tests when the remaining Client interface is refactored.
     describe('capabilitiesSet', function () {
         it('should send a Capabilities Set message', function () {
             var sentData = null;
