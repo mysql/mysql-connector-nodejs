@@ -1,41 +1,18 @@
-"use strict";
+'use strict';
 
-GLOBAL.chai = require("chai");
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+
 chai.config.includeStack = true;
-const chaiAsPromised = require("chai-as-promised"),
-    spies = require('chai-spies');
-
 chai.use(chaiAsPromised);
-chai.use(spies);
 
-GLOBAL.mysqlx = require('../');
-GLOBAL.Client = require('../lib/Protocol/Client');
-GLOBAL.Server = require('../lib/Protocol/Server');
-GLOBAL.Encoding = require('../lib/Protocol/Encoding');
-GLOBAL.Messages = require('../lib/Protocol/Messages');
+global.chai = chai;
 
-GLOBAL.nullStream = {
+global.Client = require('lib/Protocol/Client');
+global.Encoding = require('lib/Protocol/Encoding');
+global.Messages = require('lib/Protocol/Messages');
+
+global.nullStream = {
     on: function () {},
     write: function () {}
-};
-
-GLOBAL.NullStreamFactory = {
-    createSocket: function () {
-        return new Promise(function (resolve) {
-            resolve(nullStream);
-        });
-    }
-};
-
-var NullAuth = require('../lib/Authentication/NullAuth');
-
-GLOBAL.mysqlxtest = {
-    getNullSession: function (done) {
-        return mysqlx.getSession({
-            authMethod: "NULL",
-            socketFactory: NullStreamFactory
-        }).catch(function (err) {
-            done(err);
-        });
-    }
 };

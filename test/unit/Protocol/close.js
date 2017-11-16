@@ -1,18 +1,27 @@
-"use strict";
+'use strict';
 
-chai.should();
+/* eslint-env node, mocha */
+/* global nullStream */
 
-var assert = require("assert");
+const Client = require('lib/Protocol/Client');
+const Encoding = require('lib/Protocol/Encoding');
+const Messages = require('lib/Protocol/Messages');
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
 
-describe('Client', function () {
-    describe('close', function () {
-        it('should throw if row callback is no function', function () {
-            const protocol = new Client(nullStream),
-                promise = protocol.close();
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
+
+describe('Client', () => {
+    context('close', () => {
+        it('should throw if row callback is no function', () => {
+            const protocol = new Client(nullStream);
+            const promise = protocol.close();
 
             protocol.handleNetworkFragment(Encoding.encodeMessage(Messages.ServerMessages.OK, {}, Encoding.serverMessages));
 
-            return promise.should.be.fullfilled;
+            return expect(promise).to.be.fulfilled;
         });
     });
 });
