@@ -2,17 +2,14 @@
     "Getting_Started": {
         "title": "Getting Started"
     },
-    "Managing_Database_Objects": {
-        "title": "Managing Database Objects"
+    "Managing_Databases": {
+        "title": "Managing Databases"
     },
     "Row_Locking": {
         "title": "Row Locking"
     },
     "Secure_Sessions": {
         "title": "Secure Sessions"
-    },
-    "Table_Creation_API": {
-        "title": "Table Creation API"
     },
     "Working_with_Collections": {
         "title": "Working with Collections"

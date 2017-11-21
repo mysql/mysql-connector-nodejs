@@ -33,19 +33,11 @@ describe('@integration row locking in table transactions', () => {
             });
     });
 
-    beforeEach('create table', () => {
-        const schema = sessionA.getSchema(config.schema);
-
-        return schema
-            .createTable('test')
-            .addColumn(schema
-                .columnDef('_id', schema.Type.Varchar, 10)
-                .notNull()
-                .primaryKey()
-            )
-            .addColumn(schema.columnDef('a', schema.Type.Int))
-            .addColumn(schema.columnDef('b', schema.Type.Varchar, 10))
-            .execute();
+    beforeEach('create table', function () {
+        return sessionA.sql(`CREATE TABLE ${config.schema}.test (
+            _id VARCHAR(10) NOT NULL PRIMARY KEY,
+            a INT,
+            b VARCHAR(10))`).execute()
     });
 
     beforeEach('add fixtures', () => {

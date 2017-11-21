@@ -1,3 +1,58 @@
+## Creating a Table
+
+`Session.sql()` API is exposed to the user for the purpose of executing raw SQL commands on the server.
+MySQL Tables can be created using this API as shown below:
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .sql('CREATE TABLE schemaName.tableName (column INT)')
+            .execute()
+            .then(() => {
+                return session.getSchema('schemaName').getTable('tableName');
+            });
+    })
+    .then(table => {
+        // work with the Table object
+    })
+    .catch(err => {
+        // something went wrong
+    });
+```
+
+## Dropping a Table
+
+Consider a table `testSchema.testTable`.
+We can drop this table using the `Session.sql()` API similar to above.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .sql('CREATE TABLE schemaName.tableName (column INT)')
+            .execute()
+            .then(() => session);
+    })
+    .then(session => {
+        return session
+            .sql(`DROP TABLE testSchema.testTable`)
+            .execute();
+    })
+    .then(() => {
+        // do other things
+    })
+    .catch(err => {
+        // something went wrong
+    });
+```
+
 ## Handling data in existing tables
 
 Considering a table `testSchema.testTable` such as the following:

@@ -1,3 +1,52 @@
+The X DevAPI provides an APIs for creating collections and relational
+tables. In this tutorial the Connector/Node.JS implementations of this
+API are presented.
+
+All following examples assume a session was created and a `session`
+object exists. If you don't know how to create a session see the
+{@tutorial Getting_Started} tutorial.
+
+## Creating Collections
+
+A collection is a special-purpose table for storing documents. For
+creating a collection the user only has to provide a name to
+{@link Schema#createCollection}:
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session
+            .getSchema("test");
+            .createCollection("collname");
+    .then(collection => {
+        // ... work with the Collection object ...
+    }).catch(err => {
+        // ... something went wrong ...
+    });
+```
+
+As you can see the`createColletion` function returns a Promise
+which resolves to a {@link Collection} object on success.
+
+### Dropping a collection
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://localhost:33060')
+    .then(session => {
+        const schema = session.getSchema('foo');
+        return schema.createCollection('bar').then(() => schema);
+    })
+    .then(schema => {
+        return schema.dropCollection('bar');
+    });
+```
+
 ## Handling documents in existing collections
 
 Considering a collection `testSchema.testCollection` containing the following documents:

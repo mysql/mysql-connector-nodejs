@@ -4,6 +4,7 @@
 
 const expect = require('chai').expect;
 const fixtures = require('test/fixtures');
+const properties = require('test/properties');
 
 describe('@integration relational table select', () => {
     let session, schema;
@@ -17,12 +18,10 @@ describe('@integration relational table select', () => {
     });
 
     beforeEach('create table', () => {
-        return schema
-            .createTable('test')
-            .addColumn(schema.columnDef('id', schema.Type.Int))
-            .addColumn(schema.columnDef('name', schema.Type.Varchar, 4))
-            .addColumn(schema.columnDef('age', schema.Type.Int))
-            .execute();
+        return session.sql(`CREATE TABLE ${properties.schema}.test (
+            id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255),
+            age INT)`).execute();
     });
 
     afterEach('clear context', () => {
