@@ -29,7 +29,6 @@
 const Authentication = require('./lib/Authentication');
 const Session = require('./lib/DevAPI/Session');
 const Expr = require('./lib/Protocol/Encoder/Expr');
-const configManager = require('./lib/DevAPI/SessionConfigManager');
 const parseUri = require('./lib/DevAPI/Util/URIParser');
 const query = require('./lib/DevAPI/Query');
 
@@ -37,7 +36,6 @@ const query = require('./lib/DevAPI/Query');
  * @module mysqlx
  */
 
-const config = configManager();
 
 /**
  * Create a session instance.
@@ -61,70 +59,40 @@ function createSession (configuration) {
 /**
  * Load a new session.
  * @private
- * @param {string|URI|module:SessionConfig} session
- * @see {@link module:SessionConfig|SessionConfig}
- * @param {Object} overrides - session properties to override
+ * @param {string|URI} session
  * @returns {Promise.<Session>}
  */
-function loadSession (properties, overrides) {
+function loadSession (properties) {
     if (typeof properties.getUri !== 'function') {
         return createSession(properties);
     }
 
-    const base = parseUri(properties.getUri());
-    const configuration = Object.assign({}, base, overrides, {
-        endpoints: [{
-            host: overrides.host || base.endpoints[0].host,
-            port: overrides.port || base.endpoints[0].port,
-            socket: overrides.socket || base.endpoints[0].socket
-        }]
-    });
-
-    return createSession(configuration);
+    return createSession(Object.assign({}, parseUri(properties.getUri())));
 }
 
 /**
  * Load a new or existing session.
- * @param {string|URI|SessionConfig} properties - session properties
- * @see {@link module:SessionConfig|SessionConfig}
- * @param {string} [password] - user password
+ * @param {string|URI} properties - session properties
  * @returns {Promise.<Session>}
  */
-exports.getSession = function (properties, password) {
-    let configuration = {};
+exports.getSession = function (input) {
+    const hasPlainObjectInput = typeof input === 'object' && !Array.isArray(input);
+    const hasStringInput = typeof input === 'string';
+
+    if (!hasPlainObjectInput && !hasStringInput) {
+        return Promise.reject(new Error('Invalid parameter. `getSession()` needs a configuration object or a connection string'));
+    }
+
+    if (hasPlainObjectInput) {
+        return createSession(input);
+    }
 
     try {
-        // properties is a JSON string
-        configuration = JSON.parse(properties);
+        return createSession(parseUri(input));
     } catch (err) {
-        if (err.name !== 'SyntaxError') {
-            return Promise.reject(err);
-        }
-
-        // properties is an URI, an object or a dictionary
-        configuration = properties;
+        return Promise.reject(err);
     }
-
-    password = password || configuration.dbPassword;
-
-    if (!configuration.sessionName) {
-        return loadSession(configuration, { dbPassword: password });
-    }
-
-    const base = Object.assign({}, configuration, { dbPassword: password });
-    delete base.sessionName;
-
-    return config.get(configuration.sessionName)
-        .then(instance => loadSession(instance, base));
 };
-
-/**
- * Manage persisted session configurations.
- * @type {SessionConfigManager}
- * @const
- * @see {@link module:SessionConfigManager|SessionConfigManager}
- */
-exports.config = config;
 
 /**
  * Additional parser options.
