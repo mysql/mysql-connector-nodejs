@@ -5,7 +5,7 @@ When adding documents to a collection, if a document does not contain an `_id`, 
 ```txt
 RFC 4122 UUID: 5C99CDfE-48CB-11E6-94F3-4A383B7fCC8B
 
-MySQL Document ID: 4A383B7FCC8B-94F3-11E6-48CB-5C99CDFE
+MySQL Document ID: 4A383B7FCC8B94F311E648CB5C99CDFE
 ```
 
 One can however provide a static `_id` for each document, or even provide a custom function to generate them in using some sort of special convention.
@@ -34,7 +34,7 @@ mysqlx
     })
     .then(docs => {
         // the `_id` value is just an example in this case
-        console.log(docs); // [{ _id: '4A383B7FCC8B-94F3-11E6-48CB-5C99CDFE', name: 'foo' }]
+        console.log(docs); // [{ _id: '4A383B7FCC8B94F311E648CB5C99CDFE', name: 'foo' }]
     })
 ```
 
