@@ -1,7 +1,6 @@
 ## Creating a Table
 
-`Session.sql()` API is exposed to the user for the purpose of executing raw SQL commands on the server.
-MySQL Tables can be created using this API as shown below:
+`Session.sql()` API is exposed to the user for the purpose of executing raw SQL commands on the server. MySQL Tables can be created using this API as shown below:
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
@@ -24,10 +23,35 @@ mysqlx
     });
 ```
 
+## Listing all the existing tables
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://localhost:33060')
+    .then(session => {
+        const schema = session.getSchema('foo');
+
+        return Promise
+            .all([
+                session.sql('CREATE TABLE foo.bar (_id SERIAL)').execute(),
+                session.sql('CREATE TABLE foo.baz (_id SERIAL)').execute()
+            ])
+            .then(() => schema);
+    })
+    .then(schema => {
+        return schema.getTables();
+    })
+    .then(tables => {
+        console.log(tables[0].getName()); // 'bar'
+        console.log(tables[1].getName()); // 'baz'
+    })
+```
+
 ## Dropping a Table
 
-Consider a table `testSchema.testTable`.
-We can drop this table using the `Session.sql()` API similar to above.
+Consider a table `testSchema.testTable`. We can drop this table using the `Session.sql()` API similar to above.
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
@@ -42,7 +66,7 @@ mysqlx
     })
     .then(session => {
         return session
-            .sql(`DROP TABLE testSchema.testTable`)
+            .sql('DROP TABLE testSchema.testTable')
             .execute();
     })
     .then(() => {
@@ -85,14 +109,14 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .getSchema('testSchema')
             .getTable('testTable')
             // The criteria is defined through the expression.
-            .delete('`name` == "foo"')
+            .delete('name = "foo"')
             .execute()
-            .then(() => table)
+            .then(() => table);
     })
     .then(table => {
         let resultSet = [];
 
-        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result); // [ [ 'bar', 42 ] ]
@@ -111,14 +135,14 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .getTable('testTable')
             // The criteria is defined through the expression.
             .delete()
-            .where('`name` == "foo"')
+            .where('name = "foo"')
             .execute()
-            .then(() => table)
+            .then(() => table);
     })
     .then(table => {
         let resultSet = [];
 
-        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result); // [ [ 'bar', 42 ] ]
@@ -140,12 +164,12 @@ mysqlx.getSession('mysqlx://localhost:33060')
             // The expression should evaluate to `true`.
             .delete('true')
             .execute()
-            .then(() => table)
+            .then(() => table);
     })
     .then(table => {
         let resultSet = [];
 
-        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result); // []
@@ -166,12 +190,12 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .delete()
             .where('true')
             .execute()
-            .then(() => table)
+            .then(() => table);
     })
     .then(table => {
         let resultSet = [];
 
-        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result); // []
@@ -191,15 +215,15 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .getSchema('testSchema')
             .getTable('testTable')
             // The criteria is defined through the expression.
-            .update('`name` == "foo"')
+            .update('name = "foo"')
             .set('age', 50)
             .execute()
-            .then(() => table)
+            .then(() => table);
     })
     .then(table => {
         let resultSet = [];
 
-        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result); // [ [ 'foo', 50 ], [ 'bar', 42 ] ]
@@ -218,15 +242,15 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .getTable('testTable')
             // The criteria is defined through the expression.
             .update()
-            .where('`name` == "bar"')
+            .where('name = "bar"')
             .set('age', 50)
             .execute()
-            .then(() => table)
+            .then(() => table);
     })
     .then(table => {
         let resultSet = [];
 
-        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result); // [ [ 'foo', 23 ] [ 'bar', 50 ] ]
@@ -249,12 +273,12 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .update('true')
             .set('age', 50)
             .execute()
-            .then(() => table)
+            .then(() => table);
     })
     .then(table => {
         let resultSet = [];
 
-        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result); // [ [ 'foo', 50 ] [ 'bar', 50 ] ]
@@ -276,12 +300,12 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .where('true')
             .set('name', 'qux')
             .execute()
-            .then(() => table)
+            .then(() => table);
     })
     .then(table => {
         let resultSet = [];
 
-        return table.select().orderBy('age ASC').execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return table.select().orderBy('age ASC').execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result); // [ [ 'qux', 23 ] [ 'qux', 50 ] ]

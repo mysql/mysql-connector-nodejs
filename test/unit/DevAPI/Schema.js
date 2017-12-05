@@ -175,34 +175,32 @@ describe('Schema', () => {
             td.when(execute(td.callback([]))).thenResolve();
             td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.getTables()).to.eventually.be.an.instanceof(Object).and.be.empty;
+            return expect(instance.getTables()).to.eventually.be.an.instanceof(Array).and.be.empty;
         });
 
         it('should return an object containing the existing tables', () => {
             const instance = schema('foo', 'bar');
-            const expected = instance.getTable('baz').inspect();
 
             td.when(execute(td.callback(['baz', 'TABLE']))).thenResolve();
             td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.getTables()).to.eventually.be.fulfilled
                 .then(actual => {
-                    expect(actual).to.have.all.keys('baz');
-                    expect(actual.baz.inspect()).to.deep.equal(expected);
+                    expect(actual).to.have.lengthOf(1);
+                    expect(actual[0].getName()).to.equal('baz');
                 });
         });
 
         it('should return an object containing the existing views', () => {
             const instance = schema('foo', 'bar');
-            const expected = instance.getTable('baz').inspect();
 
             td.when(execute(td.callback(['baz', 'VIEW']))).thenResolve();
             td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.getTables()).to.eventually.be.fulfilled
                 .then(actual => {
-                    expect(actual).to.have.all.keys('baz');
-                    expect(actual.baz.inspect()).to.deep.equal(expected);
+                    expect(actual).to.have.lengthOf(1);
+                    expect(actual[0].getName()).to.equal('baz');
                 });
         });
     });

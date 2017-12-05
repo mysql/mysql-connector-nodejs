@@ -96,4 +96,28 @@ describe('@integration session schema', () => {
             return expect(schema.dropCollection(null)).to.eventually.be.rejected;
         });
     });
+
+    context('fetching tables', () => {
+        it('should allow to retrieve a single table', () => {
+            return session
+                .sql(`CREATE TABLE ${schema.getName()}.foo (_id SERIAL)`)
+                .execute()
+                .then(() => {
+                    expect(schema.getTable('foo').getName()).to.equal('foo');
+                });
+        });
+
+        it('should allow to retrieve the list of existing tables', () => {
+            return session
+                .sql(`CREATE TABLE ${schema.getName()}.foo (_id SERIAL)`)
+                .execute()
+                .then(() => {
+                    return schema.getTables();
+                })
+                .then(tables => {
+                    expect(tables).to.have.lengthOf(1);
+                    expect(tables[0].getName()).to.equal('foo');
+                });
+        });
+    });
 });
