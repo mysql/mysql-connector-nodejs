@@ -50,7 +50,7 @@ describe('Collection', () => {
             const instance = collection('foo', 'bar', 'baz');
 
             td.when(execute(td.callback(['baz']))).thenResolve();
-            td.when(stmtExecute('foo', 'list_objects', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
+            td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.existsInDatabase()).to.eventually.be.true;
         });
@@ -59,7 +59,7 @@ describe('Collection', () => {
             const instance = collection('foo', 'bar', 'baz');
 
             td.when(execute(td.callback([]))).thenResolve();
-            td.when(stmtExecute('foo', 'list_objects', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
+            td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.existsInDatabase()).to.eventually.be.false;
         });
@@ -396,8 +396,6 @@ describe('Collection', () => {
         });
 
         it('should not accept index definition without valid field list', () => {
-            const instance = collection('bar', 'baz', 'qux');
-
             return expect(collection().createIndex('index', {})).to.be.rejectedWith('Invalid index definition.');
         });
 

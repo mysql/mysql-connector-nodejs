@@ -50,7 +50,7 @@ describe('Schema', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute(td.callback([]))).thenResolve();
-            td.when(stmtExecute('foo', 'list_objects', ['bar'], 'xplugin')).thenReturn({ execute });
+            td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.getCollections()).to.eventually.be.an.instanceof(Object).and.be.empty;
         });
@@ -60,7 +60,7 @@ describe('Schema', () => {
             const expected = instance.getCollection('baz').inspect();
 
             td.when(execute(td.callback(['baz', 'COLLECTION']))).thenResolve();
-            td.when(stmtExecute('foo', 'list_objects', ['bar'], 'xplugin')).thenReturn({ execute });
+            td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.getCollections()).to.eventually.be.fulfilled
                 .then(actual => {
@@ -79,7 +79,7 @@ describe('Schema', () => {
                 error.info = { code: 1050 };
 
                 td.when(execute()).thenReject(error);
-                td.when(stmtExecute('foo', 'create_collection', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
+                td.when(stmtExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
                 return expect(instance.createCollection('baz', { ReuseExistingObject: true })).to.eventually.be.fulfilled
                     .then(actual => {
@@ -93,7 +93,7 @@ describe('Schema', () => {
                 error.info = { code: 1050 };
 
                 td.when(execute()).thenReject(error);
-                td.when(stmtExecute('foo', 'create_collection', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
+                td.when(stmtExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
                 return expect(instance.createCollection('baz')).to.eventually.be.rejectedWith(error);
             });
@@ -105,7 +105,7 @@ describe('Schema', () => {
                 const expected = instance.getCollection('baz').inspect();
 
                 td.when(execute()).thenResolve();
-                td.when(stmtExecute('foo', 'create_collection', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
+                td.when(stmtExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
                 return expect(instance.createCollection('baz')).to.eventually.be.fulfilled
                     .then(actual => {
@@ -119,7 +119,7 @@ describe('Schema', () => {
                 error.info = {};
 
                 td.when(execute()).thenReject(error);
-                td.when(stmtExecute('foo', 'create_collection', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
+                td.when(stmtExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
                 return expect(instance.createCollection('baz')).to.eventually.be.rejectedWith(error);
             });
@@ -130,7 +130,7 @@ describe('Schema', () => {
                 error.info = {};
 
                 td.when(execute()).thenReject(error);
-                td.when(stmtExecute('foo', 'create_collection', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
+                td.when(stmtExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
                 return expect(instance.createCollection('baz', { ReuseExistingObject: true })).to.eventually.be.rejectedWith(error);
             });
@@ -142,7 +142,7 @@ describe('Schema', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute()).thenResolve();
-            td.when(stmtExecute('foo', 'drop_collection', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
+            td.when(stmtExecute('foo', 'drop_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.dropCollection('baz')).to.eventually.be.true;
         });
@@ -153,7 +153,7 @@ describe('Schema', () => {
             error.info = { code: 1051 };
 
             td.when(execute()).thenReject(error);
-            td.when(stmtExecute('foo', 'drop_collection', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
+            td.when(stmtExecute('foo', 'drop_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.dropCollection('baz')).to.eventually.be.true;
         });
@@ -163,7 +163,7 @@ describe('Schema', () => {
             const error = new Error('foobar');
 
             td.when(execute()).thenReject(error);
-            td.when(stmtExecute('foo', 'drop_collection', ['bar', 'baz'], 'xplugin')).thenReturn({ execute });
+            td.when(stmtExecute('foo', 'drop_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.dropCollection('baz')).to.eventually.be.rejectedWith(error);
         });
@@ -174,7 +174,7 @@ describe('Schema', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute(td.callback([]))).thenResolve();
-            td.when(stmtExecute('foo', 'list_objects', ['bar'], 'xplugin')).thenReturn({ execute });
+            td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.getTables()).to.eventually.be.an.instanceof(Object).and.be.empty;
         });
@@ -184,7 +184,7 @@ describe('Schema', () => {
             const expected = instance.getTable('baz').inspect();
 
             td.when(execute(td.callback(['baz', 'TABLE']))).thenResolve();
-            td.when(stmtExecute('foo', 'list_objects', ['bar'], 'xplugin')).thenReturn({ execute });
+            td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.getTables()).to.eventually.be.fulfilled
                 .then(actual => {
@@ -198,7 +198,7 @@ describe('Schema', () => {
             const expected = instance.getTable('baz').inspect();
 
             td.when(execute(td.callback(['baz', 'VIEW']))).thenResolve();
-            td.when(stmtExecute('foo', 'list_objects', ['bar'], 'xplugin')).thenReturn({ execute });
+            td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.getTables()).to.eventually.be.fulfilled
                 .then(actual => {
