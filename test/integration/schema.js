@@ -25,18 +25,45 @@ describe('@integration session schema', () => {
         return fixtures.teardown(session, schema);
     });
 
-    it('should allow to create collections', () => {
-        const collections = ['test1', 'test2'];
+    context('creating collections', () => {
+        it('should allow to create collections', () => {
+            const collections = ['test1', 'test2'];
 
-        return expect(Promise.all([
-            schema.createCollection(collections[0]),
-            schema.createCollection(collections[1]),
-            schema.getCollections()
-        ])).to.be.fulfilled.then(result => {
-            expect(Object.keys(result[2])).to.have.lengthOf(2);
-            expect(result[2]).to.have.keys(collections);
-            expect(result[2][collections[0]].inspect()).to.deep.equal(result[0].inspect());
-            expect(result[2][collections[1]].inspect()).to.deep.equal(result[1].inspect());
+            return Promise
+                .all([
+                    schema.createCollection(collections[0]),
+                    schema.createCollection(collections[1])
+                ])
+                .then(() => {
+                    return schema.getCollections();
+                })
+                .then(result => {
+                    expect(result).to.have.lengthOf(2);
+                    expect(result[0].getName()).to.deep.equal(collections[0]);
+                    expect(result[1].getName()).to.deep.equal(collections[1]);
+                });
+        });
+    });
+
+    context('fetching collections', () => {
+        it('should allow to retrieve a single collection', () => {
+            return schema
+                .createCollection('foo')
+                .then(() => {
+                    expect(schema.getCollection('foo').getName()).to.equal('foo');
+                });
+        });
+
+        it('should allow to retrieve the list of existing collections', () => {
+            return schema
+                .createCollection('foo')
+                .then(() => {
+                    return schema.getCollections();
+                })
+                .then(collections => {
+                    expect(collections).to.have.lengthOf(1);
+                    expect(collections[0].getName()).to.equal('foo');
+                });
         });
     });
 

@@ -52,20 +52,19 @@ describe('Schema', () => {
             td.when(execute(td.callback([]))).thenResolve();
             td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.getCollections()).to.eventually.be.an.instanceof(Object).and.be.empty;
+            return expect(instance.getCollections()).to.eventually.be.an.instanceof(Array).and.be.empty;
         });
 
         it('should return an object containing the existing collections', () => {
             const instance = schema('foo', 'bar');
-            const expected = instance.getCollection('baz').inspect();
 
             td.when(execute(td.callback(['baz', 'COLLECTION']))).thenResolve();
             td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.getCollections()).to.eventually.be.fulfilled
                 .then(actual => {
-                    expect(actual).to.have.all.keys(['baz']);
-                    expect(actual.baz.inspect()).to.deep.equal(expected);
+                    expect(actual).to.have.lengthOf(1);
+                    expect(actual[0].getName()).to.deep.equal('baz');
                 });
         });
     });

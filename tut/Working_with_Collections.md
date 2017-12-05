@@ -1,16 +1,10 @@
-The X DevAPI provides an APIs for creating collections and relational
-tables. In this tutorial the Connector/Node.JS implementations of this
-API are presented.
+The X DevAPI provides an APIs for creating collections and relational tables. In this tutorial the Connector/Node.JS implementations of this API are presented.
 
-All following examples assume a session was created and a `session`
-object exists. If you don't know how to create a session see the
-{@tutorial Getting_Started} tutorial.
+All following examples assume a session was created and a `session` object exists. If you don't know how to create a session see the {@tutorial Getting_Started} tutorial.
 
 ## Creating Collections
 
-A collection is a special-purpose table for storing documents. For
-creating a collection the user only has to provide a name to
-{@link Schema#createCollection}:
+A collection is a special-purpose table for storing documents. For creating a collection the user only has to provide a name to {@link Schema#createCollection}:
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
@@ -19,19 +13,44 @@ mysqlx
     .getSession('mysqlx://localhost:33060')
     .then(session => {
         return session
-            .getSchema("test");
-            .createCollection("collname");
+            .getSchema('test');
+            .createCollection('collname');
     .then(collection => {
-        // ... work with the Collection object ...
+        // Use the Collection instance.
     }).catch(err => {
-        // ... something went wrong ...
+        // Something went wrong.
     });
 ```
 
-As you can see the`createColletion` function returns a Promise
-which resolves to a {@link Collection} object on success.
+As you can see the`createColletion` function returns a Promise which resolves to a {@link Collection} object on success.
 
-### Dropping a collection
+## Listing all the existing collections
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://localhost:33060')
+    .then(session => {
+        const schema = session.getSchema('foo');
+
+        return Promise
+            .all([
+                schema.createCollection('bar'),
+                schema.createCollection('baz')
+            ])
+            .then(() => schema);
+    })
+    .then(schema => {
+        return schema.getCollections();
+    })
+    .then(collections => {
+        console.log(collections[0].getName()); // 'bar'
+        console.log(collections[1].getName()); // 'baz'
+    })
+```
+
+## Dropping a collection
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
@@ -86,13 +105,13 @@ mysqlx.getSession('mysqlx://localhost:33060')
             // The criteria is defined through the expression.
             .remove('name = "foo"')
             .execute()
-            .then(() => collection)
+            .then(() => collection);
     })
     .then(collection => {
         const query = collection.find();
         let resultSet = [];
 
-        return query.execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return query.execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result); // [{ _id: 2, name: 'bar', meta: { nested: 'baz' } }]
@@ -112,13 +131,13 @@ mysqlx.getSession('mysqlx://localhost:33060')
             // The expression should evaluate to `true`.
             .remove('true')
             .execute()
-            .then(() => collection)
+            .then(() => collection);
     })
     .then(collection => {
         const query = collection.find();
         let resultSet = [];
 
-        return query.execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return query.execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result); // []
@@ -139,13 +158,13 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .modify('_id = 1')
             .set('name', 'baz')
             .execute()
-            .then(() => collection)
+            .then(() => collection);
     })
     .then(collection => {
         const query = collection.find();
         let resultSet = [];
 
-        return query.execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return query.execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result);
@@ -171,13 +190,13 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .set('name', 'baz')
             .set('meta.nested', 'quux')
             .execute()
-            .then(() => collection)
+            .then(() => collection);
     })
     .then(collection => {
         const query = collection.find();
         let resultSet = [];
 
-        return query.execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return query.execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result);
@@ -205,13 +224,13 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .modify('_id = 1')
             .patch({ name: 'qux', meta: { nested: null, other: 'quux' } })
             .execute()
-            .then(() => collection)
+            .then(() => collection);
     })
     .then(collection => {
         const query = collection.find();
         let resultSet = [];
 
-        return query.execute(doc => resultSet.push(doc)).then(() => resultSet)
+        return query.execute(doc => resultSet.push(doc)).then(() => resultSet);
     })
     .then(result => {
         console.log(result);
@@ -277,8 +296,9 @@ const mysqlx = require('@mysqlx/xdevapi');
 mysqlx
     .getSession('mysqlx://root@localhost:33060')
     .then(session => {
-        const collection = session.getSchema('testSchema').getCollection('testCollection');
-        return collection
+        return session
+            .getSchema('testSchema')
+            .getCollection('testCollection')
             .createIndex('zip', {
                 fields: [{
                     field: '$.zip',
@@ -303,9 +323,9 @@ const mysqlx = require('@mysqlx/xdevapi');
 mysqlx
     .getSession('mysqlx://root@localhost:33060')
     .then(session => {
-        const collection = session.getSchema('testSchema').getCollection('testCollection');
-
-        return collection
+        return session
+            .getSchema('testSchema')
+            .getCollection('testCollection')
             .createIndex('coords', {
                 fields: [{
                     field: '$.coords',
@@ -333,8 +353,10 @@ const mysqlx = require('@mysqlx/xdevapi');
 mysqlx
     .getSession('mysqlx://root@localhost:33060')
     .then(session => {
-        const collection = session.getSchema('testSchema').getCollection('testCollection');
-        return collection.dropIndex('zip');
+        return session
+            .getSchema('testSchema')
+            .getCollection('testCollection')
+            .dropIndex('zip');
     })
     .then(status => {
         console.log(status); // true
