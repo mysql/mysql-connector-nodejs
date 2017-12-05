@@ -29,8 +29,8 @@ describe('ExprParser', () => {
 
         it('should parse integers', () => {
             const literal = Parser.parse('1', { type });
-            expect(literal.output.getType()).to.equal(Scalar.Type.V_SINT);
-            expect(literal.output.getVSignedInt()).to.equal(1);
+            expect(literal.output.getType()).to.equal(Scalar.Type.V_UINT);
+            expect(literal.output.getVUnsignedInt()).to.equal(1);
         });
 
         it('should parse negative integers', () => {

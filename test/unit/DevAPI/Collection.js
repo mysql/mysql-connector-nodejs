@@ -352,4 +352,100 @@ describe('Collection', () => {
             return expect(instance.removeOne(documentId)).to.eventually.be.rejectedWith(error);
         });
     });
+
+    context('dropIndex()', () => {
+        it('should not accept invalid index name', () => {
+            return expect(collection().dropIndex()).to.be.rejectedWith('Invalid index name.');
+        });
+
+        it('should accept valid index name', () => {
+            const instance = collection('bar', 'baz', 'qux');
+            td.when(execute()).thenResolve(true);
+            td.when(stmtExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
+
+            return expect(instance.dropIndex('index')).to.eventually.be.true;
+        });
+    });
+
+    context('createIndex()', () => {
+        it('should not accept invalid index name', () => {
+            return expect(collection().createIndex()).to.be.rejectedWith('Invalid index name.');
+        });
+
+        it('should accept a valid index name and valid index definition', () => {
+            const instance = collection('bar', 'baz', 'qux');
+            const args = [{
+                name: 'index',
+                schema: 'baz',
+                collection: 'qux',
+                unique: false,
+                type: 'INDEX',
+                constraint: [ { required: false, type: 'TINYINT', member: '$.age' } ]
+            }];
+            const index = {
+                fields: [{
+                    field: '$.age',
+                    type: 'TINYINT'
+                }]
+            };
+
+            td.when(execute()).thenResolve(true);
+            td.when(stmtExecute('bar', 'create_collection_index', args, 'mysqlx')).thenReturn({ execute });
+
+            return expect(instance.createIndex('index', index)).to.eventually.be.true;
+        });
+
+        it('should not accept index definition without valid field list', () => {
+            const instance = collection('bar', 'baz', 'qux');
+
+            return expect(collection().createIndex('index', {})).to.be.rejectedWith('Invalid index definition.');
+        });
+
+        it('should not accept index definition with empty field list', () => {
+            return expect(collection().createIndex('index', { fields: [] })).to.be.rejectedWith('Invalid index definition.');
+        });
+
+        it('should not accept index definition with invalid field definition', () => {
+            const index = {
+                fields: [{
+                    field: null,
+                    type: null
+                }]
+            };
+
+            return expect(collection().createIndex('index', index)).to.be.rejectedWith('Invalid index definition.');
+        });
+
+        it('should not accept index definition with any of the field definitions missing field', () => {
+            const index = {
+                fields: [{
+                    type: 'TINYINT'
+                }]
+            };
+
+            return expect(collection().createIndex('index', index)).to.be.rejectedWith('Invalid index definition.');
+        });
+
+        it('should not accept index definition with any of the field definitions missing type', () => {
+            const index = {
+                fields: [{
+                    field: '$.age'
+                }]
+            };
+
+            return expect(collection().createIndex('index', index)).to.be.rejectedWith('Invalid index definition.');
+        });
+
+        it('should not allow unique option to be true in the index definition', () => {
+            const index = {
+                fields: [{
+                    field: '$.age',
+                    type: 'INT'
+                }],
+                unique: true
+            };
+
+            return expect(collection().createIndex('index', index)).to.be.rejectedWith('Unique indexes are currently not supported.');
+        });
+    });
 });

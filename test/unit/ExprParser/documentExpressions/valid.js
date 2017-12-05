@@ -33,13 +33,13 @@ describe('ExprParser', () => {
 
                 params.forEach(param => {
                     expect(param.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
 
-                expect(params[0].getLiteral().getVSignedInt()).to.equal(1);
-                expect(params[1].getLiteral().getVSignedInt()).to.equal(1);
-                expect(params[2].getLiteral().getVSignedInt()).to.equal(2);
-                expect(params[3].getLiteral().getVSignedInt()).to.equal(3);
+                expect(params[0].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(params[1].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(params[2].getLiteral().getVUnsignedInt()).to.equal(2);
+                expect(params[3].getLiteral().getVUnsignedInt()).to.equal(3);
 
                 expect(equalityOperator.getParamList()[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(equalityOperator.getParamList()[1].getLiteral().getType()).to.equal(Scalar.Type.V_BOOL);
@@ -63,12 +63,12 @@ describe('ExprParser', () => {
 
                 params.slice(1, params.length).forEach(param => {
                     expect(param.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
 
-                expect(params[1].getLiteral().getVSignedInt()).to.equal(1);
-                expect(params[2].getLiteral().getVSignedInt()).to.equal(2);
-                expect(params[3].getLiteral().getVSignedInt()).to.equal(3);
+                expect(params[1].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(params[2].getLiteral().getVUnsignedInt()).to.equal(2);
+                expect(params[3].getLiteral().getVUnsignedInt()).to.equal(3);
                 expect(expr.placeholders).to.deep.equal([]);
 
                 input = "field in ('one', 'two', 'three')";
@@ -119,13 +119,13 @@ describe('ExprParser', () => {
 
                 inParams.forEach(param => {
                     expect(param.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
 
-                expect(inParams[0].getLiteral().getVSignedInt()).to.equal(1);
-                expect(inParams[1].getLiteral().getVSignedInt()).to.equal(1);
-                expect(inParams[2].getLiteral().getVSignedInt()).to.equal(2);
-                expect(inParams[3].getLiteral().getVSignedInt()).to.equal(3);
+                expect(inParams[0].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(inParams[1].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(inParams[2].getLiteral().getVUnsignedInt()).to.equal(2);
+                expect(inParams[3].getLiteral().getVUnsignedInt()).to.equal(3);
 
                 expect(equalityOperator.getParamList()[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(equalityOperator.getParamList()[1].getLiteral().getType()).to.equal(Scalar.Type.V_BOOL);
@@ -162,7 +162,7 @@ describe('ExprParser', () => {
 
                 valueArray.slice(0, 2).forEach(value => {
                     expect(value.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(value.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(value.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
 
                 expect(valueArray[2].getType()).to.equal(Expr.Type.ARRAY);
@@ -359,11 +359,11 @@ describe('ExprParser', () => {
                 expect(params).to.have.lengthOf(2);
                 params.forEach(param => {
                     expect(param.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
 
-                expect(params[0].getLiteral().getVSignedInt()).to.equal(1);
-                expect(params[1].getLiteral().getVSignedInt()).to.equal(2);
+                expect(params[0].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(params[1].getLiteral().getVUnsignedInt()).to.equal(2);
                 expect(expr.placeholders).to.deep.equal([]);
 
                 input = `4 % 2`;
@@ -377,11 +377,11 @@ describe('ExprParser', () => {
                 expect(params).to.have.lengthOf(2);
                 params.forEach(param => {
                     expect(param.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
 
-                expect(params[0].getLiteral().getVSignedInt()).to.equal(4);
-                expect(params[1].getLiteral().getVSignedInt()).to.equal(2);
+                expect(params[0].getLiteral().getVUnsignedInt()).to.equal(4);
+                expect(params[1].getLiteral().getVUnsignedInt()).to.equal(2);
                 expect(expr.placeholders).to.deep.equal([]);
 
                 input = 'foo is true';
@@ -511,12 +511,12 @@ describe('ExprParser', () => {
                 expect(params).to.have.lengthOf(3);
                 params.forEach(param => {
                     expect(param.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
 
-                expect(params[0].getLiteral().getVSignedInt()).to.equal(4);
-                expect(params[1].getLiteral().getVSignedInt()).to.equal(2);
-                expect(params[2].getLiteral().getVSignedInt()).to.equal(6);
+                expect(params[0].getLiteral().getVUnsignedInt()).to.equal(4);
+                expect(params[1].getLiteral().getVUnsignedInt()).to.equal(2);
+                expect(params[2].getLiteral().getVUnsignedInt()).to.equal(6);
                 expect(expr.placeholders).to.deep.equal([]);
 
                 input = '1 not between 9 AND 10';
@@ -530,12 +530,12 @@ describe('ExprParser', () => {
                 expect(params).to.have.lengthOf(3);
                 params.forEach(param => {
                     expect(param.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
 
-                expect(params[0].getLiteral().getVSignedInt()).to.equal(1);
-                expect(params[1].getLiteral().getVSignedInt()).to.equal(9);
-                expect(params[2].getLiteral().getVSignedInt()).to.equal(10);
+                expect(params[0].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(params[1].getLiteral().getVUnsignedInt()).to.equal(9);
+                expect(params[2].getLiteral().getVUnsignedInt()).to.equal(10);
                 expect(expr.placeholders).to.deep.equal([]);
 
                 input = "'foobar!' REGEXP '.*'";
@@ -628,16 +628,16 @@ describe('ExprParser', () => {
                 let params = expr.output.getOperator().getParamList();
                 expect(params).to.have.lengthOf(2);
                 expect(params[0].getType()).to.equal(Expr.Type.LITERAL);
-                expect(params[0].getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(params[0].getLiteral().getVSignedInt()).to.equal(1);
+                expect(params[0].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(params[0].getLiteral().getVUnsignedInt()).to.equal(1);
                 expect(params[1].getType()).to.equal(Expr.Type.ARRAY);
 
                 let options = params[1].getArray().getValueList();
                 expect(options).to.have.lengthOf(3);
                 options.forEach((option, index) => {
                     expect(option.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(option.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                    expect(option.getLiteral().getVSignedInt()).to.equal(index + 1);
+                    expect(option.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                    expect(option.getLiteral().getVUnsignedInt()).to.equal(index + 1);
                 });
 
                 expect(expr.placeholders).to.deep.equal([]);
@@ -656,8 +656,8 @@ describe('ExprParser', () => {
                 let selector = params[0].getArray().getValueList();
                 expect(selector).to.have.lengthOf(1);
                 expect(selector[0].getType()).to.equal(Expr.Type.LITERAL);
-                expect(selector[0].getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(selector[0].getLiteral().getVSignedInt()).to.equal(1);
+                expect(selector[0].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(selector[0].getLiteral().getVUnsignedInt()).to.equal(1);
 
                 expect(params[1].getType()).to.equal(Expr.Type.ARRAY);
                 options = params[1].getArray().getValueList();
@@ -666,8 +666,8 @@ describe('ExprParser', () => {
                     expect(option.getType()).to.equal(Expr.Type.ARRAY);
                     expect(option.getArray().getValueList()).to.have.length(1);
                     expect(option.getArray().getValueList()[0].getType()).to.equal(Expr.Type.LITERAL);
-                    expect(option.getArray().getValueList()[0].getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                    expect(option.getArray().getValueList()[0].getLiteral().getVSignedInt()).to.equal(index + 1);
+                    expect(option.getArray().getValueList()[0].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                    expect(option.getArray().getValueList()[0].getLiteral().getVUnsignedInt()).to.equal(index + 1);
                 });
 
                 expect(expr.placeholders).to.deep.equal([]);
@@ -741,11 +741,11 @@ describe('ExprParser', () => {
                 expect(values).to.have.lengthOf(2);
                 values.forEach(value => {
                     expect(value.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(value.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(value.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
 
-                expect(values[0].getLiteral().getVSignedInt()).to.equal(45);
-                expect(values[1].getLiteral().getVSignedInt()).to.equal(46);
+                expect(values[0].getLiteral().getVUnsignedInt()).to.equal(45);
+                expect(values[1].getLiteral().getVUnsignedInt()).to.equal(46);
                 expect(expr.placeholders).to.deep.equal([]);
 
                 input = '1 in field.array';
@@ -758,8 +758,8 @@ describe('ExprParser', () => {
                 params = expr.output.getOperator().getParamList();
                 expect(params).to.have.lengthOf(2);
                 expect(params[0].getType()).to.equal(Expr.Type.LITERAL);
-                expect(params[0].getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(params[0].getLiteral().getVSignedInt()).to.equal(1);
+                expect(params[0].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(params[0].getLiteral().getVUnsignedInt()).to.equal(1);
 
                 expect(params[1].getType()).to.equal(Expr.Type.IDENT);
 
@@ -792,11 +792,11 @@ describe('ExprParser', () => {
                 expect(args).to.have.lengthOf(3);
                 args.forEach(arg => {
                     expect(arg.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(arg.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(arg.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
-                expect(args[0].getLiteral().getVSignedInt()).to.equal(1);
-                expect(args[1].getLiteral().getVSignedInt()).to.equal(2);
-                expect(args[2].getLiteral().getVSignedInt()).to.equal(3);
+                expect(args[0].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(args[1].getLiteral().getVUnsignedInt()).to.equal(2);
+                expect(args[2].getLiteral().getVUnsignedInt()).to.equal(3);
 
                 expect(expr.placeholders).to.deep.equal([]);
 
@@ -815,8 +815,8 @@ describe('ExprParser', () => {
                 expect(fields).to.have.lengthOf(1);
                 expect(fields[0].getKey()).to.equal('a');
                 expect(fields[0].getValue().getType()).to.equal(Expr.Type.LITERAL);
-                expect(fields[0].getValue().getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(fields[0].getValue().getLiteral().getVSignedInt()).to.equal(1);
+                expect(fields[0].getValue().getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(fields[0].getValue().getLiteral().getVUnsignedInt()).to.equal(1);
 
                 expect(params[1].getType()).to.equal(Expr.Type.IDENT);
                 expect(params[1].getIdentifier().getDocumentPathList()).to.have.lengthOf(0);
@@ -861,10 +861,10 @@ describe('ExprParser', () => {
                 expect(args).to.have.lengthOf(2);
                 args.forEach(arg => {
                     expect(arg.getType()).to.equal(Expr.Type.LITERAL);
-                    expect(arg.getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                    expect(arg.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 });
-                expect(args[0].getLiteral().getVSignedInt()).to.equal(1);
-                expect(args[1].getLiteral().getVSignedInt()).to.equal(5);
+                expect(args[0].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(args[1].getLiteral().getVUnsignedInt()).to.equal(5);
 
                 expect(params[1].getType()).to.equal(Expr.Type.ARRAY);
                 args = params[1].getArray().getValueList();
@@ -900,10 +900,10 @@ describe('ExprParser', () => {
                 /* eslint-disable node/no-deprecated-api */
                 expect(new Buffer(args[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar');
                 /* eslint-enable node/no-deprecated-api */
-                expect(args[1].getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(args[1].getLiteral().getVSignedInt()).to.equal(1);
-                expect(args[2].getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(args[2].getLiteral().getVSignedInt()).to.equal(3);
+                expect(args[1].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(args[1].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(args[2].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(args[2].getLiteral().getVUnsignedInt()).to.equal(3);
 
                 expect(params[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
@@ -940,14 +940,14 @@ describe('ExprParser', () => {
                 /* eslint-disable node/no-deprecated-api */
                 expect(new Buffer(args[0].getLiteral().getVString().getValue()).toString()).to.equal('[');
                 /* eslint-enable node/no-deprecated-api */
-                expect(args[1].getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(args[1].getLiteral().getVSignedInt()).to.equal(1);
+                expect(args[1].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(args[1].getLiteral().getVUnsignedInt()).to.equal(1);
                 expect(args[2].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 /* eslint-disable node/no-deprecated-api */
                 expect(new Buffer(args[2].getLiteral().getVString().getValue()).toString()).to.equal(',');
                 /* eslint-enable node/no-deprecated-api */
-                expect(args[3].getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(args[3].getLiteral().getVSignedInt()).to.equal(2);
+                expect(args[3].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(args[3].getLiteral().getVUnsignedInt()).to.equal(2);
                 expect(args[4].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 /* eslint-disable node/no-deprecated-api */
                 expect(new Buffer(args[4].getLiteral().getVString().getValue()).toString()).to.equal(']');
@@ -1023,8 +1023,8 @@ describe('ExprParser', () => {
                 expect(fields).to.have.lengthOf(1);
                 expect(fields[0].getKey()).to.equal('a');
                 expect(fields[0].getValue().getType()).to.equal(Expr.Type.LITERAL);
-                expect(fields[0].getValue().getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(fields[0].getValue().getLiteral().getVSignedInt()).to.equal(1);
+                expect(fields[0].getValue().getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(fields[0].getValue().getLiteral().getVUnsignedInt()).to.equal(1);
 
                 input = '_**._';
                 expr = Parser.parse(input);

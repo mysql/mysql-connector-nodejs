@@ -48,8 +48,8 @@ describe('Encoder', () => {
                 /* eslint-disable node/no-deprecated-api */
                 expect(new Buffer(fields[0].getLiteral().getVString().getValue()).toString()).to.equal('foo');
                 /* eslint-enable node/no-deprecated-api */
-                expect(fields[1].getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(fields[1].getLiteral().getVSignedInt()).to.equal(23);
+                expect(fields[1].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(fields[1].getLiteral().getVUnsignedInt()).to.equal(23);
                 expect(fields[2].getLiteral().getType()).to.equal(Scalar.Type.V_FLOAT);
                 expect(fields[2].getLiteral().getVFloat()).to.equal(1.1);
                 expect(fields[3].getLiteral().getType()).to.equal(Scalar.Type.V_BOOL);

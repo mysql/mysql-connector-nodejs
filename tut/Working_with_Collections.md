@@ -223,3 +223,123 @@ mysqlx.getSession('mysqlx://localhost:33060')
 ```
 
 Note: the criteria expression string provided via `modify()` establishes the filtering rules, thus any `_id` value provided as part of the properties to be updated will simply be ignored (and will not be updated).
+
+## Collection indexes
+
+Collection indexes are ordinary MySQL indexes on virtual columns that extract data from JSON document.
+To create an Index, an index name and the index definition is required.
+
+The Index Definition has the following properties:
+```
+{string} [type] - name of index's type INDEX (default) or SPATIAL.
+{array} fields - Array of Index Field objects. Each has the following properties:
+    {string} field - The Document path.
+    {string} type - see list of available types below.
+    {boolean} required - whether the generated column will be created as NOT NULL.
+    {number} [options] - describes how to handle GeoJSON documents that contain geometries with coordinate dimensions higher than 2.
+    {number} [srid] - unique value used to unambiguously identify projected, unprojected, and local spatial coordinate system definitions.
+```
+
+You can create an index with one of the following types:
+```
+INT [UNSIGNED]
+TINYINT [UNSIGNED]
+SMALLINT [UNSIGNED]
+MEDIUMINT [UNSIGNED]
+INTEGER [UNSIGNED]
+BIGINT [UNSIGNED]
+REAL [UNSIGNED]
+FLOAT [UNSIGNED]
+DOUBLE [UNSIGNED]
+DECIMAL [UNSIGNED]
+NUMERIC [UNSIGNED]
+DATE
+TIME
+TIMESTAMP
+DATETIME
+TEXT[(length)]
+GEOJSON (extra options: options, srid)
+```
+
+Additional details about spacial indexes can be found [here](https://dev.mysql.com/doc/refman/8.0/en/spatial-geojson-functions.html).
+
+### Gotchas
+
+Unique indexes are currently not supported by the xplugin, so, for now, you can only create non-unique indexes.
+
+If a collection is not empty, you can't create `SPACIAL` indexes for `GEOJSON` fields and you can't also create regular required (`NOT NULL`) indexes for `DATE` or `DATETIME` fields, due to some limitations of the xplugin.
+
+### Creating a regular index
+
+```js
+const mysqlx = require('@mysqlx/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://root@localhost:33060')
+    .then(session => {
+        const collection = session.getSchema('testSchema').getCollection('testCollection');
+        return collection
+            .createIndex('zip', {
+                fields: [{
+                    field: '$.zip',
+                    type: 'TEXT(10)',
+                    required: false
+                }]
+            });
+    })
+    .then(status => {
+        console.log(status); // true
+    })
+    .catch(err => {
+        // the operation failed
+    });
+```
+
+### Creating a spatial index
+
+```js
+const mysqlx = require('@mysqlx/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://root@localhost:33060')
+    .then(session => {
+        const collection = session.getSchema('testSchema').getCollection('testCollection');
+
+        return collection
+            .createIndex('coords', {
+                fields: [{
+                    field: '$.coords',
+                    type: 'GEOJSON',
+                    required: true,
+                    options: 1234,
+                    srid: 1234
+                }],
+                type: 'SPATIAL'
+            });
+    })
+    .then(status => {
+        console.log(status); // true
+    })
+    .catch(err => {
+        // the operation failed
+    });
+```
+
+### Dropping an index
+
+```js
+const mysqlx = require('@mysqlx/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://root@localhost:33060')
+    .then(session => {
+        const collection = session.getSchema('testSchema').getCollection('testCollection');
+        return collection.dropIndex('zip');
+    })
+    .then(status => {
+        console.log(status); // true
+    })
+    .catch(err => {
+        // the operation failed
+    });
+```

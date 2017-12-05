@@ -22,8 +22,8 @@ describe('Encoder', () => {
 
                 any = Datatypes.encodeAny(1);
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
-                expect(any.getScalar().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(any.getScalar().getVSignedInt()).to.equal(1);
+                expect(any.getScalar().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(any.getScalar().getVUnsignedInt()).to.equal(1);
 
                 any = Datatypes.encodeAny(1.2);
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
@@ -88,8 +88,8 @@ describe('Encoder', () => {
 
                 expect(values).to.have.lengthOf(2);
                 expect(values[0].getType()).to.equal(Any.Type.SCALAR);
-                expect(values[0].getScalar().getType()).to.equal(Scalar.Type.V_SINT);
-                expect(values[0].getScalar().getVSignedInt()).to.equal(1);
+                expect(values[0].getScalar().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(values[0].getScalar().getVUnsignedInt()).to.equal(1);
                 expect(values[1].getType()).to.equal(Any.Type.OBJECT);
 
                 let fields = values[1].getObj().getFldList();
