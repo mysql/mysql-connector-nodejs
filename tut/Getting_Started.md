@@ -16,7 +16,7 @@ directory from which they can be loaded. This can be done with the `npm` tool fr
 project's directory:
 
 ```sh
-$ npm install mysql-connector-nodejs-8.0.8.tar.gz
+$ npm install mysql-connector-nodejs-8.0.9.tar.gz
 ```
 
 You can also fetch the Connector directly from npmjs.com:

@@ -21,7 +21,7 @@ This library is organized in a way that it can be installed into your project us
 
 * manually download the package from [https://dev.mysql.com/downloads/connector/nodejs/](https://dev.mysql.com/downloads/connector/nodejs/) and import the library using npm:
 ```sh
-$ npm install mysql-connector-nodejs-8.0.8.tar.gz`
+$ npm install mysql-connector-nodejs-8.0.9.tar.gz`
 ```
 * use the @mysql/xdevapi package from [https://npmjs.com](https://npmjs.com) and install it:
 ```sh

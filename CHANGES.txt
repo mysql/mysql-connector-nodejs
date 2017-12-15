@@ -1,12 +1,26 @@
 =====================================================
-MySQL Connector/Node.JS 1.0 - Release Notes & Changes
+MySQL Connector/Node.JS 8.0 - Release Notes & Changes
 =====================================================
 
 MySQL Connector/Node.JS
-Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
+
+v8.0.9
+======
+
+- Rollout a new and improved expression parser
+- Partial rollout of a protobuf message encoder using stubs compiled by the official vendor compiler
+- Add support for creating and deleting collection indexes using the DevAPI
+- Add support for working with transaction savepoints via the DevAPI
+- Add support for modifying multiple document properties in bulk, using the `patch()` method
+- Remove relational (table and view) DDL API
+- Remove persistent session configuration management API
+- Fix all known expression parsing issues and caveats
+- Fix duplicate UUID generation issues
+- Fix document property projection issues, using the `fields()` method
 
 v8.0.8
 ======
