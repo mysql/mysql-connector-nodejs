@@ -42,7 +42,7 @@ mysqlx
 
 ### Unix socket connections
 
-SSL/TLS doesn't make connections via local unix sockets any more secure, so, it is not available for sessions created using this kind of connections. Any security option provided as part of a local socket connection will be ignored (this is also the default behavior of the MySQL server).
+SSL/TLS is not used with local Unix sockets.
 
 ## Disabling secure connections
 
@@ -111,9 +111,9 @@ Currently, the MySQL X plugin supports the following authentication methods:
 - [`MYSQL41`](https://dev.mysql.com/doc/internals/en/x-protocol-authentication-authentication.html#x-protocol-authentication-mysql41-authentication) (available for any kind of connection)
 - [`PLAIN`](https://dev.mysql.com/doc/internals/en/x-protocol-authentication-authentication.html#x-protocol-authentication-plain-authentication) (requires TLS)
 
-Since C/Node.js server connections are secure by default, unless one explicitely disables TLS support, the connection will use the `PLAIN` authentication method. The same happens if the server connection is established via a local UNIX socket (which does not support TLS). On the other hand, connections established via regular unencrypted TCP links will use the `MYSQL41` authentication method by default.
+Since server connections are secure by default, unless one explicitely disables TLS support, the connection will use the `PLAIN` authentication method. The same happens if the server connection is established via a local UNIX socket (which does not support TLS). On the other hand, connections established via regular unencrypted TCP links will use the `MYSQL41` authentication method by default.
 
-The user is allowed to override this automatic choice, and fallback to `MYSQL41` on secure connections. The same does not apply to insecure connections because the `PLAIN` authentication method requires TLS to be enabled.
+The user is allowed to override this automatic choice, and fallback to `MYSQL41` on secure connections. The same does not apply to insecure connections because the `PLAIN` authentication method requires TLS to be enabled. By implementing the {@link IAuthenticator} interface users can also provide their custom authentication mechanisms.
 
 #### Default security options (SSL enabled) and authentication mechanism
 

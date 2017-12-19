@@ -1,5 +1,3 @@
-## Row Locking
-
 The MySQL `SELECT` statement supports locking matching rows, for reads and for writes (`SELECT ... FOR UPDATE` or `SELECT ... LOCK IN SHARE MODE`). This also happens for the `Collection.find()` and `Table.select()` methods, which allow safe and transactional document/row updates on collections/tables by binding operations to a specific type of lock.
 
 There are two types of locks. Shared locks - `lockShared()` - allow parallel transactions to consistently read from a given collection document or table row by waiting for uncommitted transactions with write operations. Parallel write operations will fail, unless there is no active transaction. Exclusive locks - `lockExclusive()` - on the other hand, allow parallel transactions to seamlessly and consistently both read from and write to a given collection document or table row.

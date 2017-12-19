@@ -101,11 +101,11 @@ mysqlx
     })
 ```
 
-Node: the id generator function can only be provided through a session configuration object.
+Note: the id generator function can only be provided through a session configuration object.
 
 ## Single document CRUD
 
-C/Node.js provides a set of utility methods that can be used to add, remove, replace or retrieve a single specific document via its `_id` property.
+The connector provides a set of utility methods that can be used to add, remove, replace or retrieve a single specific document via its `_id` property.
 
 Consider a collection `test_schema.test_collection` containing the following documents:
 
@@ -179,7 +179,7 @@ mysqlx
 
 ### Creating or updating a single document
 
-C/Node.js also provides an additional utility method - `Collection.addOrReplaceOne()` - that allows to seamlessly either create a document with a given `_id` and properties or automatically replace an existing matching document.
+The connector also provides an additional utility method - `Collection.addOrReplaceOne()` - that allows to seamlessly either create a document with a given `_id` and properties or automatically replace an existing matching document.
 
 So, if a document with the given `_id` already exists in a collection, the behavior is the same as with `Collection.replaceOne()`.
 

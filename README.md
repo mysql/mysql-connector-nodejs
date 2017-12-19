@@ -1,15 +1,10 @@
 # MySQL Connector/Node.js with X DevAPI
 
-The Node.js Connector is an asynchronous promise-based client library for the
-X DevAPI (using the X Protocol) that was introduced in MySQL 5.7.12.
+The Node.js Connector is an asynchronous promise-based client library for the X DevAPI (using the X Protocol) that was introduced in MySQL 5.7.12.
 
-MySQL is an open-source relational database that is secure, high
-performing, and easy to use. The X DevAPI supports relational tables and JSON
-documents making it possible to use both tables and collections at the same
-time.
+MySQL is an open-source relational database that is secure, high performing, and easy to use. The X DevAPI supports relational tables and JSON documents making it possible to use both tables and collections at the same time.
 
-For general information about the X DevAPI, please refer to documentation on
-[https://dev.mysql.com/doc/x-devapi-userguide/en/](https://dev.mysql.com/doc/x-devapi-userguide/en/).
+For general information about the X DevAPI, please refer to documentation on [https://dev.mysql.com/doc/x-devapi-userguide/en/](https://dev.mysql.com/doc/x-devapi-userguide/en/).
 
 ## Requirements
 
@@ -112,6 +107,8 @@ mysqlx
         process.exit(1);
     });
 ```
+
+Check out the official [documentation](https://dev.mysql.com/doc/dev/connector-nodejs/) for more details on how to use connector.
 
 ## License
 

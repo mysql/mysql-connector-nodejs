@@ -1,8 +1,8 @@
 The X DevAPI provides an APIs for creating collections and relational tables. In this tutorial the Connector/Node.JS implementations of this API are presented.
 
-All following examples assume a session was created and a `session` object exists. If you don't know how to create a session see the {@tutorial Getting_Started} tutorial.
+All following examples assume a session was created and a `session` object exists. Check the appropriate [tutorial]{@tutorial Connecting_to_a_Server} if you don't know how to create a session. Additionally, the connector also provides an API for working with [single documents]{@tutorial Working_with_Documents}.
 
-## Creating Collections
+## Creating collections
 
 A collection is a special-purpose table for storing documents. For creating a collection the user only has to provide a name to {@link Schema#createCollection}:
 

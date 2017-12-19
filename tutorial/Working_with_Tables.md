@@ -1,6 +1,6 @@
 ## Creating a Table
 
-`Session.sql()` API is exposed to the user for the purpose of executing raw SQL commands on the server. MySQL Tables can be created using this API as shown below:
+`Session.sql()` API is exposed to execute raw SQL commands on the server. MySQL tables can be created using this API as shown below:
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
