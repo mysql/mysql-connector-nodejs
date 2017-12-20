@@ -357,18 +357,34 @@ describe('Session', () => {
         });
 
         context('getSchemas()', () => {
-            it('should return an object with the existing schemas', () => {
+            it('should return a list with the existing schemas', () => {
                 const session = new Session({});
-                const schema = 'foobar';
-                const expected = { foobar: { schema } };
+                const name = 'foobar';
+                const schema = { name };
+                const expected = [schema];
 
                 session.getSchema = td.function();
 
-                td.when(execute(td.callback([schema]))).thenResolve(expected);
+                td.when(execute(td.callback([name]))).thenResolve(expected);
                 td.when(stmtExecute(session, 'SHOW DATABASES')).thenReturn({ execute });
-                td.when(session.getSchema(schema)).thenReturn({ schema });
+                td.when(session.getSchema(name)).thenReturn(schema);
 
                 return expect(session.getSchemas()).to.eventually.deep.equal(expected);
+            });
+
+            it('should fail if an expected error is thrown', () => {
+                const session = new Session({});
+                const name = 'foobar';
+                const schema = { name };
+                const error = new Error('foobar');
+
+                session.getSchema = td.function();
+
+                td.when(execute(td.callback([name]))).thenReject(error);
+                td.when(stmtExecute(session, 'SHOW DATABASES')).thenReturn({ execute });
+                td.when(session.getSchema(name)).thenReturn(schema);
+
+                return expect(session.getSchemas()).to.be.rejectedWith(error);
             });
         });
 

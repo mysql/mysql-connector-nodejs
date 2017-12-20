@@ -208,7 +208,7 @@ describe('Schema', () => {
     context('inspect()', () => {
         it('should hide internals', () => {
             const instance = schema(null, 'foobar');
-            const expected = { schema: 'foobar' };
+            const expected = { name: 'foobar' };
 
             instance.inspect().should.deep.equal(expected);
         });

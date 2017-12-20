@@ -6,11 +6,9 @@ const Session = require('lib/DevAPI/Session');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
-const fs = require('fs');
 const fixtures = require('test/fixtures');
 const mysqlx = require('index');
 const os = require('os');
-const path = require('path');
 
 chai.use(chaiAsPromised);
 
@@ -63,9 +61,36 @@ describe('@integration X plugin session', () => {
 
             return expect(mysqlx.getSession(invalidConfig)).to.be.rejected;
         });
+
+        it('should connect to the server and create the given default schema', () => {
+            const validConfig = Object.assign({}, config, { socket: undefined });
+
+            return expect(mysqlx.getSession(validConfig)).to.be.fulfilled
+                .then(session => session.getSchemas().then(schemas => ({ schemas, session })))
+                .then(result => {
+                    expect(result.schemas).to.be.an('array');
+                    expect(result.schemas.map(schema => schema.inspect().name)).to.include(validConfig.schema);
+
+                    return result.session.close();
+                });
+        });
     });
 
     context('using a RFC-3986 URI', () => {
+        it('should connect to the server and create the given default schema', () => {
+            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
+            const uri = `mysqlx://${config.dbUser}:${config.dbPassword}@${config.host}:${config.port}/${config.schema}`;
+
+            return expect(mysqlx.getSession(uri)).to.be.fulfilled
+                .then(session => session.getSchemas().then(schemas => ({ schemas, session })))
+                .then(result => {
+                    expect(result.schemas).to.be.an('array');
+                    expect(result.schemas.map(schema => schema.inspect().name)).to.include(config.schema);
+
+                    return result.session.close();
+                });
+        });
+
         it('should connect to the server with an IPv6 host', () => {
             const ipv6Config = Object.assign({}, config, { host: '::1' });
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
@@ -201,14 +226,15 @@ describe('@integration X plugin session', () => {
     });
 
     context('using a unified connection string', () => {
-        it('should connect to the server with a string containing all the connection details', () => {
+        it('should connect to the server and create the given default schema', () => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             const uri = `${config.dbUser}:${config.dbPassword}@${config.host}:${config.port}/${config.schema}`;
 
             return expect(mysqlx.getSession(uri)).to.be.fulfilled
                 .then(session => session.getSchemas().then(schemas => ({ schemas, session })))
                 .then(result => {
-                    expect(result.schemas).to.include.keys(config.schema);
+                    expect(result.schemas).to.be.an('array');
+                    expect(result.schemas.map(schema => schema.inspect().name)).to.include(config.schema);
 
                     return result.session.close();
                 });
@@ -334,7 +360,7 @@ describe('@integration X plugin session', () => {
     });
 
     context('using invalid parameters', () => {
-        it('should not connect if parameter is not string or object', function() {
+        it('should not connect if parameter is not string or object', () => {
             return expect(mysqlx.getSession(null)).to.be.rejected;
         });
 
@@ -366,54 +392,54 @@ describe('@integration X plugin session', () => {
 
         it('should create a savepoint with the given name', () => {
             return session
-              .startTransaction()
-              .then(() => {
-                  return expect(session.setSavepoint('foo')).to.eventually.equal('foo');
-              });
+                .startTransaction()
+                .then(() => {
+                    return expect(session.setSavepoint('foo')).to.eventually.equal('foo');
+                });
         });
 
         it('should not create a savepoint with empty string', () => {
             return session
-              .startTransaction()
-              .then(() => {
-                  return expect(session.setSavepoint('')).to.be.rejectedWith('Invalid Savepoint name.');
-              });
+                .startTransaction()
+                .then(() => {
+                    return expect(session.setSavepoint('')).to.be.rejectedWith('Invalid Savepoint name.');
+                });
         });
 
         it('should release a valid savepoint', () => {
             return session
-              .startTransaction()
-              .then(() => {
-                  return session.setSavepoint('foo');
-              })
-              .then(point => {
-                  return expect(session.releaseSavepoint(point)).to.be.fulfilled;
-              });
+                .startTransaction()
+                .then(() => {
+                    return session.setSavepoint('foo');
+                })
+                .then(point => {
+                    return expect(session.releaseSavepoint(point)).to.be.fulfilled;
+                });
         });
 
         it('should not release a savepoint with empty string', () => {
             return session
-              .startTransaction()
-              .then(() => {
-                  return session.setSavepoint('foo');
-              })
-              .then(point => {
-                  return expect(session.releaseSavepoint('')).to.be.rejectedWith('Invalid Savepoint name.');
-              });
+                .startTransaction()
+                .then(() => {
+                    return session.setSavepoint('foo');
+                })
+                .then(point => {
+                    return expect(session.releaseSavepoint('')).to.be.rejectedWith('Invalid Savepoint name.');
+                });
         });
 
         it('should raise error on an invalid savepoint', () => {
             return session
-              .startTransaction()
-              .then(() => {
-                  return session.setSavepoint('foo');
-              })
-              .then(point => {
-                  return expect(session.releaseSavepoint('s')).to.be.rejected.then((err) => {
-                      expect(err.info).to.include.keys('code');
-                      expect(err.info.code).to.equal(1305);
-                  })
-              });
+                .startTransaction()
+                .then(() => {
+                    return session.setSavepoint('foo');
+                })
+                .then(point => {
+                    return expect(session.releaseSavepoint('s')).to.be.rejected.then((err) => {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(1305);
+                    });
+                });
         });
 
         it('should rollback to a valid savepoint', () => {
