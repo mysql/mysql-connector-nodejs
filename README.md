@@ -27,64 +27,46 @@ Please refer to [https://npmjs.com](https://npmjs.com) for more information on n
 
 ## Getting Started
 
-Here's a small example of how to leverage the library using MySQL as a document-store.
+Using the MySQL document-store is as easy as follows:
 
 ```js
 'use strict';
 
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession({
-        dbPassword: '<passwd>',
-        dbUser: 'root',
-        host: 'localhost',
-        port: 33060
-    })
-    .then(session => {
-        console.log('A new session has been created.');
+const options = {
+    dbPassword: '<passwd>',
+    dbUser: 'root',
+    host: 'localhost',
+    port: 33060
+};
 
+mysqlx
+    .getSession(options)
+    .then(session => {
         return session
             .createSchema('mySchema')
             .then(schema => ({ schema, session }))
     })
     .then(ctx => {
-        console.log('The schema has been created.');
-
         return ctx.schema
             .createCollection('myCollection')
             .then(collection => Object.assign(ctx, { collection }))
     })
     .then(ctx => {
-        console.log('The collection has been created.')
-
         return Promise
             .all([
                 ctx.collection
                     .add({ baz: { foo: 'bar' } }, { foo: { bar: 'baz' } })
-                    .execute()
-                    .then(() => {
-                        console.log('The documents where added to the collection.');
-                    }),
+                    .execute(),
                 ctx.collection
                     .find('baz.foo = "bar"')
-                    .execute(row => {
-                        console.log('A row has been found: %j', row);
-                    })
-                    .then(() => {
-                        console.log('The collection find operation has finished.');
-                    }),
+                    .execute(row => console.log(row)),
                 ctx.collection
                     .remove('foo.bar = "baz"')
-                    .execute()
-                    .then(() => {
-                        console.log('The document has been removed from the collection.');
-                    }),
+                    .execute(),
                 ctx.schema
                     .dropCollection('myCollection')
-                    .then(() => {
-                        console.log('The collection has been deleted.');
-                    })
             ])
             .then(() => ctx)
     })
@@ -94,12 +76,7 @@ mysqlx
             .then(() => ctx);
     })
     .then(ctx => {
-        console.log('The schema has been deleted.');
-
-        return ctx.session.close();
-    })
-    .then(() => {
-        console.log('The session has been closed.');
+        ctx.session.close();
         process.exit(0);
     })
     .catch(err => {
@@ -108,7 +85,7 @@ mysqlx
     });
 ```
 
-Check out the official [documentation](https://dev.mysql.com/doc/dev/connector-nodejs/) for more details on how to use connector.
+Check out the official [documentation](https://dev.mysql.com/doc/dev/connector-nodejs/) for more details.
 
 ## License
 
