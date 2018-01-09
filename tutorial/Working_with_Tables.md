@@ -311,3 +311,35 @@ mysqlx.getSession('mysqlx://localhost:33060')
         console.log(result); // [ [ 'qux', 23 ] [ 'qux', 50 ] ]
     });
 ```
+
+## Column Types
+
+It's important to understand how MySQL column types are translated to JavaScript/Node.js native types. One case worth a special mention is the fact every possible `number` higher than 2^53 - 1 (the maximum safest integer in JavaScript) or lower than -2^53 + 1 (the minimum safest integer in JavaScript) will be preserved as a `string` in order to avoid loosing precision. The following table depicts a comprehensive mapping between data types.
+
+| MySQL             | JavaScript/Node.js    |
+|-------------------|-----------------------|
+| `INTEGER`         | `Number`              |
+| `INT`             | `Number`              |
+| `SMALLINT`        | `Number`              |
+| `TINYINT`         | `Number`              |
+| `MEDIUMINT`       | `Number`              |
+| `BIGINT`          | `Number` or `String`  |
+| `DECIMAL`         | `Number` or `String`  |
+| `NUMERIC`         | `Number` or `String`  |
+| `FLOAT`           | `Number`              |
+| `DOUBLE`          | `Number`              |
+| `BIT`             | `String`              |
+| `DATE`            | `Date`                |
+| `DATETIME`        | `Date`                |
+| `TIMESTAMP`       | `Number`              |
+| `TIME`            | `String`              |
+| `CHAR`            | `String`              |
+| `VARCHAR`         | `String`              |
+| `BINARY`          | `String`              |
+| `VARBINARY`       | `String`              |
+| `BLOB`            | `String`              |
+| `TEXT`            | `String`              |
+| `ENUM`            | `String`              |
+| `SET`             | `Array`               |
+| `JSON`            | `Object`              |
+| Spacial           | `Buffer`              |

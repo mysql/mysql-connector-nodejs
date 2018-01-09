@@ -4,11 +4,11 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const Any = require('lib/Protocol/Stubs/mysqlx_datatypes_pb').Any;
-const Datatypes = require('lib/Protocol/Encoder/Datatypes');
+const Datatypes = require('lib/Protocol/Protobuf/Datatypes');
 const Scalar = require('lib/Protocol/Stubs/mysqlx_datatypes_pb').Scalar;
 const expect = require('chai').expect;
 
-describe('Encoder', () => {
+describe('Protobuf', () => {
     context('Datatypes', () => {
         context('encodeAny()', () => {
             it('should return a Mysqlx.Datatypes.Any object for valid literals', () => {

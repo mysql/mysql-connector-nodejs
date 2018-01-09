@@ -31,13 +31,13 @@ describe('@integration document collection find', () => {
     context('without query', () => {
         beforeEach('add fixtures', () => {
             return collection
-                .add({ _id: 'foo', foo: 'bar' })
-                .add({ _id: 'bar', bar: 'baz' })
+                .add({ _id: '1', name: 'foo' })
+                .add({ _id: '2', name: 'bar' })
                 .execute();
         });
 
         it('should return all documents in the database', () => {
-            const expected = [{ _id: 'foo', foo: 'bar' }, { _id: 'bar', bar: 'baz' }];
+            const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }];
             let actual = [];
 
             return collection

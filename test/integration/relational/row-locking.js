@@ -35,9 +35,9 @@ describe('@integration row locking in table transactions', () => {
 
     beforeEach('create table', function () {
         return sessionA.sql(`CREATE TABLE ${config.schema}.test (
-            _id VARCHAR(10) NOT NULL PRIMARY KEY,
+            _id VARCHAR(10),
             a INT,
-            b VARCHAR(10))`).execute()
+            b VARCHAR(10))`).execute();
     });
 
     beforeEach('add fixtures', () => {

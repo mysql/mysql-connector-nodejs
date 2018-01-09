@@ -298,7 +298,7 @@ describe('Collection', () => {
             const session = 'qux';
             const instance = collection(session, schema, collectionName);
 
-            td.when(execute(td.callback())).thenResolve();
+            td.when(execute(td.matchers.isA(Function))).thenResolve();
             td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ execute });
 
             return expect(instance.getOne(documentId)).to.eventually.be.null;

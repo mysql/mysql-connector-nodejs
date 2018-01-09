@@ -3,13 +3,13 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Crud = require('lib/Protocol/Encoder/Crud');
+const Crud = require('lib/Protocol/Protobuf/Crud');
 const Expr = require('lib/Protocol/Stubs/mysqlx_expr_pb').Expr;
 const Scalar = require('lib/Protocol/Stubs/mysqlx_datatypes_pb').Scalar;
 const Parser = require('lib/ExprParser');
 const expect = require('chai').expect;
 
-describe('Encoder', () => {
+describe('Protobuf', () => {
     context('Crud', () => {
         context('encodeTypedRow()', () => {
             it('should encode a typed row given a single object', () => {

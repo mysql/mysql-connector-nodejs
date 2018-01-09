@@ -1,0 +1,130 @@
+'use strict';
+
+/* eslint-env node, mocha */
+
+// npm `test` script was updated to use NODE_PATH=.
+const Frame = require('lib/Protocol/Stubs/mysqlx_notice_pb').Frame;
+const Notice = require('lib/Protocol/Protobuf/Notice');
+const Scalar = require('lib/Protocol/Stubs/mysqlx_datatypes_pb').Scalar;
+const SessionStateChanged = require('lib/Protocol/Stubs/mysqlx_notice_pb').SessionStateChanged;
+const SessionVariableChanged = require('lib/Protocol/Stubs/mysqlx_notice_pb').SessionVariableChanged;
+const Warning = require('lib/Protocol/Stubs/mysqlx_notice_pb').Warning;
+const expect = require('chai').expect;
+
+describe('Protobuf', () => {
+    context('Notice', () => {
+        context('decodeFrame()', () => {
+            it('should decode a Warning frame', () => {
+                const type = Frame.Type.WARNING;
+                const frame = new Frame();
+                frame.setScope(Frame.Scope.LOCAL);
+                frame.setType(type);
+
+                const level = Warning.Level.NOTE;
+                const warning = new Warning();
+                warning.setLevel(level);
+                warning.setCode(23);
+                warning.setMsg('foo');
+
+                frame.setPayload(warning.serializeBinary());
+
+                /* eslint-disable node/no-deprecated-api */
+                const data = new Buffer(frame.serializeBinary());
+                /* eslint-disable node/no-deprecated-api */
+
+                expect(Notice.decodeFrame(data)).to.deep.equal({ type, warning: { level, code: 23, message: 'foo' } });
+            });
+
+            it('should decode a SessionVariableChanged frame', () => {
+                const type = Frame.Type.SESSION_VARIABLE_CHANGED;
+                const frame = new Frame();
+                frame.setScope(Frame.Scope.LOCAL);
+                frame.setType(type);
+
+                const scalar = new Scalar();
+                scalar.setType(Scalar.Type.V_UINT);
+                scalar.setVUnsignedInt(23);
+
+                const warning = new SessionVariableChanged();
+                warning.setParam('foo');
+                warning.setValue(scalar);
+
+                frame.setPayload(warning.serializeBinary());
+
+                /* eslint-disable node/no-deprecated-api */
+                const data = new Buffer(frame.serializeBinary());
+                /* eslint-disable node/no-deprecated-api */
+
+                expect(Notice.decodeFrame(data)).to.deep.equal({ type, variable: { name: 'foo', value: 23 } });
+            });
+
+            it('should decode a SessionStateChanged frame', () => {
+                const type = Frame.Type.SESSION_STATE_CHANGED;
+                const frame = new Frame();
+                frame.setScope(Frame.Scope.LOCAL);
+                frame.setType(type);
+
+                const scalar = new Scalar();
+                scalar.setType(Scalar.Type.V_UINT);
+                scalar.setVUnsignedInt(2);
+
+                const param = SessionStateChanged.Parameter.GENERATED_INSERT_ID;
+                const warning = new SessionStateChanged();
+                warning.setParam(param);
+                warning.setValue(scalar);
+
+                frame.setPayload(warning.serializeBinary());
+
+                /* eslint-disable node/no-deprecated-api */
+                const data = new Buffer(frame.serializeBinary());
+                /* eslint-disable node/no-deprecated-api */
+
+                expect(Notice.decodeFrame(data)).to.deep.equal({ type, state: { type: param, value: 2 } });
+            });
+        });
+
+        context('decodeWarning()', () => {
+            it('should decode a note', () => {
+                const level = Warning.Level.NOTE;
+                const warning = new Warning();
+                warning.setLevel(level);
+                warning.setCode(23);
+                warning.setMsg('foo');
+
+                /* eslint-disable node/no-deprecated-api */
+                const data = new Buffer(warning.serializeBinary());
+                /* eslint-enable node/no-deprecated-api */
+
+                expect(Notice.decodeWarning(data)).to.deep.equal({ code: 23, level: level, message: 'foo' });
+            });
+
+            it('should decode a server warning', () => {
+                const level = Warning.Level.WARNING;
+                const warning = new Warning();
+                warning.setLevel(level);
+                warning.setCode(23);
+                warning.setMsg('foo');
+
+                /* eslint-disable node/no-deprecated-api */
+                const data = new Buffer(warning.serializeBinary());
+                /* eslint-enable node/no-deprecated-api */
+
+                expect(Notice.decodeWarning(data)).to.deep.equal({ code: 23, level: level, message: 'foo' });
+            });
+
+            it('should decode a server error', () => {
+                const level = Warning.Level.ERROR;
+                const warning = new Warning();
+                warning.setLevel(level);
+                warning.setCode(23);
+                warning.setMsg('foo');
+
+                /* eslint-disable node/no-deprecated-api */
+                const data = new Buffer(warning.serializeBinary());
+                /* eslint-enable node/no-deprecated-api */
+
+                expect(Notice.decodeWarning(data)).to.deep.equal({ code: 23, level: level, message: 'foo' });
+            });
+        });
+    });
+});

@@ -1,7 +1,6 @@
 'use strict';
 
 /* eslint-env node, mocha */
-/* global Messages */
 
 const Client = require('lib/Protocol/Client');
 const EventEmitter = require('events');
@@ -226,7 +225,7 @@ describe('Client', () => {
 
     context('network fragmentation', () => {
         // stubs
-        let FakeClient, decodeMessage, decodeMessageHeader, fakeProcess, originalProcess, workQueueProto;
+        let FakeClient, decodeMessage, decodeMessageHeader, fakeProcess, workQueueProto;
         // dummies
         let message1, message2, rawMessage1, rawMessage2;
 
@@ -241,6 +240,7 @@ describe('Client', () => {
 
             FakeClient = proxyquire('lib/Protocol/Client', { './Encoding': { decodeMessage, decodeMessageHeader } });
 
+            /* eslint-disable node/no-deprecated-api */
             rawMessage1 = new Buffer(8);
             rawMessage1.writeUInt32LE(4);
             rawMessage1.writeUInt8(1, 4);
@@ -251,8 +251,9 @@ describe('Client', () => {
             rawMessage2.writeUInt8(2, 4);
             rawMessage2.fill('bar', 5);
 
-            message1 = { messageId: 1, decoded: 'foo' };
-            message2 = { messageId: 2, decoded: 'bar' };
+            message1 = { id: 1, payload: new Buffer('foo') };
+            message2 = { id: 2, payload: new Buffer('bar') };
+            /* eslint-enable node/no-deprecated-api */
 
             td.when(fakeProcess(), { ignoreExtraArgs: true }).thenReturn();
             td.when(decodeMessage(rawMessage2), { ignoreExtraArgs: true }).thenReturn(message2);
@@ -265,7 +266,9 @@ describe('Client', () => {
 
         it('should handle messages fully-contained in a fragment', () => {
             const network = new EventEmitter();
+            /* eslint-disable no-unused-vars */
             const client = new FakeClient(network);
+            /* eslint-enable no-unused-vars */
 
             // fragment containing two messages
             const fragment = Buffer.concat([rawMessage1, rawMessage2], rawMessage1.length + rawMessage2.length);
@@ -279,7 +282,9 @@ describe('Client', () => {
 
         it('should handle message headers split between fragments', () => {
             const network = new EventEmitter();
+            /* eslint-disable no-unused-vars */
             const client = new FakeClient(network);
+            /* eslint-enable no-unused-vars */
             const partialHeader = rawMessage2.slice(0, 2);
 
             // fragment containing the first message and a partial header of the second message
@@ -297,7 +302,9 @@ describe('Client', () => {
 
         it('should handle message headers and payloads split between fragments', () => {
             const network = new EventEmitter();
+            /* eslint-disable no-unused-vars */
             const client = new FakeClient(network);
+            /* eslint-enable no-unused-vars */
             const header = rawMessage2.slice(0, 4);
 
             // fragment containing the first message and the entire header of the second message
@@ -315,7 +322,9 @@ describe('Client', () => {
 
         it('should handle message payloads split between fragments', () => {
             const network = new EventEmitter();
+            /* eslint-disable no-unused-vars */
             const client = new FakeClient(network);
+            /* eslint-enable no-unused-vars */
             const partialMessage = rawMessage2.slice(0, 6);
 
             // fragment containing the first message and a partial payload of the second message
@@ -333,7 +342,9 @@ describe('Client', () => {
 
         it('should handle smaller fragments', () => {
             const network = new EventEmitter();
+            /* eslint-disable no-unused-vars */
             const client = new FakeClient(network);
+            /* eslint-enable no-unused-vars */
             const partialMessage = rawMessage1.slice(2);
 
             // fragment containing just a partial header of the first message
@@ -351,13 +362,13 @@ describe('Client', () => {
 
         it('should handle messages split between more than two fragments', () => {
             const network = new EventEmitter();
+            /* eslint-disable no-unused-vars */
             const client = new FakeClient(network);
+            /* eslint-enable no-unused-vars */
 
             const fragment1 = rawMessage1.slice(0, 4);
             const fragment2 = rawMessage1.slice(4, 6);
             const fragment3 = rawMessage1.slice(6, 8);
-
-            const message = { messageId: 1, decoded: 'foo' };
 
             network.emit('data', fragment1);
             network.emit('data', fragment2);
@@ -369,9 +380,13 @@ describe('Client', () => {
 
         it('should handle fragments containing a lot of messages', () => {
             const network = new EventEmitter();
+            /* eslint-disable no-unused-vars */
             const client = new FakeClient(network);
+            /* eslint-enable no-unused-vars */
 
+            /* eslint-disable node/no-deprecated-api */
             let fragment = new Buffer(0);
+            /* eslint-enable node/no-deprecated-api */
 
             // The stack size on Node.js v4 seems to exceed for around 6035 messages of 8 bytes.
             // Let's keep a bit of a margin while making sure the test is fast enough.

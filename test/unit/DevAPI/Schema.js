@@ -49,7 +49,7 @@ describe('Schema', () => {
         it('should return an empty object if there are no collections', () => {
             const instance = schema('foo', 'bar');
 
-            td.when(execute(td.callback([]))).thenResolve();
+            td.when(execute(td.matchers.isA(Function))).thenResolve();
             td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.getCollections()).to.eventually.be.an.instanceof(Array).and.be.empty;
@@ -172,7 +172,7 @@ describe('Schema', () => {
         it('should return an empty object if there are no tables', () => {
             const instance = schema('foo', 'bar');
 
-            td.when(execute(td.callback([]))).thenResolve();
+            td.when(execute(td.matchers.isA(Function))).thenResolve();
             td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.getTables()).to.eventually.be.an.instanceof(Array).and.be.empty;
