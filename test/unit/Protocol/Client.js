@@ -4,6 +4,7 @@
 /* global Messages */
 
 const Client = require('lib/Protocol/Client');
+const EventEmitter = require('events');
 const WorkQueue = require('lib/WorkQueue');
 const SqlResultHandler = require('lib/Protocol/ResponseHandler').SqlResultHandler;
 const chai = require('chai');
@@ -46,10 +47,10 @@ describe('Client', () => {
             return expect(client._workQueue).to.be.an.instanceof(WorkQueue);
         });
 
-        it('should disable the `danglingFragment` option by default', () => {
+        it('should set `danglingFragment` to `null`', () => {
             const client = new Client({ on });
 
-            return expect(client._danglingFragment).to.be.false;
+            return expect(client._danglingFragment).to.be.null;
         });
 
         it('should register a `data` event listener for the provided stream', () => {
@@ -220,6 +221,168 @@ describe('Client', () => {
             td.when(client.capabilitiesSet({ tls: true })).thenReject(error);
 
             return expect(client.enableSSL({})).to.eventually.be.rejectedWith(error);
+        });
+    });
+
+    context('network fragmentation', () => {
+        // stubs
+        let FakeClient, decodeMessage, decodeMessageHeader, fakeProcess, originalProcess, workQueueProto;
+        // dummies
+        let message1, message2, rawMessage1, rawMessage2;
+
+        beforeEach('create fakes', () => {
+            workQueueProto = Object.assign({}, WorkQueue.prototype);
+
+            decodeMessage = td.function('decodeMessage');
+            decodeMessageHeader = td.function('decodeMessageHeader');
+            fakeProcess = td.function('process');
+
+            WorkQueue.prototype.process = fakeProcess;
+
+            FakeClient = proxyquire('lib/Protocol/Client', { './Encoding': { decodeMessage, decodeMessageHeader } });
+
+            rawMessage1 = new Buffer(8);
+            rawMessage1.writeUInt32LE(4);
+            rawMessage1.writeUInt8(1, 4);
+            rawMessage1.fill('foo', 5);
+
+            rawMessage2 = new Buffer(8);
+            rawMessage2.writeUInt32LE(4);
+            rawMessage2.writeUInt8(2, 4);
+            rawMessage2.fill('bar', 5);
+
+            message1 = { messageId: 1, decoded: 'foo' };
+            message2 = { messageId: 2, decoded: 'bar' };
+
+            td.when(fakeProcess(), { ignoreExtraArgs: true }).thenReturn();
+            td.when(decodeMessage(rawMessage2), { ignoreExtraArgs: true }).thenReturn(message2);
+            td.when(decodeMessage(rawMessage1), { ignoreExtraArgs: true }).thenReturn(message1);
+        });
+
+        afterEach('reset fakes', () => {
+            WorkQueue.prototype = workQueueProto;
+        });
+
+        it('should handle messages fully-contained in a fragment', () => {
+            const network = new EventEmitter();
+            const client = new FakeClient(network);
+
+            // fragment containing two messages
+            const fragment = Buffer.concat([rawMessage1, rawMessage2], rawMessage1.length + rawMessage2.length);
+
+            network.emit('data', fragment);
+
+            expect(td.explain(fakeProcess).callCount).to.equal(2);
+            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
+        });
+
+        it('should handle message headers split between fragments', () => {
+            const network = new EventEmitter();
+            const client = new FakeClient(network);
+            const partialHeader = rawMessage2.slice(0, 2);
+
+            // fragment containing the first message and a partial header of the second message
+            const fragment1 = Buffer.concat([rawMessage1, partialHeader], rawMessage1.length + partialHeader.length);
+            // fragment containing the remaining content
+            const fragment2 = rawMessage2.slice(2);
+
+            network.emit('data', fragment1);
+            network.emit('data', fragment2);
+
+            expect(td.explain(fakeProcess).callCount).to.equal(2);
+            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
+        });
+
+        it('should handle message headers and payloads split between fragments', () => {
+            const network = new EventEmitter();
+            const client = new FakeClient(network);
+            const header = rawMessage2.slice(0, 4);
+
+            // fragment containing the first message and the entire header of the second message
+            const fragment1 = Buffer.concat([rawMessage1, header], rawMessage1.length + header.length);
+            // fragment containing the payload of the second message
+            const fragment2 = rawMessage2.slice(4);
+
+            network.emit('data', fragment1);
+            network.emit('data', fragment2);
+
+            expect(td.explain(fakeProcess).callCount).to.equal(2);
+            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
+        });
+
+        it('should handle message payloads split between fragments', () => {
+            const network = new EventEmitter();
+            const client = new FakeClient(network);
+            const partialMessage = rawMessage2.slice(0, 6);
+
+            // fragment containing the first message and a partial payload of the second message
+            const fragment1 = Buffer.concat([rawMessage1, partialMessage], rawMessage1.length + partialMessage.length);
+            // fragment containing the remaining content
+            const fragment2 = rawMessage2.slice(6);
+
+            network.emit('data', fragment1);
+            network.emit('data', fragment2);
+
+            expect(td.explain(fakeProcess).callCount).to.equal(2);
+            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
+        });
+
+        it('should handle smaller fragments', () => {
+            const network = new EventEmitter();
+            const client = new FakeClient(network);
+            const partialMessage = rawMessage1.slice(2);
+
+            // fragment containing just a partial header of the first message
+            const fragment1 = rawMessage1.slice(0, 2);
+            // fragment the remaining content
+            const fragment2 = Buffer.concat([partialMessage, rawMessage2], partialMessage.length + rawMessage2.length);
+
+            network.emit('data', fragment1);
+            network.emit('data', fragment2);
+
+            expect(td.explain(fakeProcess).callCount).to.equal(2);
+            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
+        });
+
+        it('should handle messages split between more than two fragments', () => {
+            const network = new EventEmitter();
+            const client = new FakeClient(network);
+
+            const fragment1 = rawMessage1.slice(0, 4);
+            const fragment2 = rawMessage1.slice(4, 6);
+            const fragment3 = rawMessage1.slice(6, 8);
+
+            const message = { messageId: 1, decoded: 'foo' };
+
+            network.emit('data', fragment1);
+            network.emit('data', fragment2);
+            network.emit('data', fragment3);
+
+            expect(td.explain(fakeProcess).callCount).to.equal(1);
+            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
+        });
+
+        it('should handle fragments containing a lot of messages', () => {
+            const network = new EventEmitter();
+            const client = new FakeClient(network);
+
+            let fragment = new Buffer(0);
+
+            // The stack size on Node.js v4 seems to exceed for around 6035 messages of 8 bytes.
+            // Let's keep a bit of a margin while making sure the test is fast enough.
+            for (let i = 0; i < 7000; ++i) {
+                fragment = Buffer.concat([fragment, rawMessage1], fragment.length + rawMessage1.length);
+            }
+
+            network.emit('data', fragment);
+
+            expect(td.explain(fakeProcess).callCount).to.equal(7000);
+            td.explain(fakeProcess).calls.forEach(call => expect(call.args).to.deep.equal([message1]));
         });
     });
 
