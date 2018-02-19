@@ -3,8 +3,8 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Mysqlx = require('lib/Protocol/Protobuf/Mysqlx');
-const Ok = require('lib/Protocol/Stubs/mysqlx_pb').Ok;
+const Mysqlx = require('lib/Protocol/Protobuf/Adapters/Mysqlx');
+const Ok = require('lib/Protocol/Protobuf/Stubs/mysqlx_pb').Ok;
 const expect = require('chai').expect;
 
 describe('Protobuf', () => {

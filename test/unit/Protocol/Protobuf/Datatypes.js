@@ -3,9 +3,9 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Any = require('lib/Protocol/Stubs/mysqlx_datatypes_pb').Any;
-const Datatypes = require('lib/Protocol/Protobuf/Datatypes');
-const Scalar = require('lib/Protocol/Stubs/mysqlx_datatypes_pb').Scalar;
+const Any = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Any;
+const Datatypes = require('lib/Protocol/Protobuf/Adapters/Datatypes');
+const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
 const expect = require('chai').expect;
 
 describe('Protobuf', () => {

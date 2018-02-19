@@ -32,7 +32,7 @@
 
 const Authentication = require('./lib/Authentication');
 const Session = require('./lib/DevAPI/Session');
-const Expr = require('./lib/Protocol/Protobuf/Expr');
+const Expr = require('./lib/Protocol/Protobuf/Adapters/Expr');
 const parseUri = require('./lib/DevAPI/Util/URIParser');
 const query = require('./lib/DevAPI/Query');
 

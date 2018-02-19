@@ -3,9 +3,9 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Crud = require('lib/Protocol/Protobuf/Crud');
-const Expr = require('lib/Protocol/Stubs/mysqlx_expr_pb').Expr;
-const Scalar = require('lib/Protocol/Stubs/mysqlx_datatypes_pb').Scalar;
+const Crud = require('lib/Protocol/Protobuf/Adapters/Crud');
+const Expr = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
+const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
 const Parser = require('lib/ExprParser');
 const expect = require('chai').expect;
 

@@ -4,7 +4,7 @@
 
 const expect = require('chai').expect;
 const mysqlx = require('index');
-const Expr = require('lib/Protocol/Stubs/mysqlx_expr_pb').Expr;
+const Expr = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
 
 describe('@integration mysqlx', () => {
     context('expr()', () => {

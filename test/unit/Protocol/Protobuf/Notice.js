@@ -3,12 +3,12 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Frame = require('lib/Protocol/Stubs/mysqlx_notice_pb').Frame;
-const Notice = require('lib/Protocol/Protobuf/Notice');
-const Scalar = require('lib/Protocol/Stubs/mysqlx_datatypes_pb').Scalar;
-const SessionStateChanged = require('lib/Protocol/Stubs/mysqlx_notice_pb').SessionStateChanged;
-const SessionVariableChanged = require('lib/Protocol/Stubs/mysqlx_notice_pb').SessionVariableChanged;
-const Warning = require('lib/Protocol/Stubs/mysqlx_notice_pb').Warning;
+const Frame = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Frame;
+const Notice = require('lib/Protocol/Protobuf/Adapters/Notice');
+const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
+const SessionStateChanged = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').SessionStateChanged;
+const SessionVariableChanged = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').SessionVariableChanged;
+const Warning = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Warning;
 const expect = require('chai').expect;
 
 describe('Protobuf', () => {

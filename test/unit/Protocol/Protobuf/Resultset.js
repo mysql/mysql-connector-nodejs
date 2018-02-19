@@ -4,10 +4,10 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const BinaryWriter = require('google-protobuf').BinaryWriter;
-const ColumnMetaData = require('lib/Protocol/Stubs/mysqlx_resultset_pb').ColumnMetaData;
-const ContentType = require('lib/Protocol/Stubs/mysqlx_resultset_pb').ContentType_BYTES;
-const Resultset = require('lib/Protocol/Protobuf/Resultset');
-const Row = require('lib/Protocol/Stubs/mysqlx_resultset_pb').Row;
+const ColumnMetaData = require('lib/Protocol/Protobuf/Stubs/mysqlx_resultset_pb').ColumnMetaData;
+const ContentType = require('lib/Protocol/Protobuf/Stubs/mysqlx_resultset_pb').ContentType_BYTES;
+const Resultset = require('lib/Protocol/Protobuf/Adapters/Resultset');
+const Row = require('lib/Protocol/Protobuf/Stubs/mysqlx_resultset_pb').Row;
 const expect = require('chai').expect;
 
 describe('Protobuf', () => {

@@ -3,10 +3,10 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Expr = require('lib/Protocol/Protobuf/Expr');
-const ExprStub = require('lib/Protocol/Stubs/mysqlx_expr_pb').Expr;
-const Scalar = require('lib/Protocol/Stubs/mysqlx_datatypes_pb').Scalar;
-const Type = require('lib/Protocol/Stubs/mysqlx_expr_pb').Expr.Type;
+const Expr = require('lib/Protocol/Protobuf/Adapters/Expr');
+const ExprStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
+const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
+const Type = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr.Type;
 const expect = require('chai').expect;
 const proxyquire = require('proxyquire');
 const td = require('testdouble');
@@ -18,7 +18,7 @@ describe('Protobuf', () => {
         beforeEach('setup fakes', () => {
             parse = td.function();
 
-            FakeExpr = proxyquire('lib/Protocol/Protobuf/Expr', { '../../ExprParser': { parse } });
+            FakeExpr = proxyquire('lib/Protocol/Protobuf/Adapters/Expr', { '../../../ExprParser': { parse } });
         });
 
         afterEach('reset fakes', () => {
