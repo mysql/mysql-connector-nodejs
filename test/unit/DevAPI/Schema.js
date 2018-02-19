@@ -210,7 +210,7 @@ describe('Schema', () => {
             const instance = schema(null, 'foobar');
             const expected = { name: 'foobar' };
 
-            instance.inspect().should.deep.equal(expected);
+            expect(instance.inspect()).to.deep.equal(expected);
         });
     });
 });

@@ -33,7 +33,7 @@ describe('TableInsert', () => {
 
             td.when(crudInsert(query)).thenResolve(state);
 
-            return query.execute().should.eventually.deep.equal(expected);
+            return expect(query.execute()).to.eventually.deep.equal(expected);
         });
     });
 
