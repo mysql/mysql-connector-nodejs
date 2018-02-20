@@ -85,5 +85,21 @@ describe('ExprParser', () => {
             const literal = Parser.parse('null', { type });
             expect(literal.output.getType()).to.equal(Scalar.Type.V_NULL);
         });
+
+        it('should not loose precision for big numbers', () => {
+            let overflow = Number.MAX_SAFE_INTEGER + 1;
+            let literal = Parser.parse(`${overflow}`, { type });
+            expect(literal.output.getType()).to.equal(Scalar.Type.V_STRING);
+            /* eslint-disable node/no-deprecated-api */
+            expect(new Buffer(literal.output.getVString().getValue()).toString()).to.equal(`${overflow}`);
+            /* eslint-enable node/no-deprecated-api */
+
+            overflow = Number.MIN_SAFE_INTEGER - 1;
+            literal = Parser.parse(`${overflow}`, { type });
+            expect(literal.output.getType()).to.equal(Scalar.Type.V_STRING);
+            /* eslint-disable node/no-deprecated-api */
+            expect(new Buffer(literal.output.getVString().getValue()).toString()).to.equal(`${overflow}`);
+            /* eslint-enable node/no-deprecated-api */
+        });
     });
 });
