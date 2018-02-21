@@ -24,19 +24,19 @@ describe('@integration document collection remove', () => {
         collection = schema.getCollection('test');
     });
 
-    beforeEach('add fixtures', () => {
-        return collection
-            .add({ _id: '1', name: 'foo' })
-            .add({ _id: '2', name: 'bar' })
-            .add({ _id: '3', name: 'baz' })
-            .execute();
-    });
-
     afterEach('clear context', () => {
         return fixtures.teardown(session, schema);
     });
 
     context('with truthy condition', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo' })
+                .add({ _id: '2', name: 'bar' })
+                .add({ _id: '3', name: 'baz' })
+                .execute();
+        });
+
         it('should remove all documents from a collection', () => {
             let actual = [];
 
@@ -55,6 +55,14 @@ describe('@integration document collection remove', () => {
     });
 
     context('with filtering condition', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo' })
+                .add({ _id: '2', name: 'bar' })
+                .add({ _id: '3', name: 'baz' })
+                .execute();
+        });
+
         it('should remove the documents from a collection that match the criteria', () => {
             const expected = [{ _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
             let actual = [];
@@ -93,6 +101,14 @@ describe('@integration document collection remove', () => {
     });
 
     context('with limit', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo' })
+                .add({ _id: '2', name: 'bar' })
+                .add({ _id: '3', name: 'baz' })
+                .execute();
+        });
+
         it('should remove a given number of documents', () => {
             const expected = [{ _id: '3', name: 'baz' }];
             let actual = [];
@@ -107,6 +123,14 @@ describe('@integration document collection remove', () => {
     });
 
     context('single document removal', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo' })
+                .add({ _id: '2', name: 'bar' })
+                .add({ _id: '3', name: 'baz' })
+                .execute();
+        });
+
         it('should remove an existing document with the given id', () => {
             const expected = [{ _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
             let actual = [];
@@ -141,6 +165,14 @@ describe('@integration document collection remove', () => {
     });
 
     context('multi-option expressions', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo' })
+                .add({ _id: '2', name: 'bar' })
+                .add({ _id: '3', name: 'baz' })
+                .execute();
+        });
+
         it('should remove all documents that match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '2', name: 'bar' }];
             let actual = [];
@@ -162,6 +194,50 @@ describe('@integration document collection remove', () => {
 
             return collection
                 .remove("_id not in ('1', '3')")
+                .execute()
+                .then(() => {
+                    return collection
+                        .find()
+                        .execute(doc => doc && actual.push(doc));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('removal order', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo', age: 23 })
+                .add({ _id: '2', name: 'bar', age: 42 })
+                .add({ _id: '3', name: 'baz', age: 23 })
+                .execute();
+        });
+
+        it('should remove documents with a given order provided as an expression array', () => {
+            const expected = [{ _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar', age: 42 }];
+            const actual = [];
+
+            return collection
+                .remove('true')
+                .limit(1)
+                .sort(['age ASC', 'name ASC'])
+                .execute()
+                .then(() => {
+                    return collection
+                        .find()
+                        .execute(doc => doc && actual.push(doc));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should remove documents with a given order provided as multiple expressions', () => {
+            const expected = [{ _id: '1', name: 'foo', age: 23 }];
+            const actual = [];
+
+            return collection
+                .remove('true')
+                .limit(2)
+                .sort('age DESC', 'name ASC')
                 .execute()
                 .then(() => {
                     return collection
