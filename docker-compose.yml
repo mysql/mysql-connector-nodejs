@@ -3,13 +3,14 @@ version: '2.1'
 services:
     mysql:
         environment:
-            MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
             MYSQL_DATABASE: nodejsmysqlxtest
             MYSQL_PASSWORD: bar
             MYSQL_USER: foo
         image: mysql/mysql-server:${MYSQL_VERSION:-8.0}
 
-    mysql-with-ssl:
+    mysql-ssl:
+        # --default-authentication-plugin=caching_sha2_password
         command: mysqld --plugin-load=mysqlx=mysqlx.so --ssl-key=/ssl/key.pem --ssl-cert=/ssl/cert.pem
         extends:
             service: mysql
@@ -19,21 +20,28 @@ services:
         volumes:
             - ./test/fixtures/ssl/server:/ssl:ro
 
-    mysql-without-ssl:
-        command: mysqld --plugin-load=mysqlx=mysqlx.so --port=3307 --mysqlx-port=33061 --skip-ssl
+    mysql-no-ssl:
+        command: mysqld --plugin-load=mysqlx=mysqlx.so --skip-ssl
         extends:
             service: mysql
         ports:
             - 3307:3307
             - 33061:33061
 
-    mysql-with-sha256:
-        command: mysqld --plugin-load=mysqlx=mysqlx.so --port=3308 --mysqlx-port=33062 --default-authentication-plugin=sha256_password
+    mysql-sha256-auth:
+        command: mysqld --plugin-load=mysqlx=mysqlx.so --default-authentication-plugin=sha256_password
         extends:
             service: mysql
         ports:
             - 3308:3308
             - 33062:33062
+
+    mysql-native-password-auth:
+        command: mysqld --plugin-load=mysqlx=mysqlx.so --default-authentication-plugin=mysql_native_password
+        extends:
+            service: mysql
+        ports:
+            - 33063:33060
 
 volumes:
     ssl:

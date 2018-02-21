@@ -9,7 +9,7 @@ describe('@integration fragments', () => {
     let session, schema, collection;
 
     beforeEach('set context', () => {
-        return fixtures.setup().then(suite => {
+        return fixtures.createDatabase().then(suite => {
             session = suite.session;
             schema = suite.schema;
         });

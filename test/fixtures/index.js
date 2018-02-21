@@ -8,7 +8,7 @@ const mysqlx = require('index.js');
 
 const config = Object.assign({}, properties, { socket: undefined });
 
-exports.setup = function () {
+exports.createDatabase = function () {
     return mysqlx
         .getSession(config)
         .then(session => {
@@ -16,6 +16,44 @@ exports.setup = function () {
         })
         .then(session => {
             return session.createSchema(config.schema).then(schema => ({ session, schema }));
+        });
+};
+
+exports.createAccount = function (options) {
+    options = Object.assign({}, config, options);
+
+    return mysqlx
+        .getSession(config)
+        .then(session => {
+            return session
+                .sql(`CREATE USER IF NOT EXISTS '${options.user}'@'${options.host}' IDENTIFIED WITH ${options.plugin} BY '${options.password}'`)
+                .execute()
+                .then(() => session);
+        })
+        .then(session => {
+            return session
+                .sql(`GRANT SELECT ON ${options.schema}.* TO '${options.user}'@'${options.host}'`)
+                .execute()
+                .then(() => session);
+        })
+        .then(session => {
+            return session.close();
+        });
+};
+
+exports.deleteAccount = function (options) {
+    options = Object.assign({}, config, options);
+
+    return mysqlx
+        .getSession(config)
+        .then(session => {
+            return session
+                .sql(`DROP USER IF EXISTS '${options.user}'@'${options.host}'`)
+                .execute()
+                .then(() => session);
+        })
+        .then(session => {
+            return session.close();
         });
 };
 

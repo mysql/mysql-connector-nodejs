@@ -10,7 +10,7 @@ describe('@integration relational table insert', () => {
     let session, schema, table;
 
     beforeEach('set context', () => {
-        return fixtures.setup().then(suite => {
+        return fixtures.createDatabase().then(suite => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             session = suite.session;
             schema = suite.schema;
@@ -45,7 +45,7 @@ describe('@integration relational table insert', () => {
                     return table
                         .select()
                         .orderBy('age')
-                        .execute(row => actual.push(row))
+                        .execute(row => actual.push(row));
                 })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
@@ -63,7 +63,7 @@ describe('@integration relational table insert', () => {
                     return table
                         .select()
                         .orderBy('age')
-                        .execute(row => actual.push(row))
+                        .execute(row => actual.push(row));
                 })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
@@ -83,7 +83,7 @@ describe('@integration relational table insert', () => {
                     return table
                         .select()
                         .orderBy('age')
-                        .execute(row => actual.push(row))
+                        .execute(row => actual.push(row));
                 })
                 .then(() => expect(actual).to.deep.equal(expected));
         });
@@ -101,7 +101,7 @@ describe('@integration relational table insert', () => {
                     return table
                         .select()
                         .orderBy('age')
-                        .execute(row => actual.push(row))
+                        .execute(row => actual.push(row));
                 })
                 .then(() => expect(actual).to.deep.equal(expected));
         });

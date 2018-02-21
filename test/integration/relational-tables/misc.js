@@ -11,7 +11,7 @@ describe('@integration relational miscellaneous tests', () => {
     let session, schema;
 
     beforeEach('set context', () => {
-        return fixtures.setup().then(suite => {
+        return fixtures.createDatabase().then(suite => {
             // TODO(Rui): use ES6 destructuring assignment for node >=6.0.0
             session = suite.session;
             schema = suite.schema;

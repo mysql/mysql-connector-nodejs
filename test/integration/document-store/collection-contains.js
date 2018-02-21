@@ -14,7 +14,7 @@ describe('@integration document collection contains', () => {
     let session, schema, collection;
 
     beforeEach('set context', () => {
-        return fixtures.setup().then(suite => {
+        return fixtures.createDatabase().then(suite => {
             // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
             session = suite.session;
             schema = suite.schema;

@@ -30,15 +30,25 @@
 
 'use strict';
 
-const Authentication = require('./lib/Authentication');
-const Session = require('./lib/DevAPI/Session');
 const Expr = require('./lib/Protocol/Protobuf/Adapters/Expr');
+const Session = require('./lib/DevAPI/Session');
+const authenticationManager = require('./lib/Authentication/AuthenticationManager');
+const mysql41Auth = require('./lib/Authentication/MySQL41Auth');
 const parseUri = require('./lib/DevAPI/Util/URIParser');
+const plainAuth = require('./lib/Authentication/PlainAuth');
 const query = require('./lib/DevAPI/Query');
+const sha256MemoryAuth = require('./lib/Authentication/SHA256MemoryAuth');
 
 /**
  * @module mysqlx
  */
+
+/**
+ * Register default authentication plugins.
+ */
+authenticationManager.registerPlugin(mysql41Auth);
+authenticationManager.registerPlugin(plainAuth);
+authenticationManager.registerPlugin(sha256MemoryAuth);
 
 /**
  * Create a session instance.
@@ -119,16 +129,6 @@ exports.expr = function (expr, options) {
  * @const
  */
 exports.Mode = query.Type;
-
-/**
- * Get available auth methods.
- *
- * In most cases this will return <pre>[ 'PLAIN', 'MYSQL41' ]</pre>
- * @return {Array.<String>}
- */
-exports.getAuthMethods = function () {
-    return Authentication.getNames();
-};
 
 /**
  * Get the version number
