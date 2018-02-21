@@ -200,4 +200,36 @@ describe('@integration document collection find', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('sorting results', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo', age: 23 })
+                .add({ _id: '2', name: 'bar', age: 42 })
+                .add({ _id: '3', name: 'baz', age: 23 })
+                .execute();
+        });
+
+        it('should sort the results according the order clauses provided as an expression array', () => {
+            const expected = [{ _id: '3', name: 'baz', age: 23 }, { _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar', age: 42 }];
+            const actual = [];
+
+            return collection
+                .find()
+                .sort(['age ASC', 'name ASC'])
+                .execute(doc => doc && actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should sort the results according the order clauses provided as expression arguments', () => {
+            const expected = [{ _id: '2', name: 'bar', age: 42 }, { _id: '3', name: 'baz', age: 23 }, { _id: '1', name: 'foo', age: 23 }];
+            const actual = [];
+
+            return collection
+                .find()
+                .sort('age DESC', 'name ASC')
+                .execute(doc => doc && actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });

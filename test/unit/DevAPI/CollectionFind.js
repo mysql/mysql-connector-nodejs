@@ -113,4 +113,30 @@ describe('DevAPI CollectionFind', () => {
             return expect(query.execute()).to.eventually.be.rejectedWith(error);
         });
     });
+
+    context('sort()', () => {
+        it('should mix-in CollectionOrdering', () => {
+            expect(collectionFind().sort).to.be.a('function');
+        });
+
+        it('should be fluent', () => {
+            const query = collectionFind().sort();
+
+            expect(query.sort).to.be.a('function');
+        });
+
+        it('should set the order parameters provided as an array', () => {
+            const parameters = ['foo desc', 'bar desc'];
+            const query = collectionFind().sort(parameters);
+
+            expect(query.getOrderings()).to.deep.equal(parameters);
+        });
+
+        it('should set the order parameters provided as multiple arguments', () => {
+            const parameters = ['foo desc', 'bar desc'];
+            const query = collectionFind().sort(parameters[0], parameters[1]);
+
+            expect(query.getOrderings()).to.deep.equal(parameters);
+        });
+    });
 });
