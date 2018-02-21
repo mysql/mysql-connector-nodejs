@@ -87,4 +87,30 @@ describe('CollectionModify', () => {
             expect(query.setOperations(existing).patch(doc).getOperations()).to.deep.equal(expected);
         });
     });
+
+    context('sort()', () => {
+        it('should mix-in CollectionOrdering', () => {
+            expect(collectionModify().sort).to.be.a('function');
+        });
+
+        it('should be fluent', () => {
+            const query = collectionModify().sort();
+
+            expect(query.sort).to.be.a('function');
+        });
+
+        it('should set the order parameters provided as an array', () => {
+            const parameters = ['foo desc', 'bar desc'];
+            const query = collectionModify().sort(parameters);
+
+            expect(query.getOrderings()).to.deep.equal(parameters);
+        });
+
+        it('should set the order parameters provided as multiple arguments', () => {
+            const parameters = ['foo desc', 'bar desc'];
+            const query = collectionModify().sort(parameters[0], parameters[1]);
+
+            expect(query.getOrderings()).to.deep.equal(parameters);
+        });
+    });
 });

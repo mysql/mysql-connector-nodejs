@@ -292,4 +292,50 @@ describe('@integration document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('update order', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo', age: 23 })
+                .add({ _id: '2', name: 'bar', age: 42 })
+                .add({ _id: '3', name: 'baz', age: 23 })
+                .execute();
+        });
+
+        it('should modify documents with a given order provided as an expression array', () => {
+            const expected = [{ _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar', age: 42, updated: true }, { _id: '3', name: 'baz', age: 23 }];
+            const actual = [];
+
+            return collection
+                .modify('true')
+                .set('updated', true)
+                .limit(1)
+                .sort(['age DESC'])
+                .execute()
+                .then(() => {
+                    return collection
+                        .find()
+                        .execute(doc => doc && actual.push(doc));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should modify documents with a given order provided as multiple expressions', () => {
+            const expected = [{ _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar', age: 42 }, { _id: '3', name: 'baz', age: 23, updated: true }];
+            const actual = [];
+
+            return collection
+                .modify('true')
+                .set('updated', true)
+                .limit(1)
+                .sort('age ASC', 'name ASC')
+                .execute()
+                .then(() => {
+                    return collection
+                        .find()
+                        .execute(doc => doc && actual.push(doc));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });
