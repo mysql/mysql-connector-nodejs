@@ -14,7 +14,7 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('@integration authentication', () => {
-    describe('mysql_native_password', () => {
+    context('mysql_native_password', () => {
         let auth, user, password;
 
         beforeEach('setup test account', () => {
@@ -274,6 +274,7 @@ describe('@integration authentication', () => {
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
+                                expect(err.message).to.equal('Invalid user or password');
                             });
                     });
 
@@ -282,6 +283,7 @@ describe('@integration authentication', () => {
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
+                                expect(err.message).to.equal('Invalid user or password');
                             });
                     });
                 });
@@ -295,6 +297,7 @@ describe('@integration authentication', () => {
                                 .then(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
+                                    expect(err.message).to.equal('Invalid user or password');
                                 });
                         });
 
@@ -303,6 +306,7 @@ describe('@integration authentication', () => {
                                 .then(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
+                                    expect(err.message).to.equal('Invalid user or password');
                                 });
                         });
                     });
@@ -319,6 +323,7 @@ describe('@integration authentication', () => {
                                 .then(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
+                                    expect(err.message).to.equal('Invalid user or password');
                                 });
                         });
 
@@ -331,6 +336,7 @@ describe('@integration authentication', () => {
                                 .then(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
+                                    expect(err.message).to.equal('Invalid user or password');
                                 });
                         });
                     });

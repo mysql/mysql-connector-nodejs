@@ -110,198 +110,146 @@ Currently, the MySQL X plugin supports the following authentication methods:
 
 - [`MYSQL41`](https://dev.mysql.com/doc/internals/en/x-protocol-authentication-authentication.html#x-protocol-authentication-mysql41-authentication) (available for any kind of connection)
 - [`PLAIN`](https://dev.mysql.com/doc/internals/en/x-protocol-authentication-authentication.html#x-protocol-authentication-plain-authentication) (requires TLS)
+- `SHA256_MEMORY` (requires previously cached password)
 
-Since server connections are secure by default, unless one explicitely disables TLS support, the connection will use the `PLAIN` authentication method. The same happens if the server connection is established via a local UNIX socket (which does not support TLS). On the other hand, connections established via regular unencrypted TCP links will use the `MYSQL41` authentication method by default.
+Since server connections are secure by default, unless one explicitely disables TLS support, the connection will use the `PLAIN` authentication mechanism. The same happens if the server connection is established via a local UNIX socket (albeit not over TLS).
 
-The user is allowed to override this automatic choice, and fallback to `MYSQL41` on secure connections. The same does not apply to insecure connections because the `PLAIN` authentication method requires TLS to be enabled. By implementing the {@link IAuthenticator} interface users can also provide their custom authentication mechanisms.
+On the other hand, connections established via regular unencrypted TCP links will try to authenticate the user via `MYSQL41` first, if that does not work, `SHA256_MEMORY` authentication will then be attempted and finally, if none of those work, the client will just relay the server error.
 
-#### Default security options (SSL enabled) and authentication mechanism
+The `SHA256_MEMORY` authentication mechanism will only work if the server already contains the account password in the authentication cache, after an earlier authentication attempt using a different mechanism.
 
-```js
-const mysqlx = require('@mysql/xdevapi');
+The user is allowed to override this automatic choice, and fallback to `MYSQL41` on secure connections. The same does not apply to insecure connections because the `PLAIN` authentication mechanism requires TLS. There are some other rules to have in mind with regards to the compabitility between client authentication mechanism and server authentication plugins associated to each database user account.
 
-const options = {
-    dbUser: 'foo',
-    dbPassword: 'bar',
-    host: 'localhost',
-    port: 33060
-};
+Below is an overview of the major compatibility rules, which change based not only if the server connection uses TLS or unix sockets (secure - S) or uses an unencrypted TCP channel (insecure - N) but also on the server version. The examples provided are valid for MySQL 8.0.11.
 
-mysqlx.getSession(options)
-    .then(session => {
-        console.log(session.inspect().auth); // 'PLAIN'
-    });
-```
+### `mysql_native_password`
 
-```js
-const mysqlx = require('@mysql/xdevapi');
+The `mysql_native_password` authentication plugin is used by default from [MySQL 5.7](https://dev.mysql.com/doc/refman/5.7/en/native-pluggable-authentication.html) up to [MySQL 8.0.11](https://dev.mysql.com/doc/refman/8.0/en/native-pluggable-authentication.html).
 
-mysqlx.getSession('mysqlx://foo:bar@localhost:33060')
-    .then(session => {
-        console.log(session.inspect().auth); // 'PLAIN'
-    });
-```
+| Authentication mechanism  | 5.7 (S)   | 5.7 (N)   | 8.0.11 (S) | 8.0.11 (N) |
+| --------------------------|-----------|-----------|------------|------------|
+| `MYSQL41`                 | OK        | OK        | OK         | OK         |
+| `PLAIN`                   | OK        | NO        | OK         | NO         |
+| `SHA256_MEMORY`           | N/A       | N/A       | OK         | OK         |
 
-### SSL disabled and default authentication mechanism
+#### Examples
+
+`MYSQL41` will always work, whereas `PLAIN` will only work over TLS. `SHA256_MEMORY` requires the password to be previously cached (see examples below).
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const options = {
-    dbUser: 'foo',
-    dbPassword: 'bar',
-    host: 'localhost',
-    port: 33060,
-    ssl: false
-};
-
-mysqlx.getSession(options)
+mysqlx
+    .getSession('root@localhost?auth=MYSQL41')
     .then(session => {
         console.log(session.inspect().auth); // 'MYSQL41'
-    });
-```
+    })
 
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://foo:bar@localhost:33060?ssl-mode=DISABLED')
+mysqlx
+    .getSession({ auth: 'MYSQL41', ssl: false, user: 'root' })
     .then(session => {
         console.log(session.inspect().auth); // 'MYSQL41'
-    });
-```
+    })
 
-### SSL enabled and default authentication mechanism
+mysqlx
+    .getSession('root@localhost?ssl-mode=DISABLED')
+    .then(session => {
+        console.log(session.inspect().auth); // 'MYSQL41'
+    })
 
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-const options = {
-    dbUser: 'foo',
-    dbPassword: 'bar',
-    host: 'localhost',
-    port: 33060,
-    ssl: true
-};
-
-mysqlx.getSession(options)
+mysqlx
+    .getSession({ user: 'root' })
     .then(session => {
         console.log(session.inspect().auth); // 'PLAIN'
+    })
+
+mysqlx
+    .getSession('root@localhost?auth=PLAIN&ssl-mode=DISABLED')
+    .catch(err => {
+        console.log(err.message); // 'Invalid user or password'
     });
 ```
+
+### `sha256_password`
+
+The `sha256_password` authentication can be used on [MySQL 8.0.0](https://dev.mysql.com/doc/refman/8.0/en/sha256-pluggable-authentication.html) or later versions. There are some X Protocol issues that prevent the plugin from being used with [MySQL 5.7](https://dev.mysql.com/doc/refman/5.7/en/sha256-pluggable-authentication.html) (regardless of the authentication mechanism on the client).
+
+| Authentication mechanism  | 5.7 (S)   | 5.7 (N)   | 8.0.11 (S) | 8.0.11 (N) |
+| --------------------------|-----------|-----------|------------|------------|
+| `MYSQL41`                 | NO        | NO        | NO         | NO         |
+| `PLAIN`                   | NO        | NO        | OK         | NO         |
+| `SHA256_MEMORY`           | N/A       | N/A       | OK         | OK         |
+
+#### Examples
+
+Any authentication setup besides `PLAIN` over TLS will fail. Again, `SHA256_MEMORY` requires the password to be previously cached (see examples below).
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx.getSession('mysqlx://foo:bar@localhost:33060?ssl-mode=REQUIRED')
+mysqlx
+    .getSession('root@localhost')
     .then(session => {
         console.log(session.inspect().auth); // 'PLAIN'
+    })
+
+mysqlx
+    .getSession({ auth: 'MYSQL41', user: 'root' })
+    .catch(err => {
+        console.log(err.message); // 'Invalid user or password'
+    });
+
+mysqlx
+    .getSession('root@localhost?auth=PLAIN&ssl-mode=DISABLED')
+    .catch(err => {
+        console.log(err.message); // 'Invalid authentication method PLAIN'
+    });
+
+mysqlx
+    .getSession({ ssl: false, user: 'root' })
+    .catch(err => {
+        console.log(err.message); // 'Authentication failed using "MYSQL41" and "SHA256_MEMORY", check username and password or try a secure connection.'
     });
 ```
 
-### SSL enabled and custom authentication mechanism
+### `caching_sha2_password`
+
+The `caching_sha2_password` authentication plugin was introduced with [MySQL 8.0.11](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html) and is used by default since then. It's not supported on older server versions.
+
+| Authentication mechanism  | 5.7 (S)   | 5.7 (N)   | 8.0.11 (S) | 8.0.11 (N) |
+| --------------------------|-----------|-----------|------------|------------|
+| `MYSQL41`                 | N/A       | N/A       | NO         | NO         |
+| `PLAIN`                   | N/A       | N/A       | OK         | NO         |
+| `SHA256_MEMORY`           | N/A       | N/A       | OK         | OK         |
+
+#### Examples
+
+To save the password on the server cache, first, the client must authenticate using `PLAIN` over TLS. Any other authentication setup will not work.
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const options = {
-    auth: 'MYSQL41',
-    dbUser: 'foo',
-    dbPassword: 'bar',
-    host: 'localhost',
-    port: 33060,
-    ssl: true
-};
-
-mysqlx.getSession(options)
-    .then(session => {
-        console.log(session.inspect().auth); // 'MYSQL41'
-    });
-```
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://foo:bar@localhost:33060?ssl-mode=REQUIRED&auth=MYSQL41')
-    .then(session => {
-        console.log(session.inspect().auth); // 'MYSQL41'
-    });
-```
-
-### Local socket connection and default authentication mechanism
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-const options = {
-    dbUser: 'foo',
-    dbPassword: 'bar',
-    host: 'localhost',
-    port: 33060,
-    socket: '/path/to/socket'
-};
-
-mysqlx.getSession(options)
+mysqlx
+    .getSession('root@localhost')
     .then(session => {
         console.log(session.inspect().auth); // 'PLAIN'
-    });
-```
 
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://foo:bar@(/path/to/socket)')
+        return mysqlx
+            .getSession('root@localhost?auth=SHA256_MEMORY')
+    })
     .then(session => {
-        console.log(session.inspect().auth); // 'PLAIN'
+        console.log(session.inspect().auth); // 'SHA256_MEMORY'
     });
-```
 
-### Local socket connection and custom authentication mechanism
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-const options = {
-    auth: 'MYSQL41',
-    dbUser: 'foo',
-    dbPassword: 'bar',
-    host: 'localhost',
-    port: 33060,
-    socket: '/path/to/socket'
-};
-
-mysqlx.getSession(options)
-    .then(session => {
-        console.log(session.inspect().auth); // 'MYSQL41'
+mysqlx
+    .getSession('root@localhost?ssl-mode=DISABLED')
+    .catch(err => {
+        console.log(err.message); // 'Authentication failed using "MYSQL41" and "SHA256_MEMORY", check username and password or try a secure connection.'
     });
-```
 
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://foo:bar@(/path/to/socket)?auth=MYSQL41')
-    .then(session => {
-        console.log(session.inspect().auth); // 'MYSQL41'
-    });
-```
-
-### Failover with TLS enabled
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://foo:bar@[localhost:33060, 127.0.0.1:33061]')
-    .then(session => {
-        console.log(session.inspect().auth); // 'PLAIN'
-    });
-```
-
-### Failover with TLS disabled
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://foo:bar@[localhost:33060, 127.0.0.1:33061]?ssl-mode=DISABLED')
-    .then(session => {
-        console.log(session.inspect().auth); // 'MYSQL41'
+mysqlx
+    .getSession('root@localhost?auth=MYSQL41')
+    .catch(err => {
+        console.log(err.message); // 'Invalid user or password'
     });
 ```

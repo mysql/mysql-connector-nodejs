@@ -12,8 +12,10 @@ chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
-describe('@functional server connection', () => {
-    context('secure session', () => {
+describe('@functional secure connections', () => {
+    context('server with SSL/TLS support', () => {
+        // port as defined in docker-compose.yml
+        const port = 33061;
         // Provide fake servername to avoid CN mismatch.
         const servername = 'MySQL_Server_nodejsmysqlxtest_Auto_Generated_Server_Certificate';
 
@@ -23,7 +25,7 @@ describe('@functional server connection', () => {
         // a certificate signed by an intermediate CA using the CA chain.
         it('should connect to the server if the server certificate was issued by the authority', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'ca.pem');
-            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true, sslOptions: { ca, servername } });
+            const secureConfig = Object.assign({}, config, { port, socket: undefined, ssl: true, sslOptions: { ca, servername } });
 
             return mysqlx
                 .getSession(secureConfig)
@@ -36,7 +38,7 @@ describe('@functional server connection', () => {
         // result in the expected error.
         it('should not connect if the server certificate was not issued by the authority', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'non-authoritative-ca.pem');
-            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true, sslOptions: { ca, servername } });
+            const secureConfig = Object.assign({}, config, { port, socket: undefined, ssl: true, sslOptions: { ca, servername } });
 
             return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejected.then(err => {
                 // FIXME(Rui): with an intermediate CA, the error code should be 'UNABLE_TO_GET_ISSUER_CERT'.
@@ -47,7 +49,7 @@ describe('@functional server connection', () => {
         it('should connect to the server if the server certificate is not revoked', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'ca.pem');
             const crl = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'empty-crl.pem');
-            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true, sslOptions: { ca, crl, servername } });
+            const secureConfig = Object.assign({}, config, { port, socket: undefined, ssl: true, sslOptions: { ca, crl, servername } });
 
             return mysqlx
                 .getSession(secureConfig)
@@ -57,16 +59,21 @@ describe('@functional server connection', () => {
         it('should not connect if the server certificate is revoked', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'ca.pem');
             const crl = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'crl.pem');
-            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true, sslOptions: { ca, crl, servername } });
+            const secureConfig = Object.assign({}, config, { port, socket: undefined, ssl: true, sslOptions: { ca, crl, servername } });
 
             return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejected.then(err => {
                 expect(err.code).to.equal('CERT_REVOKED');
             });
         });
+    });
+
+    context('server without SSL/TLS support', () => {
+        // port as defined in docker-compose.yml
+        const port = 33062;
 
         it('should not connect if the server does not support SSL/TLS', () => {
             // Insecure server will be running on port 33061.
-            const secureConfig = Object.assign({}, config, { socket: undefined, ssl: true, port: 33061 });
+            const secureConfig = Object.assign({}, config, { port, socket: undefined, ssl: true });
             const error = `The server's X plugin version does not support SSL. Please refer to https://dev.mysql.com/doc/refman/8.0/en/x-plugin-ssl-connections.html for more details on how to enable secure connections.`;
 
             return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejectedWith(error);

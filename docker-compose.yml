@@ -1,47 +1,60 @@
 version: '2.1'
 
 services:
-    mysql:
+    mysql-base:
         environment:
-            MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
             MYSQL_DATABASE: nodejsmysqlxtest
-            MYSQL_PASSWORD: bar
-            MYSQL_USER: foo
-        image: mysql/mysql-server:${MYSQL_VERSION:-8.0}
+            MYSQL_LOG_CONSOLE: 'true'
+            MYSQL_PASSWORD: test
+            MYSQL_USER: test
+        image: mysql/mysql-server:${MYSQL_VERSION:-8.0.3}
+
+    mysql:
+        command: mysqld --plugin-load=mysqlx=mysqlx.so
+        extends:
+            service: mysql-base
+        ports:
+            - 33060:33060
 
     mysql-ssl:
-        # --default-authentication-plugin=caching_sha2_password
         command: mysqld --plugin-load=mysqlx=mysqlx.so --ssl-key=/ssl/key.pem --ssl-cert=/ssl/cert.pem
         extends:
-            service: mysql
+            service: mysql-base
         ports:
-            - 3306:3306
-            - 33060:33060
+            - 33061:33060
         volumes:
             - ./test/fixtures/ssl/server:/ssl:ro
 
     mysql-no-ssl:
         command: mysqld --plugin-load=mysqlx=mysqlx.so --skip-ssl
         extends:
-            service: mysql
+            service: mysql-base
         ports:
-            - 3307:3307
-            - 33061:33061
+            - 33062:33060
 
-    mysql-sha256-auth:
+    mysql-sha256:
         command: mysqld --plugin-load=mysqlx=mysqlx.so --default-authentication-plugin=sha256_password
         extends:
-            service: mysql
-        ports:
-            - 3308:3308
-            - 33062:33062
-
-    mysql-native-password-auth:
-        command: mysqld --plugin-load=mysqlx=mysqlx.so --default-authentication-plugin=mysql_native_password
-        extends:
-            service: mysql
+            service: mysql-base
         ports:
             - 33063:33060
+
+    mysql-5.7:
+        command: mysqld --plugin-load=mysqlx=mysqlx.so
+        extends:
+            service: mysql-base
+        image: mysql/mysql-server:5.7
+        ports:
+            - 33064:33060
+
+    mysql-5.7-sha256:
+        command: mysqld --plugin-load=mysqlx=mysqlx.so --default-authentication-plugin=sha256_password
+        extends:
+            service: mysql-base
+        image: mysql/mysql-server:5.7
+        ports:
+            - 33065:33060
 
 volumes:
     ssl:
