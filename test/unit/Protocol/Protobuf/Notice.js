@@ -71,7 +71,7 @@ describe('Protobuf', () => {
                 const param = SessionStateChanged.Parameter.GENERATED_INSERT_ID;
                 const warning = new SessionStateChanged();
                 warning.setParam(param);
-                warning.setValue(scalar);
+                warning.addValue(scalar);
 
                 frame.setPayload(warning.serializeBinary());
 
@@ -79,7 +79,7 @@ describe('Protobuf', () => {
                 const data = new Buffer(frame.serializeBinary());
                 /* eslint-disable node/no-deprecated-api */
 
-                expect(Notice.decodeFrame(data)).to.deep.equal({ type, state: { type: param, value: 2 } });
+                expect(Notice.decodeFrame(data)).to.deep.equal({ type, state: { type: param, values: [2] } });
             });
         });
 
