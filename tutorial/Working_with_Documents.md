@@ -1,14 +1,6 @@
 ## UUID generation
 
-When adding documents to a collection, if a document does not contain an `_id`, it will be automatically assigned a UUID-like value. This value does not strictly follow the format described by [RFC 4222](http://www.ietf.org/rfc/rfc4122.txt), but instead adheres to the following convention.
-
-```txt
-RFC 4122 UUID: 5C99CDfE-48CB-11E6-94F3-4A383B7fCC8B
-
-MySQL Document ID: 4A383B7FCC8B94F311E648CB5C99CDFE
-```
-
-One can however provide a static `_id` for each document, or even provide a custom function to generate them in using some sort of special convention.
+When adding documents to a collection, if a document does not contain an `_id`, it will be automatically assigned a sequential UUID-like value. One can, however, override this behavior by providing a static `_id` for each document.
 
 ### Using automatically assigned values
 
@@ -34,7 +26,7 @@ mysqlx
     })
     .then(docs => {
         // the `_id` value is just an example in this case
-        console.log(docs); // [{ _id: '4A383B7FCC8B94F311E648CB5C99CDFE', name: 'foo' }]
+        console.log(docs); // [{ _id: '00005a640138000000000000002c', name: 'foo' }]
     })
 ```
 
@@ -64,46 +56,7 @@ mysqlx
         console.log(docs); // [{ _id: 1, name: 'foo' }]
     })
 ```
-
-### Using a generator function
-
-```js
-const crypto = require('crypto');
-const mysqlx = require('@mysqlx/xdevapi');
-
-const options = {
-    dbHost: 'localhost',
-    dbPort: 33060,
-    idGenerator: () => crypto.randomBytes(4).toString('hex'),
-    schema: 'testSchema'
-};
-
-mysqlx
-    .getSession(options)
-    .then(session => {
-        return session
-            .getSchema('testSchema')
-            .createCollection('testCollection');
-    })
-    .then(collection => {
-        let docs = [];
-
-        return Promise
-            .all([
-                collection.add({ name: 'foo' }).execute(),
-                collection.find().execute(doc => docs.push(doc))
-            ])
-            .then(() => docs);
-    })
-    .then(docs => {
-        // the `_id` value is just an example in this case
-        console.log(docs); // [{ _id: 'ccdef991', name: 'foo' }]
-    })
-```
-
-Note: the id generator function can only be provided through a session configuration object.
-
-## Single document CRUD
+# Single document CRUD
 
 The connector provides a set of utility methods that can be used to add, remove, replace or retrieve a single specific document via its `_id` property.
 

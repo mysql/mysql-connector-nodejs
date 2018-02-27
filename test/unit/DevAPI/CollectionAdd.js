@@ -13,16 +13,6 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('CollectionAdd', () => {
-    let idGenerator;
-
-    beforeEach('create fakes', () => {
-        idGenerator = td.function();
-    });
-
-    afterEach('reset fakes', () => {
-        td.reset();
-    });
-
     context('getClassName()', () => {
         it('should return the correct class name (to avoid duck typing)', () => {
             expect(collectionAdd().getClassName()).to.equal('CollectionAdd');
@@ -63,22 +53,6 @@ describe('CollectionAdd', () => {
 
             expect(query.getItems()).to.deep.equal(expected);
         });
-
-        it('should generate an id for documents that do not have one', () => {
-            td.when(idGenerator()).thenReturn('2');
-            td.when(idGenerator(), { times: 1 }).thenReturn('1');
-
-            const query = collectionAdd({ idGenerator }).add([{ name: 'foo' }, { name: 'bar' }]);
-
-            expect(query.getItems()).to.deep.equal([{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }]);
-        });
-
-        it('should not generate an id for documents with `_id` equal to `0`', () => {
-            const query = collectionAdd({ idGenerator }).add([{ _id: '0', name: 'foo' }]);
-
-            expect(query.getItems()).to.deep.equal([{ _id: '0', name: 'foo' }]);
-            expect(td.explain(idGenerator).callCount).to.equal(0);
-        });
     });
 
     context('execute()', () => {
@@ -88,15 +62,15 @@ describe('CollectionAdd', () => {
             crudInsert = td.function();
         });
 
+        afterEach('reset fakes', () => {
+            td.reset();
+        });
+
         it('should pass itself to the client implementation', () => {
-            const idList = ['1', '2'];
-            const state = { doc_ids: idList };
+            const state = { ok: true };
             const expected = new Result(state);
 
-            td.when(idGenerator()).thenReturn(idList[1]);
-            td.when(idGenerator(), { times: 1 }).thenReturn(idList[0]);
-
-            const query = collectionAdd({ _client: { crudInsert }, idGenerator }, 'bar', 'baz')
+            const query = collectionAdd({ _client: { crudInsert } }, 'bar', 'baz')
                 .add({ name: 'qux' })
                 .add({ name: 'quux' });
 
@@ -109,10 +83,7 @@ describe('CollectionAdd', () => {
             const idList = ['1', '2'];
             const state = { doc_ids: idList };
 
-            td.when(idGenerator()).thenReturn(idList[1]);
-            td.when(idGenerator(), { times: 1 }).thenReturn(idList[0]);
-
-            const query = collectionAdd({ _client: { crudInsert }, idGenerator }, 'bar', 'baz')
+            const query = collectionAdd({ _client: { crudInsert } }, 'bar', 'baz')
                 .add({ name: 'qux' })
                 .add({ name: 'quux' });
 
@@ -125,14 +96,10 @@ describe('CollectionAdd', () => {
         it('should return early if no documents were provided', () => {
             const query = collectionAdd({ _client: crudInsert }, 'foo', 'bar', []);
 
-            td.when(idGenerator(), { ignoreExtraArgs: true }).thenReturn();
             td.when(crudInsert(), { ignoreExtraArgs: true }).thenResolve();
 
             return expect(query.execute()).to.be.fulfilled
-                .then(() => {
-                    expect(td.explain(idGenerator).callCount).to.equal(0);
-                    expect(td.explain(crudInsert).callCount).to.equal(0);
-                });
+                .then(() => expect(td.explain(crudInsert).callCount).to.equal(0));
         });
     });
 });

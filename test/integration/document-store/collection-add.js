@@ -112,19 +112,19 @@ describe('@integration document collection add', () => {
     });
 
     context('uuid generation', () => {
-        it('should generate a V1 UUID as the document id by default', () => {
-            let actual = [];
+        it('should generate a UUID as the document id by default', () => {
+            const actual = [];
 
             return collection
                 .add({ name: 'foo' })
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
-                .then(() => expect(actual[0]._id).to.match(/^[A-F0-9]{32}$/));
+                .then(() => expect(actual[0]._id).to.match(/^[a-f0-9]{28,32}$/));
         });
 
-        it('should not generate a v1 UUID if the document already provides an id', () => {
+        it('should not generate a UUID if the document already provides an id', () => {
             const documents = [{ _id: '1', name: 'foo' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .add(documents[0])
@@ -134,13 +134,40 @@ describe('@integration document collection add', () => {
         });
 
         it('should generate the random node identifier once per session', () => {
-            let actual = [];
+            const actual = [];
 
             return collection
                 .add([{ name: 'foo' }, { name: 'bar' }])
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual[0]._id.substring(0, 12)).to.equal(actual[1]._id.substring(0, 12)));
+        });
+
+        it('should generate sequential UUIDs if some documents already provide an id', () => {
+            const documents = [{ name: 'foo' }, { _id: '1', name: 'bar' }, { name: 'baz' }];
+            const actual = [];
+
+            return collection
+                .add(documents[0])
+                .execute()
+                .then(() => collection.add(documents[1]).execute())
+                .then(() => collection.add(documents[2]).execute())
+                .then(() => {
+                    return collection
+                        .find('name = "foo" OR name = "baz"')
+                        .sort('name DESC')
+                        .execute(doc => doc && actual.push(doc));
+                })
+                .then(() => {
+                    expect(actual).to.have.lengthOf(2);
+
+                    /* eslint-disable node/no-deprecated-api */
+                    const firstId = new Buffer(actual[0]._id, 'hex');
+                    const lastId = new Buffer(actual[1]._id, 'hex');
+                    /* eslint-enable node/no-deprecated-api */
+
+                    expect(firstId.readUInt8(firstId.length - 1)).to.equal(lastId.readUInt8(lastId.length - 1) - 1);
+                });
         });
     });
 });

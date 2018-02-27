@@ -28,21 +28,6 @@ describe('Session', () => {
     });
 
     context('constructor', () => {
-        it('should override the idGenerator function with a custom one', () => {
-            const expected = { foo: 'bar' };
-            const idGenerator = () => expected;
-            const session = new Session({ idGenerator });
-
-            expect(session.idGenerator()).to.deep.equal(expected);
-        });
-
-        it('should use a new seed when generating UUIDs', () => {
-            const session1 = new Session({});
-            const session2 = new Session({});
-
-            expect(session1.idGenerator().substring(0, 12)).to.not.equal(session2.idGenerator().substring(0, 12));
-        });
-
         it('should throw an error if the properties are not provided', () => {
             expect(() => new Session()).to.throw(Error);
         });
@@ -145,7 +130,7 @@ describe('Session', () => {
                     return expect(session.connect()).to.be.fulfilled
                         .then(() => {
                             expect(td.explain(enableSSL).callCount).to.equal(0);
-                            expect(session._serverCapabilities.tls).to.be.undefined;
+                            return expect(session._serverCapabilities.tls).to.be.undefined;
                         });
                 });
 
@@ -440,14 +425,14 @@ describe('Session', () => {
             it('should create a savepoint with a generated name if no name is passed', () => {
                 const session = new Session({});
                 td.when(execute()).thenResolve(true);
-                td.when(stmtExecute(session, td.matchers.contains(/^SAVEPOINT \`connector\-nodejs\-[A-F0-9]{32}\`$/))).thenReturn({ execute });
+                td.when(stmtExecute(session, td.matchers.contains(/^SAVEPOINT `connector-nodejs-[a-f0-9]{32}`$/))).thenReturn({ execute });
                 return expect(session.setSavepoint()).to.eventually.be.a('string').and.not.be.empty;
             });
 
             it('should create a savepoint with the given name', () => {
                 const session = new Session({});
                 td.when(execute()).thenResolve(true);
-                td.when(stmtExecute(session, td.matchers.contains(/^SAVEPOINT \`foo\`$/))).thenReturn({ execute });
+                td.when(stmtExecute(session, td.matchers.contains(/^SAVEPOINT `foo`$/))).thenReturn({ execute });
                 return expect(session.setSavepoint('foo')).to.eventually.be.equal('foo');
             });
 
@@ -460,7 +445,7 @@ describe('Session', () => {
             it('should release the savepoint', () => {
                 const session = new Session({});
                 td.when(execute()).thenResolve(true);
-                td.when(stmtExecute(session, td.matchers.contains(/^RELEASE SAVEPOINT \`foo\`$/))).thenReturn({ execute });
+                td.when(stmtExecute(session, td.matchers.contains(/^RELEASE SAVEPOINT `foo`$/))).thenReturn({ execute });
                 return expect(session.releaseSavepoint('foo')).to.be.fulfilled;
             });
 
@@ -477,7 +462,7 @@ describe('Session', () => {
             it('should rolback to the savepoint', () => {
                 const session = new Session({});
                 td.when(execute()).thenResolve(true);
-                td.when(stmtExecute(session, td.matchers.contains(/^ROLLBACK TO SAVEPOINT \`foo\`$/))).thenReturn({ execute });
+                td.when(stmtExecute(session, td.matchers.contains(/^ROLLBACK TO SAVEPOINT `foo`$/))).thenReturn({ execute });
                 return expect(session.rollbackTo('foo')).to.be.fulfilled;
             });
 
@@ -488,14 +473,6 @@ describe('Session', () => {
             it('should throw an error if name provided is invalid', () => {
                 return expect((new Session({})).rollbackTo(null)).to.be.rejected;
             });
-        });
-    });
-
-    context('idGenerator()', () => {
-        it('should generate an UUID in the apropriate format', () => {
-            const uuid = (new Session({})).idGenerator();
-
-            expect(uuid).to.match(/^[A-F0-9]{32}$/);
         });
     });
 
