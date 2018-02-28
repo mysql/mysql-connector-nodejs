@@ -3,9 +3,9 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
+const proxyquire = require('proxyquire');
 const tableUpdate = require('lib/DevAPI/TableUpdate');
 const td = require('testdouble');
 
@@ -66,11 +66,15 @@ describe('TableUpdate', () => {
             return expect(query.execute()).to.eventually.be.rejectedWith(error);
         });
 
-        it('should succeed if the query succeed with the state of the query', () => {
-            const query = tableUpdate({ _client: { crudModify } }, 'foo', 'bar', 'baz');
-            const state = { foo: 'bar' };
-            const expected = new Result(state);
+        it('should return a Result instance containing the operation details', () => {
+            const expected = { done: true };
+            const state = { ok: true };
+            const fakeResult = td.function();
+            const fakeTableUpdate = proxyquire('lib/DevAPI/TableUpdate', { './Result': fakeResult });
 
+            const query = fakeTableUpdate({ _client: { crudModify } }, 'foo', 'bar', 'baz');
+
+            td.when(fakeResult(state)).thenReturn(expected);
             td.when(crudModify(query)).thenResolve(state);
 
             return expect(query.execute()).to.eventually.deep.equal(expected);

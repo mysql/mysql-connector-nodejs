@@ -3,10 +3,10 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const tableDelete = require('lib/DevAPI/TableDelete');
+const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -42,36 +42,39 @@ describe('TableDelete', () => {
         });
 
         it('should fail if a condition query is empty', () => {
-            const operation = tableDelete(null, null, null, '');
+            const query = tableDelete(null, null, null, '');
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `delete()` or `where()`');
+            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `delete()` or `where()`');
         });
 
         it('should fail if a condition query is not valid', () => {
-            const operation = tableDelete(null, null, null, ' ');
+            const query = tableDelete(null, null, null, ' ');
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `delete()` or `where()`');
+            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `delete()` or `where()`');
         });
 
         it('should fail if the operation results in an error', () => {
             const error = new Error('foobar');
             // criteria is required
-            const operation = tableDelete({ _client: { crudRemove } }).where('foo');
+            const query = tableDelete({ _client: { crudRemove } }).where('foo');
 
-            td.when(crudRemove(operation)).thenReject(error);
+            td.when(crudRemove(query)).thenReject(error);
 
-            return expect(operation.execute()).to.eventually.be.rejectedWith(error);
+            return expect(query.execute()).to.eventually.be.rejectedWith(error);
         });
 
-        it('should succeed if the operation succeed with the state of the operation', () => {
-            // criteria is required
-            const operation = tableDelete({ _client: { crudRemove } }).where('foo');
+        it('should return a Result instance containing the operation details', () => {
+            const expected = { done: true };
             const state = { ok: true };
-            const expected = new Result(state);
+            const fakeResult = td.function();
+            const fakeTableDelete = proxyquire('lib/DevAPI/TableDelete', { './Result': fakeResult });
 
-            td.when(crudRemove(operation)).thenResolve(state);
+            const query = fakeTableDelete({ _client: { crudRemove } }, 'foo', 'bar', 'baz');
 
-            return expect(operation.execute()).to.eventually.deep.equal(expected);
+            td.when(fakeResult(state)).thenReturn(expected);
+            td.when(crudRemove(query)).thenResolve(state);
+
+            return expect(query.execute()).to.eventually.deep.equal(expected);
         });
     });
 });

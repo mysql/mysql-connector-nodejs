@@ -2,10 +2,11 @@
 
 /* eslint-env node, mocha */
 
-const Result = require('lib/DevAPI/Result');
+// npm `test` script was updated to use NODE_PATH=.
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const collectionAdd = require('lib/DevAPI/CollectionAdd');
+const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -66,31 +67,20 @@ describe('CollectionAdd', () => {
             td.reset();
         });
 
-        it('should pass itself to the client implementation', () => {
+        it('should return a Result instance containing the operation details', () => {
+            const expected = { done: true };
             const state = { ok: true };
-            const expected = new Result(state);
+            const fakeResult = td.function();
+            const fakeCollectionAdd = proxyquire('lib/DevAPI/CollectionAdd', { './Result': fakeResult });
 
-            const query = collectionAdd({ _client: { crudInsert } }, 'bar', 'baz')
+            const query = fakeCollectionAdd({ _client: { crudInsert } }, 'bar', 'baz')
                 .add({ name: 'qux' })
                 .add({ name: 'quux' });
 
+            td.when(fakeResult(state)).thenReturn(expected);
             td.when(crudInsert(), { ignoreExtraArgs: true }).thenResolve(state);
 
-            return expect(query.execute()).to.eventually.eventually.deep.equal(expected);
-        });
-
-        it('should append the ids of the added documents to the response state', () => {
-            const idList = ['1', '2'];
-            const state = { doc_ids: idList };
-
-            const query = collectionAdd({ _client: { crudInsert } }, 'bar', 'baz')
-                .add({ name: 'qux' })
-                .add({ name: 'quux' });
-
-            td.when(crudInsert(), { ignoreExtraArgs: true }).thenResolve(state);
-
-            return expect(query.execute()).to.be.fulfilled
-                .then(result => expect(result.getDocumentIds()).to.deep.equal(idList));
+            return expect(query.execute()).to.eventually.deep.equal(expected);
         });
 
         it('should return early if no documents were provided', () => {

@@ -4,12 +4,44 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const Any = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Any;
+const ContentType = require('lib/Protocol/Protobuf/Stubs/mysqlx_resultset_pb').ContentType_BYTES;
 const Datatypes = require('lib/Protocol/Protobuf/Adapters/Datatypes');
 const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
 const expect = require('chai').expect;
 
 describe('Protobuf', () => {
     context('Datatypes', () => {
+        context('decodeScalar()', () => {
+            it('should return a Node.js buffer for binary data', () => {
+                const octets = new Scalar.Octets();
+                octets.setContentType(ContentType.GEOMETRY);
+                /* eslint-disable node/no-deprecated-api */
+                const data = new Buffer('foo');
+                /* eslint-enable node/no-deprecated-api */
+                octets.setValue(new Uint8Array(data));
+
+                const scalar = new Scalar();
+                scalar.setType(Scalar.Type.V_OCTETS);
+                scalar.setVOctets(octets);
+
+                expect(Datatypes.decodeScalar(scalar)).to.deep.equal(data);
+            });
+
+            it('should return a JavaScript string for textual data', () => {
+                const octets = new Scalar.Octets();
+                octets.setContentType(ContentType.JSON);
+                /* eslint-disable node/no-deprecated-api */
+                octets.setValue(new Uint8Array(new Buffer('foo')));
+                /* eslint-enable node/no-deprecated-api */
+
+                const scalar = new Scalar();
+                scalar.setType(Scalar.Type.V_OCTETS);
+                scalar.setVOctets(octets);
+
+                expect(Datatypes.decodeScalar(scalar)).to.equal('foo');
+            });
+        });
+
         context('encodeAny()', () => {
             it('should return a Mysqlx.Datatypes.Any object for valid literals', () => {
                 let any = Datatypes.encodeAny('foo');

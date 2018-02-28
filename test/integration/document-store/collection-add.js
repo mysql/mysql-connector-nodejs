@@ -169,5 +169,27 @@ describe('@integration document collection add', () => {
                     expect(firstId.readUInt8(firstId.length - 1)).to.equal(lastId.readUInt8(lastId.length - 1) - 1);
                 });
         });
+
+        it('should return the list of server generated ids on the result', () => {
+            const documents = [{ name: 'foo' }, { name: 'bar' }, { name: 'baz' }];
+            const actual = [];
+
+            let ids = [];
+
+            return collection
+                .add(documents)
+                .execute()
+                .then(result => {
+                    ids = result.getGeneratedIds();
+                })
+                .then(() => {
+                    return collection
+                        .find()
+                        .execute(doc => doc && actual.push(doc));
+                })
+                .then(() => {
+                    expect(actual.map(doc => doc._id)).to.deep.equal(ids);
+                });
+        });
     });
 });

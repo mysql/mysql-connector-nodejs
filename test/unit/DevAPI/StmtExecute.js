@@ -4,9 +4,9 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const Column = require('lib/DevAPI/Column');
-const Statement = require('lib/DevAPI/Statement');
-const Result = require('lib/DevAPI/Result');
 const expect = require('chai').expect;
+const result = require('lib/DevAPI/Result');
+const statement = require('lib/DevAPI/Statement');
 const td = require('testdouble');
 
 describe.skip('Statement', () => {
@@ -22,9 +22,9 @@ describe.skip('Statement', () => {
 
     context('execute()', () => {
         it('should execute the context statement', () => {
-            const query = new Statement({ sqlStmtExecute }, 'foo');
+            const query = statement({ sqlStmtExecute }, 'foo');
             const state = 'bar';
-            const expected = new Result(state);
+            const expected = result(state);
 
             td.when(sqlStmtExecute('foo', []), { ignoreExtraArgs: true }).thenResolve(state);
 
@@ -32,9 +32,9 @@ describe.skip('Statement', () => {
         });
 
         it('should provide the context arguments when executing the statement', () => {
-            const query = new Statement({ sqlStmtExecute }, 'foo', 'bar');
+            const query = statement({ sqlStmtExecute }, 'foo', 'bar');
             const state = 'baz';
-            const expected = new Result(state);
+            const expected = result(state);
 
             td.when(sqlStmtExecute('foo', 'bar'), { ignoreExtraArgs: true }).thenResolve(state);
 
@@ -42,7 +42,7 @@ describe.skip('Statement', () => {
         });
 
         it('should call a result handler provided as an `execute` argument', () => {
-            const query = new Statement({ sqlStmtExecute });
+            const query = statement({ sqlStmtExecute });
 
             td.when(sqlStmtExecute(td.matchers.anything(), td.matchers.anything(), td.callback('foo')), { ignoreExtraArgs: true }).thenResolve();
 
@@ -50,7 +50,7 @@ describe.skip('Statement', () => {
         });
 
         it('should call a metadata handler provided as an `execute` argument', () => {
-            const query = new Statement({ sqlStmtExecute });
+            const query = statement({ sqlStmtExecute });
             const meta = ['foo'];
 
             td.when(sqlStmtExecute(td.matchers.anything(), td.matchers.anything(), td.matchers.anything(), td.callback([meta]))).thenResolve();
@@ -59,7 +59,7 @@ describe.skip('Statement', () => {
         });
 
         it('should call a handlers provided as an `execute` object argument', () => {
-            const query = new Statement({ sqlStmtExecute });
+            const query = statement({ sqlStmtExecute });
             const meta = ['bar'];
 
             td.when(sqlStmtExecute(td.matchers.anything(), td.matchers.anything(), td.callback('foo'), td.callback([meta]))).thenResolve();
@@ -75,7 +75,7 @@ describe.skip('Statement', () => {
         });
 
         it('should fail if an unexpected error is thrown', () => {
-            const query = new Statement({ sqlStmtExecute });
+            const query = statement({ sqlStmtExecute });
             const error = new Error('foobar');
 
             td.when(sqlStmtExecute(), { ignoreExtraArgs: true }).thenReject(error);

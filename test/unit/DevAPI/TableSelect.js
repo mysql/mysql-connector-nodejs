@@ -3,11 +3,15 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Result = require('lib/DevAPI/Result');
-const expect = require('chai').expect;
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+const proxyquire = require('proxyquire');
 const tableSelect = require('lib/DevAPI/TableSelect');
 const td = require('testdouble');
-const proxyquire = require('proxyquire');
+
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
 
 describe('TableSelect', () => {
     context('getClassName()', () => {
@@ -39,42 +43,46 @@ describe('TableSelect', () => {
             td.reset();
         });
 
-        it('should pass itself to the client implementation', () => {
+        it('should return a Result instance containing the operation details', () => {
+            const expected = { done: true };
             const state = { ok: true };
-            const expected = new Result(state);
-            const query = tableSelect({ _client: { crudFind } });
+            const fakeResult = td.function();
+            const fakeTableSelect = proxyquire('lib/DevAPI/TableSelect', { './Result': fakeResult });
 
+            const query = fakeTableSelect({ _client: { crudFind } });
+
+            td.when(fakeResult(state)).thenReturn(expected);
             td.when(crudFind(query, undefined, undefined)).thenResolve(state);
 
             return expect(query.execute()).to.eventually.deep.equal(expected);
         });
 
         it('should use a custom cursor to handle result set data', () => {
-            const state = { ok: true };
-            const expected = new Result(state);
             const query = tableSelect({ _client: { crudFind } });
             const sideEffects = [];
             const callback = value => sideEffects.push(value);
 
-            td.when(crudFind(query, td.callback('foo'), undefined)).thenResolve(state);
+            td.when(crudFind(query, td.callback('foo'), undefined)).thenResolve({});
 
-            return expect(query.execute(callback)).to.eventually.deep.equal(expected).then(() => {
+            return expect(query.execute(callback)).to.eventually.be.fulfilled.then(() => {
                 return expect(sideEffects).to.deep.equal(['foo']);
             });
         });
 
         it('should use a custom cursor to handle operation metadata', () => {
-            const state = { ok: true };
-            const expected = new Result(state);
             const metaCB = td.function();
-            const tableSelectDouble = proxyquire('lib/DevAPI/TableSelect', { './Column': { metaCB } });
-            const query = tableSelectDouble({ _client: { crudFind } });
+            const fakeTableSelect = proxyquire('lib/DevAPI/TableSelect', { './Column': { metaCB } });
+            const query = fakeTableSelect({ _client: { crudFind } });
+            const sideEffects = [];
             const callback = 'foo';
+            const wrappedCallback = value => sideEffects.push(value);
 
-            td.when(metaCB(callback)).thenReturn('bar');
-            td.when(crudFind(query, null, 'bar')).thenResolve(state);
+            td.when(metaCB(callback)).thenReturn(wrappedCallback);
+            td.when(crudFind(query, null, td.callback('bar'))).thenResolve({});
 
-            return expect(query.execute(null, callback)).to.eventually.deep.equal(expected);
+            return expect(query.execute(null, callback)).to.eventually.be.fulfilled.then(() => {
+                return expect(sideEffects).to.deep.equal(['bar']);
+            });
         });
 
         it('should fail if an unexpected error occurs', () => {

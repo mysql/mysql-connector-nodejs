@@ -3,10 +3,15 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Result = require('lib/DevAPI/Result');
-const expect = require('chai').expect;
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+const proxyquire = require('proxyquire');
 const tableInsert = require('lib/DevAPI/TableInsert');
 const td = require('testdouble');
+
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
 
 describe('TableInsert', () => {
     context('getClassName()', () => {
@@ -26,11 +31,15 @@ describe('TableInsert', () => {
             td.reset();
         });
 
-        it('should pass itself to the client implementation', () => {
+        it('should return a Result instance containing the operation details', () => {
+            const expected = { done: true };
             const state = { ok: true };
-            const expected = new Result(state);
-            const query = tableInsert({ _client: { crudInsert } });
+            const fakeResult = td.function();
+            const fakeTableInsert = proxyquire('lib/DevAPI/TableInsert', { './Result': fakeResult });
 
+            const query = fakeTableInsert({ _client: { crudInsert } });
+
+            td.when(fakeResult(state)).thenReturn(expected);
             td.when(crudInsert(query)).thenResolve(state);
 
             return expect(query.execute()).to.eventually.deep.equal(expected);

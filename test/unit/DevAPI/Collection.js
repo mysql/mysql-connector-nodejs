@@ -3,10 +3,10 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const proxyquire = require('proxyquire');
+const result = require('lib/DevAPI/Result');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -145,7 +145,7 @@ describe('Collection', () => {
         it('should return the result of executing a modify operation for a given document', () => {
             const instance = collection('foo', 'bar', 'baz');
             const state = { ok: true };
-            const expected = new Result(state);
+            const expected = result(state);
 
             td.when(execute()).thenResolve(expected);
             td.when(setDouble('$', { a: 'quux' })).thenReturn({ execute });
@@ -161,7 +161,7 @@ describe('Collection', () => {
             const criteria = `_id = "b\\"ar"`;
             const instance = collection('foo', 'bar', 'baz');
             const state = { ok: true };
-            const expected = new Result(state);
+            const expected = result(state);
 
             td.when(execute()).thenResolve(expected);
             td.when(setDouble(), { ignoreExtraArgs: true }).thenReturn({ execute });
@@ -315,7 +315,7 @@ describe('Collection', () => {
         it('should return the document instance if it exists', () => {
             const documentId = 'foo';
             const state = { rows_affected: 1 };
-            const expected = new Result(state);
+            const expected = result(state);
             const criteria = `_id = "${documentId}"`;
             const instance = collection('bar', 'baz', 'qux');
 
@@ -330,7 +330,7 @@ describe('Collection', () => {
             const documentId = 'fo\"o';
             /* eslint-enable no-useless-escape */
             const state = { rows_affected: 1 };
-            const expected = new Result(state);
+            const expected = result(state);
             const criteria = `_id = "fo\\"o"`;
             const instance = collection('bar', 'baz', 'qux');
 

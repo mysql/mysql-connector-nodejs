@@ -3,10 +3,10 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const collectionModify = require('lib/DevAPI/CollectionModify');
+const proxyquire = require('proxyquire');
 const td = require('testdouble');
 const updating = require('lib/DevAPI/Updating');
 
@@ -59,11 +59,15 @@ describe('CollectionModify', () => {
             return expect(query.execute()).to.eventually.be.rejectedWith(error);
         });
 
-        it('should succeed if the query succeed with the state of the query', () => {
-            const query = collectionModify({ _client: { crudModify } }, 'foo', 'bar', 'baz');
-            const state = { foo: 'bar' };
-            const expected = new Result(state);
+        it('should return a Result instance containing the operation details', () => {
+            const expected = { done: true };
+            const state = { ok: true };
+            const fakeResult = td.function();
+            const fakeCollectionModify = proxyquire('lib/DevAPI/CollectionModify', { './Result': fakeResult });
 
+            const query = fakeCollectionModify({ _client: { crudModify } }, 'foo', 'bar', 'baz');
+
+            td.when(fakeResult(state)).thenReturn(expected);
             td.when(crudModify(query)).thenResolve(state);
 
             return expect(query.execute()).to.eventually.deep.equal(expected);

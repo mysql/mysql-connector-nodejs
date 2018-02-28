@@ -3,7 +3,6 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const Result = require('lib/DevAPI/Result');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const collectionFind = require('lib/DevAPI/CollectionFind');
@@ -79,27 +78,29 @@ describe('DevAPI CollectionFind', () => {
             crudFind = td.function();
         });
 
-        it('should pass itself to the client implementation', () => {
+        it('should return a Result instance containing the operation details', () => {
+            const expected = { done: true };
             const state = { ok: true };
-            const expected = new Result(state);
-            const query = collectionFind({ _client: { crudFind } });
+            const fakeResult = td.function();
+            const fakeCollectionFind = proxyquire('lib/DevAPI/CollectionFind', { './Result': fakeResult });
 
+            const query = fakeCollectionFind({ _client: { crudFind } });
+
+            td.when(fakeResult(state)).thenReturn(expected);
             td.when(crudFind(query, undefined)).thenResolve(state);
 
             return expect(query.execute()).to.eventually.deep.equal(expected);
         });
 
         it('should use a custom cursor to handle result set data', () => {
-            const state = { ok: true };
-            const expected = new Result(state);
             const query = collectionFind({ _client: { crudFind } });
             const sideEffects = [];
 
-            td.when(crudFind(query, td.callback(['foo']))).thenResolve(state);
+            td.when(crudFind(query, td.callback(['foo']))).thenResolve({});
 
             const callback = (value) => sideEffects.push(value);
 
-            return expect(query.execute(callback)).to.eventually.deep.equal(expected).then(() => {
+            return expect(query.execute(callback)).to.eventually.be.fulfilled.then(() => {
                 return expect(sideEffects).to.deep.equal(['foo']);
             });
         });
