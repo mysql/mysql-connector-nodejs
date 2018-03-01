@@ -17,7 +17,7 @@ Consider a collection `testSchema.testCollection` containing the following docum
 }]
 ```
 
-The following scenarios apply (the same should be true when working with tables).
+The following scenarios apply when using row locks with the default mode (the same should be true when working with tables).
 
 ### Writing data in two sessions with exclusive locks
 
@@ -26,9 +26,9 @@ When two transactions are using exclusive locks, writes and updates from both of
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let samplesA = [];
-let samplesB = [];
-let result = [];
+const result = [];
+const samplesA = [];
+const samplesB = [];
 
 let sessionA, sessionB;
 
@@ -108,9 +108,9 @@ When two transactions are bound to the same shared lock, writes and updates from
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let samplesA = [];
-let samplesB = [];
-let result = [];
+const result = [];
+const samplesA = [];
+const samplesB = [];
 
 let sessionA, sessionB;
 
@@ -188,7 +188,7 @@ When two transactions are bound to the same shared lock, if one of the transacti
 const mysqlx = require('@mysql/xdevapi');
 const pTimeout = require('p-timeout');
 
-let result = [];
+const result = [];
 
 let sessionA, sessionB;
 
@@ -257,7 +257,7 @@ When two transactions are not bound to any kind of lock, if both write/update a 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let result = [];
+const result = [];
 
 let sessionA, sessionB;
 
@@ -368,6 +368,98 @@ mysqlx
         ]);
     })
     .catch(err => {
-        console.log(err.message); // Deadlock found when trying to get lock; try restarting transaction
+        console.log(err.message); // 'Deadlock found when trying to get lock; try restarting transaction'
+    });
+```
+
+## NOWAIT and SKIP LOCKED
+
+The default behavior of row locks can be overridden using the `NOWAIT` and `SKIP LOCKED` [options](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html#innodb-locking-reads-nowait-skip-locked). These options are available through the `mysqlx.LockContention` property.
+
+`NOWAIT` works similarly to the default mode when there isn't any ongoing transaction, whereas reads will fail when there is an ongoing transaction.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+const result = [];
+
+let sessionA, sessionB;
+
+const sut = sessionA
+    .startTransaction()
+    .then(() => {
+        return sessionA
+            .getSchema(config.schema)
+            .getCollection('test')
+            .find('_id = "1"')
+            .lockShared()
+            .execute();
+    })
+    .then(() => {
+        return sessionA
+            .getSchema(config.schema)
+            .getCollection('test')
+            .modify('_id = "1"')
+            .set('a', 2)
+            .set('b', 'foo')
+            .execute();
+    })
+    .then(() => {
+        return sessionB.startTransaction();
+    })
+    .then(() => {
+        return sessionB
+            .getSchema(config.schema)
+            .getCollection('test')
+            .find('_id = "1"')
+            .lockShared(mysqlx.LockContention.NOWAIT)
+            .execute(doc => result.push(doc));
+    })
+    .catch(err => {
+        console.log(err.message); // 'Statement aborted because lock(s) could not be acquired immediately and NOWAIT is set.'
+    });
+```
+
+`SKIP LOCKED` will allow reads, risking the chance of working with inconsistent data.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+const result = [];
+
+let sessionA, sessionB;
+
+const sut = sessionA
+    .startTransaction()
+    .then(() => {
+        return sessionA
+            .getSchema(config.schema)
+            .getCollection('test')
+            .find('_id = "1"')
+            .lockShared()
+            .execute();
+    })
+    .then(() => {
+        return sessionA
+            .getSchema(config.schema)
+            .getCollection('test')
+            .modify('_id = "1"')
+            .set('a', 2)
+            .set('b', 'foo')
+            .execute();
+    })
+    .then(() => {
+        return sessionB.startTransaction();
+    })
+    .then(() => {
+        return sessionB
+            .getSchema(config.schema)
+            .getCollection('test')
+            .find('_id = "1"')
+            .lockShared(mysqlx.LockContention.NOWAIT)
+            .execute(doc => result.push(doc));
+    })
+    .then(() => {
+        console.log(result); // []
     });
 ```

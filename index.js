@@ -33,6 +33,7 @@
 const Expr = require('./lib/Protocol/Protobuf/Adapters/Expr');
 const Session = require('./lib/DevAPI/Session');
 const authenticationManager = require('./lib/Authentication/AuthenticationManager');
+const locking = require('./lib/DevAPI/Locking');
 const mysql41Auth = require('./lib/Authentication/MySQL41Auth');
 const parseUri = require('./lib/DevAPI/Util/URIParser');
 const plainAuth = require('./lib/Authentication/PlainAuth');
@@ -67,20 +68,6 @@ function createSession (configuration) {
     }
 
     return session.connect();
-}
-
-/**
- * Load a new session.
- * @private
- * @param {string|URI} session
- * @returns {Promise.<Session>}
- */
-function loadSession (properties) {
-    if (typeof properties.getUri !== 'function') {
-        return createSession(properties);
-    }
-
-    return createSession(Object.assign({}, parseUri(properties.getUri())));
 }
 
 /**
@@ -129,6 +116,13 @@ exports.expr = function (expr, options) {
  * @const
  */
 exports.Mode = query.Type;
+
+/**
+ * Locking modes.
+ * @type {LockContention}
+ * @const
+ */
+exports.LockContention = locking.LockContention;
 
 /**
  * Get the version number
