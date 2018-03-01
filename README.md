@@ -35,10 +35,10 @@ Using the MySQL document-store is as easy as follows:
 const mysqlx = require('@mysql/xdevapi');
 
 const options = {
-    dbPassword: '<passwd>',
-    dbUser: 'root',
     host: 'localhost',
-    port: 33060
+    port: 33060,
+    password: '<passwd>',
+    user: 'root'
 };
 
 mysqlx

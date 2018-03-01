@@ -9,7 +9,7 @@ msyqlx
     .getSession('mysqlx://root:passwd@localhost:33060/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { dbUser: 'root', host: 'localhost', port: 33060, schema: 'mySchema' }
+        // { user: 'root', host: 'localhost', port: 33060, schema: 'mySchema' }
     })
 ```
 
@@ -22,7 +22,7 @@ msyqlx
     .getSession('root:passwd@localhost:33060/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { dbUser: 'root', host: 'localhost', port: 33060, schema: 'mySchema' }
+        // { user: 'root', host: 'localhost', port: 33060, schema: 'mySchema' }
     })
 ```
 
@@ -32,8 +32,8 @@ Using a session configuration object:
 const mysqlx = require('@mysql/xdevapi');
 
 const config = {
-    dbPassword: 'passwd',
-    dbUser: 'root',
+    password: 'passwd',
+    user: 'root',
     host: 'localhost',
     port: 33060,
     schema: 'mySchema'
@@ -43,7 +43,7 @@ msyqlx
     .getSession(config)
     .then(session => {
         console.log(session.inspect());
-        // { dbUser: 'root', host: 'localhost', port: 33060, schema: 'mySchema' }
+        // { user: 'root', host: 'localhost', port: 33060, schema: 'mySchema' }
     })
 ```
 
@@ -58,7 +58,7 @@ msyqlx
     .getSession('mysqlx://root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { dbUser: 'root', schema: 'mySchema', socket: '/path/to/socket' }
+        // { user: 'root', schema: 'mySchema', socket: '/path/to/socket' }
     })
 ```
 
@@ -71,7 +71,7 @@ msyqlx
     .getSession('mysqlx://root:passwd@(/path/to/socket)/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { dbUser: 'root', schema: 'mySchema', socket: '/path/to/socket' }
+        // { user: 'root', schema: 'mySchema', socket: '/path/to/socket' }
     })
 ```
 
@@ -84,7 +84,7 @@ msyqlx
     .getSession('root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { dbUser: 'root', schema: 'mySchema', socket: '/path/to/socket' }
+        // { user: 'root', schema: 'mySchema', socket: '/path/to/socket' }
     })
 ```
 
@@ -97,7 +97,7 @@ msyqlx
     .getSession('root:passwd@(/path/to/socket)/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { dbUser: 'root', schema: 'mySchema', socket: '/path/to/socket' }
+        // { user: 'root', schema: 'mySchema', socket: '/path/to/socket' }
     })
 ```
 
@@ -107,8 +107,8 @@ Using a session configuration object:
 const mysqlx = require('@mysql/xdevapi');
 
 const config = {
-    dbPassword: 'passwd',
-    dbUser: 'root',
+    password: 'passwd',
+    user: 'root',
     socket: '/path/to/socket',
     schema: 'mySchema'
 };
@@ -117,7 +117,7 @@ msyqlx
     .getSession(config)
     .then(session => {
         console.log(session.inspect());
-        // { dbUser: 'root', schema: 'mySchema', socket: '/path/to/socket' }
+        // { user: 'root', schema: 'mySchema', socket: '/path/to/socket' }
     })
 ```
 
