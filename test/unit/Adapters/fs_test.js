@@ -2,9 +2,9 @@
 
 /* eslint-env node, mocha */
 
-const proxyquire = require('proxyquire');
 const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised')
+const chaiAsPromised = require('chai-as-promised');
+const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);

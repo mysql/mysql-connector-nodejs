@@ -41,7 +41,7 @@ describe('getServerCipherSuite', () => {
             'DES',
             'RC2',
             'RC4',
-            'PSK',
+            'PSK'
             // 'SSLv3'
         ].map(cipher => `!${cipher}`);
 
@@ -68,7 +68,7 @@ describe('getServerCipherSuite', () => {
             'DES',
             'RC2',
             'RC4',
-            'PSK',
+            'PSK'
             // 'SSLv3'
         ].map(cipher => `!${cipher}`);
 
