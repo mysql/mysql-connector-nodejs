@@ -8,6 +8,23 @@ Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.11
+=======
+
+- Replace protobuf.js library with the official google-protobuf npm package
+- Add new "SHA256_MEMORY" authentication mechanism for MySQL 8.0.11 "caching_sha2_password" authentication plugin
+- Introduce new auto-generated document id format (which is now generated on the server)
+- Add "NOWAIT" and "SKIP_LOCKED" modes for both shared and exclusive row locks
+- Add support for sorting results on CollectionFind, CollectionRemove and CollectionModify operations
+- Update Session.getSchemas(), Schema.getCollections() and Schema.getTables() to return an array of instances
+- Introduce performance improvements on Collection.add()
+- Fix parsing issues with escape characters in expressions
+- Fix precision loss issues with the use of MySQL BIGINT type in expressions
+- Update result set interface to use JavaScript Date objects for representing the MySQL DATE type
+- Update result set interface to apply rounding mask for the MySQL FLOAT type
+- Fix decoding issues with the MySQL UNSIGNED INTEGER and BIT types
+- Fix decoding issues with large documents or document properties
+
 v8.0.9
 ======
 

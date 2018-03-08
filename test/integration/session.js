@@ -17,7 +17,7 @@ const expect = chai.expect;
 describe('@integration X plugin session', () => {
     context('creating new sessions', () => {
         beforeEach('password caching', () => {
-            // Since MySQL 8.0.5 introduces `caching_sha2_password` as the default authentication
+            // Since MySQL 8.0.11 introduces `caching_sha2_password` as the default authentication
             // plugin, we need to make sure the password is, indeed, cached on the server before
             // testing some of the following scenarios.
             return mysqlx

@@ -8,7 +8,7 @@ For general information about the X DevAPI, please refer to documentation on [ht
 
 ## Requirements
 
-This library requires Node.js 4.2.0 or later and MySQL 8.0.3 or later. You are able to use recent MySQL 5.7.x versions (with some limitations), however, MySQL 5.7 does not take advantage of the entire set of features provided by the connector.
+This library requires Node.js 4.2.0 or higher and MySQL 8.0.11 or higher. You are able to use recent MySQL 5.7.x versions (with some limitations), however, MySQL 5.7 does not take advantage of the entire set of features provided by the connector.
 
 ## Installation
 
@@ -16,7 +16,7 @@ This library is organized in a way that it can be installed into your project us
 
 * manually download the package from [https://dev.mysql.com/downloads/connector/nodejs/](https://dev.mysql.com/downloads/connector/nodejs/) and import the library using npm:
 ```sh
-$ npm install mysql-connector-nodejs-8.0.9.tar.gz`
+$ npm install mysql-connector-nodejsmysql-xdevapi-8.0.11.tar.gz
 ```
 * use the @mysql/xdevapi package from [https://npmjs.com](https://npmjs.com) and install it:
 ```sh
