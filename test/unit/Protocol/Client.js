@@ -8,7 +8,6 @@ const WorkQueue = require('lib/WorkQueue');
 const SqlResultHandler = require('lib/Protocol/ResponseHandlers/SqlResultHandler');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const isEqual = require('lodash.isequal');
 const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
@@ -172,14 +171,15 @@ describe('Client', () => {
             td.when(getServerCipherSuite()).thenReturn('foo:bar:!baz');
             td.when(client.capabilitiesSet({ tls: true })).thenResolve();
 
-            const expected = {
-                ciphers: 'foo:bar:!baz',
-                rejectUnauthorized: false,
-                socket: stream
+            const matcher = options => {
+                return Object.keys(options).indexOf('crl') === -1 &&
+                    options.ciphers === 'foo:bar:!baz' &&
+                    options.rejectUnauthorized === false &&
+                    options.socket === stream;
             };
 
             // The custom matcher makes sure the options do not contain `crl: undefined`.
-            td.when(connect(td.matchers.argThat(options => isEqual(options, expected)), td.callback())).thenReturn(stream);
+            td.when(connect(td.matchers.argThat(matcher), td.callback())).thenReturn(stream);
 
             return expect(client.enableSSL({ crl: 'foobar' })).to.eventually.be.true;
         });
@@ -225,20 +225,22 @@ describe('Client', () => {
 
     context('network fragmentation', () => {
         // stubs
-        let FakeClient, decodeMessage, decodeMessageHeader, fakeProcess, workQueueProto;
+        let clientProto, decodeMessage, decodeMessageHeader, fakeProcess, workQueueProto;
         // dummies
         let message1, message2, rawMessage1, rawMessage2;
 
         beforeEach('create fakes', () => {
+            clientProto = Object.assign({}, Client.prototype);
             workQueueProto = Object.assign({}, WorkQueue.prototype);
 
             decodeMessage = td.function('decodeMessage');
             decodeMessageHeader = td.function('decodeMessageHeader');
             fakeProcess = td.function('process');
 
-            WorkQueue.prototype.process = fakeProcess;
+            Client.prototype.decodeMessage = decodeMessage;
+            Client.prototype.decodeMessageHeader = decodeMessageHeader;
 
-            FakeClient = proxyquire('lib/Protocol/Client', { './Encoding': { decodeMessage, decodeMessageHeader } });
+            WorkQueue.prototype.process = fakeProcess;
 
             /* eslint-disable node/no-deprecated-api */
             rawMessage1 = new Buffer(8);
@@ -261,13 +263,14 @@ describe('Client', () => {
         });
 
         afterEach('reset fakes', () => {
+            Client.prototype = clientProto;
             WorkQueue.prototype = workQueueProto;
         });
 
         it('should handle messages fully-contained in a fragment', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
-            const client = new FakeClient(network);
+            const client = new Client(network);
             /* eslint-enable no-unused-vars */
 
             // fragment containing two messages
@@ -283,7 +286,7 @@ describe('Client', () => {
         it('should handle message headers split between fragments', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
-            const client = new FakeClient(network);
+            const client = new Client(network);
             /* eslint-enable no-unused-vars */
             const partialHeader = rawMessage2.slice(0, 2);
 
@@ -303,7 +306,7 @@ describe('Client', () => {
         it('should handle message headers and payloads split between fragments', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
-            const client = new FakeClient(network);
+            const client = new Client(network);
             /* eslint-enable no-unused-vars */
             const header = rawMessage2.slice(0, 4);
 
@@ -323,7 +326,7 @@ describe('Client', () => {
         it('should handle message payloads split between fragments', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
-            const client = new FakeClient(network);
+            const client = new Client(network);
             /* eslint-enable no-unused-vars */
             const partialMessage = rawMessage2.slice(0, 6);
 
@@ -343,7 +346,7 @@ describe('Client', () => {
         it('should handle smaller fragments', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
-            const client = new FakeClient(network);
+            const client = new Client(network);
             /* eslint-enable no-unused-vars */
             const partialMessage = rawMessage1.slice(2);
 
@@ -363,7 +366,7 @@ describe('Client', () => {
         it('should handle messages split between more than two fragments', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
-            const client = new FakeClient(network);
+            const client = new Client(network);
             /* eslint-enable no-unused-vars */
 
             const fragment1 = rawMessage1.slice(0, 4);
@@ -381,7 +384,7 @@ describe('Client', () => {
         it('should handle fragments containing a lot of messages', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
-            const client = new FakeClient(network);
+            const client = new Client(network);
             /* eslint-enable no-unused-vars */
 
             /* eslint-disable node/no-deprecated-api */

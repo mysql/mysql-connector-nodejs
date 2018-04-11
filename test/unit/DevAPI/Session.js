@@ -3,7 +3,7 @@
 /* eslint-env node, mocha */
 
 const Client = require('lib/Protocol/Client');
-const Duplex = require('stream').Duplex;
+const Socket = require('net').Socket;
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const proxyquire = require('proxyquire');
@@ -65,7 +65,7 @@ describe('Session', () => {
             Client.prototype.capabilitiesGet = capabilitiesGet;
 
             td.when(authenticate(), { ignoreExtraArgs: true }).thenResolve();
-            td.when(createSocket(), { ignoreExtraArgs: true }).thenResolve(new Duplex());
+            td.when(createSocket(), { ignoreExtraArgs: true }).thenResolve(new Socket());
         });
 
         afterEach(() => {
@@ -88,7 +88,7 @@ describe('Session', () => {
                 // Not providing credentials should result in an authentication error.
                 const properties = { socketFactory: { createSocket } };
                 const session = new Session(properties);
-                const stream = new Duplex();
+                const stream = new Socket();
                 const streamStub = td.function();
 
                 stream.end = streamStub;
@@ -233,7 +233,7 @@ describe('Session', () => {
 
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
                     td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
-                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
+                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Socket());
 
                     return expect(session.connect()).to.be.fulfilled
                         .then(session => expect(session.inspect()).to.deep.include(expected));
@@ -277,7 +277,7 @@ describe('Session', () => {
 
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
                     // failover restarts from the highest priority address
-                    td.when(createSocket(), { ignoreExtraArgs: true }).thenResolve(new Duplex());
+                    td.when(createSocket(), { ignoreExtraArgs: true }).thenResolve(new Socket());
                     td.when(createSocket(), { ignoreExtraArgs: true, times: 2 }).thenReject(error);
 
                     return expect(session.connect()).to.be.rejectedWith('All routers failed.')
@@ -297,7 +297,7 @@ describe('Session', () => {
                     td.when(enableSSL({})).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
                     td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
-                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
+                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Socket());
 
                     return expect(session.connect()).to.be.fulfilled
                         .then(session => expect(session.inspect()).to.deep.include(expected));
@@ -315,7 +315,7 @@ describe('Session', () => {
                     td.when(enableSSL({})).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
                     td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
-                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
+                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Socket());
 
                     return expect(session.connect()).to.be.fulfilled
                         .then(session => expect(session.inspect()).to.deep.include(expected));
@@ -333,7 +333,7 @@ describe('Session', () => {
                     td.when(enableSSL({})).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
                     td.when(createSocket(td.matchers.contains({ host: 'foo' }))).thenReject(error);
-                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Duplex());
+                    td.when(createSocket(td.matchers.contains({ host: 'bar' }))).thenResolve(new Socket());
 
                     return expect(session.connect()).to.be.fulfilled
                         .then(session => expect(session.inspect()).to.deep.include(expected));
