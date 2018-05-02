@@ -287,7 +287,7 @@ mysqlx
     });
 ```
 
-In autocommit mode, the call to `setSavepoint()` will create a transaction, create a savepoint and then commit, which would erase the savepoint. In consequence, the call to `releaseSavepoint()` would throw an error `SAVEPOINT \`fun\` does not exist`. For the savepoint to survive, the user needs to start an explicit transaction block first.
+In autocommit mode, the call to `setSavepoint()` will create a transaction, create a savepoint and then commit, which would erase the savepoint. In consequence, the call to `releaseSavepoint()` would throw an error ```SAVEPOINT `fun` does not exist```. For the savepoint to survive, the user needs to start an explicit transaction block first.
 
 ### Savepoints with DDL statements
 

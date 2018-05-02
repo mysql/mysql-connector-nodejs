@@ -8,7 +8,7 @@ By default, the connector creates a new session using SSL/TLS for TCP connection
 const mysqlx = require('@mysqlx/xdevapi');
 
 mysqlx
-    .getSession('mysqlx://foobar)
+    .getSession('mysqlx://foobar')
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: true }
     });
@@ -34,7 +34,7 @@ If the server does not support secure TCP connections, the operation will fail.
 const mysqlx = require('@mysqlx/xdevapi');
 
 mysqlx
-    .getSession('mysqlx://foobar)
+    .getSession('mysqlx://foobar')
     .catch(err => {
         console.log(err.message); // will print the error message
     });
@@ -54,7 +54,7 @@ The user can easily disable this feature explicitly (thus avoiding failures when
 const mysqlx = require('@mysqlx/xdevapi');
 
 mysqlx
-    .getSession('mysqlx://foobar?ssl-mode=DISABLED)
+    .getSession('mysqlx://foobar?ssl-mode=DISABLED')
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: false }
     });

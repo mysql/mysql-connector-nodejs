@@ -1,4 +1,4 @@
-## UUID generation
+## Id generation
 
 When adding documents to a collection, if a document does not contain an `_id`, it will be automatically assigned a sequential UUID-like value. One can, however, override this behavior by providing a static `_id` for each document.
 
@@ -56,7 +56,7 @@ mysqlx
         console.log(docs); // [{ _id: 1, name: 'foo' }]
     })
 ```
-# Single document CRUD
+## Single document CRUD
 
 The connector provides a set of utility methods that can be used to add, remove, replace or retrieve a single specific document via its `_id` property.
 

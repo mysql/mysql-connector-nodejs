@@ -1,4 +1,4 @@
-You can establish a connection with a MySQL server by creating a `Session` through the `getSession()` method available in the main module API. The session will be established via the [X Plugin](https://dev.mysql.com/doc/refman/8.0/en/x-plugin.html) which, by default, listens on TCP port `33060`. Also, by default, X Protocol sessions are established using TLS and the `PLAIN` authentication method (more details available [here]{@tutorial Secure_Sessions.md}). You can resort to any of the following flavours to create a new session.
+You can establish a connection with a MySQL server by creating a `Session` through the `getSession()` method available in the main module API. The session will be established via the [X Plugin](https://dev.mysql.com/doc/refman/8.0/en/x-plugin.html) which, by default, listens on TCP port `33060`. Also, by default, X Protocol sessions are established using TLS and the `PLAIN` authentication method (more details available [here]{@tutorial Secure_Sessions}). You can resort to any of the following flavours to create a new session.
 
 Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI:
 
@@ -163,7 +163,7 @@ Creating a new schema implicitely, using the connection URI:
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx
-    .getSession('mysqlx://localhost:33060/foo')
+    .getSession('mysqlx://root@localhost:33060/foo')
     .then(session => {
         return session.getSchemas();
     })
@@ -180,7 +180,7 @@ const mysqlx = require('@mysql/xdevapi');
 const connection = {};
 
 mysqlx
-    .getSession('mysqlx://localhost:33060')
+    .getSession('mysqlx://root@localhost:33060')
     .then(session => {
         connection.session = session;
 
@@ -202,7 +202,7 @@ const mysqlx = require('@mysql/xdevapi');
 const connection = {};
 
 mysqlx
-    .getSession('mysqlx://localhost:33060/foo')
+    .getSession('mysqlx://root@localhost:33060/foo')
     .then(session => {
         connection.session = session;
 
