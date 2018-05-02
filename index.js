@@ -97,7 +97,7 @@ exports.getSession = function (input) {
 /**
  * Additional parser options.
  * @typedef {Object} ParserOptions
- * @prop {Mode} [mode] - the parsing mode (DOCUMENT or TABLE)
+ * @prop {DataModel} [mode] - the parsing mode
  */
 
 /**
@@ -112,8 +112,11 @@ exports.expr = function (expr, options) {
 
 /**
  * Database entity types.
- * @type {Mode}
+ * @type {DataModel}
  * @const
+ * @example
+ * mysqlx.Mode.TABLE
+ * mysqlx.Mode.DOCUMENT
  */
 exports.Mode = query.Type;
 
@@ -121,14 +124,15 @@ exports.Mode = query.Type;
  * Locking modes.
  * @type {LockContention}
  * @const
+ * @example
+ * mysqlx.LockContention.DEFAULT
+ * mysqlx.LockContention.NOWAIT
+ * mysqlx.LockContention.SKIP_LOCKED
  */
 exports.LockContention = locking.LockContention;
 
 /**
- * Get the version number
- *
- * This is  shortcut for reading package.json/version
- *
+ * Retrieve the connector version number (from package.json).
  * @return {String}
  */
 exports.getVersion = function () {
