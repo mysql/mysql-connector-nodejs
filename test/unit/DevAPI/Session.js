@@ -28,8 +28,23 @@ describe('Session', () => {
     });
 
     context('constructor', () => {
-        it('should throw an error if the properties are not provided', () => {
-            expect(() => new Session()).to.throw(Error);
+        it('should not throw an error if the session configuration is not provided', () => {
+            expect(() => new Session()).to.not.throw(Error);
+        });
+
+        it('should not throw an error if the session configuration is incomplete', () => {
+            expect(() => new Session({})).to.not.throw(Error);
+        });
+
+        it('should create a session using sane defaults', () => {
+            expect((new Session()).inspect()).to.deep.equal({
+                auth: 'PLAIN',
+                ssl: true,
+                dbUser: '',
+                host: 'localhost',
+                port: 33060,
+                socket: undefined
+            });
         });
 
         it('should throw an error if the port is not in the appropriate range', () => {
