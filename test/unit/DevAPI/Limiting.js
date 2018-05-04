@@ -8,18 +8,22 @@ const expect = require('chai').expect;
 
 describe('limiting', () => {
     context('limit()', () => {
-        it('should use default thresholds if no argument is provided', () => {
+        it('should not have default thresholds', () => {
             const query = limiting();
 
-            expect(query.getCount()).to.equal(Number.MAX_SAFE_INTEGER);
-            expect(query.getOffset()).to.equal(0);
+            /* eslint-disable no-unused-expressions */
+            expect(query.getCount()).to.not.exist;
+            expect(query.getOffset()).to.not.exist;
+            /* eslint-enable no-unused-expressions */
         });
 
         it('should set limit `row_count` if one argument is provided', () => {
             const query = limiting().limit(10);
 
             expect(query.getCount()).to.deep.equal(10);
-            expect(query.getOffset()).to.equal(0);
+            /* eslint-disable no-unused-expressions */
+            expect(query.getOffset()).to.not.exist;
+            /* eslint-enable no-unused-expressions */
         });
 
         it('should set limit `row_count` and `offset` properties', () => {
