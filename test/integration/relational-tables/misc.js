@@ -324,6 +324,30 @@ describe('@integration relational miscellaneous tests', () => {
                         .then(() => expect(actual).to.deep.equal(expected));
                 });
             });
+
+            context('GEOMETRY columns', () => {
+                beforeEach('create table', () => {
+                    return session
+                        .sql(`CREATE TABLE ${schema.getName()}.test (a_geo GEOMETRY)`)
+                        .execute();
+                });
+
+                beforeEach('add fixtures', () => {
+                    return session
+                        .sql(`INSERT INTO ${schema.getName()}.test VALUES (ST_GeomFromText('POINT(1 1)'))`)
+                        .execute();
+                });
+
+                it('should correctly decode values', () => {
+                    const actual = [];
+
+                    return schema
+                        .getTable('test')
+                        .select()
+                        .execute(row => row && row.length && actual.push(row))
+                        .then(() => actual.forEach(row => expect(row[0]).to.be.an.instanceof(Buffer)));
+                });
+            });
         });
 
         context('values encoded as TIME', () => {

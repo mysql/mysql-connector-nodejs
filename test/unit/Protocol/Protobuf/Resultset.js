@@ -183,18 +183,54 @@ describe('Protobuf', () => {
             });
 
             it('should decode binary data values into Node.js buffers', () => {
-                const metadata = [{ type: ColumnMetaData.FieldType.BYTES, contentType: ContentType.GEOMETRY }];
                 /* eslint-disable node/no-deprecated-api */
                 const binary = new Buffer('foo\0');
                 /* eslint-enable node/no-deprecated-api */
 
-                const row = new Row();
+                let metadata = [{ type: ColumnMetaData.FieldType.BYTES, contentType: ContentType.GEOMETRY }];
+
+                let row = new Row();
                 row.addField(new Uint8Array(binary));
 
                 /* eslint-disable node/no-deprecated-api */
-                const data = new Buffer(row.serializeBinary());
+                let data = new Buffer(row.serializeBinary());
                 /* eslint-enable node/no-deprecated-api */
                 expect(Resultset.decodeRow(data, { metadata })).to.deep.equal([binary.slice(0, -1)]);
+
+                metadata[0] = Object.assign({}, metadata[0], { length: 5, flags: 0 }); // without right-padding
+
+                row.clearFieldList();
+                /* eslint-disable node/no-deprecated-api */
+                row.addField(new Uint8Array(binary));
+
+                data = new Buffer(row.serializeBinary());
+                /* eslint-enable node/no-deprecated-api */
+
+                expect(Resultset.decodeRow(data, { metadata })).to.deep.equal([binary.slice(0, -1)]);
+
+                metadata[0] = Object.assign({}, metadata[0], { length: 2, flags: 1 }); // with right-padding but invalid length
+
+                row.clearFieldList();
+                /* eslint-disable node/no-deprecated-api */
+                row.addField(new Uint8Array(binary));
+
+                data = new Buffer(row.serializeBinary());
+                /* eslint-enable node/no-deprecated-api */
+
+                // remove the additional `0x00` bytes
+                expect(Resultset.decodeRow(data, { metadata })).to.deep.equal([binary.slice(0, -1)]);
+
+                metadata[0] = Object.assign({}, metadata[0], { length: 5, flags: 1 }); // with right-padding
+
+                row.clearFieldList();
+                /* eslint-disable node/no-deprecated-api */
+                row.addField(new Uint8Array(binary));
+
+                data = new Buffer(row.serializeBinary());
+                /* eslint-enable node/no-deprecated-api */
+
+                // remove the additional `0x00` bytes
+                expect(Resultset.decodeRow(data, { metadata })[0].slice(0, -2)).to.deep.equal(binary.slice(0, -1));
             });
 
             it('should decode JSON data values into JavaScript objects', () => {
@@ -237,6 +273,17 @@ describe('Protobuf', () => {
 
                 expect(Resultset.decodeRow(data, { metadata })).to.deep.equal(['foo']);
 
+                metadata[0] = Object.assign({}, metadata[0], { length: 5, flags: 0 }); // without right-padding
+
+                row.clearFieldList();
+                /* eslint-disable node/no-deprecated-api */
+                row.addField(new Uint8Array(new Buffer('foo\0')));
+
+                data = new Buffer(row.serializeBinary());
+                /* eslint-enable node/no-deprecated-api */
+
+                expect(Resultset.decodeRow(data, { metadata })).to.deep.equal(['foo']);
+
                 row.clearFieldList();
                 /* eslint-disable node/no-deprecated-api */
                 row.addField(new Uint8Array(new Buffer('\0')));
@@ -246,7 +293,18 @@ describe('Protobuf', () => {
 
                 expect(Resultset.decodeRow(data, { metadata })).to.deep.equal(['']);
 
-                metadata[0] = Object.assign({}, metadata[0], { length: 5, flags: 1 });
+                metadata[0] = Object.assign({}, metadata[0], { length: 2, flags: 1 }); // with right-padding but invalid length
+
+                row.clearFieldList();
+                /* eslint-disable node/no-deprecated-api */
+                row.addField(new Uint8Array(new Buffer('foo\0')));
+
+                data = new Buffer(row.serializeBinary());
+                /* eslint-enable node/no-deprecated-api */
+
+                expect(Resultset.decodeRow(data, { metadata })).to.deep.equal(['foo']);
+
+                metadata[0] = Object.assign({}, metadata[0], { length: 5, flags: 1 }); // with right-padding
 
                 row.clearFieldList();
                 /* eslint-disable node/no-deprecated-api */

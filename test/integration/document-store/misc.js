@@ -117,4 +117,19 @@ describe('@integration collection miscellaneous tests', () => {
             .createCollection('foobar')
             .then(collection => expect(collection.getSchema()).to.deep.equal(schema.getName()));
     });
+
+    it('@regression should not apply padding when retrieving server-side auto-generated _id values using SQL', () => {
+        const ids = [];
+
+        return schema
+            .getCollection('test')
+            .add({ name: 'foo' })
+            .execute()
+            .then(() => {
+                return session
+                    .sql(`SELECT _id FROM ${schema.getName()}.test`)
+                    .execute(row => ids.push(row[0]));
+            })
+            .then(() => ids.forEach(id => expect(id).to.have.lengthOf(28)));
+    });
 });
