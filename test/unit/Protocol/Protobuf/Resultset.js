@@ -259,7 +259,7 @@ describe('Protobuf', () => {
             });
 
             it('should decode NULL values', () => {
-                const metadata = [{ type: ColumnMetaData.FieldType.BYTES }];
+                const metadata = [{ type: 0 }]; // any type
 
                 const row = new Row();
                 row.addField(new Uint8Array());

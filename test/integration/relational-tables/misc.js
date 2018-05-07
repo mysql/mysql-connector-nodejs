@@ -450,5 +450,60 @@ describe('@integration relational miscellaneous tests', () => {
                     .then(() => expect(actual).to.deep.equal(expected));
             });
         });
+
+        context('NULL values', () => {
+            beforeEach('create table', () => {
+                return session
+                    .sql(`CREATE TABLE ${schema.getName()}.test (
+                        null_01 TINYINT,
+                        null_02 TINYINT UNSIGNED,
+                        null_03 SMALLINT,
+                        null_04 SMALLINT UNSIGNED,
+                        null_05 MEDIUMINT,
+                        null_06 MEDIUMINT UNSIGNED,
+                        null_07 INT,
+                        null_08 INT UNSIGNED,
+                        null_09 BIGINT,
+                        null_10 BIGINT UNSIGNED,
+                        null_11 DOUBLE,
+                        null_12 FLOAT,
+                        null_13 DECIMAL,
+                        null_14 VARCHAR(5),
+                        null_15 CHAR(5),
+                        null_16 VARBINARY(5),
+                        null_17 BINARY(5),
+                        null_18 ENUM('foo', 'bar'),
+                        null_19 TIME,
+                        null_20 DATE,
+                        null_21 DATETIME,
+                        null_22 TIMESTAMP,
+                        null_23 SET('foo', 'bar'),
+                        null_24 BIT
+                    )`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session
+                    .sql(`INSERT INTO ${schema.getName()}.test VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)`)
+                    .execute();
+            });
+
+            it('should correctly decode values', () => {
+                const expected = [[]];
+                const actual = [];
+
+                for (let i = 0; i < 24; ++i) {
+                    expected[0].push(null);
+                }
+
+                return schema
+                    .getTable('test')
+                    .select()
+                    .execute(row => row && row.length && actual.push(row))
+                    .then(() => expect(actual).to.deep.equal(expected));
+            });
+        });
     });
 });
