@@ -475,20 +475,15 @@ describe('ExprParser', () => {
 
                 params = expr.output.getOperator().getParamList();
                 expect(params).to.have.lengthOf(3);
-                params.slice(0, 2).forEach(param => {
+                params.forEach(param => {
                     expect(param.getType()).to.equal(Expr.Type.LITERAL);
                     expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 });
-                expect(params[2].getType()).to.equal(Expr.Type.OPERATOR);
-                expect(params[2].getOperator().getName()).to.equal('escape');
 
-                let subParams = params[2].getOperator().getParamList();
-                expect(subParams[0].getType()).to.equal(Expr.Type.LITERAL);
-                expect(subParams[0].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(subParams[0].getLiteral().getVString().getValue()).toString()).to.equal('|');
                 expect(new Buffer(params[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar_');
                 expect(new Buffer(params[1].getLiteral().getVString().getValue()).toString()).to.equal('foobar|_');
+                expect(new Buffer(params[2].getLiteral().getVString().getValue()).toString()).to.equal('|');
                 /* eslint-enable node/no-deprecated-api */
 
                 input = '4 BETWEEN 2 AND 6';
