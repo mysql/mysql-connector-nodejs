@@ -153,6 +153,61 @@ mysqlx
     });
 ```
 
+### Connection timeout
+
+By default, the initial server connection will timeout after 10 seconds in a single-host scenario, and after 10 seconds for each connection attempt in a multi-host scenario. You can override this behavior by providing a custom timeout value, which should be an integer representing the number of `ms` to wait for a valid connection.
+
+In a single-host scenario, when a connection is not established in the defined interval, the following should happen:
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://root:passwd@localhost:33060?connect-timeout=5000')
+    .catch(err => {
+        // connection could not be established after 5 seconds
+        console.log(err.message); // Connection attempt to the server was aborted. Timeout of 5000 ms was exceeded.
+    });
+```
+
+As usual you can also set a custom value using a plain JavaScript object, whose counterpart property name is, in this case, `connectTimeout`.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession({ user: 'root', password: 'passwd', connectTimeout: 8000 })
+    .catch(err => {
+        // connection could not be established after 8 seconds
+        console.log(err.message); // Connection attempt to the server was aborted. Timeout of 8000 ms was exceeded.
+    });
+```
+
+In a multi-host scenario, the error message will be a bit different:
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://root:passwd@[localhost:33060, 127.0.0.1:33060]?connect-timeout=5000')
+    .catch(err => {
+        // connection could not be established after 10 seconds (5 seconds for each server)
+        console.log(err.message); // All server connection attempts were aborted. Timeout of 5000 ms was exceeded for each selected server.
+    });
+```
+
+To explicitly disable the timeout, you can use `connect-timeout=0`.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx
+    .getSession('mysqlx://root:passwd@127.0.0.1:33060?connect-timeout=0')
+    .catch(err => {
+        // should not reach this point for any timeout-related reason
+    });
+```
+
 ### Working with schemas
 
 As usual in MySQL setups, you need to create or connect to an existing schema/database of your choice, which is basically the namespace under which your tables, views and collections will live. The `Session` instance provides the following constructs to manage database schemas.

@@ -12,6 +12,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'hostname',
                     port: 3357,
@@ -33,6 +34,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
+                connectTimeout: '10000',
                 endpoints: [{
                     host: '127.0.0.1',
                     port: 3357,
@@ -54,6 +56,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
+                connectTimeout: '10000',
                 endpoints: [{
                     host: '::',
                     port: 3357,
@@ -75,6 +78,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'a1:a2:a3:a4:a5:a6:a7:a8',
                     port: 3357,
@@ -96,6 +100,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'server.example.com',
                     port: undefined,
@@ -117,6 +122,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: '127.0.0.1',
                     port: undefined,
@@ -138,6 +144,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'a1:b2:c4:d4:e5:f6:a7:b8',
                     port: undefined,
@@ -159,6 +166,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'hostname',
                     port: 3357,
@@ -180,6 +188,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: 'user',
                 dbPassword: 'password',
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'hostname',
                     port: 3357,
@@ -201,6 +210,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'hostname',
                     port: 'foobar',
@@ -223,6 +233,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: '127.0.0.1',
                         port: 3357,
@@ -248,6 +259,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: '::1',
                         port: undefined,
@@ -298,6 +310,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: 33060,
@@ -319,6 +332,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: 33060,
@@ -340,6 +354,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: 33060,
@@ -361,6 +376,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: 33060,
@@ -382,6 +398,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: 33060,
@@ -403,6 +420,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: 33060,
@@ -426,6 +444,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: undefined,
                         port: undefined,
@@ -447,6 +466,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: undefined,
                         port: undefined,
@@ -470,6 +490,7 @@ describe('parseUri', () => {
                     auth: 'AUTHMETHOD',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'localhost',
                         port: 33060,
@@ -487,6 +508,30 @@ describe('parseUri', () => {
             });
         });
 
+        context('connection timeout', () => {
+            it('should parse an URI with a specific connection timeout', () => {
+                const expected = {
+                    auth: '',
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    connectTimeout: '2',
+                    endpoints: [{
+                        host: 'localhost',
+                        port: 33060,
+                        socket: undefined
+                    }],
+                    schema: undefined,
+                    ssl: true,
+                    sslOptions: {
+                        ca: undefined,
+                        crl: undefined
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@localhost:33060?connect-timeout=2')).to.deep.equal(expected);
+            });
+        });
+
         it('should throw an error if the host is not valid', () => {
             expect(() => parseUri('mysql#x')).to.throw(Error, 'Invalid URI');
         });
@@ -498,6 +543,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: 'user',
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'hostname',
                     port: 3357,
@@ -519,6 +565,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: 'user',
                 dbPassword: '',
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'hostname',
                     port: 3357,
@@ -540,6 +587,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: 'user',
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'hostname',
                     port: undefined,
@@ -561,6 +609,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: 'user',
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'hostname',
                     port: undefined,
@@ -582,6 +631,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'server.example.com',
                     port: undefined,
@@ -603,6 +653,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: '127.0.0.1',
                     port: undefined,
@@ -624,6 +675,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'a1:b2:c4:d4:e5:f6:a7:b8',
                     port: undefined,
@@ -645,6 +697,7 @@ describe('parseUri', () => {
                 auth: '',
                 dbUser: undefined,
                 dbPassword: undefined,
+                connectTimeout: '10000',
                 endpoints: [{
                     host: 'hostname',
                     port: 'foobar',
@@ -667,6 +720,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: '::1',
                         port: 33060,
@@ -696,6 +750,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'localhost',
                         port: 3357,
@@ -747,6 +802,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: undefined,
@@ -768,6 +824,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: undefined,
@@ -789,6 +846,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: undefined,
@@ -810,6 +868,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: undefined,
@@ -831,6 +890,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: undefined,
@@ -852,6 +912,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'hostname',
                         port: undefined,
@@ -875,6 +936,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: undefined,
                         port: undefined,
@@ -896,6 +958,7 @@ describe('parseUri', () => {
                     auth: '',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: undefined,
                         port: undefined,
@@ -919,6 +982,7 @@ describe('parseUri', () => {
                     auth: 'AUTHMETHOD',
                     dbUser: 'user',
                     dbPassword: 'password',
+                    connectTimeout: '10000',
                     endpoints: [{
                         host: 'localhost',
                         port: 33060,
@@ -933,6 +997,30 @@ describe('parseUri', () => {
                 };
 
                 expect(parseUri('user:password@localhost:33060?auth=authMethod')).to.deep.equal(expected);
+            });
+        });
+
+        context('connection timeout', () => {
+            it('should parse an URI with a specific connection timeout', () => {
+                const expected = {
+                    auth: '',
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    connectTimeout: '2',
+                    endpoints: [{
+                        host: 'localhost',
+                        port: 33060,
+                        socket: undefined
+                    }],
+                    schema: undefined,
+                    ssl: true,
+                    sslOptions: {
+                        ca: undefined,
+                        crl: undefined
+                    }
+                };
+
+                expect(parseUri('user:password@localhost:33060?connect-timeout=2')).to.deep.equal(expected);
             });
         });
 
