@@ -147,7 +147,6 @@ describe('@integration authentication', () => {
                         .then(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.equal('Invalid user or password');
                         });
                 });
 
@@ -156,7 +155,6 @@ describe('@integration authentication', () => {
                         .then(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.equal('Invalid user or password');
                         });
                 });
             });
@@ -172,7 +170,6 @@ describe('@integration authentication', () => {
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
-                                expect(err.message).to.equal('Invalid user or password');
                             });
                     });
 
@@ -181,7 +178,6 @@ describe('@integration authentication', () => {
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
-                                expect(err.message).to.equal('Invalid user or password');
                             });
                     });
                 });
@@ -198,7 +194,6 @@ describe('@integration authentication', () => {
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
-                                expect(err.message).to.equal('Invalid user or password');
                             });
                     });
 
@@ -211,7 +206,6 @@ describe('@integration authentication', () => {
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
-                                expect(err.message).to.equal('Invalid user or password');
                             });
                     });
                 });
@@ -312,7 +306,6 @@ describe('@integration authentication', () => {
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
-                                expect(err.message).to.equal('Invalid user or password');
                             });
                     });
 
@@ -321,7 +314,6 @@ describe('@integration authentication', () => {
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
-                                expect(err.message).to.equal('Invalid user or password');
                             });
                     });
                 });
@@ -335,7 +327,6 @@ describe('@integration authentication', () => {
                                 .then(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
-                                    expect(err.message).to.equal('Invalid user or password');
                                 });
                         });
 
@@ -344,7 +335,6 @@ describe('@integration authentication', () => {
                                 .then(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
-                                    expect(err.message).to.equal('Invalid user or password');
                                 });
                         });
                     });
@@ -361,7 +351,6 @@ describe('@integration authentication', () => {
                                 .then(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
-                                    expect(err.message).to.equal('Invalid user or password');
                                 });
                         });
 
@@ -374,7 +363,6 @@ describe('@integration authentication', () => {
                                 .then(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
-                                    expect(err.message).to.equal('Invalid user or password');
                                 });
                         });
                     });
