@@ -523,5 +523,9 @@ describe('@integration X plugin session', () => {
         it('should fail to drop a schema with name set to `null`', () => {
             return expect(session.dropSchema(null)).to.be.rejected;
         });
+
+        it('should setup a default schema', () => {
+            return expect(session.getDefaultSchema().getName()).to.equal(config.schema);
+        });
     });
 });

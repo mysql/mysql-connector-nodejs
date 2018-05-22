@@ -388,6 +388,16 @@ describe('Session', () => {
             });
         });
 
+        context('getDefaultSchema()', () => {
+            it('should return the default schema bound to the session', () => {
+                const session = new Session({ schema: 'foo' });
+                const schema = session.getDefaultSchema();
+
+                expect(schema.getClassName()).to.equal('Schema');
+                return expect(schema.getName()).to.equal('foo');
+            });
+        });
+
         context('createSchema()', () => {
             it('should create and return a new schema', () => {
                 const session = new Session({});
