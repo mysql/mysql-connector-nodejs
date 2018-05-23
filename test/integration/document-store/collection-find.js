@@ -142,7 +142,8 @@ describe('@integration document collection find', () => {
 
             return collection
                 .find()
-                .limit(2, 2)
+                .limit(2)
+                .offset(2)
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
         });

@@ -34,11 +34,23 @@ describe('limiting', () => {
         });
 
         it('should throw an error if the limit count is not valid', () => {
-            expect(() => limiting().limit(-10)).to.throw('count must be a non-negative integer');
+            expect(() => limiting().limit(-10)).to.throw('The count value must be a non-negative integer.');
         });
 
         it('should throw an error if the limit offset is not valid', () => {
-            return expect(() => limiting().limit(10, -10)).to.throw('offset must be a non-negative integer');
+            return expect(() => limiting().limit(10, -10)).to.throw('The offset value must be a non-negative integer.');
+        });
+    });
+
+    context('offset()', () => {
+        it('should set limit `offset` property', () => {
+            expect(limiting().offset(10).getOffset()).to.equal(10);
+        });
+
+        it('should throw an error if the value is not valid', () => {
+            it('should throw an error if the limit offset is not valid', () => {
+                return expect(() => limiting().offset(-10)).to.throw('The offset value must be a non-negative integer.');
+            });
         });
     });
 });

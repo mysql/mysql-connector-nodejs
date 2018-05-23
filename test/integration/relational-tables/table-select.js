@@ -240,7 +240,8 @@ describe('@integration relational table select', () => {
             return schema
                 .getTable('test')
                 .select()
-                .limit(2, 2)
+                .limit(2)
+                .offset(2)
                 .orderBy('id')
                 .execute(row => actual.push(row))
                 .then(() => expect(actual).to.deep.equal(expected));
