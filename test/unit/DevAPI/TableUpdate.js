@@ -42,19 +42,19 @@ describe('TableUpdate', () => {
         it('should fail if a condition query is not provided', () => {
             const query = tableUpdate();
 
-            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `update()` or `where()`');
+            return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
         });
 
         it('should fail if a condition query is empty', () => {
             const query = tableUpdate(null, null, null, '');
 
-            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `update()` or `where()`');
+            return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
         });
 
         it('should fail if a condition query is not valid', () => {
             const query = tableUpdate(null, null, null, ' ');
 
-            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `update()` or `where()`');
+            return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
         });
 
         it('should fail if the query results in an error', () => {

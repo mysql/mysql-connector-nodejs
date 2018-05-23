@@ -38,19 +38,19 @@ describe('TableDelete', () => {
         });
 
         it('should fail if a condition query is not provided', () => {
-            return expect(tableDelete().execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `delete()` or `where()`');
+            return expect(tableDelete().execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
         });
 
         it('should fail if a condition query is empty', () => {
             const query = tableDelete(null, null, null, '');
 
-            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `delete()` or `where()`');
+            return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
         });
 
         it('should fail if a condition query is not valid', () => {
             const query = tableDelete(null, null, null, ' ');
 
-            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `delete()` or `where()`');
+            return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
         });
 
         it('should fail if the operation results in an error', () => {
