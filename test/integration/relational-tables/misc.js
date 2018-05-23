@@ -558,4 +558,94 @@ describe('@integration relational miscellaneous tests', () => {
             });
         });
     });
+
+    context('column metadata', () => {
+        context('signed and unsigned values', () => {
+            beforeEach('create table', () => {
+                return session
+                    .sql(`CREATE TABLE ${schema.getName()}.test (sint INT, uint INT UNSIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session
+                    .sql(`INSERT INTO ${schema.getName()}.test VALUES (1, 1)`)
+                    .execute();
+            });
+
+            it('should allow to determine if a field is signed or not', () => {
+                let metadata = [];
+
+                return session
+                    .sql(`SELECT * FROM ${schema.getName()}.test`)
+                    .execute(() => {}, meta => {
+                        metadata = metadata.concat(meta);
+                    })
+                    .then(() => {
+                        /* eslint-disable no-unused-expressions */
+                        expect(metadata[0].isNumberSigned()).to.be.true;
+                        expect(metadata[1].isNumberSigned()).to.be.false;
+                        /* eslint-enable no-unused-expressions */
+                    });
+            });
+        });
+
+        context('collation and charset names', () => {
+            beforeEach('create table', () => {
+                return session
+                    .sql(`CREATE TABLE ${schema.getName()}.test (a_char CHAR(3) CHARACTER SET latin1 COLLATE latin1_german1_ci)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session
+                    .sql(`INSERT INTO ${schema.getName()}.test VALUES ('foo')`)
+                    .execute();
+            });
+
+            it('should attach the correct names of the character set and collation', () => {
+                let metadata = [];
+
+                return session
+                    .sql(`SELECT * FROM ${schema.getName()}.test`)
+                    .execute(() => {}, meta => {
+                        metadata = metadata.concat(meta);
+                    })
+                    .then(() => {
+                        expect(metadata[0].getCollationName()).to.equal('latin1_german1_ci');
+                        expect(metadata[0].getCharacterSetName()).to.equal('latin1');
+                    });
+            });
+        });
+
+        context('padded values', () => {
+            beforeEach('create table', () => {
+                return session
+                    .sql(`CREATE TABLE ${schema.getName()}.test (rchar CHAR(5), vchar VARCHAR(5))`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session
+                    .sql(`INSERT INTO ${schema.getName()}.test VALUES ('foo', 'bar')`)
+                    .execute();
+            });
+
+            it('should allow to determine if a field is padded or not', () => {
+                let metadata = [];
+
+                return session
+                    .sql(`SELECT * FROM ${schema.getName()}.test`)
+                    .execute(() => {}, meta => {
+                        metadata = metadata.concat(meta);
+                    })
+                    .then(() => {
+                        /* eslint-disable no-unused-expressions */
+                        expect(metadata[0].isPadded()).to.be.true;
+                        expect(metadata[1].isPadded()).to.be.false;
+                        /* eslint-enable no-unused-expressions */
+                    });
+            });
+        });
+    });
 });
