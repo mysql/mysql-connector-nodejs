@@ -79,6 +79,34 @@ describe('@integration relational miscellaneous tests', () => {
                     expect(actual.meta[0].getLength()).to.equal(1);
                 });
         });
+
+        context('placeholder binding', () => {
+            beforeEach('create table', () => {
+                return session
+                    .sql(`CREATE TABLE ${schema.getName()}.test (
+                        name VARCHAR(5),
+                        age TINYINT)`)
+                    .execute();
+            });
+
+            it('should bind values to query placeholders', () => {
+                const rows = [];
+                const expected = [['foo'], ['baz']];
+
+                return session
+                    .sql(`INSERT INTO ${schema.getName()}.test VALUES (?, ?), (?, ?), (?, ?)`)
+                    .bind('foo', 23, 'bar')
+                    .bind([42, 'baz', 23])
+                    .execute()
+                    .then(() => {
+                        return session
+                            .sql(`SELECT name FROM ${schema.getName()}.test WHERE age < ?`)
+                            .bind(40)
+                            .execute(row => rows.push(row))
+                            .then(() => expect(rows).to.deep.equal(expected));
+                    });
+            });
+        });
     });
 
     context('column type decoding', () => {

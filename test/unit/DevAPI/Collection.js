@@ -14,16 +14,16 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('Collection', () => {
-    let collection, collectionRemove, execute, stmtExecute;
+    let collection, collectionRemove, execute, sqlExecute;
 
     beforeEach('create fakes', () => {
         collectionRemove = td.function();
         execute = td.function();
-        stmtExecute = td.function();
+        sqlExecute = td.function();
 
         collection = proxyquire('lib/DevAPI/Collection', {
             './CollectionRemove': collectionRemove,
-            './StmtExecute': stmtExecute
+            './SqlExecute': sqlExecute
         });
     });
 
@@ -68,7 +68,7 @@ describe('Collection', () => {
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback(['baz']))).thenResolve();
-            td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
+            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.existsInDatabase()).to.eventually.be.true;
         });
@@ -80,7 +80,7 @@ describe('Collection', () => {
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([]))).thenResolve();
-            td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
+            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.existsInDatabase()).to.eventually.be.false;
         });
@@ -94,7 +94,7 @@ describe('Collection', () => {
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([1]))).thenResolve();
-            td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
+            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
             return expect(instance.count()).to.eventually.equal(1);
         });
@@ -107,7 +107,7 @@ describe('Collection', () => {
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([1]))).thenReject(error);
-            td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
+            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
             return expect(instance.count()).to.eventually.be.rejectedWith(error);
         });
@@ -396,7 +396,7 @@ describe('Collection', () => {
 
             td.when(getName()).thenReturn('baz');
             td.when(execute()).thenResolve(true);
-            td.when(stmtExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
+            td.when(sqlExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.dropIndex('index')).to.eventually.be.true;
         });
@@ -430,7 +430,7 @@ describe('Collection', () => {
 
             td.when(getName()).thenReturn('baz');
             td.when(execute()).thenResolve(true);
-            td.when(stmtExecute('bar', 'create_collection_index', args, 'mysqlx')).thenReturn({ execute });
+            td.when(sqlExecute('bar', 'create_collection_index', args, 'mysqlx')).thenReturn({ execute });
 
             return expect(instance.createIndex('index', index)).to.eventually.be.true;
         });

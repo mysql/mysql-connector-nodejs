@@ -13,13 +13,13 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('Table', () => {
-    let execute, stmtExecute, table;
+    let execute, sqlExecute, table;
 
     beforeEach('create fakes', () => {
         execute = td.function();
-        stmtExecute = td.function();
+        sqlExecute = td.function();
 
-        table = proxyquire('lib/DevAPI/Table', { './StmtExecute': stmtExecute });
+        table = proxyquire('lib/DevAPI/Table', { './SqlExecute': sqlExecute });
     });
 
     afterEach('reset fakes', () => {
@@ -58,7 +58,7 @@ describe('Table', () => {
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback(['bar']))).thenResolve();
-            td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
+            td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
             return expect(instance.existsInDatabase()).to.eventually.be.true;
         });
@@ -71,7 +71,7 @@ describe('Table', () => {
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([]))).thenResolve();
-            td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
+            td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
             return expect(instance.existsInDatabase()).to.eventually.be.false;
         });
@@ -86,7 +86,7 @@ describe('Table', () => {
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback(['bar']))).thenResolve();
-            td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
+            td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
             return expect(instance.isView()).to.eventually.be.true;
         });
@@ -99,7 +99,7 @@ describe('Table', () => {
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([]))).thenResolve();
-            td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
+            td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
             return expect(instance.isView()).to.eventually.be.false;
         });
@@ -171,7 +171,7 @@ describe('Table', () => {
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([count]))).thenResolve();
-            td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
+            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
             return expect(instance.count()).to.eventually.equal(count);
         });
@@ -184,7 +184,7 @@ describe('Table', () => {
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(), { ignoreExtraArgs: true }).thenReject(error);
-            td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
+            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
             return expect(instance.count()).to.eventually.be.rejectedWith(error);
         });

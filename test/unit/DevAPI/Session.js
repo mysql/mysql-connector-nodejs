@@ -14,13 +14,13 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('Session', () => {
-    let Session, execute, stmtExecute;
+    let Session, execute, sqlExecute;
 
     beforeEach('create fakes', () => {
         execute = td.function();
-        stmtExecute = td.function();
+        sqlExecute = td.function();
 
-        Session = proxyquire('lib/DevAPI/Session', { './StmtExecute': stmtExecute });
+        Session = proxyquire('lib/DevAPI/Session', { './SqlExecute': sqlExecute });
     });
 
     afterEach('reset fakes', () => {
@@ -366,7 +366,7 @@ describe('Session', () => {
                 session.getSchema = td.function();
 
                 td.when(execute(td.callback([name]))).thenResolve(expected);
-                td.when(stmtExecute(session, 'SHOW DATABASES')).thenReturn({ execute });
+                td.when(sqlExecute(session, 'SHOW DATABASES')).thenReturn({ execute });
                 td.when(session.getSchema(name)).thenReturn(schema);
 
                 return expect(session.getSchemas()).to.eventually.deep.equal(expected);
@@ -381,7 +381,7 @@ describe('Session', () => {
                 session.getSchema = td.function();
 
                 td.when(execute(td.callback([name]))).thenReject(error);
-                td.when(stmtExecute(session, 'SHOW DATABASES')).thenReturn({ execute });
+                td.when(sqlExecute(session, 'SHOW DATABASES')).thenReturn({ execute });
                 td.when(session.getSchema(name)).thenReturn(schema);
 
                 return expect(session.getSchemas()).to.be.rejectedWith(error);
@@ -407,7 +407,7 @@ describe('Session', () => {
                 session.getSchema = td.function();
 
                 td.when(execute()).thenResolve();
-                td.when(stmtExecute(session, `CREATE DATABASE \`${schema}\``)).thenReturn({ execute });
+                td.when(sqlExecute(session, `CREATE DATABASE \`${schema}\``)).thenReturn({ execute });
                 td.when(session.getSchema(schema)).thenReturn(expected);
 
                 return expect(session.createSchema(schema)).to.eventually.deep.equal(expected);
@@ -419,7 +419,7 @@ describe('Session', () => {
                 const session = new Session({});
 
                 td.when(execute()).thenResolve(true);
-                td.when(stmtExecute(session, 'DROP DATABASE `foo`')).thenReturn({ execute });
+                td.when(sqlExecute(session, 'DROP DATABASE `foo`')).thenReturn({ execute });
 
                 return expect(session.dropSchema('foo')).to.eventually.be.true;
             });
@@ -430,7 +430,7 @@ describe('Session', () => {
                 error.info = { code: 1008 };
 
                 td.when(execute()).thenReject(error);
-                td.when(stmtExecute(session, 'DROP DATABASE `foo`')).thenReturn({ execute });
+                td.when(sqlExecute(session, 'DROP DATABASE `foo`')).thenReturn({ execute });
 
                 return expect(session.dropSchema('foo')).to.eventually.be.true;
             });
@@ -440,7 +440,7 @@ describe('Session', () => {
                 const error = new Error('foobar');
 
                 td.when(execute()).thenReject(error);
-                td.when(stmtExecute(session, 'DROP DATABASE `foo`')).thenReturn({ execute });
+                td.when(sqlExecute(session, 'DROP DATABASE `foo`')).thenReturn({ execute });
 
                 return expect(session.dropSchema('foo')).to.eventually.be.rejectedWith(error);
             });
@@ -450,14 +450,14 @@ describe('Session', () => {
             it('should create a savepoint with a generated name if no name is passed', () => {
                 const session = new Session({});
                 td.when(execute()).thenResolve(true);
-                td.when(stmtExecute(session, td.matchers.contains(/^SAVEPOINT `connector-nodejs-[a-f0-9]{32}`$/))).thenReturn({ execute });
+                td.when(sqlExecute(session, td.matchers.contains(/^SAVEPOINT `connector-nodejs-[a-f0-9]{32}`$/))).thenReturn({ execute });
                 return expect(session.setSavepoint()).to.eventually.be.a('string').and.not.be.empty;
             });
 
             it('should create a savepoint with the given name', () => {
                 const session = new Session({});
                 td.when(execute()).thenResolve(true);
-                td.when(stmtExecute(session, td.matchers.contains(/^SAVEPOINT `foo`$/))).thenReturn({ execute });
+                td.when(sqlExecute(session, td.matchers.contains(/^SAVEPOINT `foo`$/))).thenReturn({ execute });
                 return expect(session.setSavepoint('foo')).to.eventually.be.equal('foo');
             });
 
@@ -470,7 +470,7 @@ describe('Session', () => {
             it('should release the savepoint', () => {
                 const session = new Session({});
                 td.when(execute()).thenResolve(true);
-                td.when(stmtExecute(session, td.matchers.contains(/^RELEASE SAVEPOINT `foo`$/))).thenReturn({ execute });
+                td.when(sqlExecute(session, td.matchers.contains(/^RELEASE SAVEPOINT `foo`$/))).thenReturn({ execute });
                 return expect(session.releaseSavepoint('foo')).to.be.fulfilled;
             });
 
@@ -487,7 +487,7 @@ describe('Session', () => {
             it('should rolback to the savepoint', () => {
                 const session = new Session({});
                 td.when(execute()).thenResolve(true);
-                td.when(stmtExecute(session, td.matchers.contains(/^ROLLBACK TO SAVEPOINT `foo`$/))).thenReturn({ execute });
+                td.when(sqlExecute(session, td.matchers.contains(/^ROLLBACK TO SAVEPOINT `foo`$/))).thenReturn({ execute });
                 return expect(session.rollbackTo('foo')).to.be.fulfilled;
             });
 
@@ -502,47 +502,46 @@ describe('Session', () => {
     });
 
     context('executeSql()', () => {
-        it('should create a StmtExecute query with a given statement', () => {
+        it('should create a sqlExecute query with a given statement', () => {
             const session = new Session({});
 
-            td.when(stmtExecute(session, 'foo')).thenReturn();
+            td.when(sqlExecute(session, 'foo')).thenReturn();
 
             session.executeSql('foo');
 
-            expect(td.explain(stmtExecute).callCount).to.equal(1);
+            expect(td.explain(sqlExecute).callCount).to.equal(1);
         });
 
-        it('should create a StmtExecute query with optional arguments', () => {
+        it('should create a sqlExecute query with optional arguments', () => {
             const session = new Session({});
 
-            td.when(stmtExecute(session, 'foo', ['bar', 'baz'])).thenReturn();
+            td.when(sqlExecute(session, 'foo', ['bar', 'baz'])).thenReturn();
 
             session.executeSql('foo', 'bar', 'baz');
 
-            expect(td.explain(stmtExecute).callCount).to.equal(1);
+            expect(td.explain(sqlExecute).callCount).to.equal(1);
         });
 
-        it('should create a StmtExecute query with optional arguments provided as an array', () => {
+        it('should create a sqlExecute query with optional arguments provided as an array', () => {
             const session = new Session({});
 
-            td.when(stmtExecute(session, 'foo', ['bar', 'baz'])).thenReturn();
+            td.when(sqlExecute(session, 'foo', ['bar', 'baz'])).thenReturn();
 
             session.executeSql('foo', ['bar', 'baz']);
 
-            expect(td.explain(stmtExecute).callCount).to.equal(1);
+            expect(td.explain(sqlExecute).callCount).to.equal(1);
         });
     });
 
     context('sql()', () => {
-        it('should call `executeSQL()`', () => {
+        it('should create a sqlExecute query with a given statement', () => {
             const session = new Session({});
-            const executeSql = td.function();
 
-            session.executeSql = executeSql;
+            td.when(sqlExecute(session, 'foo')).thenReturn();
 
-            td.when(executeSql('foo')).thenReturn('bar');
+            session.sql('foo');
 
-            expect(session.sql('foo')).to.equal('bar');
+            expect(td.explain(sqlExecute).callCount).to.equal(1);
         });
     });
 
