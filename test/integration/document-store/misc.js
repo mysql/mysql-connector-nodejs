@@ -115,7 +115,7 @@ describe('@integration collection miscellaneous tests', () => {
     it('should create a collection within the appropriate schema', () => {
         return schema
             .createCollection('foobar')
-            .then(collection => expect(collection.getSchema()).to.deep.equal(schema.getName()));
+            .then(collection => expect(collection.getSchema().getName()).to.deep.equal(schema.getName()));
     });
 
     it('@regression should not apply padding when retrieving server-side auto-generated _id values using SQL', () => {

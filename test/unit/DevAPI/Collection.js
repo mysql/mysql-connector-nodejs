@@ -37,6 +37,21 @@ describe('Collection', () => {
         });
     });
 
+    context('getSchema()', () => {
+        it('should return the instance of the collection schema', () => {
+            const getSchema = td.function();
+            const getName = td.function();
+            const session = { getSchema };
+            const schema = { getName };
+            const coll = collection(session, schema, 'bar');
+
+            td.when(getName()).thenReturn('foo');
+            td.when(getSchema('foo')).thenReturn(schema);
+
+            return expect(coll.getSchema().getName()).to.equal('foo');
+        });
+    });
+
     context('getSession()', () => {
         it('should return the associated session', () => {
             const instance = collection({ foo: 'bar' });
@@ -47,8 +62,11 @@ describe('Collection', () => {
 
     context('existsInDatabase()', () => {
         it('should return true if exists in database', () => {
-            const instance = collection('foo', 'bar', 'baz');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection('foo', schema, 'baz');
 
+            td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback(['baz']))).thenResolve();
             td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
@@ -56,8 +74,11 @@ describe('Collection', () => {
         });
 
         it('should return false if it does not exist in database', () => {
-            const instance = collection('foo', 'bar', 'baz');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection('foo', schema, 'baz');
 
+            td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([]))).thenResolve();
             td.when(stmtExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
@@ -67,8 +88,11 @@ describe('Collection', () => {
 
     context('count()', () => {
         it('should return the number of documents in a collection', () => {
-            const instance = collection('foo', 'bar', 'baz');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection('foo', schema, 'baz');
 
+            td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([1]))).thenResolve();
             td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
@@ -76,9 +100,12 @@ describe('Collection', () => {
         });
 
         it('should fail if an unexpected error is thrown', () => {
-            const instance = collection('foo', 'bar', 'baz');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection('foo', schema, 'baz');
             const error = new Error('foobar');
 
+            td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([1]))).thenReject(error);
             td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
@@ -88,8 +115,12 @@ describe('Collection', () => {
 
     context('inspect()', () => {
         it('should hide internals', () => {
-            const instance = collection(null, 'foo', 'bar');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection(null, schema, 'bar');
             const expected = { schema: 'foo', collection: 'bar' };
+
+            td.when(getName()).thenReturn('foo');
 
             expect(instance.inspect()).to.deep.equal(expected);
         });
@@ -359,7 +390,11 @@ describe('Collection', () => {
         });
 
         it('should accept valid index name', () => {
-            const instance = collection('bar', 'baz', 'qux');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection('bar', schema, 'qux');
+
+            td.when(getName()).thenReturn('baz');
             td.when(execute()).thenResolve(true);
             td.when(stmtExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
 
@@ -373,7 +408,10 @@ describe('Collection', () => {
         });
 
         it('should accept a valid index name and valid index definition', () => {
-            const instance = collection('bar', 'baz', 'qux');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection('bar', schema, 'qux');
+
             const args = [{
                 name: 'index',
                 schema: 'baz',
@@ -382,6 +420,7 @@ describe('Collection', () => {
                 type: 'INDEX',
                 constraint: [ { required: false, type: 'TINYINT', member: '$.age' } ]
             }];
+
             const index = {
                 fields: [{
                     field: '$.age',
@@ -389,6 +428,7 @@ describe('Collection', () => {
                 }]
             };
 
+            td.when(getName()).thenReturn('baz');
             td.when(execute()).thenResolve(true);
             td.when(stmtExecute('bar', 'create_collection_index', args, 'mysqlx')).thenReturn({ execute });
 

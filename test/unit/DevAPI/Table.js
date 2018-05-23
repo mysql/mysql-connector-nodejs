@@ -34,11 +34,29 @@ describe('Table', () => {
         });
     });
 
+    context('getSchema()', () => {
+        it('should return the instance of the table schema', () => {
+            const getSchema = td.function();
+            const getName = td.function();
+            const session = { getSchema };
+            const schema = { getName };
+            const coll = table(session, schema, 'bar');
+
+            td.when(getName()).thenReturn('foo');
+            td.when(getSchema('foo')).thenReturn(schema);
+
+            return expect(coll.getSchema().getName()).to.equal('foo');
+        });
+    });
+
     context('existsInDatabase()', () => {
         it('should return true if the table exists in database', () => {
-            const instance = table('foo', 'bar', 'baz');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = table('foo', schema, 'baz');
             const query = 'SELECT COUNT(*) cnt FROM information_schema.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
 
+            td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback(['bar']))).thenResolve();
             td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
@@ -46,9 +64,12 @@ describe('Table', () => {
         });
 
         it('should return false if the table does not exist in database', () => {
-            const instance = table('foo', 'bar', 'baz');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = table('foo', schema, 'baz');
             const query = 'SELECT COUNT(*) cnt FROM information_schema.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
 
+            td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([]))).thenResolve();
             td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
@@ -58,9 +79,12 @@ describe('Table', () => {
 
     context('isView()', () => {
         it('should return true if the table exists in database', () => {
-            const instance = table('foo', 'bar', 'baz');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = table('foo', schema, 'baz');
             const query = 'SELECT COUNT(*) cnt FROM information_schema.VIEWS WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
 
+            td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback(['bar']))).thenResolve();
             td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
@@ -68,9 +92,12 @@ describe('Table', () => {
         });
 
         it('should return false if the table does not exist in database', () => {
-            const instance = table('foo', 'bar', 'baz');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = table('foo', schema, 'baz');
             const query = 'SELECT COUNT(*) cnt FROM information_schema.VIEWS WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
 
+            td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([]))).thenResolve();
             td.when(stmtExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
@@ -137,9 +164,12 @@ describe('Table', () => {
 
     context('count()', () => {
         it('should return the number of records found', () => {
-            const instance = table('foo', 'bar', 'baz');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = table('foo', schema, 'baz');
             const count = 3;
 
+            td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([count]))).thenResolve();
             td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
@@ -147,9 +177,12 @@ describe('Table', () => {
         });
 
         it('should fail if an expected error is thrown', () => {
-            const instance = table('foo', 'bar', 'baz');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = table('foo', schema, 'baz');
             const error = new Error('foobar');
 
+            td.when(getName()).thenReturn('bar');
             td.when(execute(), { ignoreExtraArgs: true }).thenReject(error);
             td.when(stmtExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
@@ -159,8 +192,12 @@ describe('Table', () => {
 
     context('inspect()', () => {
         it('should hide internals', () => {
-            const instance = table(null, 'foo', 'bar');
+            const getName = td.function();
+            const schema = { getName };
+            const instance = table(null, schema, 'bar');
             const expected = { schema: 'foo', table: 'bar' };
+
+            td.when(getName()).thenReturn('foo');
 
             expect(instance.inspect()).to.deep.equal(expected);
         });
