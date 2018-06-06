@@ -8,6 +8,18 @@ Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.12
+=======
+
+- Mysqlx.Crud message encoding performance improvements
+- Expression parser performance improvements
+- Add missing X DevAPI standard methods
+- Remove and deprecate extraneous X DevAPI unsupported methods
+- Fix issues with ESCAPE expressions
+- Fix metadata-based field value padding issues
+- Fix uncaught exception issue for NULL fields
+- Reduce error surface and introduce sane defaults for mysqlx.getSession()
+
 v8.0.11
 =======
 
