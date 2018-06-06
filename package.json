@@ -30,6 +30,10 @@
     "Database"
   ],
   "homepage": "http://www.mysql.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mysql/mysql-connector-nodejs.git"
+  },
   "bugs": {
     "url": "http://bugs.mysql.com"
   },
