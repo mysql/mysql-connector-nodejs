@@ -4,6 +4,7 @@
 
 const expect = require('chai').expect;
 const fixtures = require('test/fixtures');
+const mysqlx = require('index');
 
 describe('@integration document collection find', () => {
     let session, schema, collection;
@@ -110,6 +111,18 @@ describe('@integration document collection find', () => {
                 .find()
                 .fields('_id', 'name')
                 .execute(row => actual.push(row))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should perform computed projections', () => {
+            const expected = [{ name: 'bar', newSize: 24 }, { name: 'foo', newSize: 43 }];
+            let actual = [];
+
+            return collection
+                .find()
+                .fields(mysqlx.expr('{ "name": name, "newSize": size + 1 }'))
+                .sort('size ASC')
+                .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });

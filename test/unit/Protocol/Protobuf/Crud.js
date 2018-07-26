@@ -3,7 +3,9 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
+const ColumnIdentifier = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').ColumnIdentifier;
 const Crud = require('lib/Protocol/Protobuf/Adapters/Crud');
+const DocumentPathItem = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').DocumentPathItem;
 const Expr = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
 const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
 const Parser = require('lib/ExprParser');
@@ -11,6 +13,24 @@ const expect = require('chai').expect;
 
 describe('Protobuf', () => {
     context('Crud', () => {
+        context('encodeProjection()', () => {
+            it('should encode a Mysqlx.Expr.Expr', () => {
+                const docPathItem = new DocumentPathItem();
+                docPathItem.setType(DocumentPathItem.Type.MEMBER);
+                docPathItem.setValue('foo');
+
+                const id = new ColumnIdentifier();
+                id.addDocumentPath(docPathItem);
+
+                const expr = new Expr();
+                expr.setType(Expr.Type.IDENT);
+                expr.setIdentifier(id);
+
+                const encoded = Crud.encodeProjection(expr);
+                expect(encoded.getSource()).to.deep.equal(expr);
+            });
+        });
+
         context('encodeTypedRow()', () => {
             it('should encode a typed row given a single object', () => {
                 const encoded = Crud.encodeTypedRow({ name: 'foo' });
