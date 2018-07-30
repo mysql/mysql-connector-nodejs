@@ -18,6 +18,7 @@
     "README.md",
     "lib/",
     "test/",
+    "docs/",
     "CHANGES.txt",
     "COPYING",
     "index.js"
@@ -37,7 +38,9 @@
   "bugs": {
     "url": "http://bugs.mysql.com"
   },
-  "scripts": {},
+  "scripts": {
+    "prepack": "node bin/prepack.js"
+  },
   "dependencies": {
     "google-protobuf": "3.4.0",
     "parsimmon": "1.6.2"
