@@ -63,6 +63,14 @@ describe('@integration X plugin session', () => {
                     });
             });
 
+            it('should not connect with the default configuration', () => {
+                return expect(mysqlx.getSession()).to.be.rejected
+                    .then(err => {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(1045);
+                    });
+            });
+
             it('should not connect if the credentials are invalid', () => {
                 const invalidConfig = Object.assign({}, config, {
                     dbUser: 'invalid user',
@@ -486,6 +494,20 @@ describe('@integration X plugin session', () => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1305);
                     });
+                });
+        });
+    });
+
+    context('session state', () => {
+        it('should fail to re-use a closed session', () => {
+            const error = 'This session was closed. Use "mysqlx.getSession()" or "mysqlx.getClient()" to create a new one.';
+
+            return expect(mysqlx.getSession(config)).to.be.fulfilled
+                .then(session => {
+                    return session.close()
+                        .then(() => {
+                            return expect(session.getSchemas()).to.be.rejectedWith(error);
+                        });
                 });
         });
     });

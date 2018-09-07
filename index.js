@@ -31,8 +31,8 @@
 'use strict';
 
 const Expr = require('./lib/Protocol/Protobuf/Adapters/Expr');
-const Session = require('./lib/DevAPI/Session');
 const authenticationManager = require('./lib/Authentication/AuthenticationManager');
+const client = require('./lib/DevAPI/Client');
 const locking = require('./lib/DevAPI/Locking');
 const mysql41Auth = require('./lib/Authentication/MySQL41Auth');
 const parseUri = require('./lib/DevAPI/Util/URIParser');
@@ -52,46 +52,78 @@ authenticationManager.registerPlugin(plainAuth);
 authenticationManager.registerPlugin(sha256MemoryAuth);
 
 /**
- * Create a session instance.
+ * Parse a connection specification.
  * @private
- * @param {string|URI} configuration - session base reference
- * @throws {Error} When the session base reference is not valid.
+ * @param {string|URI} input - connection specification
+ * @param {Object} [options] - string validation options
+ * @throws {Error} When the input if not a valid connection specification.
  * @returns {Promise.<Session>}
  */
-function createSession (configuration) {
-    let session;
+function parseConnectionSpec (input, options) {
+    options = Object.assign({ enforceJSON: false }, options);
 
-    try {
-        session = new Session(configuration);
-    } catch (err) {
-        return Promise.reject(err);
+    const isPlainObject = typeof input === 'object' && !Array.isArray(input);
+    const isString = typeof input === 'string';
+
+    if (!isPlainObject && !isString) {
+        throw new Error('Invalid parameter. `getSession()` expects a plain JavaScript object, JSON or a connection string');
     }
 
-    return session.connect();
+    if (isPlainObject) {
+        return input;
+    }
+
+    try {
+        return JSON.parse(input);
+    } catch (err) {
+        if (err.name === 'SyntaxError' && !options.enforceJSON) {
+            return parseUri(input);
+        }
+
+        throw err;
+    }
 }
 
 /**
- * Load a new or existing session.
- * @param {string|URI} properties - session properties
+ * Create a legacy X DevAPI connection.
+ * @param {string|URI} connection - connection specification
+ * @example
+ * mysqlx.getSession({ user: 'root' })
+ *   .then(session => {
+ *     console.log(session.inspect()); // { host: 'localhost', port: 33060, user: 'root', pooling: false, ... }
+ *   })
  * @returns {Promise.<Session>}
  */
-exports.getSession = function (input) {
-    const hasPlainObjectInput = typeof input === 'object' && !Array.isArray(input);
-    const hasStringInput = typeof input === 'string';
-
-    if (!hasPlainObjectInput && !hasStringInput) {
-        return Promise.reject(new Error('Invalid parameter. `getSession()` needs a configuration object or a connection string'));
-    }
-
-    if (hasPlainObjectInput) {
-        return createSession(input);
-    }
+exports.getSession = function (connection) {
+    connection = connection || {};
 
     try {
-        return createSession(parseUri(input));
+        connection = parseConnectionSpec(connection);
     } catch (err) {
         return Promise.reject(err);
     }
+
+    return client({ pooling: { enabled: false, maxSize: 1 }, uri: connection }).getSession();
+};
+
+/**
+ * Create a new X DevAPI connection pool.
+ * @param {string|URI} connection - connection specification
+ * @param {PoolingOptions} options - pooling options
+ * @example
+ * const client = mysqlx.getClient({ user: 'root' }, { pooling: { enabled: true, maxSize: 3 } })
+ *
+ * client.getSession()
+ *   .then(session => {
+ *     console.log(session.inspect()); // { host: 'localhost', port: 33060, user: 'root', pooling: true, ... }
+ *   })
+ * @returns {module:Client}
+ */
+exports.getClient = function (connection, options) {
+    options = Object.assign({ pooling: { enabled: true } }, parseConnectionSpec(options || {}, { enforceJSON: true, allowUndefined: true }));
+    connection = parseConnectionSpec(connection);
+
+    return client(Object.assign(options, { uri: connection }));
 };
 
 /**

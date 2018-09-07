@@ -42,6 +42,7 @@ describe('Session', () => {
                 ssl: true,
                 dbUser: '',
                 host: 'localhost',
+                pooling: false,
                 port: 33060,
                 socket: undefined
             });
@@ -546,30 +547,97 @@ describe('Session', () => {
     });
 
     context('close()', () => {
-        let close;
+        let sessionClose;
 
         beforeEach('create fakes', () => {
-            close = td.function();
+            sessionClose = td.function();
         });
 
-        it('should succeed if the client closes the connection', () => {
+        it('should succeed if the session is closed', () => {
             const session = new Session({});
-            session._client = { close };
+            session._client = { sessionClose };
 
-            td.when(close()).thenResolve();
+            td.when(sessionClose()).thenResolve();
 
             return expect(session.close()).to.eventually.be.fulfilled;
         });
 
-        it('should fail if the client cannot close the connection', () => {
+        it('should succeed if the session is not usable', () => {
             const session = new Session({});
-            session._client = { close };
+            session._client = { sessionClose };
+            session._isValid = false;
+
+            return expect(session.close()).to.eventually.be.fulfilled
+                .then(() => expect(td.explain(sessionClose).callCount).to.equal(0));
+        });
+
+        it('should fail if there is an error while closing the session', () => {
+            const session = new Session({});
+            session._client = { sessionClose };
+            session._isValid = true;
 
             const error = new Error('foobar');
 
-            td.when(close()).thenReject(error);
+            td.when(sessionClose()).thenReject(error);
 
             return expect(session.close()).to.eventually.be.rejectedWith(error);
+        });
+    });
+
+    context('reset()', () => {
+        let sessionReset;
+
+        beforeEach('create fakes', () => {
+            sessionReset = td.function();
+        });
+
+        it('should succeed if the session is reset', () => {
+            const session = new Session({});
+            session._client = { sessionReset };
+
+            td.when(sessionReset()).thenResolve();
+
+            return expect(session.reset()).to.eventually.deep.equal(session);
+        });
+
+        it('should fail if there is an error while resetting the session', () => {
+            const session = new Session({});
+            session._client = { sessionReset };
+
+            const error = new Error('foobar');
+
+            td.when(sessionReset()).thenReject(error);
+
+            return expect(session.reset()).to.eventually.be.rejectedWith(error);
+        });
+    });
+
+    // TODO(Rui): should be the responsability of a connection management module
+    context('disconnect()', () => {
+        let connectionClose;
+
+        beforeEach('create fakes', () => {
+            connectionClose = td.function();
+        });
+
+        it('should succeed if the connection is closed', () => {
+            const session = new Session({});
+            session._client = { connectionClose };
+
+            td.when(connectionClose()).thenResolve();
+
+            return expect(session.disconnect()).to.be.fulfilled;
+        });
+
+        it('should fail if there is an error while closing the connection', () => {
+            const session = new Session({});
+            session._client = { connectionClose };
+
+            const error = new Error('foobar');
+
+            td.when(connectionClose()).thenReject(error);
+
+            return expect(session.disconnect()).to.eventually.be.rejectedWith(error);
         });
     });
 });
