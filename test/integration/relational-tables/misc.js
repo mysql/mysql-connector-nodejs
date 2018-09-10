@@ -616,6 +616,18 @@ describe('@integration relational miscellaneous tests', () => {
                         expect(metadata[0].getCharacterSetName()).to.equal('latin1');
                     });
             });
+
+            it('should return undefined for non-textual fields', () => {
+                let metadata = [];
+
+                return session
+                    .sql(`SELECT 1`).execute(() => {}, meta => {
+                        metadata = metadata.concat(meta);
+                    })
+                    .then(() => {
+                        expect(metadata[0].getCollationName()).to.equal(undefined);
+                    });
+            });
         });
 
         context('padded values', () => {
