@@ -41,70 +41,63 @@ The following is an example encompassing the different sort of CRUD operations u
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const connection = {};
-
-mysqlx
-    .getSession('root@localhost:33060')
+mysqlx.getSession('root@localhost:33060')
     .then(session => {
-        connection.session = session;
-
-        return session.createSchema('mySchema');
-    })
-    .then(schema => {
-        connection.schema = schema;
-
-        return connection.schema
-            .createCollection('myCollection');
-    })
-    .then(() => {
-        return connection.schema
-            .getCollection('myCollection')
-            .add([{ name: 'foo', age: 42 }])
-            .execute();
-    })
-    .then(() => {
-        return connection.schema
-            .getCollection('myCollection')
-            .find()
-            .fields(['name', 'age'])
-            .execute(row => {
-                console.log(row); // { name: 'foo', age: 42 }
+        return session.createSchema('mySchema')
+            .then(() => {
+                return session.getSchema('mySchema').createCollection('myCollection');
+            })
+            .then(() => {
+                return session.getSchema('mySchema').getCollection('myCollection')
+                    .add([{ name: 'foo', age: 42 }])
+                    .execute()
+            })
+            .then(() => {
+                return session.getSchema('mySchema').getCollection('myCollection')
+                    .find()
+                    .fields(['name', 'age'])
+                    .execute(row => {
+                        console.log(row); // { name: 'foo', age: 42 }
+                    });
+            })
+            .then(() => {
+                return session.getSchema('mySchema').getCollection('myCollection')
+                    .modify('age = :value')
+                    .bind('value', 42);
+                    .set('name', 'bar')
+                    .execute();
+            })
+            .then(() => {
+                return session.getSchema('mySchema').getCollection('myCollection')
+                    .find()
+                    .fields(['name', 'age'])
+                    .execute(row => {
+                        console.log(row); // { name: 'bar', age: 42 }
+                    });
+            })
+            .then(() => {
+                return session.getSchema('mySchema').getCollection('myCollection')
+                    .remove('true')
+                    .execute();
+            })
+            .then(() => {
+                return session.getSchema('mySchema').dropCollection('myCollection');
+            })
+            .then(() => {
+                return session.dropSchema('mySchema');
+            })
+            .then(() => {
+                return session.close();
+            })
+            .catch(err => {
+                return session.close()
+                    .then(() => {
+                        throw err;
+                    })
+                    .catch(err => {
+                        throw err;
+                    });
             });
-    })
-    .then(() => {
-        return connection.schema
-            .getCollection('myCollection')
-            .modify()
-            .where('age = 42')
-            .set('name', 'bar')
-            .execute();
-    })
-    .then(() => {
-        return connection.schema
-            .getCollection('myCollection')
-            .find()
-            .fields(['name', 'age'])
-            .execute(row => {
-                console.log(row); // { name: 'bar', age: 42 }
-            });
-    })
-    .then(() => {
-        return connection.schema
-            .getCollection('myCollection')
-            .remove('true')
-            .execute();
-    })
-    .then(() => {
-        return connection.schema
-            .dropCollection('myCollection');
-    })
-    .then(() => {
-        return connection.session
-            .dropSchema('mySchema');
-    })
-    .then(() => {
-        return connection.session
-            .close();
     })
     .catch(err => {
         console.log(err);
@@ -118,71 +111,67 @@ The following is an example encompassing the different sort of CRUD operations u
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const connection = {};
-
-mysqlx
-    .getSession('root@localhost:33060')
+mysqlx.getSession('root@localhost:33060')
     .then(session => {
-        connection.session = session;
-
-        return session.createSchema('mySchema');
-    })
-    .then(schema => {
-        connection.schema = schema;
-
-        return connection.session
-            .sql('CREATE TABLE mySchema.myTable (_id SERIAL, name VARCHAR(3), age TINYINT)')
-            .execute();
-    })
-    .then(() => {
-        return connection.schema
-            .getTable('myTable')
-            .insert(['name', 'age'])
-            .values(['foo', 42])
-            .execute();
-    })
-    .then(() => {
-        return connection.schema
-            .getTable('myTable')
-            .select(['name', 'age'])
-            .execute(row => {
-                console.log(row); // ['foo', 42]
+        return session.createSchema('mySchema')
+            .then(() => {
+                return session.sql('CREATE TABLE mySchema.myTable (_id SERIAL, name VARCHAR(3), age TINYINT)')
+                    .execute();
+            })
+            .then(() => {
+                return session.getSchema('mySchema').getTable('myTable')
+                    .insert(['name', 'age'])
+                    .values(['foo', 42])
+                    .execute();
+            })
+            .then(() => {
+                return session.getSchema('mySchema').getTable('myTable')
+                    .select(['name', 'age'])
+                    .execute(row => {
+                        console.log(row); // ['foo', 42]
+                    });
+            })
+            .then(() => {
+                return session.getSchema('mySchema').getTable('myTable')
+                    .update()
+                    .where('age = 42')
+                    .set('name', 'bar')
+                    .execute();
+            })
+            .then(() => {
+                return session.getSchema('mySchema').getTable('myTable')
+                    .select(['name', 'age'])
+                    .where('name = :value')
+                    .bind('value', 'bar')
+                    .execute(row => {
+                        console.log(row); // ['bar', 42]
+                    });
+            })
+            .then(() => {
+                return session.getSchema('mySchema').getTable('myTable')
+                    .delete()
+                    .where('true')
+                    .execute();
+            })
+            .then(() => {
+                return session.sql('DROP TABLE mySchema.myTable')
+                    .execute();
+            })
+            .then(() => {
+                return session.dropSchema('mySchema');
+            })
+            .then(() => {
+                return session.close();
+            })
+            .catch(err => {
+                return session.close()
+                    .then(() => {
+                        throw err;
+                    })
+                    .catch(err => {
+                        throw err;
+                    });
             });
-    })
-    .then(() => {
-        return connection.schema
-            .getTable('myTable')
-            .update()
-            .where('age = 42')
-            .set('name', 'bar')
-            .execute();
-    })
-    .then(() => {
-        return connection.schema
-            .getTable('myTable')
-            .select(['name', 'age'])
-            .where('name = "bar"')
-            .execute(row => {
-                console.log(row); // ['bar', 42]
-            });
-    })
-    .then(() => {
-        return connection.schema
-            .getTable('myTable')
-            .delete('true')
-            .execute();
-    })
-    .then(() => {
-        return connection.schema
-            .dropTable('myTable');
-    })
-    .then(() => {
-        return connection.session
-            .dropSchema('mySchema');
-    })
-    .then(() => {
-        return connection.session
-            .close();
     })
     .catch(err => {
         console.log(err);
