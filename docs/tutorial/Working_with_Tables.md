@@ -5,11 +5,9 @@
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://localhost:33060')
+mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .sql('CREATE TABLE schemaName.tableName (column INT)')
+        return session.sql('CREATE TABLE schemaName.tableName (column INT)')
             .execute()
             .then(() => {
                 return session.getSchema('schemaName').getTable('tableName');
@@ -28,17 +26,14 @@ mysqlx
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://localhost:33060')
+mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        const schema = session.getSchema('foo');
-
         return Promise
             .all([
                 session.sql('CREATE TABLE foo.bar (_id SERIAL)').execute(),
                 session.sql('CREATE TABLE foo.baz (_id SERIAL)').execute()
             ])
-            .then(() => schema);
+            .then(() => session.getSchema('foo'));
     })
     .then(schema => {
         return schema.getTables();
@@ -56,21 +51,14 @@ Consider a table `testSchema.testTable`. We can drop this table using the `Sessi
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://localhost:33060')
+mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .sql('CREATE TABLE schemaName.tableName (column INT)')
+        return session.sql('CREATE TABLE schemaName.tableName (column INT)')
             .execute()
-            .then(() => session);
-    })
-    .then(session => {
-        return session
-            .sql('DROP TABLE testSchema.testTable')
-            .execute();
-    })
-    .then(() => {
-        // do other things
+            .then(() => {
+                return session.sql('DROP TABLE testSchema.testTable')
+                    .execute();
+            });
     })
     .catch(err => {
         // something went wrong
@@ -102,24 +90,21 @@ To update/delete all rows from a table, one should provide any expression that e
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
+const rows = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getTable('testTable')
-            // The criteria is defined through the expression.
-            .delete('name = "foo"')
-            .execute()
-            .then(() => table);
-    })
-    .then(table => {
-        let resultSet = [];
+        const table = session.getSchema('testSchema').getTable('testTable');
 
-        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet);
+        return table.delete().where('name = "foo"')
+            .execute()
+            .then(() => {
+                return table.select()
+                    .execute(row => rows.push(row));
+            });
     })
-    .then(result => {
-        console.log(result); // [ [ 'bar', 42 ] ]
+    .then(() => {
+        console.log(rows); // [ [ 'bar', 42 ] ]
     });
 ```
 
@@ -127,188 +112,90 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
+const rows = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getTable('testTable')
-            // The criteria is defined through the expression.
-            .delete()
-            .where('name = "foo"')
-            .execute()
-            .then(() => table);
-    })
-    .then(table => {
-        let resultSet = [];
+        const table = session.getSchema('testSchema').getTable('testTable');
 
-        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet);
+        return table.delete().where('name = "foo"')
+            .execute()
+            .then(() => {
+                return table.select()
+                    .execute(row => rows.push(row));
+            });
     })
-    .then(result => {
-        console.log(result); // [ [ 'bar', 42 ] ]
+    .then(() => {
+        console.log(rows); // [ [ 'bar', 42 ] ]
     });
 ```
 
 ### Deleting all rows
 
-#### Without `where()`
-
 ```js
 const mysqlx = require('@mysql/xdevapi');
+const rows = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getTable('testTable')
-            // The expression should evaluate to `true`.
-            .delete('true')
+        const table = session.getSchema('testSchema').getTable('testTable');
+
+        // The expression should evaluate to `true`.
+        return table.delete().where('true')
             .execute()
-            .then(() => table);
+            .then(() => {
+                return table.select()
+                    .execute(row => rows.push(row));
+            });
     })
-    .then(table => {
-        let resultSet = [];
-
-        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result); // []
-    });
-```
-
-#### With `where()`
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://localhost:33060')
-    .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getTable('testTable')
-            // The expression should evaluate to `true`.
-            .delete()
-            .where('true')
-            .execute()
-            .then(() => table);
-    })
-    .then(table => {
-        let resultSet = [];
-
-        return table.select().execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result); // []
+    .then(() => {
+        console.log(rows); // []
     });
 ```
 
 ### Updating rows that match a given criteria
 
-#### Without `where()`
-
 ```js
 const mysqlx = require('@mysql/xdevapi');
+const rows = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getTable('testTable')
-            // The criteria is defined through the expression.
-            .update('name = "foo"')
-            .set('age', 50)
+        const table = session.getSchema('testSchema').getTable('testTable');
+
+        // The criteria is defined through the expression.
+        return table.update().where('name = "bar"').set('age', 50)
             .execute()
-            .then(() => table);
+            .then(() => {
+                return table.select().orderBy('name ASC')
+                    .execute(row => rows.push(row));
+            });
     })
-    .then(table => {
-        let resultSet = [];
-
-        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result); // [ [ 'foo', 50 ], [ 'bar', 42 ] ]
-    });
-```
-
-#### With `where()`
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://localhost:33060')
-    .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getTable('testTable')
-            // The criteria is defined through the expression.
-            .update()
-            .where('name = "bar"')
-            .set('age', 50)
-            .execute()
-            .then(() => table);
-    })
-    .then(table => {
-        let resultSet = [];
-
-        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result); // [ [ 'foo', 23 ] [ 'bar', 50 ] ]
+    .then(() => {
+        console.log(rows); // [ [ 'foo', 23 ] [ 'bar', 50 ] ]
     });
 ```
 
 ### Deleting all rows
 
-#### Without `where()`
-
 ```js
 const mysqlx = require('@mysql/xdevapi');
+const rows = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getTable('testTable')
-            // The expression should evaluate to `true`.
-            .update('true')
-            .set('age', 50)
+        const table = session.getSchema('testSchema').getTable('testTable');
+
+        // The expression should evaluate to `true`.
+        return table.update().where('true').set('name', 'qux')
             .execute()
-            .then(() => table);
+            .then(() => {
+                return table.select().orderBy('age ASC')
+                    .execute(row => rows.push(row));
+            });
     })
-    .then(table => {
-        let resultSet = [];
-
-        return table.select().orderBy('name ASC').execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result); // [ [ 'foo', 50 ] [ 'bar', 50 ] ]
-    });
-```
-
-#### With `where()`
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://localhost:33060')
-    .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getTable('testTable')
-            // The expression should evaluate to `true`.
-            .update()
-            .where('true')
-            .set('name', 'qux')
-            .execute()
-            .then(() => table);
-    })
-    .then(table => {
-        let resultSet = [];
-
-        return table.select().orderBy('age ASC').execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result); // [ [ 'qux', 23 ] [ 'qux', 50 ] ]
+    .then(() => {
+        console.log(rows); // [ [ 'qux', 23 ] [ 'qux', 50 ] ]
     });
 ```
 
