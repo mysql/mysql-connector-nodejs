@@ -5,8 +5,7 @@ Either you are working with relational tables or document-store collections, the
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqxl
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(session => {
         return session
             .startTransaction()
@@ -45,8 +44,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 let session;
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(s => {
         session = s;
         return session.startTransaction();
@@ -69,8 +67,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 let session;
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(s => {
         session = s;
         return session.startTransaction();
@@ -96,8 +93,7 @@ const mysqlx = require('@mysql/xdevapi');
 let session;
 let docs = [];
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(s => {
         session = s;
         return session.startTransaction();
@@ -150,8 +146,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 let session;
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(s => {
         session = s;
         return session.startTransaction();
@@ -180,8 +175,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 let session;
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(s => {
         session = s;
         return session.startTransaction();
@@ -210,8 +204,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 let session;
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(s => {
         session = s;
         return session.startTransaction();
@@ -240,8 +233,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 let session;
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(s => {
         session = s;
         return session.startTransaction();
@@ -274,8 +266,7 @@ The exact behavior of savepoints is defined by the server. This can lead to conf
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(session => {
         session.setSavepoint('fun');
     })
@@ -299,8 +290,7 @@ const mysqlx = require('@mysql/xdevapi');
 let session;
 let savepoint;
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(s => {
         session = s;
         session.startTransaction();

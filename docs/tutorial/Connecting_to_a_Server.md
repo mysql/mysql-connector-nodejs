@@ -5,7 +5,7 @@ Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI:
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-msyqlx
+mysqlx
     .getSession('mysqlx://root:passwd@localhost:33060/mySchema')
     .then(session => {
         console.log(session.inspect());
@@ -18,7 +18,7 @@ Using a "unified" connection string, which is basically a reduced version of the
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-msyqlx
+mysqlx
     .getSession('root:passwd@localhost:33060/mySchema')
     .then(session => {
         console.log(session.inspect());
@@ -39,7 +39,7 @@ const config = {
     schema: 'mySchema'
 };
 
-msyqlx
+mysqlx
     .getSession(config)
     .then(session => {
         console.log(session.inspect());
@@ -54,7 +54,7 @@ Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI with a pct-
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-msyqlx
+mysqlx
     .getSession('mysqlx://root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
     .then(session => {
         console.log(session.inspect());
@@ -67,7 +67,7 @@ Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI with an une
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-msyqlx
+mysqlx
     .getSession('mysqlx://root:passwd@(/path/to/socket)/mySchema')
     .then(session => {
         console.log(session.inspect());
@@ -80,7 +80,7 @@ Using a "unified" connection string with a pct-encoded socket path:
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-msyqlx
+mysqlx
     .getSession('root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
     .then(session => {
         console.log(session.inspect());
@@ -93,7 +93,7 @@ Using a "unified" connection string with an unencoded socket path:
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-msyqlx
+mysqlx
     .getSession('root:passwd@(/path/to/socket)/mySchema')
     .then(session => {
         console.log(session.inspect());
@@ -113,7 +113,7 @@ const config = {
     schema: 'mySchema'
 };
 
-msyqlx
+mysqlx
     .getSession(config)
     .then(session => {
         console.log(session.inspect());
@@ -232,20 +232,16 @@ Creating a new schema explicitely:
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const connection = {};
-
 mysqlx
     .getSession('mysqlx://root@localhost:33060')
     .then(session => {
-        connection.session = session;
-
-        return session.createSchema('foo');
-    })
-    .then(() => {
-        return session.getSchemas();
-    })
-    .then(schemas => {
-        console.log(schemas); // [{ Schema: { name: 'foo' } }]
+        return session.createSchema('foo')
+            .then(() => {
+                return session.getSchemas();
+            })
+            .then(schemas => {
+                console.log(schemas); // [{ Schema: { name: 'foo' } }]
+            });
     });
 ```
 
@@ -254,20 +250,16 @@ Dropping an existing schema:
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const connection = {};
-
 mysqlx
     .getSession('mysqlx://root@localhost:33060/foo')
     .then(session => {
-        connection.session = session;
-
-        return session.dropSchema('foo');
-    })
-    .then(() => {
-        return session.getSchemas();
-    })
-    .then(schemas => {
-        console.log(schemas); // []
+        return session.dropSchema('foo')
+            .then(() => {
+                return session.getSchemas();
+            })
+            .then(schemas => {
+                console.log(schemas); // []
+            });
     });
 ```
 

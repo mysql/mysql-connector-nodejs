@@ -5,10 +5,9 @@ By default, the connector creates a new session using SSL/TLS for TCP connection
 #### URI or unified-connection string
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://foobar')
+mysqlx.getSession('mysqlx://foobar')
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: true }
     });
@@ -17,12 +16,11 @@ mysqlx
 #### Connection options
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
 const options = { host: 'foobar', ssl: true };
 
-mysqlx
-    .getSession(options)
+mysqlx.getSession(options)
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: true }
     });
@@ -31,10 +29,9 @@ mysqlx
 If the server does not support secure TCP connections, the operation will fail.
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://foobar')
+mysqlx.getSession('mysqlx://foobar')
     .catch(err => {
         console.log(err.message); // will print the error message
     });
@@ -51,10 +48,9 @@ The user can easily disable this feature explicitly (thus avoiding failures when
 #### URI or unified-connection string
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://foobar?ssl-mode=DISABLED')
+mysqlx.getSession('mysqlx://foobar?ssl-mode=DISABLED')
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: false }
     });
@@ -63,12 +59,11 @@ mysqlx
 #### Connection options
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
 const options = { host: 'foobar', ssl: false };
 
-mysqlx
-    .getSession(options)
+mysqlx.getSession(options)
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: false }
     });
@@ -79,10 +74,9 @@ mysqlx
 For additional security, the user is able to verify that the server certificate is signed and/or isn't revoked by a given certificate authority (each one works independently of the other). To enable this additional security step, a link to each PEM file (CA and CRL) should be provided (certificate chaining and ordering should be done by the user beforehand).
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://foobar?ssl-ca=(/path/to/ca.pem)&ssl-crl=(/path/to/crl.pem)')
+mysqlx.getSession('mysqlx://foobar?ssl-ca=(/path/to/ca.pem)&ssl-crl=(/path/to/crl.pem)')
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: true }
     });
@@ -93,12 +87,11 @@ Note: file paths can be either [pct-encoded](https://en.wikipedia.org/wiki/Perce
 #### Connection options
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
 const options = { host: 'foobar', ssl: true, sslOptions: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem' } };
 
-mysqlx
-    .getSession(options)
+mysqlx.getSession(options)
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: true }
     });
@@ -139,32 +132,27 @@ The `mysql_native_password` authentication plugin is used by default from [MySQL
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('root@localhost?auth=MYSQL41')
+mysqlx.getSession('root@localhost?auth=MYSQL41')
     .then(session => {
         console.log(session.inspect().auth); // 'MYSQL41'
     })
 
-mysqlx
-    .getSession({ auth: 'MYSQL41', ssl: false, user: 'root' })
+mysqlx.getSession({ auth: 'MYSQL41', ssl: false, user: 'root' })
     .then(session => {
         console.log(session.inspect().auth); // 'MYSQL41'
     })
 
-mysqlx
-    .getSession('root@localhost?ssl-mode=DISABLED')
+mysqlx.getSession('root@localhost?ssl-mode=DISABLED')
     .then(session => {
         console.log(session.inspect().auth); // 'MYSQL41'
     })
 
-mysqlx
-    .getSession({ user: 'root' })
+mysqlx.getSession({ user: 'root' })
     .then(session => {
         console.log(session.inspect().auth); // 'PLAIN'
     })
 
-mysqlx
-    .getSession('root@localhost?auth=PLAIN&ssl-mode=DISABLED')
+mysqlx.getSession('root@localhost?auth=PLAIN&ssl-mode=DISABLED')
     .catch(err => {
         console.log(err.message); // 'Invalid user or password'
     });
@@ -187,26 +175,22 @@ Any authentication setup besides `PLAIN` over TLS will fail. Again, `SHA256_MEMO
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('root@localhost')
+mysqlx.getSession('root@localhost')
     .then(session => {
         console.log(session.inspect().auth); // 'PLAIN'
     })
 
-mysqlx
-    .getSession({ auth: 'MYSQL41', user: 'root' })
+mysqlx.getSession({ auth: 'MYSQL41', user: 'root' })
     .catch(err => {
         console.log(err.message); // 'Invalid user or password'
     });
 
-mysqlx
-    .getSession('root@localhost?auth=PLAIN&ssl-mode=DISABLED')
+mysqlx.getSession('root@localhost?auth=PLAIN&ssl-mode=DISABLED')
     .catch(err => {
         console.log(err.message); // 'Invalid authentication method PLAIN'
     });
 
-mysqlx
-    .getSession({ ssl: false, user: 'root' })
+mysqlx.getSession({ ssl: false, user: 'root' })
     .catch(err => {
         console.log(err.message); // 'Authentication failed using "MYSQL41" and "SHA256_MEMORY", check username and password or try a secure connection.'
     });
@@ -229,26 +213,22 @@ To save the password on the server cache, first, the client must authenticate us
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('root@localhost')
+mysqlx.getSession('root@localhost')
     .then(session => {
         console.log(session.inspect().auth); // 'PLAIN'
 
-        return mysqlx
-            .getSession('root@localhost?auth=SHA256_MEMORY')
+        return mysqlx.getSession('root@localhost?auth=SHA256_MEMORY')
     })
     .then(session => {
         console.log(session.inspect().auth); // 'SHA256_MEMORY'
     });
 
-mysqlx
-    .getSession('root@localhost?ssl-mode=DISABLED')
+mysqlx.getSession('root@localhost?ssl-mode=DISABLED')
     .catch(err => {
         console.log(err.message); // 'Authentication failed using "MYSQL41" and "SHA256_MEMORY", check username and password or try a secure connection.'
     });
 
-mysqlx
-    .getSession('root@localhost?auth=MYSQL41')
+mysqlx.getSession('root@localhost?auth=MYSQL41')
     .catch(err => {
         console.log(err.message); // 'Invalid user or password'
     });

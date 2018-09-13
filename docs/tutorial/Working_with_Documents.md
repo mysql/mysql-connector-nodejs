@@ -5,7 +5,7 @@ When adding documents to a collection, if a document does not contain an `_id`, 
 ### Using automatically assigned values
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
 mysqlx
     .getSession('mysqlx://localhost:33060/testSchema')
@@ -33,7 +33,7 @@ mysqlx
 ### Using static values
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
 mysqlx
     .getSession('mysqlx://localhost:33060/testSchema')

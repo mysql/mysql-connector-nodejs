@@ -291,7 +291,7 @@ If a collection is not empty, you can't create `SPACIAL` indexes for `GEOJSON` f
 ### Creating a regular index
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
 mysqlx
     .getSession('mysqlx://root@localhost:33060')
@@ -318,7 +318,7 @@ mysqlx
 ### Creating a spatial index
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
 mysqlx
     .getSession('mysqlx://root@localhost:33060')
@@ -348,7 +348,7 @@ mysqlx
 ### Dropping an index
 
 ```js
-const mysqlx = require('@mysqlx/xdevapi');
+const mysqlx = require('@mysql/xdevapi');
 
 mysqlx
     .getSession('mysqlx://root@localhost:33060')
