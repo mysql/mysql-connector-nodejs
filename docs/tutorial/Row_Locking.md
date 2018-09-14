@@ -32,8 +32,7 @@ const samplesB = [];
 
 let sessionA, sessionB;
 
-const transactionA = mysqlx
-    .getSession('mysqlx://user@localhost:33060/schema')
+const transactionA = mysqlx.getSession('mysqlx://user@localhost:33060/schema')
     .then(session => {
         sessionA = session;
 
@@ -59,8 +58,7 @@ const transactionA = mysqlx
         return sessionA.commit();
     });
 
-const transactionB = mysqlx
-    .getSession('mysqlx://user@localhost:33060/schema')
+const transactionB = mysqlx.getSession('mysqlx://user@localhost:33060/schema')
     .then(session => {
         sessionB = session;
 
@@ -114,8 +112,7 @@ const samplesB = [];
 
 let sessionA, sessionB;
 
-mysqlx
-    .getSession('mysqlx://user@localhost:33060/schema')
+mysqlx.getSession('mysqlx://user@localhost:33060/schema')
     .then(session => {
         sessionA = session;
 
@@ -192,8 +189,7 @@ const result = [];
 
 let sessionA, sessionB;
 
-mysqlx
-    .getSesssion('mysqlx://user@localhost:33060/schema')
+mysqlx.getSesssion('mysqlx://user@localhost:33060/schema')
     .then(session => {
         sessionA = session;
 
@@ -261,8 +257,7 @@ const result = [];
 
 let sessionA, sessionB;
 
-mysqlx
-    .getSesssion('mysqlx://user@localhost:33060/schema')
+mysqlx.getSesssion('mysqlx://user@localhost:33060/schema')
     .then(session => {
         sessionA = session;
 
@@ -319,8 +314,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 let sessionA, sessionB;
 
-mysqlx
-    .getSesssion('mysqlx://user@localhost:33060/schema')
+mysqlx.getSesssion('mysqlx://user@localhost:33060/schema')
     .then(session => {
         sessionA = session;
 
@@ -385,8 +379,7 @@ const result = [];
 
 let sessionA, sessionB;
 
-const sut = sessionA
-    .startTransaction()
+const sut = sessionA.startTransaction()
     .then(() => {
         return sessionA
             .getSchema(config.schema)
@@ -429,8 +422,7 @@ const result = [];
 
 let sessionA, sessionB;
 
-const sut = sessionA
-    .startTransaction()
+const sut = sessionA.startTransaction()
     .then(() => {
         return sessionA
             .getSchema(config.schema)
