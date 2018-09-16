@@ -32,7 +32,7 @@ describe('Protobuf', () => {
                 const data = new Buffer(frame.serializeBinary());
                 /* eslint-disable node/no-deprecated-api */
 
-                expect(Notice.decodeFrame(data)).to.deep.equal({ type, warning: { level, code: 23, message: 'foo' } });
+                expect(Notice.decodeFrame(data)).to.deep.equal({ scope: Frame.Scope.LOCAL, type, warning: { level, code: 23, message: 'foo' } });
             });
 
             it('should decode a SessionVariableChanged frame', () => {
@@ -55,7 +55,7 @@ describe('Protobuf', () => {
                 const data = new Buffer(frame.serializeBinary());
                 /* eslint-disable node/no-deprecated-api */
 
-                expect(Notice.decodeFrame(data)).to.deep.equal({ type, variable: { name: 'foo', value: 23 } });
+                expect(Notice.decodeFrame(data)).to.deep.equal({ scope: Frame.Scope.LOCAL, type, variable: { name: 'foo', value: 23 } });
             });
 
             it('should decode a SessionStateChanged frame', () => {
@@ -79,7 +79,7 @@ describe('Protobuf', () => {
                 const data = new Buffer(frame.serializeBinary());
                 /* eslint-disable node/no-deprecated-api */
 
-                expect(Notice.decodeFrame(data)).to.deep.equal({ type, state: { type: param, values: [2] } });
+                expect(Notice.decodeFrame(data)).to.deep.equal({ scope: Frame.Scope.LOCAL, state: { type: param, values: [2] }, type });
             });
         });
 

@@ -718,9 +718,19 @@ describe('Session', () => {
             return expect(session.disconnect()).to.be.fulfilled;
         });
 
+        it('should succeed if the connection is not usable', () => {
+            const session = new Session({});
+            session._client = { connectionClose };
+            session._isValid = false;
+
+            return expect(session.disconnect()).to.eventually.be.fulfilled
+                .then(() => expect(td.explain(connectionClose).callCount).to.equal(0));
+        });
+
         it('should fail if there is an error while closing the connection', () => {
             const session = new Session({});
             session._client = { connectionClose };
+            session._isValid = true;
 
             const error = new Error('foobar');
 

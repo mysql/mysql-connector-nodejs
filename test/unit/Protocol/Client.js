@@ -8,6 +8,8 @@ const ClientMessages = require('lib/Protocol/Protobuf/Stubs/mysqlx_pb').ClientMe
 const EventEmitter = require('events');
 const OkHandler = require('lib/Protocol/ResponseHandlers/OkHandler');
 const PassThrough = require('stream').PassThrough;
+const Scope = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Frame.Scope;
+const ServerMessages = require('lib/Protocol/Protobuf/Stubs/mysqlx_pb').ServerMessages;
 const SqlResultHandler = require('lib/Protocol/ResponseHandlers/SqlResultHandler');
 const WorkQueue = require('lib/WorkQueue');
 const chai = require('chai');
@@ -622,6 +624,33 @@ describe('Client', () => {
 
                 return expect(client.connectionClose()).to.eventually.be.rejectedWith(error);
             });
+        });
+    });
+
+    // TODO(Rui): this will be part of a different component.
+    context('global notices', () => {
+        it('should not process global notices', () => {
+            const decodeFrame = td.function();
+            const process = td.function();
+
+            td.replace('../../../lib/Protocol/Protobuf/Adapters/Notice', { decodeFrame });
+            const Client = require('lib/Protocol/Client');
+
+            const socket = new PassThrough();
+            const client = new Client(socket);
+
+            client.decodeMessage = td.function();
+            client._workQueue = { process };
+
+            const message = { id: ServerMessages.Type.NOTICE, payload: 'bar' };
+            const notice = { scope: Scope.GLOBAL };
+
+            td.when(decodeFrame(message.payload)).thenReturn(notice);
+            td.when(client.decodeMessage('foo')).thenReturn(message);
+
+            client.handleServerMessage('foo');
+
+            expect(td.explain(process).callCount).to.equal(0);
         });
     });
 });
