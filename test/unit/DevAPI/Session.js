@@ -40,12 +40,13 @@ describe('Session', () => {
         it('should create a session using sane defaults', () => {
             expect((new Session()).inspect()).to.deep.equal({
                 auth: 'PLAIN',
-                ssl: true,
                 dbUser: '',
                 host: 'localhost',
                 pooling: false,
                 port: 33060,
-                socket: undefined
+                socket: undefined,
+                ssl: true,
+                user: ''
             });
         });
 
@@ -104,7 +105,7 @@ describe('Session', () => {
 
                 return expect(Promise.all(
                     invalid.map(connectTimeout => {
-                        return (new Session({ connectTimeout, dbUser: 'foo', dbPassword: 'bar', ssl: false }))
+                        return (new Session({ connectTimeout, dbPassword: 'bar', ssl: false, user: 'foo' }))
                             .connect()
                             .catch(err => actual.push(err.message));
                     }))).to.be.fulfilled
@@ -115,7 +116,7 @@ describe('Session', () => {
 
             it('should fail if the connection timeout is exceeded for a single host', () => {
                 const connectTimeout = 10;
-                const properties = { connectTimeout, dbUser: 'foo', dbPassword: 'bar', ssl: false };
+                const properties = { connectTimeout, dbPassword: 'bar', ssl: false, user: 'foo' };
                 const session = new Session(properties);
                 const error = `Connection attempt to the server was aborted. Timeout of ${connectTimeout} ms was exceeded.`;
 
@@ -126,7 +127,7 @@ describe('Session', () => {
 
             it('should fail if the connection timeout is exceeded for a multiple hosts', () => {
                 const connectTimeout = 10;
-                const properties = { connectTimeout, dbUser: 'foo', dbPassword: 'bar', endpoints: [{ host: 'baz' }, { host: 'qux' }] };
+                const properties = { connectTimeout, dbPassword: 'bar', endpoints: [{ host: 'baz' }, { host: 'qux' }], user: 'foo' };
                 const session = new Session(properties);
                 const error = `All server connection attempts were aborted. Timeout of ${connectTimeout} ms was exceeded for each selected server.`;
 
@@ -139,9 +140,9 @@ describe('Session', () => {
             });
 
             it('should return a clean object with the session properties', () => {
-                const properties = { auth: 'PLAIN', dbUser: 'foo', dbPassword: 'bar', ssl: false };
+                const properties = { auth: 'PLAIN', dbPassword: 'bar', ssl: false, user: 'foo' };
                 const session = new Session(properties);
-                const expected = { dbUser: 'foo' };
+                const expected = { user: 'foo' };
 
                 td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
@@ -173,7 +174,7 @@ describe('Session', () => {
                 });
 
                 it('should be able to setup a SSL/TLS connection', () => {
-                    const properties = { dbUser: 'foo', dbPassword: 'bar', ssl: true };
+                    const properties = { dbPassword: 'bar', ssl: true, user: 'foo' };
                     const session = new Session(properties);
                     const expected = { 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] };
 
@@ -187,7 +188,7 @@ describe('Session', () => {
                 });
 
                 it('should not try to setup a SSL/TLS connection if no such intent is specified', () => {
-                    const properties = { dbUser: 'foo', dbPassword: 'bar', ssl: false };
+                    const properties = { dbPassword: 'bar', ssl: false, user: 'foo' };
                     const session = new Session(properties);
 
                     td.when(enableSSL(), { ignoreExtraArgs: true }).thenResolve();
@@ -203,7 +204,7 @@ describe('Session', () => {
                 });
 
                 it('should fail if an error is thrown in the SSL setup', () => {
-                    const properties = { dbUser: 'foo', dbPassword: 'bar', ssl: true };
+                    const properties = { dbPassword: 'bar', ssl: true, user: 'foo' };
                     const session = new Session(properties);
 
                     td.when(enableSSL({})).thenReject(new Error());
@@ -216,7 +217,7 @@ describe('Session', () => {
                 });
 
                 it('should pass down any custom SSL/TLS-related option', () => {
-                    const properties = { dbUser: 'foo', dbPassword: 'bar', sslOptions: { foo: 'bar' } };
+                    const properties = { dbPassword: 'bar', sslOptions: { foo: 'bar' }, user: 'foo' };
                     const session = new Session(properties);
 
                     td.when(enableSSL({ foo: 'bar' })).thenResolve();
@@ -228,7 +229,7 @@ describe('Session', () => {
                 });
 
                 it('should enable TLS/SSL if the server supports it', () => {
-                    const properties = { dbUser: 'foo', dbPassword: 'bar' };
+                    const properties = { user: 'foo', dbPassword: 'bar' };
                     const session = new Session(properties);
 
                     td.when(enableSSL({})).thenResolve();
@@ -241,7 +242,7 @@ describe('Session', () => {
                 });
 
                 it('should fail if the server does not support TLS/SSL', () => {
-                    const properties = { dbUser: 'foo', dbPassword: 'bar' };
+                    const properties = { dbPassword: 'bar', user: 'foo' };
                     const session = new Session(properties);
                     const error = new Error();
                     error.info = { code: 5001 };
@@ -255,7 +256,7 @@ describe('Session', () => {
                 });
 
                 it('should select the default authentication mechanism', () => {
-                    const properties = { dbUser: 'foo', dbPassword: 'bar' };
+                    const properties = { dbPassword: 'bar', user: 'foo' };
                     const session = new Session(properties);
 
                     td.when(enableSSL({})).thenResolve();
@@ -268,7 +269,7 @@ describe('Session', () => {
                 });
 
                 it('should override the default authentication mechanism with the one provided by the user', () => {
-                    const properties = { auth: 'MYSQL41', dbUser: 'foo', dbPassword: 'bar' };
+                    const properties = { auth: 'MYSQL41', dbPassword: 'bar', user: 'foo' };
                     const session = new Session(properties);
 
                     td.when(enableSSL({})).thenResolve();
@@ -283,7 +284,7 @@ describe('Session', () => {
 
             context('insecure connections', () => {
                 it('should select the default authentication mechanism', () => {
-                    const properties = { dbUser: 'foo', dbPassword: 'bar', ssl: false };
+                    const properties = { dbPassword: 'bar', ssl: false, user: 'foo' };
                     const session = new Session(properties);
 
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
@@ -306,9 +307,9 @@ describe('Session', () => {
 
                 it('should failover to the next available address if the connection fails', () => {
                     const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
-                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, ssl: false };
+                    const properties = { dbPassword: 'qux', endpoints, ssl: false, user: 'baz' };
                     const session = new Session(properties);
-                    const expected = { dbUser: 'baz', host: 'bar', port: 2 };
+                    const expected = { host: 'bar', port: 2, user: 'baz' };
 
                     const error = new Error();
                     error.code = 'ENOTFOUND';
@@ -356,9 +357,9 @@ describe('Session', () => {
 
                 it('should reset the connection availability constraints when all routers are unavailable', () => {
                     const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
-                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, ssl: false };
+                    const properties = { dbPassword: 'qux', endpoints, ssl: false, user: 'baz' };
                     const session = new Session(properties);
-                    const expected = { dbUser: 'baz', host: 'foo', port: 1 };
+                    const expected = { host: 'foo', port: 1, user: 'baz' };
 
                     const error = new Error('foo');
                     error.code = 'ENOTFOUND';
@@ -383,9 +384,9 @@ describe('Session', () => {
 
                 it('should select the default authentication mechanism for secure connections', () => {
                     const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
-                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, ssl: true };
+                    const properties = { dbPassword: 'qux', endpoints, ssl: true, user: 'baz' };
                     const session = new Session(properties);
-                    const expected = { auth: 'PLAIN', dbUser: 'baz', host: 'bar', port: 2, ssl: true };
+                    const expected = { auth: 'PLAIN', host: 'bar', port: 2, ssl: true, user: 'baz' };
 
                     const error = new Error();
                     error.code = 'ENOTFOUND';
@@ -404,9 +405,9 @@ describe('Session', () => {
 
                 it('should select the default authentication mechanism for insecure connections', () => {
                     const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
-                    const properties = { dbUser: 'baz', dbPassword: 'qux', endpoints, ssl: false };
+                    const properties = { dbPassword: 'qux', endpoints, ssl: false, user: 'baz' };
                     const session = new Session(properties);
-                    const expected = { auth: 'MYSQL41', dbUser: 'baz', host: 'bar', port: 2, ssl: false };
+                    const expected = { auth: 'MYSQL41', host: 'bar', port: 2, ssl: false, user: 'baz' };
 
                     const error = new Error();
                     error.code = 'ENOTFOUND';
@@ -425,9 +426,9 @@ describe('Session', () => {
 
                 it('should override the default authentication mechanism with the one provided by the user', () => {
                     const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
-                    const properties = { auth: 'MYSQL41', dbUser: 'baz', dbPassword: 'qux', endpoints, ssl: true };
+                    const properties = { auth: 'MYSQL41', dbPassword: 'qux', endpoints, ssl: true, user: 'baz' };
                     const session = new Session(properties);
-                    const expected = { auth: 'MYSQL41', dbUser: 'baz', host: 'bar', port: 2, ssl: true };
+                    const expected = { auth: 'MYSQL41', host: 'bar', port: 2, ssl: true, user: 'baz' };
 
                     const error = new Error();
                     error.code = 'ENOTFOUND';
