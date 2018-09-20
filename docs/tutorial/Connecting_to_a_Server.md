@@ -274,6 +274,8 @@ maxSize         | maximum number of connections supported by the pool           
 maxIdleTime     | maximum number of milliseconds to allow a connection to be idle (0 = infinite)                | 0
 queueTimeout    | maximum number of milliseconds to wait for a connection to become available (0 = infinite)    | 0
 
+Note: the pooling `queueTimeout` option is different from connection `connectTimeout` option. In a pooling scenario there are already connections in the pool, so `queueTimeout` controls how long to wait for a connection to be acquired from the pool, not how long to wait for that connection to be established.
+
 #### Creating a pool with the default options
 
 ```js
