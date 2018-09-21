@@ -9,7 +9,7 @@ mysqlx
     .getSession('mysqlx://root:passwd@localhost:33060/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { user: 'root', host: 'localhost', port: 33060, schema: 'mySchema' }
+        // { user: 'root', host: 'localhost', port: 33060 }
     })
 ```
 
@@ -22,7 +22,7 @@ mysqlx
     .getSession('root:passwd@localhost:33060/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { user: 'root', host: 'localhost', port: 33060, schema: 'mySchema' }
+        // { user: 'root', host: 'localhost', port: 33060 }
     })
 ```
 
@@ -43,7 +43,7 @@ mysqlx
     .getSession(config)
     .then(session => {
         console.log(session.inspect());
-        // { user: 'root', host: 'localhost', port: 33060, schema: 'mySchema' }
+        // { user: 'root', host: 'localhost', port: 33060 }
     })
 ```
 
@@ -58,7 +58,7 @@ mysqlx
     .getSession('mysqlx://root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { user: 'root', schema: 'mySchema', socket: '/path/to/socket' }
+        // { user: 'root', socket: '/path/to/socket' }
     })
 ```
 
@@ -71,7 +71,7 @@ mysqlx
     .getSession('mysqlx://root:passwd@(/path/to/socket)/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { user: 'root', schema: 'mySchema', socket: '/path/to/socket' }
+        // { user: 'root', socket: '/path/to/socket' }
     })
 ```
 
@@ -84,7 +84,7 @@ mysqlx
     .getSession('root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { user: 'root', schema: 'mySchema', socket: '/path/to/socket' }
+        // { user: 'root', socket: '/path/to/socket' }
     })
 ```
 
@@ -97,7 +97,7 @@ mysqlx
     .getSession('root:passwd@(/path/to/socket)/mySchema')
     .then(session => {
         console.log(session.inspect());
-        // { user: 'root', schema: 'mySchema', socket: '/path/to/socket' }
+        // { user: 'root', socket: '/path/to/socket' }
     })
 ```
 
@@ -117,7 +117,7 @@ mysqlx
     .getSession(config)
     .then(session => {
         console.log(session.inspect());
-        // { user: 'root', schema: 'mySchema', socket: '/path/to/socket' }
+        // { user: 'root', socket: '/path/to/socket' }
     })
 ```
 
