@@ -8,6 +8,17 @@ Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.13
+=======
+
+- Add support for connection pooling via the mysqlx.getClient() interface
+- Add support for single-host and multi-host connection timeouts
+- Fix uncaught exception thrown when calling getCollationName() for non-textual columns
+- Fix support for mysql.expr() inputs in the CollectionFind.fields() method
+- Fix handling of X Protocol global notices (log errors and make connections unusable if it is the case)
+- Include standard "user" property in the output of Session.inspect()
+- Fix documentation typos and incorrect usage examples
+
 v8.0.12
 =======
 
