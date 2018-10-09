@@ -62,7 +62,7 @@ describe('DevAPI ConnectionPool', () => {
         });
 
         it('should pick and reset an idle connection', () => {
-            const pool = connectionPool({ idle: [{ _isReusable: true, reset }, {}], maxIdleTime: 0, maxSize: 2 });
+            const pool = connectionPool({ idle: [{ _isOpen: true, reset }, {}], maxIdleTime: 0, maxSize: 2 });
 
             td.when(reset()).thenResolve('foo');
 
@@ -79,11 +79,12 @@ describe('DevAPI ConnectionPool', () => {
         });
 
         it('should wait for an idle connection before timing out', () => {
-            const pool = connectionPool({ active: [{ _isValid: true, reset }, {}], queueTimeout: 0, maxSize: 2 });
+            const active = [{ _isValid: true, _isOpen: true, reset }, {}];
+            const pool = connectionPool({ active, queueTimeout: 0, maxSize: 2 });
 
             td.when(reset()).thenResolve('foo');
 
-            setTimeout(() => pool.release(0), 200);
+            setTimeout(() => pool.release(active[0]), 200);
 
             return expect(pool.acquire()).to.eventually.equal('foo');
         });
@@ -118,14 +119,14 @@ describe('DevAPI ConnectionPool', () => {
                 });
         });
 
-        it('should fail if there is an error closing a connection', () => {
+        it('should not fail if there is an error closing a connection', () => {
             const active = [{ done }, { done }];
             const pool = connectionPool({ active, maxSize: active.length });
             const error = new Error('foobar');
 
             td.when(done()).thenReject(error);
 
-            return expect(pool.destroy()).to.be.rejectedWith(error)
+            return expect(pool.destroy()).to.be.fulfilled
                 .then(() => {
                     expect(td.explain(done).callCount).to.equal(2); // actice connections
                 });
@@ -211,9 +212,10 @@ describe('DevAPI ConnectionPool', () => {
 
     context('release()', () => {
         it('should move move a connection from active state into idle state', () => {
-            const pool = connectionPool({ active: [{ id: 'foo' }, { id: 'bar' }], idle: [], maxSize: 2 });
+            const active = [{ id: 'foo' }, { id: 'bar' }];
+            const pool = connectionPool({ active, idle: [], maxSize: 2 });
 
-            pool.release(1);
+            pool.release(active[1]);
 
             return expect(pool.pick()).to.deep.include({ id: 'bar' });
         });

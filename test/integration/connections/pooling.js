@@ -109,6 +109,18 @@ describe('@integration connection pooling', () => {
                     });
             });
 
+            it('should retrieve a valid connection if one is made available in the meantime', () => {
+                const client = mysqlx.getClient(config, { pooling: { enabled: true, maxSize: 2 } });
+
+                return Promise.all([client.getSession(), client.getSession()])
+                    .then(sessions => {
+                        return expect(Promise.all([client.getSession(), sessions[0].close(), sessions[1].close(), client.getSession()])).to.be.fulfilled;
+                    })
+                    .then(() => {
+                        return client.close();
+                    });
+            });
+
             it('should retrieve a valid connection if the timeout is above the maximum idle time', function () {
                 const maxIdleTime = 100;
                 const queueTimeout = maxIdleTime * 50;

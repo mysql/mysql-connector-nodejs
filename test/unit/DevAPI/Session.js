@@ -376,7 +376,6 @@ describe('Session', () => {
 
                     return expect(session.connect()).to.be.rejectedWith('All server connection attempts have failed. (last: foo)')
                         .then(() => {
-                            console.log('done for now');
                             return expect(session.connect()).to.be.fulfilled;
                         })
                         .then(session => expect(session.inspect()).to.deep.include(expected));
@@ -655,7 +654,7 @@ describe('Session', () => {
         it('should succeed if the session is not usable', () => {
             const session = new Session({});
             session._client = { sessionClose };
-            session._isValid = false;
+            session._isOpen = false;
 
             return expect(session.close()).to.eventually.be.fulfilled
                 .then(() => expect(td.explain(sessionClose).callCount).to.equal(0));
@@ -664,7 +663,7 @@ describe('Session', () => {
         it('should fail if there is an error while closing the session', () => {
             const session = new Session({});
             session._client = { sessionClose };
-            session._isValid = true;
+            session._isOpen = true;
 
             const error = new Error('foobar');
 
@@ -722,7 +721,7 @@ describe('Session', () => {
         it('should succeed if the connection is not usable', () => {
             const session = new Session({});
             session._client = { connectionClose };
-            session._isValid = false;
+            session._isOpen = false;
 
             return expect(session.disconnect()).to.eventually.be.fulfilled
                 .then(() => expect(td.explain(connectionClose).callCount).to.equal(0));
@@ -731,7 +730,7 @@ describe('Session', () => {
         it('should fail if there is an error while closing the connection', () => {
             const session = new Session({});
             session._client = { connectionClose };
-            session._isValid = true;
+            session._isOpen = true;
 
             const error = new Error('foobar');
 
