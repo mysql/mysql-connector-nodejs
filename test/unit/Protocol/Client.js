@@ -628,7 +628,7 @@ describe('Client', () => {
     });
 
     // TODO(Rui): this will be part of a different component.
-    context('global notices', () => {
+    context('handling notices', () => {
         it('should not process global notices', () => {
             const decodeFrame = td.function();
             const process = td.function();
@@ -651,6 +651,53 @@ describe('Client', () => {
             client.handleServerMessage('foo');
 
             expect(td.explain(process).callCount).to.equal(0);
+        });
+
+        context('empty notices', () => {
+            // stubs
+            let fakeProcess, workQueueProto;
+
+            beforeEach('create fakes', () => {
+                workQueueProto = Object.assign({}, WorkQueue.prototype);
+
+                fakeProcess = td.function('process');
+
+                WorkQueue.prototype.process = fakeProcess;
+            });
+
+            afterEach('reset fakes', () => {
+                WorkQueue.prototype = workQueueProto;
+            });
+
+            it('should ignore empty notices', () => {
+                const network = new EventEmitter();
+                /* eslint-disable no-unused-vars */
+                const client = new Client(network);
+                /* eslint-enable no-unused-vars */
+
+                /* eslint-disable node/no-deprecated-api */
+                const fragment = new Buffer('010000000b', 'hex');
+                /* eslint-enable node/no-deprecated-api */
+
+                network.emit('data', fragment);
+
+                expect(td.explain(fakeProcess).callCount).to.equal(0);
+            });
+        });
+    });
+
+    context('classic protocol', () => {
+        it('should fail with an unsupported protocol error', () => {
+            const network = new EventEmitter();
+            /* eslint-disable no-unused-vars */
+            const client = new Client(network);
+            /* eslint-enable no-unused-vars */
+
+            /* eslint-disable node/no-deprecated-api */
+            const classicServerGreeting = new Buffer('010000000a', 'hex');
+            /* eslint-enable node/no-deprecated-api */
+
+            expect(() => network.emit('data', classicServerGreeting)).to.throw(/^The server connection is not using the X Protocol/);
         });
     });
 });
