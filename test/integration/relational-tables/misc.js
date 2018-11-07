@@ -612,8 +612,8 @@ describe('@integration relational miscellaneous tests', () => {
                         metadata = metadata.concat(meta);
                     })
                     .then(() => {
-                        expect(metadata[0].getCollationName()).to.equal('latin1_german1_ci');
-                        expect(metadata[0].getCharacterSetName()).to.equal('latin1');
+                        expect(metadata[0].getCollationName()).to.match(/^utf8mb4.+$/);
+                        expect(metadata[0].getCharacterSetName()).to.equal('utf8mb4');
                     });
             });
 
