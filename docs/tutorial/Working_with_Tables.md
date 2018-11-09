@@ -90,7 +90,6 @@ To update/delete all rows from a table, one should provide any expression that e
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const rows = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
@@ -99,12 +98,11 @@ mysqlx.getSession('mysqlx://localhost:33060')
         return table.delete().where('name = "foo"')
             .execute()
             .then(() => {
-                return table.select()
-                    .execute(row => rows.push(row));
+                return table.select().execute();
             });
     })
-    .then(() => {
-        console.log(rows); // [ [ 'bar', 42 ] ]
+    .then(result => {
+        console.log(result.fetchAll()); // [ [ 'bar', 42 ] ]
     });
 ```
 
@@ -112,7 +110,6 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const rows = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
@@ -121,12 +118,11 @@ mysqlx.getSession('mysqlx://localhost:33060')
         return table.delete().where('name = "foo"')
             .execute()
             .then(() => {
-                return table.select()
-                    .execute(row => rows.push(row));
+                return table.select().execute();
             });
     })
-    .then(() => {
-        console.log(rows); // [ [ 'bar', 42 ] ]
+    .then(result => {
+        console.log(result.fetchAll()); // [ [ 'bar', 42 ] ]
     });
 ```
 
@@ -134,7 +130,6 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const rows = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
@@ -144,12 +139,11 @@ mysqlx.getSession('mysqlx://localhost:33060')
         return table.delete().where('true')
             .execute()
             .then(() => {
-                return table.select()
-                    .execute(row => rows.push(row));
+                return table.select().execute();
             });
     })
-    .then(() => {
-        console.log(rows); // []
+    .then(result => {
+        console.log(result.fetchAll()); // []
     });
 ```
 
@@ -157,7 +151,6 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const rows = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
@@ -167,12 +160,11 @@ mysqlx.getSession('mysqlx://localhost:33060')
         return table.update().where('name = "bar"').set('age', 50)
             .execute()
             .then(() => {
-                return table.select().orderBy('name ASC')
-                    .execute(row => rows.push(row));
+                return table.select().orderBy('name ASC').execute();
             });
     })
-    .then(() => {
-        console.log(rows); // [ [ 'foo', 23 ] [ 'bar', 50 ] ]
+    .then(result => {
+        console.log(result.fetchAll()); // [ [ 'foo', 23 ] [ 'bar', 50 ] ]
     });
 ```
 
@@ -180,7 +172,6 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const rows = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
@@ -190,12 +181,99 @@ mysqlx.getSession('mysqlx://localhost:33060')
         return table.update().where('true').set('name', 'qux')
             .execute()
             .then(() => {
-                return table.select().orderBy('age ASC')
-                    .execute(row => rows.push(row));
+                return table.select().orderBy('age ASC').execute();
             });
     })
+    .then(result => {
+        console.log(result.fetchAll()); // [ [ 'qux', 23 ] [ 'qux', 50 ] ]
+    });
+```
+
+### Cursors
+
+Similarly to the document-based API, iterating over result-sets originating from regular relational tables can be done either with `fetchAll()` (as depicted up until now) and with the pull-based `fetchOne()` cursor or the push-based API using callbacks. The only difference in the later is the fact that you can provide an additional callback function to handle column metadata.
+
+**Pull-based approach**
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        const table = session.getSchema('testSchema').getTable('testTable');
+
+        return table.select().orderBy('age ASC').execute();
+    })
+    .then(result => {
+        console.log(result.fetchOne()); // [ 'qux', 23 ]
+        console.log(result.fetchOne()); // [ 'qux', 50 ]
+    });
+```
+
+**Push-based approach**
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+const data = [];
+const metadata = [];
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        const table = session.getSchema('testSchema').getTable('testTable');
+
+        return table.select().orderBy('age ASC')
+            .execute(row => data.push(row), meta => metadata.push(meta));
+    })
     .then(() => {
-        console.log(rows); // [ [ 'qux', 23 ] [ 'qux', 50 ] ]
+        console.log(rows); // [['qux', 23], ['qux', 50]]
+        console.log(metadata.map(column => column.getColumnName()); // ['name', 'age']
+    });
+```
+
+### Iterating over multiple result-sets
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session.sql(`
+            CREATE PROCEDURE proc() BEGIN
+                SELECT name, age FROM testSchema.testTable;
+                SELECT name, age from testSchema.testTable;
+            END`)
+        .execute()
+        .then(() => {
+            return session.sql(`CALL proc()`).execute()
+        })
+        .then(result => {
+            let item = result.fetchAll();
+            console.log(item); // [['qux', 23]]
+
+            result.nextResult();
+
+            item = result.fetchOne();
+            console.log(item); // ['qux', 50]
+        });
+    });
+```
+
+### Handling column metadata
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        const table = session.getSchema('testSchema').getTable('testTable');
+
+        return table.select().orderBy('age ASC').execute();
+    })
+    .then(result => {
+        const columns = result.getColumns();
+
+        console.log(columns[0].getColumnName()); // 'name'
+        console.log(columns[1].getColumnName()); // 'age'
     });
 ```
 

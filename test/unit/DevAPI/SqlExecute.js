@@ -13,7 +13,7 @@ describe('SqlExecute', () => {
         fakeResult = td.function();
         sqlStmtExecute = td.function();
 
-        td.replace('../../../lib/DevAPI/Result', fakeResult);
+        td.replace('../../../lib/DevAPI/SqlResult', fakeResult);
         sqlExecute = require('../../../lib/DevAPI/SqlExecute');
     });
 

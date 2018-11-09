@@ -42,12 +42,14 @@ describe('TableUpdate', () => {
         it('wraps the operation in a preparable instance', () => {
             const execute = td.function();
             const session = 'foo';
+            const expected = ['bar'];
+            const state = { warnings: expected };
 
-            td.when(execute(td.matchers.isA(Function))).thenResolve('bar');
+            td.when(execute(td.matchers.isA(Function))).thenResolve(state);
             td.when(preparing({ session })).thenReturn({ execute });
 
             return tableUpdate(session, null, null, 'true').execute()
-                .then(actual => expect(actual).to.equal('bar'));
+                .then(actual => expect(actual.getWarnings()).to.deep.equal(expected));
         });
     });
 

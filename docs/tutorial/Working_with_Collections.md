@@ -89,7 +89,6 @@ To modify/remove all documents from a collection, one should provide any express
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
@@ -97,14 +96,14 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
         return collection
             // The criteria is defined through the expression.
-            .remove('name = "foo"')
+            .remove('name = :name')
+            .bind('name', 'foo')
             .execute()
             .then(() => {
-                return collection.find()
-                    .execute(doc => docs.push(doc));
+                return collection.find().execute();
             })
-            .then(() => {
-                console.log(docs); // [{ _id: 2, name: 'bar', meta: { nested: 'baz' } }]
+            .then(result => {
+                console.log(result.fetchAll()); // [{ _id: 2, name: 'bar', meta: { nested: 'baz' } }]
             });
     });
 ```
@@ -113,7 +112,6 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
@@ -124,20 +122,18 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .remove('true')
             .execute()
             .then(() => {
-                return collection.find()
-                    .execute(doc => docs.push(doc));
+                return collection.find().execute();
             })
-            .then(() => {
-                console.log(docs); // []
+            .then(result => {
+                console.log(result.fetchAll()); // []
             });
-    })
+    });
 ```
 
 ### Modifying documents that match a given criteria
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
@@ -145,28 +141,27 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
         return collection
             // The criteria is defined through the expression.
-            .modify('_id = 1')
+            .modify('_id = :id')
+            .bind('id', 1)
             .set('name', 'baz')
             .execute()
             .then(() => {
-                return collection.find()
-                    .execute(doc => docs.push(doc));
+                return collection.find().execute();
             })
-            .then(() => {
-                console.log(docs);
+            .then(result => {
+                console.log(result.fetchAll());
                 // [
                 //      { _id: 1, name: 'baz', meta: { nested: 'bar' } },
                 //      { _id: 2, name: 'bar', meta: { nested: 'baz' } }
                 // ]
             });
-    })
+    });
 ```
 
 ### Modifying all documents
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
@@ -179,17 +174,16 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .set('meta.nested', 'quux')
             .execute()
             .then(() => {
-                return collection.find()
-                    .execute(doc => docs.push(doc));
+                return collection.find().execute();
             })
-            .then(() => {
-                console.log(docs);
+            .then(result => {
+                console.log(result.fetchAll());
                 // [
                 //      { _id: 1, name: 'baz', meta: { nested: 'quux' } },
                 //      { _id: 2, name: 'baz', meta: { nested: 'quux' } }
                 // ]
             });
-    })
+    });
 ```
 
 ### Bulk-updating multiple document properties
@@ -200,7 +194,6 @@ Using `patch()` will, remove properties set to `null`, add previously nonexistin
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
@@ -210,17 +203,16 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .patch({ name: 'qux', meta: { nested: null, other: 'quux' } })
             .execute()
             .then(() => {
-                return collection.find()
-                    .execute(doc => docs.push(doc));
+                return collection.find().execute();
             })
-            .then(() => {
-                console.log(docs);
+            .then(result => {
+                console.log(result.fetchAll());
                 // [
                 //      { _id: 1, name: 'qux', meta: { other: 'quux' } },
                 //      { _id: 2, name: 'bar', meta: { nested: 'baz' } }
                 // ]
             });
-    })
+    });
 ```
 
 Note: the criteria expression string provided via `modify()` establishes the filtering rules, thus any `_id` value provided as part of the properties to be updated will simply be ignored (and will not be updated).
@@ -238,6 +230,50 @@ mysqlx.getSession('mysqlx://localhost:33060')
     })
     .then(count => {
         console.log(count); // 2
+    });
+```
+
+### Cursors
+
+Up until now, we've been using the `fetchAll()` method to retrieve the entire result-set originated by each `find()` query. This method pulls the data from memory and flushing it subsequently. There are, however, two alternive APIs for consuming result-set entries individually using a cursor. One API uses a regular pull-based cursor via an additional `fetchOne()` method available in the {@link Result} instance. The other is a pull-based API where you can provide a callback function when calling the `execute()` method, which totally disables buffering at the connector-level and leaves that responsability to the application.
+
+**Pull-based approach**
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection.find()
+            .execute()
+            .then(result => {
+                console.log(result.fetchOne()); // { _id: 1, name: 'qux', meta: { other: 'quux' } }
+                console.log(result.fetchOne()); // { _id: 2, name: 'bar', meta: { nested: 'baz' } }
+            });
+    });
+```
+
+**Push-based approach**
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+const docs = [];
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection.find()
+            .execute(doc => docs.push(doc))
+            .then(() => {
+                console.log(docs);
+                // [
+                //      { _id: 1, name: 'qux', meta: { other: 'quux' } },
+                //      { _id: 2, name: 'bar', meta: { nested: 'baz' } }
+                // ]
+            });
     });
 ```
 

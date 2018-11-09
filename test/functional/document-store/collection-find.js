@@ -40,7 +40,7 @@ describe('finding documents in collections', () => {
         return session.close();
     });
 
-    context('without query', () => {
+    context('without criteria', () => {
         beforeEach('add fixtures', () => {
             return collection
                 .add({ _id: '1', name: 'foo' })
@@ -48,19 +48,79 @@ describe('finding documents in collections', () => {
                 .execute();
         });
 
-        it('returns all documents in the database', () => {
-            const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }];
-            let actual = [];
+        context('with a callback', () => {
+            it('includes all documents in the collection', () => {
+                const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }];
+                let actual = [];
 
-            return collection
-                .find()
-                .execute(doc => {
-                    actual.push(doc);
-                })
-                .then(() => {
-                    expect(actual).to.have.lengthOf(expected.length);
-                    expect(actual).to.deep.include.all.members(expected);
-                });
+                return collection.find()
+                    .execute(doc => {
+                        actual.push(doc);
+                    })
+                    .then(() => {
+                        expect(actual).to.have.lengthOf(expected.length);
+                        expect(actual).to.deep.include.all.members(expected);
+                    });
+            });
+
+            it('does not fail when trying to use a pull-based cursor', () => {
+                const noop = () => {};
+
+                return collection.find()
+                    .execute(noop)
+                    .then(result => {
+                        // eslint-disable-next-line no-unused-expressions
+                        expect(result.fetchOne()).to.not.exist;
+                        expect(result.fetchAll()).to.deep.equal([]);
+                    });
+            });
+        });
+
+        context('without a callback', () => {
+            it('returns the first document in the resultset', () => {
+                const expected = { _id: '1', name: 'foo' };
+
+                return collection.find()
+                    .sort('_id')
+                    .execute()
+                    .then(result => {
+                        let actual = result.fetchOne();
+                        expect(actual).to.deep.equal(expected);
+
+                        actual = result.fetchAll();
+                        expect(actual).to.have.lengthOf(1);
+                    });
+            });
+
+            it('returns all documents in the collection', () => {
+                const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }];
+
+                return collection.find()
+                    .execute()
+                    .then(result => {
+                        let actual = result.fetchAll();
+                        expect(actual).to.have.lengthOf(expected.length);
+                        expect(actual).to.deep.include.all.members(expected);
+
+                        actual = result.fetchAll();
+                        return expect(actual).to.be.empty;
+                    });
+            });
+
+            it('returns the resultset as an array', () => {
+                const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }];
+
+                return collection.find()
+                    .execute()
+                    .then(result => {
+                        let actual = result.toArray();
+                        expect(actual).to.have.lengthOf(expected.length);
+                        expect(actual).to.deep.include.all.members(expected);
+
+                        actual = result.toArray();
+                        expect(actual).to.have.lengthOf(expected.length);
+                    });
+            });
         });
     });
 

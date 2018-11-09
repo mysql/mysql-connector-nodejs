@@ -44,7 +44,7 @@ describe('relational table select', () => {
         return session.close();
     });
 
-    context('without projection', () => {
+    context('without criteria and projection', () => {
         beforeEach('add fixtures', () => {
             return table.insert(['id', 'name', 'age'])
                 .values([1, 'bar', 23])
@@ -52,13 +52,87 @@ describe('relational table select', () => {
                 .execute();
         });
 
-        it('includes all columns without projection', () => {
-            const expected = [[1, 'bar', 23], [2, 'foo', 42]];
-            const actual = [];
+        context('with a callback', () => {
+            it('includes all the rows in the table (and all the columns for each row)', () => {
+                const expected = [[1, 'bar', 23], [2, 'foo', 42]];
+                const actual = [];
 
-            return table.select()
-                .execute(row => actual.push(row))
-                .then(() => expect(actual).to.deep.include.members(expected));
+                return table.select()
+                    .execute(row => actual.push(row))
+                    .then(() => expect(actual).to.deep.include.members(expected));
+            });
+
+            it('does not fail when trying to use a pull-based cursor', () => {
+                const noop = () => {};
+
+                return table.select()
+                    .execute(noop)
+                    .then(result => {
+                        // eslint-disable-next-line no-unused-expressions
+                        expect(result.fetchOne()).to.not.exist;
+                        expect(result.fetchAll()).to.deep.equal([]);
+                    });
+            });
+        });
+
+        context('without a callback', () => {
+            it('returns the first row in the resultset (and all its columns)', () => {
+                const expected = [1, 'bar', 23];
+
+                return table.select()
+                    .orderBy('id')
+                    .execute()
+                    .then(result => {
+                        let actual = result.fetchOne();
+                        expect(actual).to.deep.equal(expected);
+
+                        actual = result.fetchAll();
+                        expect(actual).to.have.lengthOf(1);
+                    });
+            });
+
+            it('returns all the existing rows in the table (and all the columns for each row)', () => {
+                const expected = [[1, 'bar', 23], [2, 'foo', 42]];
+
+                return table.select()
+                    .execute()
+                    .then(result => {
+                        let actual = result.fetchAll();
+                        expect(actual).to.have.lengthOf(expected.length);
+                        expect(actual).to.deep.include.all.members(expected);
+
+                        actual = result.fetchAll();
+                        return expect(actual).to.be.empty;
+                    });
+            });
+
+            it('returns the resultset as an array', () => {
+                const expected = [[1, 'bar', 23], [2, 'foo', 42]];
+
+                return table.select()
+                    .execute()
+                    .then(result => {
+                        let actual = result.toArray();
+                        expect(actual).to.have.lengthOf(expected.length);
+                        expect(actual).to.deep.include.all.members(expected);
+
+                        actual = result.toArray();
+                        return expect(actual).to.have.lengthOf(expected.length);
+                    });
+            });
+
+            it('returns the column metadata for each row', () => {
+                return table.select()
+                    .execute()
+                    .then(result => {
+                        const columns = result.getColumns();
+
+                        expect(columns).to.have.lengthOf(3);
+                        expect(columns[0].getColumnName()).to.equal('id');
+                        expect(columns[1].getColumnName()).to.equal('name');
+                        expect(columns[2].getColumnName()).to.equal('age');
+                    });
+            });
         });
     });
 

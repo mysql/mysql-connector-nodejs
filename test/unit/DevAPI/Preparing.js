@@ -191,18 +191,14 @@ describe('Preparing', () => {
 
     context('executePlain()', () => {
         it('executes the fallback operation wrapper', () => {
-            const warnings = ['foo', 'bar'];
-            const state = { warnings };
+            const state = 'foo';
             const statement = preparing();
             const wrapper = td.function();
 
             td.when(wrapper()).thenResolve(state);
 
             return statement.executePlain(wrapper)
-                .then(result => {
-                    expect(result.getWarningsCount()).to.equal(2);
-                    return expect(result.getWarnings()).to.deep.equal(warnings);
-                });
+                .then(result => expect(result).to.equal(state));
         });
 
         it('moves the statement to the proper lifecycle stage', () => {
@@ -224,17 +220,13 @@ describe('Preparing', () => {
         });
 
         it('executes a previously prepared statement', () => {
-            const warnings = ['foo', 'bar'];
-            const state = { warnings };
+            const state = 'baz';
             const statement = preparing({ session: { _client: { prepareExecute } } });
 
             td.when(prepareExecute(statement, 'foo', 'bar')).thenResolve(state);
 
             return statement.executePrepared('foo', 'bar')
-                .then(result => {
-                    expect(result.getWarningsCount()).to.equal(2);
-                    return expect(result.getWarnings()).to.deep.equal(warnings);
-                });
+                .then(result => expect(result).to.equal(state));
         });
 
         it('leaves the statement to the proper lifecycle stage', () => {

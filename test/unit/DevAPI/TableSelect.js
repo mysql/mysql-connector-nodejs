@@ -2,6 +2,7 @@
 
 /* eslint-env node, mocha */
 
+const Column = require('../../../lib/DevAPI/Column');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -32,33 +33,39 @@ describe('TableSelect', () => {
 
         it('wraps an operation without a cursor in a preparable instance', () => {
             const session = 'foo';
+            const expected = 'bar';
+            const state = { results: [[[expected]]] };
 
-            td.when(execute(td.matchers.isA(Function), undefined, undefined)).thenResolve('foo');
+            td.when(execute(td.matchers.isA(Function), undefined, undefined)).thenResolve(state);
             td.when(preparing({ session })).thenReturn({ execute });
 
             return tableSelect(session).execute()
-                .then(actual => expect(actual).to.deep.equal('foo'));
+                .then(actual => expect(actual.fetchOne()).to.deep.equal(['bar']));
         });
 
         it('wraps an operation with a data cursor in a preparable instance', () => {
             const session = 'foo';
+            const expected = ['bar'];
+            const state = { warnings: expected };
 
-            td.when(execute(td.matchers.isA(Function), 'foo', undefined)).thenResolve('bar');
+            td.when(execute(td.matchers.isA(Function), 'foo', undefined)).thenResolve(state);
             td.when(preparing({ session })).thenReturn({ execute });
 
             return tableSelect(session).execute('foo')
-                .then(actual => expect(actual).to.deep.equal('bar'));
+                .then(actual => expect(actual.getWarnings()).to.deep.equal(expected));
         });
 
         it('wraps an operation with both a data and metadata cursors in a preparable instance', () => {
             const session = 'foo';
+            const expected = new Column({ name: 'qux' });
+            const state = { metadata: [[expected]] };
 
             td.when(metaCB('bar')).thenReturn('baz');
-            td.when(execute(td.matchers.isA(Function), 'foo', 'baz')).thenResolve('qux');
+            td.when(execute(td.matchers.isA(Function), 'foo', 'baz')).thenResolve(state);
             td.when(preparing({ session })).thenReturn({ execute });
 
             return tableSelect(session).execute('foo', 'bar')
-                .then(actual => expect(actual).to.deep.equal('qux'));
+                .then(actual => expect(actual.getColumns()[0].getColumnLabel()).to.equal('qux'));
         });
     });
 
@@ -92,6 +99,8 @@ describe('TableSelect', () => {
 
             expect(query.groupBy).to.be.a('function');
         });
+
+        it('returns a Result instance containing the operation details');
 
         it('sets the grouping columns provided as an array', () => {
             const session = 'foo';
