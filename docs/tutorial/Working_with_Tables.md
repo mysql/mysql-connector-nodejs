@@ -199,6 +199,22 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
+### Retrieving the table size
+
+You can also retrieve the table size at any point in time, using the `count()` method.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session.getSchema('testSchema').getTable('testTable').count();
+    })
+    .then(count => {
+        console.log(count); // 2
+    });
+```
+
 ## Column Types
 
 It's important to understand how MySQL column types are translated to JavaScript/Node.js native types. One case worth a special mention is the fact every possible `number` higher than 2^53 - 1 (the maximum safest integer in JavaScript) or lower than -2^53 + 1 (the minimum safest integer in JavaScript) will be preserved as a `string` in order to avoid loosing precision. The following table depicts a comprehensive mapping between data types.
@@ -229,4 +245,4 @@ It's important to understand how MySQL column types are translated to JavaScript
 | `ENUM`            | `String`              |
 | `SET`             | `Array`               |
 | `JSON`            | `Object`              |
-| Spacial           | `Buffer`              |
+| `SPATIAL`         | `Buffer`              |

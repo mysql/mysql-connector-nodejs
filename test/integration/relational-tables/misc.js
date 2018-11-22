@@ -660,4 +660,33 @@ describe('@integration relational miscellaneous tests', () => {
             });
         });
     });
+
+    context('table size', () => {
+        beforeEach('ensure non-existing table', () => {
+            return session.sql('DROP TABLE IF EXISTS test.noop')
+                .execute();
+        });
+
+        beforeEach('create table', () => {
+            return session.sql(`CREATE TABLE ${schema.getName()}.test (name VARCHAR(4))`)
+                .execute();
+        });
+
+        beforeEach('add fixtures', () => {
+            return schema.getTable('test')
+                .insert('name')
+                .values('foo')
+                .values('bar')
+                .values('baz')
+                .execute();
+        });
+
+        it('should retrieve the total number of documents in a table', () => {
+            return expect(schema.getTable('test').count()).to.eventually.equal(3);
+        });
+
+        it('should fail if the table does not exist in the given schema', () => {
+            return expect(schema.getTable('noop').count()).to.be.rejectedWith(`Table '${schema.getName()}.noop' doesn't exist`);
+        });
+    });
 });
