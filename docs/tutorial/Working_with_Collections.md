@@ -243,6 +243,22 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 Note: the criteria expression string provided via `modify()` establishes the filtering rules, thus any `_id` value provided as part of the properties to be updated will simply be ignored (and will not be updated).
 
+### Retrieving the collection size
+
+You can also retrieve the collection size at any point in time, using the `count()` method.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(session => {
+        return session.getSchema('testSchema').getCollection('testCollection').count();
+    })
+    .then(count => {
+        console.log(count); // 2
+    });
+```
+
 ## Collection indexes
 
 Collection indexes are ordinary MySQL indexes on virtual columns that extract data from JSON document.

@@ -2,8 +2,13 @@
 
 /* eslint-env node, mocha */
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
 const fixtures = require('test/fixtures');
+
+chai.use(chaiAsPromised);
+
+const expect = chai.expect;
 
 // TODO(rui.quelhas): extract tests into proper self-contained suites.
 describe('@integration collection miscellaneous tests', () => {
@@ -131,5 +136,27 @@ describe('@integration collection miscellaneous tests', () => {
                     .execute(row => ids.push(row[0]));
             })
             .then(() => ids.forEach(id => expect(id).to.have.lengthOf(28)));
+    });
+
+    context('collection size', () => {
+        beforeEach('ensure non-existing collection', () => {
+            return schema.dropCollection('noop');
+        });
+
+        beforeEach('add fixtures', () => {
+            return schema.getCollection('test')
+                .add({ name: 'foo' })
+                .add({ name: 'bar' })
+                .add({ name: 'baz' })
+                .execute();
+        });
+
+        it('should retrieve the total number of documents in a collection', () => {
+            return expect(schema.getCollection('test').count()).to.eventually.equal(3);
+        });
+
+        it('should fail if the collection does not exist in the given schema', () => {
+            return expect(schema.getCollection('noop').count()).to.be.rejectedWith(`Collection '${schema.getName()}.noop' doesn't exist`);
+        });
     });
 });

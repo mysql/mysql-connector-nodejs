@@ -111,6 +111,20 @@ describe('Collection', () => {
 
             return expect(instance.count()).to.eventually.be.rejectedWith(error);
         });
+
+        // TODO(Rui): Maybe this will become the job of the plugin at some point.
+        it('should replace "Table" by "Collection" on server error messages', () => {
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection('foo', schema, 'baz');
+            const error = new Error("Table 'bar.baz' doesn't exist.");
+
+            td.when(getName()).thenReturn('bar');
+            td.when(execute(td.callback([1]))).thenReject(error);
+            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
+
+            return expect(instance.count()).to.eventually.be.rejectedWith("Collection 'bar.baz' doesn't exist.");
+        });
     });
 
     context('inspect()', () => {
