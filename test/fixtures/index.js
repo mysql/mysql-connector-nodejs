@@ -3,70 +3,62 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const properties = require('test/properties');
-const mysqlx = require('index.js');
-
-const config = Object.assign({}, properties, { socket: undefined });
-
-exports.createDatabase = function () {
-    return mysqlx
-        .getSession(config)
-        .then(session => {
-            return session.dropSchema(config.schema).then(() => session);
-        })
-        .then(session => {
-            return session.createSchema(config.schema).then(schema => ({ session, schema }));
-        });
-};
+const config = require('test/properties');
+const mysqlx = require('index');
 
 exports.createAccount = function (options) {
     options = Object.assign({}, config, options);
 
-    return mysqlx
-        .getSession(config)
+    return mysqlx.getSession(config)
         .then(session => {
-            return session
-                .sql(`CREATE USER IF NOT EXISTS '${options.user}'@'${options.host}' IDENTIFIED WITH ${options.plugin} BY '${options.password}'`)
+            return session.sql(`CREATE USER IF NOT EXISTS '${options.user}'@'${options.host}' IDENTIFIED WITH ${options.plugin} BY '${options.password}'`)
                 .execute()
-                .then(() => session);
-        })
+                .then(() => {
+                    return session.sql(`GRANT SELECT ON ${options.schema}.* TO '${options.user}'@'${options.host}'`)
+                        .execute();
+                })
+                .then(() => {
+                    return session.close();
+                });
+        });
+};
+
+exports.createDefaultSchema = function (options) {
+    options = Object.assign({}, config, options, { schema: undefined });
+
+    return mysqlx.getSession(options)
         .then(session => {
-            return session
-                .sql(`GRANT SELECT ON ${options.schema}.* TO '${options.user}'@'${options.host}'`)
-                .execute()
-                .then(() => session);
-        })
-        .then(session => {
-            return session.close();
+            return session.dropSchema(config.schema)
+                .then(() => {
+                    return session.createSchema(config.schema);
+                })
+                .then(() => {
+                    return session.close();
+                });
         });
 };
 
 exports.deleteAccount = function (options) {
     options = Object.assign({}, config, options);
 
-    return mysqlx
-        .getSession(config)
+    return mysqlx.getSession(config)
         .then(session => {
-            return session
-                .sql(`DROP USER IF EXISTS '${options.user}'@'${options.host}'`)
+            return session.sql(`DROP USER IF EXISTS '${options.user}'@'${options.host}'`)
                 .execute()
-                .then(() => session);
-        })
-        .then(session => {
-            return session.close();
+                .then(() => {
+                    return session.close();
+                });
         });
 };
 
-exports.teardown = function (session, schema) {
-    if (!session) {
-        return Promise.reject(new Error(`cannot close \`${session}\` session`));
-    }
+exports.deleteDefaultSchema = function (options) {
+    options = Object.assign({}, config, options);
 
-    const schemaName = !schema ? config.schema : schema.getName();
-
-    return session
-        .dropSchema(schemaName)
-        .then(() => {
-            return session.close();
+    return mysqlx.getSession(config)
+        .then(session => {
+            return session.dropSchema(config.schema)
+                .then(() => {
+                    return session.close();
+                });
         });
 };

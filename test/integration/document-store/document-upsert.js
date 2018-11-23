@@ -4,33 +4,45 @@
 
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
+const config = require('test/properties');
 const fixtures = require('test/fixtures');
+const mysqlx = require('index');
 
 chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
 describe('@integration single document upsert', () => {
-    let collection, session, schema;
+    let schema, session, collection;
 
-    beforeEach('set context', () => {
-        return fixtures.createDatabase().then(suite => {
-            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-            session = suite.session;
-            schema = suite.schema;
-        });
+    beforeEach('create default schema', () => {
+        return fixtures.createDefaultSchema();
+    });
+
+    beforeEach('create session using default schema', () => {
+        return mysqlx.getSession(config)
+            .then(s => {
+                session = s;
+            });
+    });
+
+    beforeEach('load default schema', () => {
+        schema = session.getSchema(config.schema);
     });
 
     beforeEach('create collection', () => {
-        return schema.createCollection('test');
+        return schema.createCollection('test')
+            .then(c => {
+                collection = c;
+            });
     });
 
-    beforeEach('update context', () => {
-        collection = schema.getCollection('test');
+    afterEach('drop default schema', () => {
+        return session.dropSchema(config.schema);
     });
 
-    afterEach('clear context', () => {
-        return fixtures.teardown(session, schema);
+    afterEach('close session', () => {
+        return session.close();
     });
 
     context('collection without unique keys', () => {

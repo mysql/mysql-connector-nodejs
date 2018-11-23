@@ -3,23 +3,36 @@
 /* eslint-env node, mocha */
 
 const Column = require('lib/DevAPI/Column');
+const config = require('test/properties');
 const expect = require('chai').expect;
 const fixtures = require('test/fixtures');
+const mysqlx = require('index');
 
 // TODO(Rui): extract tests into proper self-contained suites.
 describe('@integration relational miscellaneous tests', () => {
-    let session, schema;
+    let schema, session;
 
-    beforeEach('set context', () => {
-        return fixtures.createDatabase().then(suite => {
-            // TODO(Rui): use ES6 destructuring assignment for node >=6.0.0
-            session = suite.session;
-            schema = suite.schema;
-        });
+    beforeEach('create default schema', () => {
+        return fixtures.createDefaultSchema();
     });
 
-    afterEach('clear context', () => {
-        return fixtures.teardown(session, schema);
+    beforeEach('create session using default schema', () => {
+        return mysqlx.getSession(config)
+            .then(s => {
+                session = s;
+            });
+    });
+
+    beforeEach('load default schema', () => {
+        schema = session.getSchema(config.schema);
+    });
+
+    afterEach('drop default schema', () => {
+        return session.dropSchema(config.schema);
+    });
+
+    afterEach('close session', () => {
+        return session.close();
     });
 
     context('raw SQL query', () => {

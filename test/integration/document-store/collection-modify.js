@@ -2,30 +2,42 @@
 
 /* eslint-env node, mocha */
 
+const config = require('test/properties');
 const expect = require('chai').expect;
 const fixtures = require('test/fixtures');
+const mysqlx = require('index');
 
 describe('@integration document collection modify', () => {
-    let session, schema, collection;
+    let schema, session, collection;
 
-    beforeEach('set context', () => {
-        return fixtures.createDatabase().then(suite => {
-            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-            session = suite.session;
-            schema = suite.schema;
-        });
+    beforeEach('create default schema', () => {
+        return fixtures.createDefaultSchema();
+    });
+
+    beforeEach('create session using default schema', () => {
+        return mysqlx.getSession(config)
+            .then(s => {
+                session = s;
+            });
+    });
+
+    beforeEach('load default schema', () => {
+        schema = session.getSchema(config.schema);
     });
 
     beforeEach('create collection', () => {
-        return schema.createCollection('test');
+        return schema.createCollection('test')
+            .then(c => {
+                collection = c;
+            });
     });
 
-    beforeEach('update context', () => {
-        collection = schema.getCollection('test');
+    afterEach('drop default schema', () => {
+        return session.dropSchema(config.schema);
     });
 
-    afterEach('clear context', () => {
-        return fixtures.teardown(session, schema);
+    afterEach('close session', () => {
+        return session.close();
     });
 
     context('with truthy condition', () => {

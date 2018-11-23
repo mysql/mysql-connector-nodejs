@@ -2,33 +2,45 @@
 
 /* eslint-env node, mocha */
 
+const config = require('test/properties');
 const expect = require('chai').expect;
 const fixtures = require('test/fixtures');
-const properties = require('test/properties');
+const mysqlx = require('index');
 
 describe('@integration relational table insert', () => {
     let session, schema, table;
 
-    beforeEach('set context', () => {
-        return fixtures.createDatabase().then(suite => {
-            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-            session = suite.session;
-            schema = suite.schema;
-        });
+    beforeEach('create default schema', () => {
+        return fixtures.createDefaultSchema();
+    });
+
+    beforeEach('create session using default schema', () => {
+        return mysqlx.getSession(config)
+            .then(s => {
+                session = s;
+            });
+    });
+
+    beforeEach('load default schema', () => {
+        schema = session.getSchema(config.schema);
     });
 
     beforeEach('create table', () => {
-        return session.sql(`CREATE TABLE ${properties.schema}.test (
+        return session.sql(`CREATE TABLE test (
             name VARCHAR(255),
             age INT)`).execute();
     });
 
-    beforeEach('update context', () => {
+    beforeEach('load table', () => {
         table = schema.getTable('test');
     });
 
-    afterEach('clear context', () => {
-        return fixtures.teardown(session, schema);
+    afterEach('drop default schema', () => {
+        return session.dropSchema(config.schema);
+    });
+
+    afterEach('close session', () => {
+        return session.close();
     });
 
     context('with an array of columns', () => {

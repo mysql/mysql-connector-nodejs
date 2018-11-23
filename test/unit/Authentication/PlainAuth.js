@@ -8,6 +8,7 @@ const plainAuth = require('lib/Authentication/PlainAuth');
 describe('PlainAuth', () => {
     it('should mix-in AuthPlugin', () => {
         expect(plainAuth({ dbUser: 'foo' }).getPassword).to.be.a('function');
+        expect(plainAuth({ dbUser: 'foo' }).getSchema).to.be.a('function');
         expect(plainAuth({ dbUser: 'foo' }).getUser).to.be.a('function');
         expect(plainAuth({ dbUser: 'foo' }).run).to.be.a('function');
     });
@@ -23,12 +24,24 @@ describe('PlainAuth', () => {
     });
 
     context('getInitialAuthData()', () => {
-        it('should be able to create an initial authentication payload without a password', () => {
-            expect(plainAuth({ user: 'foo' }).getInitialAuthData().toString()).to.equal('\0foo\0');
+        context('without a default schema', () => {
+            it('should be able to create an initial authentication payload without a password', () => {
+                expect(plainAuth({ user: 'user' }).getInitialAuthData().toString()).to.equal('\0user\0');
+            });
+
+            it('should should generate the payload according to the spec', () => {
+                expect(plainAuth({ password: 'foo', user: 'user' }).getInitialAuthData().toString()).to.equal('\0user\0foo');
+            });
         });
 
-        it('should should generate the payload according to the spec', () => {
-            expect(plainAuth({ user: 'foo', password: 'bar' }).getInitialAuthData().toString()).to.equal('\0foo\0bar');
+        context('with a default schema', () => {
+            it('should be able to create an initial authentication payload without a password', () => {
+                expect(plainAuth({ schema: 'schema', user: 'user' }).getInitialAuthData().toString()).to.equal('schema\0user\0');
+            });
+
+            it('should should generate the payload according to the spec', () => {
+                expect(plainAuth({ password: 'foo', schema: 'schema', user: 'user' }).getInitialAuthData().toString()).to.equal('schema\0user\0foo');
+            });
         });
     });
 });

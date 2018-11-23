@@ -14,9 +14,10 @@ describe('SHA256MemoryAuth', () => {
     });
 
     it('should mix-in AuthPlugin', () => {
-        expect(sha256MemoryAuth({ dbUser: 'foo' }).getPassword).to.be.a('function');
-        expect(sha256MemoryAuth({ dbUser: 'foo' }).getUser).to.be.a('function');
-        expect(sha256MemoryAuth({ dbUser: 'foo' }).run).to.be.a('function');
+        expect(sha256MemoryAuth({ user: 'foo' }).getPassword).to.be.a('function');
+        expect(sha256MemoryAuth({ user: 'foo' }).getSchema).to.be.a('function');
+        expect(sha256MemoryAuth({ user: 'foo' }).getUser).to.be.a('function');
+        expect(sha256MemoryAuth({ user: 'foo' }).run).to.be.a('function');
     });
 
     context('getInitialAuthData()', () => {
@@ -37,39 +38,70 @@ describe('SHA256MemoryAuth', () => {
             expect(() => sha256MemoryAuth({ user: 'foo' }).getNextAuthData('bar'.repeat(20))).to.throw();
         });
 
-        it('should generate a valid payload without a password', () => {
-            const sha256 = td.function();
-            const xor = td.function();
-            const fakeSHA256MemoryAuth = proxyquire('lib/Authentication/SHA256MemoryAuth', { './Util/crypto': { sha256, xor } });
+        context('valid handshake', () => {
+            let fakeSHA256MemoryAuth, nonce, passwordHash, passwordHashHash, hashWithNonce, scramble, sha256, xor;
 
-            const nonce = 'n'.repeat(20);
+            beforeEach('create fakes', () => {
+                sha256 = td.function();
+                xor = td.function();
 
-            td.when(xor('quux', 'bar')).thenReturn('scramble');
-            td.when(sha256('baz', nonce), { times: 1 }).thenReturn('quux');
-            td.when(sha256('bar'), { times: 1 }).thenReturn('baz');
-            td.when(sha256(''), { times: 2 }).thenReturn('bar');
+                fakeSHA256MemoryAuth = proxyquire('lib/Authentication/SHA256MemoryAuth', { './Util/crypto': { sha256, xor } });
 
-            const authData = fakeSHA256MemoryAuth({ user: 'user' }).getNextAuthData(nonce);
+                scramble = 'scramble';
+                nonce = 'n'.repeat(20);
 
-            expect(authData.toString()).to.match(/\u0000user\u0000scramble*/);
-        });
+                td.when(xor(hashWithNonce, passwordHash)).thenReturn(scramble);
+                td.when(sha256(passwordHashHash, nonce), { times: 1 }).thenReturn(hashWithNonce);
+                td.when(sha256(passwordHash), { times: 1 }).thenReturn(passwordHashHash);
+            });
 
-        it('should generate a valid payload with a password', () => {
-            const sha256 = td.function();
-            const xor = td.function();
-            const fakeSHA256MemoryAuth = proxyquire('lib/Authentication/SHA256MemoryAuth', { './Util/crypto': { sha256, xor } });
+            context('without a default schema', () => {
+                it('should generate a valid payload without a password', () => {
+                    td.when(sha256(''), { times: 2 }).thenReturn(passwordHash);
 
-            const password = 'foo';
-            const nonce = 'n'.repeat(20);
+                    const authData = fakeSHA256MemoryAuth({ user: 'user' }).getNextAuthData(nonce);
 
-            td.when(xor('quux', 'bar')).thenReturn('scramble');
-            td.when(sha256('baz', nonce), { times: 1 }).thenReturn('quux');
-            td.when(sha256('bar'), { times: 1 }).thenReturn('baz');
-            td.when(sha256('foo'), { times: 2 }).thenReturn('bar');
+                    /* eslint-disable no-control-regex */
+                    expect(authData.toString()).to.match(/\u0000user\u0000scramble*/);
+                    /* eslint-enables no-control-regex */
+                });
 
-            const authData = fakeSHA256MemoryAuth({ user: 'user', password }).getNextAuthData(nonce);
+                it('should generate a valid payload with a password', () => {
+                    const password = 'foo';
 
-            expect(authData.toString()).to.match(/\u0000user\u0000scramble*/);
+                    td.when(sha256(password), { times: 2 }).thenReturn(passwordHash);
+
+                    const authData = fakeSHA256MemoryAuth({ user: 'user', password }).getNextAuthData(nonce);
+
+                    /* eslint-disable no-control-regex */
+                    expect(authData.toString()).to.match(/\u0000user\u0000scramble*/);
+                    /* eslint-enable no-control-regex */
+                });
+            });
+
+            context('with a default schema', () => {
+                it('should generate a valid payload without a password', () => {
+                    td.when(sha256(''), { times: 2 }).thenReturn(passwordHash);
+
+                    const authData = fakeSHA256MemoryAuth({ schema: 'schema', user: 'user' }).getNextAuthData(nonce);
+
+                    /* eslint-disable no-control-regex */
+                    expect(authData.toString()).to.match(/schema\u0000user\u0000scramble*/);
+                    /* eslint-enables no-control-regex */
+                });
+
+                it('should generate a valid payload with a password', () => {
+                    const password = 'foo';
+
+                    td.when(sha256(password), { times: 2 }).thenReturn(passwordHash);
+
+                    const authData = fakeSHA256MemoryAuth({ schema: 'schema', user: 'user', password }).getNextAuthData(nonce);
+
+                    /* eslint-disable no-control-regex */
+                    expect(authData.toString()).to.match(/schema\u0000user\u0000scramble*/);
+                    /* eslint-enable no-control-regex */
+                });
+            });
         });
     });
 });

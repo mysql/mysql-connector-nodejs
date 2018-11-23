@@ -17,6 +17,10 @@ describe('@integration authentication', () => {
     context('mysql_native_password', () => {
         let auth, user, password;
 
+        beforeEach('create schema', () => {
+            return fixtures.createDefaultSchema();
+        });
+
         beforeEach('setup test account', () => {
             user = 'test_mnp_user';
             password = 'test_mnp_password';

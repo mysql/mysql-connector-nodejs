@@ -4,7 +4,9 @@
 
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
+const config = require('test/properties');
 const fixtures = require('test/fixtures');
+const mysqlx = require('index');
 
 chai.use(chaiAsPromised);
 
@@ -12,24 +14,36 @@ const expect = chai.expect;
 
 // TODO(rui.quelhas): extract tests into proper self-contained suites.
 describe('@integration collection miscellaneous tests', () => {
-    let session, schema, collection;
+    let schema, session, collection;
 
-    beforeEach('set context', () => {
-        return fixtures.createDatabase().then(suite => {
-            // TODO(rui.quelhas): use ES6 destructuring assignment for node >=6.0.0
-            session = suite.session;
-            schema = suite.schema;
-        });
+    beforeEach('create default schema', () => {
+        return fixtures.createDefaultSchema();
+    });
+
+    beforeEach('create session using default schema', () => {
+        return mysqlx.getSession(config)
+            .then(s => {
+                session = s;
+            });
+    });
+
+    beforeEach('load default schema', () => {
+        schema = session.getSchema(config.schema);
     });
 
     beforeEach('create collection', () => {
-        return schema.createCollection('test').then(col => {
-            collection = col;
-        });
+        return schema.createCollection('test')
+            .then(c => {
+                collection = c;
+            });
     });
 
-    afterEach('clear context', () => {
-        return fixtures.teardown(session, schema);
+    afterEach('drop default schema', () => {
+        return session.dropSchema(config.schema);
+    });
+
+    afterEach('close session', () => {
+        return session.close();
     });
 
     it('should retrieve an existing document from the collection', () => {

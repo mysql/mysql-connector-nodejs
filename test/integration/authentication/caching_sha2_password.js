@@ -17,6 +17,10 @@ describe('@integration authentication', () => {
     context('caching_sha2_password', () => {
         let auth, user, password;
 
+        beforeEach('create schema', () => {
+            return fixtures.createDefaultSchema();
+        });
+
         beforeEach('setup test account', () => {
             user = 'test_csp_user';
             password = 'test_csp_password';

@@ -5,6 +5,7 @@
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
+const fixtures = require('test/fixtures');
 const pTimeout = require('p-timeout');
 const mysqlx = require('index');
 
@@ -15,26 +16,20 @@ const expect = chai.expect;
 describe('@integration row locking in table transactions', () => {
     let sessionA, sessionB;
 
+    beforeEach('create default schema', () => {
+        return fixtures.createDefaultSchema();
+    });
+
     beforeEach('create two sessions', () => {
-        return mysqlx
-            .getSession(config)
-            .then(session => {
-                sessionA = session;
-                return sessionA.dropSchema(config.schema).then(() => sessionA);
-            })
-            .then(session => {
-                return session.createSchema(config.schema);
-            })
-            .then(() => {
-                return mysqlx.getSession(config);
-            })
-            .then(session => {
-                sessionB = session;
+        return Promise.all([mysqlx.getSession(config), mysqlx.getSession(config)])
+            .then(sessions => {
+                sessionA = sessions[0];
+                sessionB = sessions[1];
             });
     });
 
     beforeEach('create table', function () {
-        return sessionA.sql(`CREATE TABLE ${config.schema}.test (
+        return sessionA.sql(`CREATE TABLE test (
             _id VARCHAR(10),
             a INT,
             b VARCHAR(10))`).execute();
@@ -51,18 +46,12 @@ describe('@integration row locking in table transactions', () => {
             .execute();
     });
 
-    afterEach('clear context', () => {
-        return sessionA
-            .dropSchema(config.schema)
-            .then(() => {
-                return sessionA.close();
-            })
-            .then(() => {
-                return sessionB.dropSchema(config.schema);
-            })
-            .then(() => {
-                return sessionB.close();
-            });
+    afterEach('drop default schema', () => {
+        return Promise.all([sessionA.dropSchema(config.schema), sessionB.dropSchema(config.schema)]);
+    });
+
+    afterEach('close session', () => {
+        return Promise.all([sessionA.close(), sessionB.close()]);
     });
 
     context('exclusive locks', () => {

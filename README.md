@@ -39,7 +39,7 @@ const options = {
   port: 33060,
   password: '<passwd>',
   user: 'root',
-  schema: 'mySchema' // created by default
+  schema: 'mySchema' // an error is thrown if it does not exist
 };
 
 mysqlx.getSession(options)

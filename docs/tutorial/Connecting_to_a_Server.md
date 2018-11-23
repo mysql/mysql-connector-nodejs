@@ -212,35 +212,40 @@ mysqlx
 
 As usual in MySQL setups, you need to create or connect to an existing schema/database of your choice, which is basically the namespace under which your tables, views and collections will live. The `Session` instance provides the following constructs to manage database schemas.
 
-Creating a new schema implicitely, using the connection URI:
+Connecting to an existing schema using the connection URI:
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060/foo')
+// assuming the schema "foo" exists in the server
+mysqlx.getSession('mysqlx://root@localhost:33060/foo')
     .then(session => {
         return session.getSchemas();
     })
     .then(schemas => {
         console.log(schemas); // [{ Schema: { name: 'foo' } }]
     });
+
+// if the schema does not exist, an error will be thrown
+mysqlx.getSession('mysqlx://root@localhost:33060/bar')
+    .catch(err => {
+        console.log(err.message); // Unknown database 'bar'
+    });
 ```
 
-Creating a new schema explicitely:
+Creating a new schema:
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(session => {
-        return session.createSchema('foo')
+        return session.createSchema('bar')
             .then(() => {
                 return session.getSchemas();
             })
             .then(schemas => {
-                console.log(schemas); // [{ Schema: { name: 'foo' } }]
+                console.log(schemas); // [{ Schema: { name: 'bar' } }]
             });
     });
 ```

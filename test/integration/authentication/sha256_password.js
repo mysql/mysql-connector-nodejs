@@ -17,6 +17,10 @@ describe('@integration authentication', () => {
     context('sha256_password', () => {
         let auth, user, password;
 
+        beforeEach('create schema', () => {
+            return fixtures.createDefaultSchema();
+        });
+
         beforeEach('setup test account', () => {
             user = 'test_sp_user';
             password = 'test_sp_password';
