@@ -6,7 +6,7 @@ const expect = require('chai').expect;
 const mysqlx = require('index');
 const Expr = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
 
-describe('@integration mysqlx', () => {
+describe('mysqlx', () => {
     context('expr()', () => {
         it('should parse a string into a document-mode expression by default', () => {
             const expression = mysqlx.expr('foo');

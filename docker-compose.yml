@@ -6,8 +6,8 @@ services:
             MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
             MYSQL_DATABASE: nodejsmysqlxtest
             MYSQL_LOG_CONSOLE: 'true'
-            MYSQL_PASSWORD: test
-            MYSQL_USER: test
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD:-test}
+            MYSQL_USER: ${MYSQL_USER:-test}
         image: mysql/mysql-server:${MYSQL_VERSION:-8.0.3}
 
     mysql:
