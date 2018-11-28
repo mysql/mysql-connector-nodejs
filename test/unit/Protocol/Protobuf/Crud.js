@@ -77,6 +77,20 @@ describe('Protobuf', () => {
                 expect(fields[3].getLiteral().getType()).to.equal(Scalar.Type.V_BOOL);
                 expect(fields[3].getLiteral().getVBool()).to.equal(true);
             });
+
+            it('should encode a typed row given an array of falsy values', () => {
+                let encoded = Crud.encodeTypedRow([0, false, null, undefined]);
+                const fields = encoded.getFieldList();
+
+                expect(fields).to.have.lengthOf(4);
+                fields.forEach(field => expect(field.getType()).to.equal(Expr.Type.LITERAL));
+                expect(fields[0].getLiteral().getType()).to.equal(Scalar.Type.V_SINT);
+                expect(fields[0].getLiteral().getVSignedInt()).to.equal(0);
+                expect(fields[1].getLiteral().getType()).to.equal(Scalar.Type.V_BOOL);
+                expect(fields[1].getLiteral().getVBool()).to.equal(false);
+                expect(fields[2].getLiteral().getType()).to.equal(Scalar.Type.V_NULL);
+                expect(fields[3].getLiteral().getType()).to.equal(Scalar.Type.V_NULL);
+            });
         });
 
         context('encodeUpdateOperation()', () => {

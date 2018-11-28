@@ -130,4 +130,54 @@ describe('@functional relational table insert', () => {
             .then(() => table.select().execute(row => actual.push(row)))
             .then(() => expect(actual).to.deep.equal(expected));
     });
+
+    context('falsy values', () => {
+        it('should insert `0` values', () => {
+            const expected = [['foo', 0]];
+            let actual = [];
+
+            return table
+                .insert('name', 'age')
+                .values('foo', 0)
+                .execute()
+                .then(() => table.select().execute(row => actual.push(row)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should insert `false` values', () => {
+            const expected = [['foo', 0]];
+            let actual = [];
+
+            return table
+                .insert('name', 'age')
+                .values('foo', false)
+                .execute()
+                .then(() => table.select().execute(row => actual.push(row)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should insert `null` values', () => {
+            const expected = [['foo', null]];
+            let actual = [];
+
+            return table
+                .insert('name', 'age')
+                .values('foo', null)
+                .execute()
+                .then(() => table.select().execute(row => actual.push(row)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should insert `undefined` values', () => {
+            const expected = [['foo', null]];
+            let actual = [];
+
+            return table
+                .insert('name', 'age')
+                .values('foo', undefined)
+                .execute()
+                .then(() => table.select().execute(row => actual.push(row)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });

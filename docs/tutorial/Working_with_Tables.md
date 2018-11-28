@@ -217,7 +217,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ## Column Types
 
-It's important to understand how MySQL column types are translated to JavaScript/Node.js native types. One case worth a special mention is the fact every possible `number` higher than 2^53 - 1 (the maximum safest integer in JavaScript) or lower than -2^53 + 1 (the minimum safest integer in JavaScript) will be preserved as a `string` in order to avoid loosing precision. The following table depicts a comprehensive mapping between data types.
+It's important to understand how MySQL column types are translated to JavaScript/Node.js native types. One case worth a special mention is the fact every possible `number` higher than 2^53 - 1 (the maximum safest integer in JavaScript) or lower than -2^53 + 1 (the minimum safest integer in JavaScript) will be preserved as a `string` in order to avoid loosing precision. The following table depicts a non-comprehensive and possible mapping between data types.
 
 | MySQL             | JavaScript/Node.js    |
 |-------------------|-----------------------|
@@ -246,3 +246,8 @@ It's important to understand how MySQL column types are translated to JavaScript
 | `SET`             | `Array`               |
 | `JSON`            | `Object`              |
 | `SPATIAL`         | `Buffer`              |
+
+Additionally, except for `JSON` fields, you should also account for the following:
+
+- `Boolean` values (`true` and `false`) will be coerced into any kind of [numeric](https://dev.mysql.com/doc/refman/8.0/en/numeric-types.html) type
+- `null` or `undefined` will be coerced into the MySQL [`NULL`](https://dev.mysql.com/doc/refman/8.0/en/working-with-null.html) value
