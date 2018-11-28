@@ -5,10 +5,12 @@
 // npm `test` script was updated to use NODE_PATH=.
 const ColumnIdentifier = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').ColumnIdentifier;
 const Crud = require('lib/Protocol/Protobuf/Adapters/Crud');
+const DataModel = require('lib/Protocol/Protobuf/Stubs/mysqlx_crud_pb').DataModel;
 const DocumentPathItem = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').DocumentPathItem;
 const Expr = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
-const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
 const Parser = require('lib/ExprParser');
+const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
+const UpdateOperation = require('lib/Protocol/Protobuf/Stubs/mysqlx_crud_pb').UpdateOperation;
 const expect = require('chai').expect;
 
 describe('Protobuf', () => {
@@ -74,6 +76,34 @@ describe('Protobuf', () => {
                 expect(fields[2].getLiteral().getVFloat()).to.equal(1.1);
                 expect(fields[3].getLiteral().getType()).to.equal(Scalar.Type.V_BOOL);
                 expect(fields[3].getLiteral().getVBool()).to.equal(true);
+            });
+        });
+
+        context('encodeUpdateOperation()', () => {
+            it('should encode a table operation with a `null` value', () => {
+                const encoded = Crud.encodeUpdateOperation({ source: 'foo', type: UpdateOperation.UpdateType.SET, value: null }, { mode: DataModel.TABLE });
+
+                expect(encoded.getOperation()).to.equal(UpdateOperation.UpdateType.SET);
+                expect(encoded.getSource().getName()).to.equal('foo');
+                expect(encoded.getValue().getType()).to.equal(Expr.Type.LITERAL);
+                expect(encoded.getValue().getLiteral().getType()).to.equal(Scalar.Type.V_NULL);
+            });
+
+            it('should encode a table operation with a `undefined` value', () => {
+                const encoded = Crud.encodeUpdateOperation({ source: 'foo', type: UpdateOperation.UpdateType.SET }, { mode: DataModel.TABLE });
+
+                expect(encoded.getOperation()).to.equal(UpdateOperation.UpdateType.SET);
+                expect(encoded.getSource().getName()).to.equal('foo');
+                expect(encoded.getValue().getType()).to.equal(Expr.Type.LITERAL);
+                expect(encoded.getValue().getLiteral().getType()).to.equal(Scalar.Type.V_NULL);
+            });
+
+            it('@regression should ignore falsy values for ITEM_REMOVE operations', () => {
+                const encoded = Crud.encodeUpdateOperation({ source: 'foo', type: UpdateOperation.UpdateType.ITEM_REMOVE }, { mode: DataModel.TABLE });
+
+                expect(encoded.getOperation()).to.equal(UpdateOperation.UpdateType.ITEM_REMOVE);
+                expect(encoded.getSource().getName()).to.equal('foo');
+                expect(encoded.getValue()).to.equal(undefined);
             });
         });
     });

@@ -42,6 +42,16 @@ describe('Protobuf', () => {
             });
         });
 
+        context('encodeScalar()', () => {
+            it('should return a Mysqlx.Datatypes.Scalar.Type.V_NULL for `null`', () => {
+                expect(Datatypes.encodeScalar(null).getType()).to.equal(Scalar.Type.V_NULL);
+            });
+
+            it('should return a Mysqlx.Datatypes.Scalar.Type.V_NULL for `undefined`', () => {
+                expect(Datatypes.encodeScalar().getType()).to.equal(Scalar.Type.V_NULL);
+            });
+        });
+
         context('encodeAny()', () => {
             it('should return a Mysqlx.Datatypes.Any object for valid literals', () => {
                 let any = Datatypes.encodeAny('foo');

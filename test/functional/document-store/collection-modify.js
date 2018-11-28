@@ -48,13 +48,25 @@ describe('@functional document collection modify', () => {
                 .execute();
         });
 
-        it('should updated all documents in a collection', () => {
+        it('should update properties of all documents in a collection', () => {
             const expected = [{ _id: '1', name: 'qux' }, { _id: '2', name: 'qux' }];
             let actual = [];
 
             return collection
                 .modify('true')
                 .set('name', 'qux')
+                .execute()
+                .then(() => collection.find().execute(doc => actual.push(doc)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should remove properties of all documents in a collection', () => {
+            const expected = [{ _id: '1' }, { _id: '2' }];
+            let actual = [];
+
+            return collection
+                .modify('true')
+                .unset('name')
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.deep.equal(expected));
@@ -70,13 +82,25 @@ describe('@functional document collection modify', () => {
                 .execute();
         });
 
-        it('should update the documents from a collection that match the criteria', () => {
+        it('should update properties of the documents from a collection that match the criteria', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'qux' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
             return collection
                 .modify('name = "bar"')
                 .set('name', 'qux')
+                .execute()
+                .then(() => collection.find().execute(doc => actual.push(doc)))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('should remove properties of the documents from a collection that match the criteria', () => {
+            const expected = [{ _id: '1', name: 'foo' }, { _id: '2' }, { _id: '3', name: 'baz' }];
+            let actual = [];
+
+            return collection
+                .modify('name = "bar"')
+                .unset('name')
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.deep.equal(expected));
