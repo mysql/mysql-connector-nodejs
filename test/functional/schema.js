@@ -133,4 +133,22 @@ describe('@functional session schema', () => {
                 });
         });
     });
+
+    context('available collections', () => {
+        it('BUG#28745240 should check if a collection exists in a given schema in the presence of other collections', () => {
+            return schema.getCollection('noop').existsInDatabase()
+                .then(exists => {
+                    return expect(exists).to.be.false;
+                })
+                .then(() => {
+                    return schema.createCollection('test');
+                })
+                .then(() => {
+                    return schema.getCollection('noop').existsInDatabase();
+                })
+                .then(exists => {
+                    return expect(exists).to.be.false;
+                });
+        });
+    });
 });
