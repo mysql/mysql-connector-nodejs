@@ -16,6 +16,10 @@ describe('parseSchema', () => {
         });
     });
 
+    it('should parse a pct-encoded schema name', () => {
+        expect(parseSchema(`/${encodeURIComponent('%&^*^_')}`)).to.equal('%&^*^_');
+    });
+
     it('should throw na error if the schema name is not valid', () => {
         ['/foo/bar', '/foo#bar', '/foo[bar', '/foo]bar'].forEach(schema => {
             expect(() => parseSchema(schema)).to.throw('Invalid schema name');
