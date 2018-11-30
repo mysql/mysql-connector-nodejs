@@ -91,7 +91,7 @@ Check out the official [documentation](https://dev.mysql.com/doc/dev/connector-n
 
 ## License
 
-Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
 
 This is a release of MySQL Connector/Node.js, Oracle's Node.js driver for MySQL.
 
