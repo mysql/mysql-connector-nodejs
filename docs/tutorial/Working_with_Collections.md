@@ -9,45 +9,38 @@ A collection is a special-purpose table for storing documents. For creating a co
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://localhost:33060')
+mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('test');
-            .createCollection('collname');
-    .then(collection => {
-        // Use the Collection instance.
-    }).catch(err => {
+        return session.getSchema('mySchema').createCollection('myCollection')
+            .then(collection => {
+                // Use the Collection instance.
+            });
+    })
+    .catch(err => {
         // Something went wrong.
     });
 ```
 
-As you can see the`createColletion` function returns a Promise which resolves to a {@link Collection} object on success.
+As you can see the `createColletion` function returns a Promise which resolves to a {@link Collection} object on success.
 
 ## Listing all the existing collections
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://localhost:33060')
+mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
         const schema = session.getSchema('foo');
 
-        return Promise
-            .all([
-                schema.createCollection('bar'),
-                schema.createCollection('baz')
-            ])
-            .then(() => schema);
-    })
-    .then(schema => {
-        return schema.getCollections();
+        return Promise.all([schema.createCollection('bar'), schema.createCollection('baz')])
+            .then(() => {
+                return schema.getCollections();
+            });
     })
     .then(collections => {
         console.log(collections[0].getName()); // 'bar'
         console.log(collections[1].getName()); // 'baz'
-    })
+    });
 ```
 
 ## Dropping a collection
@@ -55,20 +48,20 @@ mysqlx
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://localhost:33060')
+mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
         const schema = session.getSchema('foo');
-        return schema.createCollection('bar').then(() => schema);
-    })
-    .then(schema => {
-        return schema.dropCollection('bar');
+
+        return schema.createCollection('bar')
+            .then(() => {
+                return schema.dropCollection('bar');
+            });
     });
 ```
 
 ## Handling documents in existing collections
 
-Considering a collection `testSchema.testCollection` containing the following documents:
+Considering a collection `mySchema.myCollection` containing the following documents:
 
 ```json
 [{
@@ -96,25 +89,23 @@ To modify/remove all documents from a collection, one should provide any express
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
+const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection
             // The criteria is defined through the expression.
             .remove('name = "foo"')
             .execute()
-            .then(() => collection);
-    })
-    .then(collection => {
-        const query = collection.find();
-        let resultSet = [];
-
-        return query.execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result); // [{ _id: 2, name: 'bar', meta: { nested: 'baz' } }]
+            .then(() => {
+                return collection.find()
+                    .execute(doc => docs.push(doc));
+            })
+            .then(() => {
+                console.log(docs); // [{ _id: 2, name: 'bar', meta: { nested: 'baz' } }]
+            });
     });
 ```
 
@@ -122,89 +113,83 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
+const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection
             // The expression should evaluate to `true`.
             .remove('true')
             .execute()
-            .then(() => collection);
+            .then(() => {
+                return collection.find()
+                    .execute(doc => docs.push(doc));
+            })
+            .then(() => {
+                console.log(docs); // []
+            });
     })
-    .then(collection => {
-        const query = collection.find();
-        let resultSet = [];
-
-        return query.execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result); // []
-    });
 ```
 
 ### Modifying documents that match a given criteria
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
+const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection
             // The criteria is defined through the expression.
             .modify('_id = 1')
             .set('name', 'baz')
             .execute()
-            .then(() => collection);
+            .then(() => {
+                return collection.find()
+                    .execute(doc => docs.push(doc));
+            })
+            .then(() => {
+                console.log(docs);
+                // [
+                //      { _id: 1, name: 'baz', meta: { nested: 'bar' } },
+                //      { _id: 2, name: 'bar', meta: { nested: 'baz' } }
+                // ]
+            });
     })
-    .then(collection => {
-        const query = collection.find();
-        let resultSet = [];
-
-        return query.execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result);
-        // [
-        //      { _id: 1, name: 'baz', meta: { nested: 'bar' } },
-        //      { _id: 2, name: 'bar', meta: { nested: 'baz' } }
-        // ]
-    });
 ```
 
 ### Modifying all documents
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
+const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection
             // The expression should evaluate to `true`.
             .modify('true')
             .set('name', 'baz')
             .set('meta.nested', 'quux')
             .execute()
-            .then(() => collection);
+            .then(() => {
+                return collection.find()
+                    .execute(doc => docs.push(doc));
+            })
+            .then(() => {
+                console.log(docs);
+                // [
+                //      { _id: 1, name: 'baz', meta: { nested: 'quux' } },
+                //      { _id: 2, name: 'baz', meta: { nested: 'quux' } }
+                // ]
+            });
     })
-    .then(collection => {
-        const query = collection.find();
-        let resultSet = [];
-
-        return query.execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result);
-        // [
-        //      { _id: 1, name: 'baz', meta: { nested: 'quux' } },
-        //      { _id: 2, name: 'baz', meta: { nested: 'quux' } }
-        // ]
-    });
 ```
 
 ### Bulk-updating multiple document properties
@@ -215,30 +200,27 @@ Using `patch()` will, remove properties set to `null`, add previously nonexistin
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
+const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .modify('_id = 1')
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection.modify('_id = 1')
             .patch({ name: 'qux', meta: { nested: null, other: 'quux' } })
             .execute()
-            .then(() => collection);
+            .then(() => {
+                return collection.find()
+                    .execute(doc => docs.push(doc));
+            })
+            .then(() => {
+                console.log(docs);
+                // [
+                //      { _id: 1, name: 'qux', meta: { other: 'quux' } },
+                //      { _id: 2, name: 'bar', meta: { nested: 'baz' } }
+                // ]
+            });
     })
-    .then(collection => {
-        const query = collection.find();
-        let resultSet = [];
-
-        return query.execute(doc => resultSet.push(doc)).then(() => resultSet);
-    })
-    .then(result => {
-        console.log(result);
-        // [
-        //      { _id: 1, name: 'qux', meta: { other: 'quux' } },
-        //      { _id: 2, name: 'bar', meta: { nested: 'baz' } }
-        // ]
-    });
 ```
 
 Note: the criteria expression string provided via `modify()` establishes the filtering rules, thus any `_id` value provided as part of the properties to be updated will simply be ignored (and will not be updated).
@@ -252,7 +234,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session.getSchema('testSchema').getCollection('testCollection').count();
+        return session.getSchema('mySchema').getCollection('myCollection').count();
     })
     .then(count => {
         console.log(count); // 2
@@ -265,8 +247,8 @@ Collection indexes are ordinary MySQL indexes on virtual columns that extract da
 To create an Index, an index name and the index definition is required.
 
 The Index Definition has the following properties:
-```
-{string} [type] - name of index's type INDEX (default) or SPATIAL.
+```text
+{string} [type] - index type name, INDEX (default) or SPATIAL.
 {array} fields - Array of Index Field objects. Each has the following properties:
     {string} field - The Document path.
     {string} type - see list of available types below.
@@ -276,7 +258,7 @@ The Index Definition has the following properties:
 ```
 
 You can create an index with one of the following types:
-```
+```text
 INT [UNSIGNED]
 TINYINT [UNSIGNED]
 SMALLINT [UNSIGNED]
@@ -309,19 +291,17 @@ If a collection is not empty, you can't create `SPACIAL` indexes for `GEOJSON` f
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .createIndex('zip', {
-                fields: [{
-                    field: '$.zip',
-                    type: 'TEXT(10)',
-                    required: false
-                }]
-            });
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection.createIndex('zip', {
+            fields: [{
+                field: '$.zip',
+                type: 'TEXT(10)',
+                required: false
+            }]
+        });
     })
     .then(status => {
         console.log(status); // true
@@ -336,22 +316,20 @@ mysqlx
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .createIndex('coords', {
-                fields: [{
-                    field: '$.coords',
-                    type: 'GEOJSON',
-                    required: true,
-                    options: 1234,
-                    srid: 1234
-                }],
-                type: 'SPATIAL'
-            });
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection.createIndex('coords', {
+            fields: [{
+                field: '$.coords',
+                type: 'GEOJSON',
+                required: true,
+                options: 1234,
+                srid: 1234
+            }],
+            type: 'SPATIAL'
+        });
     })
     .then(status => {
         console.log(status); // true
@@ -366,13 +344,11 @@ mysqlx
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root@localhost:33060')
+mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(session => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .dropIndex('zip');
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection.dropIndex('zip');
     })
     .then(status => {
         console.log(status); // true
