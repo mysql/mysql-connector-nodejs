@@ -47,7 +47,7 @@ describe('@functional authentication', () => {
                 });
 
                 it('should authenticate with a URL parameter', () => {
-                    return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}`)).to.be.fulfilled
+                    return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}`)).to.be.fulfilled
                         .then(session => {
                             expect(session.inspect().auth).to.equal('PLAIN');
                             return session.close();
@@ -75,7 +75,7 @@ describe('@functional authentication', () => {
                         });
 
                         it('should authenticate with a URL parameter', () => {
-                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}?ssl-mode=DISABLED`)).to.be.fulfilled
+                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED`)).to.be.fulfilled
                                 .then(session => {
                                     expect(session.inspect().auth).to.equal('SHA256_MEMORY');
                                     return session.close();
@@ -96,7 +96,7 @@ describe('@functional authentication', () => {
                         });
 
                         it('should fail to authenticate with a URL parameter', () => {
-                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}?ssl-mode=DISABLED`)).to.be.rejected
+                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED`)).to.be.rejected
                                 .then(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
@@ -155,7 +155,7 @@ describe('@functional authentication', () => {
                 });
 
                 it('should authenticate with a URL parameter', () => {
-                    return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}?auth=${auth}`)).to.be.rejected
+                    return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)).to.be.rejected
                         .then(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
@@ -178,7 +178,7 @@ describe('@functional authentication', () => {
                     });
 
                     it('should authenticate with a URL parameter', () => {
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
+                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
@@ -235,7 +235,7 @@ describe('@functional authentication', () => {
                 });
 
                 it('should authenticate with a URL parameter', () => {
-                    return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}?auth=${auth}`)).to.be.fulfilled
+                    return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)).to.be.fulfilled
                         .then(session => {
                             expect(session.inspect().auth).to.equal(auth);
                             return session.close();
@@ -256,7 +256,7 @@ describe('@functional authentication', () => {
                     });
 
                     it('should fail to authenticate with a URL parameter', () => {
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
+                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1251);
@@ -314,7 +314,7 @@ describe('@functional authentication', () => {
                     });
 
                     it('should fail to authenticate with a URL parameter', () => {
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}?auth=${auth}`)).to.be.rejected
+                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)).to.be.rejected
                             .then(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
@@ -335,7 +335,7 @@ describe('@functional authentication', () => {
                         });
 
                         it('should fail to authenticate with a URL parameter', () => {
-                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
+                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
                                 .then(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
@@ -394,7 +394,7 @@ describe('@functional authentication', () => {
                     });
 
                     it('should authenticate with a URL parameter', () => {
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}?auth=${auth}`)).to.be.fulfilled
+                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)).to.be.fulfilled
                             .then(session => {
                                 expect(session.inspect().auth).to.equal(auth);
                                 return session.close();
@@ -415,7 +415,7 @@ describe('@functional authentication', () => {
                         });
 
                         it('should authenticate with a URL parameter', () => {
-                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}?ssl-mode=DISABLED&auth=${auth}`)).to.be.fulfilled
+                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)).to.be.fulfilled
                                 .then(session => {
                                     expect(session.inspect().auth).to.equal(auth);
                                     return session.close();
