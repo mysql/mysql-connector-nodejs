@@ -346,6 +346,37 @@ describe('ExprParser', () => {
 
             // Following test-cases were not included in original EBNF, but are valid
 
+            it('parses valid unary operations', () => {
+                let input = 'NOT TRUE';
+                let expr = Parser.parse(input);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.OPERATOR);
+                expect(expr.output.getOperator().getName()).to.equal('not');
+
+                let params = expr.output.getOperator().getParamList();
+                expect(params).to.have.lengthOf(1);
+                expect(params[0].getType()).to.equal(Expr.Type.LITERAL);
+
+                expect(params[0].getLiteral().getType()).to.equal(Scalar.Type.V_BOOL);
+                expect(params[0].getLiteral().getVBool()).to.equal(true);
+
+                input = 'not foo';
+                expr = Parser.parse(input);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.OPERATOR);
+                expect(expr.output.getOperator().getName()).to.equal('not');
+
+                params = expr.output.getOperator().getParamList();
+                expect(params).to.have.lengthOf(1);
+                expect(params[0].getType()).to.equal(Expr.Type.IDENT);
+
+                let docPath = params[0].getIdentifier().getDocumentPathList();
+                expect(docPath[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
+                expect(docPath[0].getValue()).to.equal('foo');
+            });
+
             it('parses valid binary operations', () => {
                 let input = `1 <> 2`;
                 let expr = Parser.parse(input);

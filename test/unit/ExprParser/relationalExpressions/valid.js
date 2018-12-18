@@ -179,6 +179,136 @@ describe('ExprParser', () => {
             });
         });
 
+        context('escaped identifiers', () => {
+            it('parses escaped column paths', () => {
+                let input = '`foo.bar`';
+                let expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getName()).to.equal('foo.bar');
+
+                input = '`foo``bar`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getName()).to.equal('foo`bar');
+
+                input = 'foo.`bar`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getTableName()).to.equal('foo');
+                expect(expr.output.getIdentifier().getName()).to.equal('bar');
+
+                input = 'foo.`bar.baz`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getTableName()).to.equal('foo');
+                expect(expr.output.getIdentifier().getName()).to.equal('bar.baz');
+
+                input = 'foo.`bar``baz`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getTableName()).to.equal('foo');
+                expect(expr.output.getIdentifier().getName()).to.equal('bar`baz');
+
+                input = 'foo.`bar`.`baz`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getSchemaName()).to.equal('foo');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('bar');
+                expect(expr.output.getIdentifier().getName()).to.equal('baz');
+
+                input = '`foo`.`bar`.`baz`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getSchemaName()).to.equal('foo');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('bar');
+                expect(expr.output.getIdentifier().getName()).to.equal('baz');
+
+                input = '`foo.bar`.`baz`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getTableName()).to.equal('foo.bar');
+                expect(expr.output.getIdentifier().getName()).to.equal('baz');
+
+                input = '`foo``bar`.`baz`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getTableName()).to.equal('foo`bar');
+                expect(expr.output.getIdentifier().getName()).to.equal('baz');
+
+                input = '`foo.bar`.`baz`.`qux`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getSchemaName()).to.equal('foo.bar');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('baz');
+                expect(expr.output.getIdentifier().getName()).to.equal('qux');
+
+                input = '`foo``bar`.`baz`.`qux`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getSchemaName()).to.equal('foo`bar');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('baz');
+                expect(expr.output.getIdentifier().getName()).to.equal('qux');
+
+                input = '`foo`.`bar.baz`.`qux`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getSchemaName()).to.equal('foo');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('bar.baz');
+                expect(expr.output.getIdentifier().getName()).to.equal('qux');
+
+                input = '`foo`.`bar``baz`.`qux`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getSchemaName()).to.equal('foo');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('bar`baz');
+                expect(expr.output.getIdentifier().getName()).to.equal('qux');
+
+                input = '`foo`.`bar`.`baz.qux`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getSchemaName()).to.equal('foo');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('bar');
+                expect(expr.output.getIdentifier().getName()).to.equal('baz.qux');
+
+                input = '`foo`.`bar`.`baz``qux`';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
+                expect(expr.output.getIdentifier().getSchemaName()).to.equal('foo');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('bar');
+                expect(expr.output.getIdentifier().getName()).to.equal('baz`qux');
+            });
+        });
+
         context('relational-only expressions', () => {
             it('parses expressions containing valid column names', () => {
                 let input = "doc->'$.foo.bar[*]'";
@@ -261,7 +391,7 @@ describe('ExprParser', () => {
 
                 expect(expr.input).to.equal(input);
                 expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
-                expect(expr.output.getIdentifier().getName()).to.equal('`x`');
+                expect(expr.output.getIdentifier().getName()).to.equal('x');
 
                 pathItems = expr.output.getIdentifier().getDocumentPathList();
                 expect(pathItems).to.have.lengthOf(3);
@@ -275,7 +405,7 @@ describe('ExprParser', () => {
 
                 expect(expr.input).to.equal(input);
                 expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
-                expect(expr.output.getIdentifier().getName()).to.equal("`''`");
+                expect(expr.output.getIdentifier().getName()).to.equal("''");
 
                 pathItems = expr.output.getIdentifier().getDocumentPathList();
                 expect(pathItems).to.have.lengthOf(3);
@@ -463,7 +593,7 @@ describe('ExprParser', () => {
 
                 expect(expr.input).to.equal(input);
                 expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
-                expect(expr.output.getIdentifier().getTableName()).to.equal('`foo`');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('foo');
                 expect(expr.output.getIdentifier().getName()).to.equal('doc');
 
                 pathItems = expr.output.getIdentifier().getDocumentPathList();
@@ -478,7 +608,7 @@ describe('ExprParser', () => {
 
                 expect(expr.input).to.equal(input);
                 expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
-                expect(expr.output.getIdentifier().getTableName()).to.equal('`foo.bar`');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('foo.bar');
                 expect(expr.output.getIdentifier().getName()).to.equal('doc');
 
                 pathItems = expr.output.getIdentifier().getDocumentPathList();
@@ -494,7 +624,7 @@ describe('ExprParser', () => {
 
                 expect(expr.input).to.equal(input);
                 expect(expr.output.getType()).to.equal(Expr.Type.IDENT);
-                expect(expr.output.getIdentifier().getTableName()).to.equal('`->`');
+                expect(expr.output.getIdentifier().getTableName()).to.equal('->');
                 expect(expr.output.getIdentifier().getName()).to.equal('doc');
 
                 pathItems = expr.output.getIdentifier().getDocumentPathList();
