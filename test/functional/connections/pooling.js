@@ -110,12 +110,28 @@ describe('@functional connection pooling', () => {
                     });
             });
 
-            it('should retrieve a valid connection if one is made available in the meantime', () => {
+            it('should retrieve a valid connection if one is made available and there is no queueTimeout', () => {
                 const client = mysqlx.getClient(config, { pooling: { enabled: true, maxSize: 2 } });
 
                 return Promise.all([client.getSession(), client.getSession()])
                     .then(sessions => {
                         return expect(Promise.all([client.getSession(), sessions[0].close(), sessions[1].close(), client.getSession()])).to.be.fulfilled;
+                    })
+                    .then(() => {
+                        return client.close();
+                    });
+            });
+
+            it('should retrieve a valid connection if one is made available before exceeding the queueTimeout', () => {
+                const client = mysqlx.getClient(config, { pooling: { enabled: true, maxSize: 1, queueTimeout: 2000 } });
+
+                return client.getSession()
+                    .then(session => {
+                        const delayed = new Promise(resolve => {
+                            setTimeout(() => session.close().then(resolve), 500);
+                        });
+
+                        return expect(Promise.all([client.getSession(), delayed])).to.be.fulfilled;
                     })
                     .then(() => {
                         return client.close();
