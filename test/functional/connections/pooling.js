@@ -4,12 +4,13 @@
 
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
+const properties = require('test/properties');
 const mysqlx = require('index');
 
 chai.use(chaiAsPromised);
 
 const expect = chai.expect;
+const config = Object.assign({}, properties, { schema: undefined });
 
 describe('@functional connection pooling', () => {
     context('creating a pool', () => {

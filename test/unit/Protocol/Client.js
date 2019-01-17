@@ -2,10 +2,10 @@
 
 /* eslint-env node, mocha */
 
-const AuthenticationHandler = require('lib/Protocol/ResponseHandlers/AuthenticationHandler');
 const Client = require('lib/Protocol/Client');
 const ClientMessages = require('lib/Protocol/Protobuf/Stubs/mysqlx_pb').ClientMessages;
 const EventEmitter = require('events');
+const Expect = require('lib/Protocol/Protobuf/Adapters/Expect');
 const OkHandler = require('lib/Protocol/ResponseHandlers/OkHandler');
 const PassThrough = require('stream').PassThrough;
 const Scope = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Frame.Scope;
@@ -438,111 +438,169 @@ describe('Client', () => {
     });
 
     context('cleanup', () => {
-        let authenticationHandlerSendMessage, dummy, okHandlerSendMessage;
+        let FakeClient, FakeOkHandler, encodeMessage, network;
 
         beforeEach('create fakes', () => {
-            dummy = new PassThrough();
+            FakeOkHandler = td.constructor(OkHandler);
+            network = new PassThrough();
 
-            okHandlerSendMessage = OkHandler.prototype.sendMessage;
-            OkHandler.prototype.sendMessage = fakeSendMessage;
+            td.replace('../../../lib/Protocol/ResponseHandlers/OkHandler', FakeOkHandler);
         });
 
         afterEach('reset fakes', () => {
-            OkHandler.prototype.sendMessage = okHandlerSendMessage;
+            return new Promise(resolve => network.end(resolve));
         });
 
-        // TODO(Rui): this will change in 8.0.14
         context('sessionReset()', () => {
-            let FakeClient, encodeAuthenticateStart, encodeReset;
+            let authenticate, encodeReset;
 
             beforeEach('create fakes', () => {
-                authenticationHandlerSendMessage = AuthenticationHandler.prototype.sendMessage;
-                AuthenticationHandler.prototype.sendMessage = fakeSendMessage;
-
-                encodeAuthenticateStart = td.function();
                 encodeReset = td.function();
 
-                td.replace('../../../lib/Protocol/Protobuf/Adapters/Session', { encodeAuthenticateStart, encodeReset });
+                td.replace('../../../lib/Protocol/Protobuf/Adapters/Session', { encodeReset });
 
                 FakeClient = require('lib/Protocol/Client');
+                authenticate = td.replace(FakeClient.prototype, 'authenticate');
+                encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
             });
 
-            afterEach('reset fakes', () => {
-                AuthenticationHandler.prototype.sendMessage = authenticationHandlerSendMessage;
+            context('in the first call', () => {
+                let expectOpen, expectClose;
+
+                beforeEach('create fakes', () => {
+                    expectOpen = td.replace(FakeClient.prototype, 'expectOpen');
+                    expectClose = td.replace(FakeClient.prototype, 'expectClose');
+                });
+
+                context('with new servers', () => {
+                    it('sets the expectations, resets the session keeping it open and updates the local state', () => {
+                        const client = new FakeClient(network);
+                        const expectations = [{
+                            condition: Expect.Open.Condition.ConditionOperation.EXPECT_OP_SET,
+                            key: Expect.Open.Condition.Key.EXPECT_FIELD_EXIST,
+                            value: '6.1'
+                        }];
+
+                        td.when(expectOpen(expectations)).thenResolve();
+                        td.when(encodeReset({ keepOpen: true })).thenReturn('bar');
+                        td.when(encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                        td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
+                        td.when(expectClose()).thenResolve();
+
+                        return expect(client.sessionReset()).to.eventually.be.fulfilled
+                            .then(() => expect(client._requiresAuthenticationAfterReset).to.equal('NO'));
+                    });
+                });
+
+                context('with old servers', () => {
+                    it('tries to set the server expectations, updates the local state, resets the session and re-authenticates', () => {
+                        const client = new FakeClient(network);
+                        const expectations = [{
+                            condition: Expect.Open.Condition.ConditionOperation.EXPECT_OP_SET,
+                            key: Expect.Open.Condition.Key.EXPECT_FIELD_EXIST,
+                            value: '6.1'
+                        }];
+                        const error = new Error();
+                        // Error 5168 means the X Plugin does not support prepared statements (fails with the "6.1" expectation)
+                        error.info = { code: 5168 };
+
+                        td.replace(client, '_authenticator', 'foo');
+
+                        td.when(expectOpen(expectations)).thenReject(error);
+                        td.when(encodeReset({ keepOpen: false })).thenReturn('bar');
+                        td.when(encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                        td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
+                        td.when(authenticate('foo'), { ignoreExtraArgs: true }).thenResolve('qux');
+
+                        return expect(client.sessionReset()).to.eventually.equal('qux')
+                            .then(() => expect(client._requiresAuthenticationAfterReset).to.equal('YES'));
+                    });
+                });
+
+                it('fails if there is an unexpected error while opening the expectation block', () => {
+                    const client = new FakeClient(network);
+                    const error = new Error();
+                    error.info = { code: -1 };
+
+                    td.when(expectOpen(), { ignoreExtraArgs: true }).thenReject(error);
+
+                    return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
+                });
+
+                it('fails if there is an unexpected error while encoding the Mysqlx.Session.Reset message ', () => {
+                    const client = new FakeClient(network);
+                    const error = new Error();
+                    error.info = { code: -1 };
+
+                    td.when(expectOpen(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(encodeReset(), { ignoreExtraArgs: true }).thenReturn();
+                    td.when(encodeMessage(), { ignoreExtraArgs: true }).thenThrow(error);
+
+                    return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
+                });
+
+                it('fails if there is an unexpected error while resetting the connection ', () => {
+                    const client = new FakeClient(network);
+                    const error = new Error();
+                    error.info = { code: -1 };
+
+                    td.when(expectOpen(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(encodeReset(), { ignoreExtraArgs: true }).thenReturn();
+                    td.when(encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
+                    td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenReject(error);
+
+                    return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
+                });
+
+                it('fails if there is an unexpected error while closing the expectation block', () => {
+                    const client = new FakeClient(network);
+                    const error = new Error();
+                    error.info = { code: -1 };
+
+                    td.when(expectOpen(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(encodeReset(), { ignoreExtraArgs: true }).thenReturn();
+                    td.when(encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
+                    td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(expectClose()).thenReject(error);
+
+                    return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
+                });
             });
 
-            it('should reset the connection and re-authenticate', () => {
-                const authenticator = 'foo';
-                const client = new FakeClient(dummy);
-                client.authenticator = authenticator;
-                client.encodeMessage = td.function();
+            context('in subsequent calls', () => {
+                it('resets the session and keeps it open with new servers in subsequent calls', () => {
+                    const client = new FakeClient(network);
 
-                td.when(encodeReset()).thenReturn('bar');
-                td.when(client.encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
-                td.when(fakeSendMessage(td.matchers.anything(), td.matchers.anything(), 'baz')).thenResolve();
-                td.when(encodeAuthenticateStart(authenticator)).thenReturn('qux');
-                td.when(client.encodeMessage(ClientMessages.Type.SESS_AUTHENTICATE_START, 'qux')).thenReturn('quux');
-                td.when(fakeSendMessage(td.matchers.anything(), td.matchers.anything(), 'quux')).thenResolve();
+                    // should not require re-authentication
+                    td.replace(client, '_requiresAuthenticationAfterReset', 'NO');
 
-                return expect(client.sessionReset()).to.be.fulfilled
-                    .then(() => expect(td.explain(fakeSendMessage).callCount).to.equal(2));
-            });
+                    td.when(encodeReset({ keepOpen: true })).thenReturn('bar');
+                    td.when(encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                    td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve('qux');
 
-            it('should fail if there is an error while encoding the Mysqlx.Session.Reset message', () => {
-                const error = new Error('foo');
-                const client = new FakeClient(dummy);
+                    return expect(client.sessionReset()).to.eventually.equal('qux');
+                });
 
-                td.when(encodeReset()).thenThrow(error);
+                it('resets the session and re-authenticates with older servers in subsequent calls', () => {
+                    const client = new FakeClient(network);
 
-                return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
-            });
+                    td.replace(client, '_authenticator', 'foo');
+                    // should require re-authentication
+                    td.replace(client, '_requiresAuthenticationAfterReset', 'YES');
 
-            it('should fail if there is an error while sending the Mysqlx.Session.Reset message to the server', () => {
-                const error = new Error('foo');
-                const client = new Client(dummy);
+                    td.when(encodeReset({ keepOpen: false })).thenReturn('bar');
+                    td.when(encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                    td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
+                    td.when(authenticate('foo')).thenResolve('qux');
 
-                td.when(encodeReset(), { ignoreExtraArgs: true }).thenResolve(error);
-                td.when(fakeSendMessage(), { ignoreExtraArgs: true }).thenReject(error);
-
-                return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
-            });
-
-            it('should fail if there is an error while encoding the Mysqlx.Session.AuthenticateStart message', () => {
-                const authenticator = 'foo';
-                const error = new Error('bar');
-                const client = new FakeClient(dummy);
-                client.authenticator = authenticator;
-                client.encodeMessage = td.function();
-
-                td.when(encodeReset()).thenReturn('baz');
-                td.when(client.encodeMessage(ClientMessages.Type.SESS_RESET, 'baz')).thenReturn('qux');
-                td.when(fakeSendMessage(td.matchers.anything(), td.matchers.anything(), 'qux')).thenResolve();
-                td.when(encodeAuthenticateStart(authenticator)).thenThrow(error);
-
-                return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
-            });
-
-            it('should fail if there is an error while sending the Mysqlx.Session.AuthenticateStart message to the server', () => {
-                const authenticator = 'foo';
-                const error = new Error('foobar');
-                const client = new FakeClient(dummy);
-                client.authenticator = authenticator;
-                client.encodeMessage = td.function();
-
-                td.when(encodeReset()).thenReturn('bar');
-                td.when(client.encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
-                td.when(fakeSendMessage(td.matchers.anything(), td.matchers.anything(), 'baz')).thenResolve();
-                td.when(encodeAuthenticateStart(authenticator)).thenReturn('qux');
-                td.when(client.encodeMessage(ClientMessages.Type.SESS_AUTHENTICATE_START, 'qux')).thenReturn('quux');
-                td.when(fakeSendMessage(td.matchers.anything(), td.matchers.anything(), 'quux')).thenReject(error);
-
-                return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
+                    return expect(client.sessionReset()).to.eventually.equal('qux');
+                });
             });
         });
 
         // needs to be called with session.close()
         context('sessionClose()', () => {
-            let FakeClient, encodeClose;
+            let encodeClose;
 
             beforeEach('create fakes', () => {
                 encodeClose = td.function();
@@ -550,34 +608,35 @@ describe('Client', () => {
                 td.replace('../../../lib/Protocol/Protobuf/Adapters/Session', { encodeClose });
 
                 FakeClient = require('lib/Protocol/Client');
+                encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
             });
 
-            it('should send a Mysqlx.Session.Close message to the server', () => {
-                const client = new FakeClient(dummy);
-                client.encodeMessage = td.function();
+            it('sends a Mysqlx.Session.Close message to the server', () => {
+                const client = new FakeClient(network);
 
                 td.when(encodeClose()).thenReturn('foo');
-                td.when(client.encodeMessage(ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
-                td.when(fakeSendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
+                td.when(encodeMessage(ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
+                td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
 
                 return expect(client.sessionClose()).to.eventually.equal('baz');
             });
 
-            it('should fail if there is an error while encoding the message', () => {
+            it('fails if there is an error while encoding the message', () => {
                 const error = new Error('foo');
-                const client = new FakeClient(dummy);
+                const client = new FakeClient(network);
 
                 td.when(encodeClose()).thenThrow(error);
 
                 return expect(client.sessionClose()).to.eventually.be.rejectedWith(error);
             });
 
-            it('should fail if there is an error while sending the message to the server', () => {
+            it('fails if there is an error while sending the message to the server', () => {
                 const error = new Error('foo');
-                const client = new Client(dummy);
+                const client = new FakeClient(network);
 
-                td.when(encodeClose(), { ignoreExtraArgs: true }).thenResolve();
-                td.when(fakeSendMessage(), { ignoreExtraArgs: true }).thenReject(error);
+                td.when(encodeClose()).thenReturn('foo');
+                td.when(encodeMessage(ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
+                td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenReject(error);
 
                 return expect(client.sessionClose()).to.eventually.be.rejectedWith(error);
             });
@@ -585,7 +644,7 @@ describe('Client', () => {
 
         // needs to be called with client.close()
         context('connectionClose()', () => {
-            let FakeClient, encodeClose;
+            let encodeClose;
 
             beforeEach('create fakes', () => {
                 encodeClose = td.function();
@@ -593,34 +652,36 @@ describe('Client', () => {
                 td.replace('../../../lib/Protocol/Protobuf/Adapters/Connection', { encodeClose });
 
                 FakeClient = require('lib/Protocol/Client');
+                encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
             });
 
-            it('should send a Mysqlx.Connection.Close message to the server', () => {
-                const client = new FakeClient(dummy);
+            it('sends a Mysqlx.Connection.Close message to the server', () => {
+                const client = new FakeClient(network);
                 client.encodeMessage = td.function();
 
                 td.when(encodeClose()).thenReturn('foo');
                 td.when(client.encodeMessage(ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
-                td.when(fakeSendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
+                td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
 
                 return expect(client.connectionClose()).to.eventually.equal('baz');
             });
 
-            it('should fail if there is an error while encoding the message', () => {
+            it('fails if there is an error while encoding the message', () => {
                 const error = new Error('foo');
-                const client = new FakeClient(dummy);
+                const client = new FakeClient(network);
 
                 td.when(encodeClose()).thenThrow(error);
 
                 return expect(client.connectionClose()).to.eventually.be.rejectedWith(error);
             });
 
-            it('should fail if there is an error while sending the message to the server', () => {
+            it('fails if there is an error while sending the message to the server', () => {
                 const error = new Error('foo');
-                const client = new Client(dummy);
+                const client = new FakeClient(network);
 
-                td.when(encodeClose(), { ignoreExtraArgs: true }).thenResolve();
-                td.when(fakeSendMessage(), { ignoreExtraArgs: true }).thenReject(error);
+                td.when(encodeClose()).thenReturn('foo');
+                td.when(encodeMessage(ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
+                td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenReject(error);
 
                 return expect(client.connectionClose()).to.eventually.be.rejectedWith(error);
             });
