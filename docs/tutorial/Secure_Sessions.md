@@ -257,44 +257,6 @@ mysqlx.getSession('root@localhost?auth=PLAIN&ssl-mode=DISABLED')
     });
 ```
 
-### `sha256_password`
-
-The `sha256_password` authentication can be used on [MySQL 8.0.0](https://dev.mysql.com/doc/refman/8.0/en/sha256-pluggable-authentication.html) or later versions. There are some X Protocol issues that prevent the plugin from being used with [MySQL 5.7](https://dev.mysql.com/doc/refman/5.7/en/sha256-pluggable-authentication.html) (regardless of the authentication mechanism on the client).
-
-| Authentication mechanism  | 5.7 (S)   | 5.7 (N)   | 8.0.11 (S) | 8.0.11 (N) |
-| --------------------------|-----------|-----------|------------|------------|
-| `MYSQL41`                 | NO        | NO        | NO         | NO         |
-| `PLAIN`                   | NO        | NO        | OK         | NO         |
-| `SHA256_MEMORY`           | N/A       | N/A       | OK         | OK         |
-
-#### Examples
-
-Any authentication setup besides `PLAIN` over TLS will fail. Again, `SHA256_MEMORY` requires the password to be previously cached (see examples below).
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('root@localhost')
-    .then(session => {
-        console.log(session.inspect().auth); // 'PLAIN'
-    })
-
-mysqlx.getSession({ auth: 'MYSQL41', user: 'root' })
-    .catch(err => {
-        console.log(err.message); // 'Invalid user or password'
-    });
-
-mysqlx.getSession('root@localhost?auth=PLAIN&ssl-mode=DISABLED')
-    .catch(err => {
-        console.log(err.message); // 'Invalid authentication method PLAIN'
-    });
-
-mysqlx.getSession({ ssl: false, user: 'root' })
-    .catch(err => {
-        console.log(err.message); // 'Authentication failed using "MYSQL41" and "SHA256_MEMORY", check username and password or try a secure connection.'
-    });
-```
-
 ### `caching_sha2_password`
 
 The `caching_sha2_password` authentication plugin was introduced with [MySQL 8.0.11](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html) and is used by default since then. It's not supported on older server versions.
