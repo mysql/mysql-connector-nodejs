@@ -16,7 +16,7 @@ describe('@functional connect timeout', () => {
     let fakeServer1, port1;
 
     beforeEach('start fake server', () => {
-        port1 = process.env.NODE_TEST_MYSQL_UNUSED_PORT || 33061;
+        port1 = process.env.NODE_TEST_MYSQL_UNUSED_PORT || 33081;
 
         return new Promise((resolve, reject) => {
             fakeServer1 = net.createServer();
@@ -70,7 +70,7 @@ describe('@functional connect timeout', () => {
             let fakeServer2, port2;
 
             beforeEach('create additional fake server', () => {
-                port2 = process.env.NODE_TEST_MYSQL_UNUSED_EXTRA_PORT || 33062;
+                port2 = process.env.NODE_TEST_MYSQL_UNUSED_EXTRA_PORT || 33082;
 
                 return new Promise((resolve, reject) => {
                     fakeServer2 = net.createServer();

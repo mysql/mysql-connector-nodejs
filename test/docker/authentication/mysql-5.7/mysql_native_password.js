@@ -5,6 +5,7 @@
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
+const fixtures = require('test/fixtures');
 const mysqlx = require('index');
 
 chai.use(chaiAsPromised);
@@ -15,8 +16,16 @@ describe('@docker MySQL 5.7 authentication', () => {
     context('mysql_native_password', () => {
         let auth;
 
-        // MySQL 5.7 with mysql_native_password plugin (defined in docker.compose.yml)
-        const baseConfig = { port: 33064, schema: undefined, socket: undefined };
+        // MySQL 5.7 server port (defined in docker.compose.yml)
+        const baseConfig = { password: 'mnpp', port: 33063, schema: undefined, socket: undefined, user: 'mnpu' };
+
+        beforeEach('setup test account', () => {
+            return fixtures.createAccount({ password: baseConfig.password, plugin: 'mysql_native_password', port: baseConfig.port, user: baseConfig.user });
+        });
+
+        afterEach('delete test account', () => {
+            return fixtures.deleteAccount({ user: baseConfig.user });
+        });
 
         context('default authentication mechanism', () => {
             it('should authenticate with TLS', () => {

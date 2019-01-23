@@ -4,21 +4,17 @@ services:
     mysql-base:
         environment:
             MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
-            MYSQL_DATABASE: nodejsmysqlxtest
-            MYSQL_LOG_CONSOLE: 'true'
-            MYSQL_PASSWORD: ${MYSQL_PASSWORD:-test}
-            MYSQL_USER: ${MYSQL_USER:-test}
-        image: mysql/mysql-server:${MYSQL_VERSION:-8.0.3}
+            MYSQL_ROOT_HOST: '%'
+        image: mysql/mysql-server:${MYSQL_VERSION:-8.0.14}
 
     mysql:
-        command: mysqld --plugin-load=mysqlx=mysqlx.so
         extends:
             service: mysql-base
         ports:
             - 33060:33060
 
-    mysql-ssl:
-        command: mysqld --plugin-load=mysqlx=mysqlx.so --ssl-key=/ssl/key.pem --ssl-cert=/ssl/cert.pem
+    mysql-full-ssl:
+        command: mysqld --ssl-key=/ssl/key.pem --ssl-cert=/ssl/cert.pem
         extends:
             service: mysql-base
         ports:
@@ -27,18 +23,11 @@ services:
             - ./test/fixtures/ssl/server:/ssl:ro
 
     mysql-no-ssl:
-        command: mysqld --plugin-load=mysqlx=mysqlx.so --skip-ssl
+        command: mysqld --skip-ssl
         extends:
             service: mysql-base
         ports:
             - 33062:33060
-
-    mysql-sha256:
-        command: mysqld --plugin-load=mysqlx=mysqlx.so --default-authentication-plugin=sha256_password
-        extends:
-            service: mysql-base
-        ports:
-            - 33063:33060
 
     mysql-5.7:
         command: mysqld --plugin-load=mysqlx=mysqlx.so
@@ -46,13 +35,22 @@ services:
             service: mysql-base
         image: mysql/mysql-server:5.7
         ports:
-            - 33064:33060
+            - 33063:33060
 
-    mysql-5.7-sha256:
-        command: mysqld --plugin-load=mysqlx=mysqlx.so --default-authentication-plugin=sha256_password
+    mysql-8.0.3:
+        command: mysqld --plugin-load=mysqlx=mysqlx.so
         extends:
             service: mysql-base
-        image: mysql/mysql-server:5.7
+        image: mysql/mysql-server:8.0.3
+        ports:
+            - 33064:33060
+
+    # last version without support for prepared statements in the X Plugin
+    # sha256_password authentication plugin deprecated
+    mysql-8.0.13:
+        extends:
+            service: mysql-base
+        image: mysql/mysql-server:8.0.13
         ports:
             - 33065:33060
 

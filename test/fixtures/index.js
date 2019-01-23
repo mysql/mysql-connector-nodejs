@@ -7,14 +7,16 @@ const config = require('test/properties');
 const mysqlx = require('index');
 
 exports.createAccount = function (options) {
-    options = Object.assign({}, config, options);
+    options = Object.assign({}, config, { host: '%', plugin: 'caching_sha2_password', schema: '*' }, options);
 
-    return mysqlx.getSession(config)
+    const baseConfig = Object.assign({}, config, { port: options.port, schema: undefined });
+
+    return mysqlx.getSession(baseConfig)
         .then(session => {
             return session.sql(`CREATE USER IF NOT EXISTS '${options.user}'@'${options.host}' IDENTIFIED WITH ${options.plugin} BY '${options.password}'`)
                 .execute()
                 .then(() => {
-                    return session.sql(`GRANT SELECT ON ${options.schema}.* TO '${options.user}'@'${options.host}'`)
+                    return session.sql(`GRANT ALL ON ${options.schema}.* TO '${options.user}'@'${options.host}'`)
                         .execute();
                 })
                 .then(() => {
@@ -39,9 +41,11 @@ exports.createDefaultSchema = function (options) {
 };
 
 exports.deleteAccount = function (options) {
-    options = Object.assign({}, config, options);
+    options = Object.assign({}, config, { host: '%' }, options);
 
-    return mysqlx.getSession(config)
+    const baseConfig = Object.assign({}, config, { port: options.port, schema: undefined });
+
+    return mysqlx.getSession(baseConfig)
         .then(session => {
             return session.sql(`DROP USER IF EXISTS '${options.user}'@'${options.host}'`)
                 .execute()

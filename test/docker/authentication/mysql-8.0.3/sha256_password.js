@@ -5,6 +5,7 @@
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
+const fixtures = require('test/fixtures');
 const mysqlx = require('index');
 
 chai.use(chaiAsPromised);
@@ -15,8 +16,16 @@ describe('@docker MySQL 8.0.3 authentication', () => {
     context('sha256_password', () => {
         let auth;
 
-        // MySQL 8.0.3 with sha256_password plugin (defined in docker.compose.yml)
-        const baseConfig = { port: 33063, schema: undefined };
+        // MySQL 8.0.3 server port (defined in docker.compose.yml)
+        const baseConfig = { password: 'mnpp', port: 33064, schema: undefined, socket: undefined, user: 'mnpu' };
+
+        beforeEach('setup test account', () => {
+            return fixtures.createAccount({ password: baseConfig.password, plugin: 'sha256_password', port: baseConfig.port, user: baseConfig.user });
+        });
+
+        afterEach('delete test account', () => {
+            return fixtures.deleteAccount({ user: baseConfig.user, port: baseConfig.port });
+        });
 
         context('default authentication mechanism', () => {
             it('should authenticate with TLS', () => {

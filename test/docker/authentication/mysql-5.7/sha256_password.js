@@ -5,6 +5,7 @@
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
+const fixtures = require('test/fixtures');
 const mysqlx = require('index');
 
 chai.use(chaiAsPromised);
@@ -16,7 +17,15 @@ describe('@docker MySQL 5.7 authentication', () => {
         let auth;
 
         // MySQL 5.7 server port (defined in docker.compose.yml)
-        const baseConfig = { port: 33065, schema: undefined, socket: undefined };
+        const baseConfig = { password: 'spp', port: 33063, schema: undefined, socket: undefined, user: 'spu' };
+
+        beforeEach('setup test account', () => {
+            return fixtures.createAccount({ password: baseConfig.password, plugin: 'sha256_password', port: baseConfig.port, user: baseConfig.user });
+        });
+
+        afterEach('delete test account', () => {
+            return fixtures.deleteAccount({ user: baseConfig.user });
+        });
 
         context('default authentication mechanism', () => {
             // TODO(Rui): this test should be passing, because the client falls back to "PLAIN" but it fails
