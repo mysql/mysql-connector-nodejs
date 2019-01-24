@@ -25,7 +25,7 @@ describe('Protobuf', () => {
             td.reset();
         });
 
-        context('encodeExpr()', () => {
+        context('createExpr()', () => {
             beforeEach('setup fakes', () => {
                 td.when(parse(), { ignoreExtraArgs: true }).thenReturn({ output: {} });
             });
@@ -86,6 +86,20 @@ describe('Protobuf', () => {
 
                 expect(id.getType()).to.equal(Type.IDENT);
                 expect(literal.getType()).to.equal(Type.LITERAL);
+            });
+
+            it('should encode a JavaScript Date object', () => {
+                const now = new Date();
+                const obj = Expr.createExpr({ foo: now });
+
+                expect(obj.getType()).to.equal(Type.OBJECT);
+
+                const fields = obj.getObject().getFldList();
+                expect(fields).to.have.length(1);
+                expect(fields[0].getValue().getType()).to.equal(Type.LITERAL);
+                expect(fields[0].getValue().getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
+                // eslint-disable-next-line node/no-deprecated-api
+                return expect(new Buffer(fields[0].getValue().getLiteral().getVString().getValue()).toString()).to.equal(now.toJSON());
             });
         });
     });

@@ -374,4 +374,53 @@ describe('@functional document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('BUG#29179767 JavaScript Date converted to empty object', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo' })
+                .add({ _id: '2', name: 'bar' })
+                .execute();
+        });
+
+        it('updates a single field using a valid JSON value from a JavaScript Date object', () => {
+            const now = new Date();
+            const expected = [{ createdAt: now.toJSON() }];
+            const actual = [];
+
+            return collection.modify('_id = :id')
+                .bind('id', '1')
+                .set('createdAt', now)
+                .execute()
+                .then(() => {
+                    return collection.find('_id = :id')
+                        .fields('createdAt')
+                        .bind('id', '1')
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    expect(actual).to.deep.equal(expected);
+                });
+        });
+
+        it('updates a multiple fields using valid JSON values from JavaScript Date objects', () => {
+            const now = new Date();
+            const expected = [{ createdAt: now.toJSON(), updatedAt: now.toJSON() }];
+            const actual = [];
+
+            return collection.modify('_id = :id')
+                .bind('id', '1')
+                .patch({ createdAt: now, updatedAt: now })
+                .execute()
+                .then(() => {
+                    return collection.find('_id = :id')
+                        .fields('createdAt', 'updatedAt')
+                        .bind('id', '1')
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    expect(actual).to.deep.equal(expected);
+                });
+        });
+    });
 });

@@ -204,4 +204,24 @@ describe('@functional collection add', () => {
                 });
         });
     });
+
+    context('BUG#29179767 JavaScript Date converted to empty object', () => {
+        it('saves a JavaScript Date as a valid JSON value', () => {
+            const now = new Date();
+            const expected = [{ createdAt: now.toJSON() }];
+            const actual = [];
+
+            return collection.add({ name: 'foo', createdAt: now })
+                .execute()
+                .then(() => {
+                    return collection.find('name = :name')
+                        .fields('createdAt')
+                        .bind('name', 'foo')
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    expect(actual).to.deep.equal(expected);
+                });
+        });
+    });
 });
