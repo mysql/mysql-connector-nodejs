@@ -38,51 +38,51 @@ describe('Protobuf', () => {
                 expected.setType(Type.LITERAL);
                 expected.setLiteral();
 
-                const actual = FakeExpr.encodeExpr(expected);
+                const actual = FakeExpr.createExpr(expected);
 
                 expect(td.explain(parse).callCount).to.equal(0);
                 expect(actual.toObject()).to.deep.equal(expected.toObject());
             });
 
             it('should enable expression parsing by default', () => {
-                FakeExpr.encodeExpr('foo');
+                FakeExpr.createExpr('foo');
 
                 expect(td.explain(parse).callCount).to.equal(1);
                 expect(td.explain(parse).calls[0].args[0]).to.equal('foo');
             });
 
             it('should stringify non-string input for parsing', () => {
-                FakeExpr.encodeExpr({ foo: 'bar' });
+                FakeExpr.createExpr({ foo: 'bar' });
 
                 expect(td.explain(parse).callCount).to.equal(1);
                 expect(td.explain(parse).calls[0].args[0]).to.equal('{"foo":"bar"}');
             });
 
             it('should disable expression parsing on demand', () => {
-                FakeExpr.encodeExpr({ foo: 'bar' }, { parse: false });
+                FakeExpr.createExpr({ foo: 'bar' }, { parse: false });
 
                 expect(td.explain(parse).callCount).to.equal(0);
             });
 
             it('should encode a JavaScript array', () => {
-                const array1 = Expr.encodeExpr(['foo', 'bar']);
-                const array2 = Expr.encodeExpr(['foo', 'bar'], { parse: false });
+                const array1 = Expr.createExpr(['foo', 'bar']);
+                const array2 = Expr.createExpr(['foo', 'bar'], { parse: false });
 
                 expect(array1.getType()).to.equal(Type.ARRAY);
                 expect(array2.getType()).to.equal(Type.ARRAY);
             });
 
             it('should encode a JavaScript plain object', () => {
-                const obj1 = Expr.encodeExpr({ foo: 'bar' });
-                const obj2 = Expr.encodeExpr({ foo: 'bar' }, { parse: false });
+                const obj1 = Expr.createExpr({ foo: 'bar' });
+                const obj2 = Expr.createExpr({ foo: 'bar' }, { parse: false });
 
                 expect(obj1.getType()).to.equal(Type.OBJECT);
                 expect(obj2.getType()).to.equal(Type.OBJECT);
             });
 
             it('should encode a JavaScript primitive type', () => {
-                const id = Expr.encodeExpr('foo');
-                const literal = Expr.encodeExpr('foo', { parse: false });
+                const id = Expr.createExpr('foo');
+                const literal = Expr.createExpr('foo', { parse: false });
 
                 expect(id.getType()).to.equal(Type.IDENT);
                 expect(literal.getType()).to.equal(Type.LITERAL);

@@ -5,8 +5,6 @@
 // npm `test` script was updated to use NODE_PATH=.
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const collectionRemove = require('lib/DevAPI/CollectionRemove');
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -14,86 +12,131 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('CollectionRemove', () => {
-    context('getClassName()', () => {
-        it('should return the correct class name (to avoid duck typing)', () => {
-            expect(collectionRemove().getClassName()).to.equal('CollectionRemove');
-        });
+    let collectionRemove, preparing;
+
+    beforeEach('create fakes', () => {
+        preparing = td.function();
+
+        td.replace('../../../lib/DevAPI/Preparing', preparing);
+        collectionRemove = require('lib/DevAPI/CollectionRemove');
+    });
+
+    afterEach('reset fakes', () => {
+        td.reset();
     });
 
     context('execute()', () => {
-        let crudRemove;
-
-        beforeEach('create fakes', () => {
-            crudRemove = td.function();
-        });
-
-        afterEach('reset fakes', () => {
-            td.reset();
-        });
-
-        it('should fail if a criteria is not provided', () => {
+        it('fails if a criteria is not provided', () => {
             const query = collectionRemove();
 
             return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `remove()`');
         });
 
-        it('should fail if a condition query is empty', () => {
+        it('fails if a condition query is empty', () => {
             const query = collectionRemove(null, null, null, '');
 
             return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `remove()`');
         });
 
-        it('should fail if the condition is not valid', () => {
+        it('fails if the condition is not valid', () => {
             const query = collectionRemove(null, null, null, ' ');
 
             return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `remove()`');
         });
 
-        it('should fail if the operation results in an error', () => {
-            const error = new Error('foobar');
-            const query = collectionRemove({ _client: { crudRemove } }, 'foo', 'bar', 'baz');
+        it('wraps the operation in a preparable instance', () => {
+            const execute = td.function();
+            const session = 'foo';
 
-            td.when(crudRemove(query)).thenReject(error);
+            td.when(execute(td.matchers.isA(Function))).thenReturn('bar');
+            td.when(preparing({ session })).thenReturn({ execute });
 
-            return expect(query.execute()).to.eventually.be.rejectedWith(error);
+            return expect(collectionRemove(session, null, null, 'true').execute()).to.equal('bar');
+        });
+    });
+
+    context('getClassName()', () => {
+        it('returns the correct class name (to avoid duck typing)', () => {
+            expect(collectionRemove().getClassName()).to.equal('CollectionRemove');
+        });
+    });
+
+    context('limit()', () => {
+        let forceReprepare;
+
+        beforeEach('create fakes', () => {
+            forceReprepare = td.function();
         });
 
-        it('should return a Result instance containing the operation details', () => {
-            const expected = { done: true };
-            const state = { ok: true };
-            const fakeResult = td.function();
-            const fakeCollectionRemove = proxyquire('lib/DevAPI/CollectionRemove', { './Result': fakeResult });
+        it('mixes in Limiting with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
 
-            const query = fakeCollectionRemove({ _client: { crudRemove } }, 'foo', 'bar', 'baz');
+            collectionRemove(session).limit(1);
 
-            td.when(fakeResult(state)).thenReturn(expected);
-            td.when(crudRemove(query)).thenResolve(state);
+            return expect(td.explain(forceReprepare).callCount).equal(1);
+        });
 
-            return expect(query.execute()).to.eventually.deep.equal(expected);
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
+
+            const query = collectionRemove(session).limit(1);
+
+            return expect(query.limit).to.be.a('function');
+        });
+
+        it('does not set a default offset implicitely', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
+
+            const query = collectionRemove(session).limit(1);
+
+            return expect(query.getOffset()).to.not.exist;
         });
     });
 
     context('sort()', () => {
-        it('should mix-in CollectionOrdering', () => {
-            expect(collectionRemove().sort).to.be.a('function');
+        let forceRestart;
+
+        beforeEach('create fakes', () => {
+            forceRestart = td.function();
         });
 
-        it('should be fluent', () => {
-            const query = collectionRemove().sort();
+        it('mixes in CollectionOrdering with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            collectionRemove(session).sort();
+
+            return expect(td.explain(forceRestart).callCount).equal(1);
+        });
+
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const query = collectionRemove(session).sort();
 
             expect(query.sort).to.be.a('function');
         });
 
-        it('should set the order parameters provided as an array', () => {
+        it('sets the order parameters provided as an array', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
             const parameters = ['foo desc', 'bar desc'];
-            const query = collectionRemove().sort(parameters);
+            const query = collectionRemove(session).sort(parameters);
 
             expect(query.getOrderings()).to.deep.equal(parameters);
         });
 
-        it('should set the order parameters provided as multiple arguments', () => {
+        it('sets the order parameters provided as multiple arguments', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
             const parameters = ['foo desc', 'bar desc'];
-            const query = collectionRemove().sort(parameters[0], parameters[1]);
+            const query = collectionRemove(session).sort(parameters[0], parameters[1]);
 
             expect(query.getOrderings()).to.deep.equal(parameters);
         });

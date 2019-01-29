@@ -5,8 +5,6 @@
 // npm `test` script was updated to use NODE_PATH=.
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const tableDelete = require('lib/DevAPI/TableDelete');
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -14,29 +12,20 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('TableDelete', () => {
-    context('getClassName()', () => {
-        it('should return the correct class name (to avoid duck typing)', () => {
-            expect(tableDelete().getClassName()).to.equal('TableDelete');
-        });
+    let tableDelete, preparing;
+
+    beforeEach('create fakes', () => {
+        preparing = td.function();
+
+        td.replace('../../../lib/DevAPI/Preparing', preparing);
+        tableDelete = require('lib/DevAPI/TableDelete');
     });
 
-    context('where()', () => {
-        it('should set the operation criteria', () => {
-            expect(tableDelete().where('foo').getCriteria()).to.equal('foo');
-        });
+    afterEach('reset fakes', () => {
+        td.reset();
     });
 
     context('execute()', () => {
-        let crudRemove;
-
-        beforeEach('create fakes', () => {
-            crudRemove = td.function();
-        });
-
-        afterEach('reset fakes', () => {
-            td.reset();
-        });
-
         it('should fail if a condition query is not provided', () => {
             return expect(tableDelete().execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
         });
@@ -53,28 +42,141 @@ describe('TableDelete', () => {
             return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
         });
 
-        it('should fail if the operation results in an error', () => {
-            const error = new Error('foobar');
-            // criteria is required
-            const query = tableDelete({ _client: { crudRemove } }).where('foo');
+        it('wraps the operation in a preparable instance', () => {
+            const execute = td.function();
+            const session = 'foo';
 
-            td.when(crudRemove(query)).thenReject(error);
+            td.when(execute(td.matchers.isA(Function))).thenReturn('bar');
+            td.when(preparing({ session })).thenReturn({ execute });
 
-            return expect(query.execute()).to.eventually.be.rejectedWith(error);
+            return expect(tableDelete(session, null, null, 'true').execute()).to.equal('bar');
+        });
+    });
+
+    context('getClassName()', () => {
+        it('should return the correct class name (to avoid duck typing)', () => {
+            expect(tableDelete().getClassName()).to.equal('TableDelete');
+        });
+    });
+
+    context('limit()', () => {
+        let forceReprepare;
+
+        beforeEach('create fakes', () => {
+            forceReprepare = td.function();
         });
 
-        it('should return a Result instance containing the operation details', () => {
-            const expected = { done: true };
-            const state = { ok: true };
-            const fakeResult = td.function();
-            const fakeTableDelete = proxyquire('lib/DevAPI/TableDelete', { './Result': fakeResult });
+        it('mixes in Limiting with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
 
-            const query = fakeTableDelete({ _client: { crudRemove } }, 'foo', 'bar', 'baz');
+            tableDelete(session).limit(1);
 
-            td.when(fakeResult(state)).thenReturn(expected);
-            td.when(crudRemove(query)).thenResolve(state);
+            return expect(td.explain(forceReprepare).callCount).equal(1);
+        });
 
-            return expect(query.execute()).to.eventually.deep.equal(expected);
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
+
+            const query = tableDelete(session).limit(1);
+
+            return expect(query.limit).to.be.a('function');
+        });
+
+        it('does not set a default offset implicitely', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
+
+            const query = tableDelete(session).limit(1);
+
+            return expect(query.getOffset()).to.not.exist;
+        });
+    });
+
+    context('orderBy()', () => {
+        let forceRestart;
+
+        beforeEach('create fakes', () => {
+            forceRestart = td.function();
+        });
+
+        it('mixes in TableOrdering with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            tableDelete(session).orderBy();
+
+            return expect(td.explain(forceRestart).callCount).equal(1);
+        });
+
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const query = tableDelete(session).orderBy();
+
+            expect(query.orderBy).to.be.a('function');
+        });
+
+        it('sets the order parameters provided as an array', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const parameters = ['foo desc', 'bar desc'];
+            const query = tableDelete(session).orderBy(parameters);
+
+            expect(query.getOrderings()).to.deep.equal(parameters);
+        });
+
+        it('sets the order parameters provided as multiple arguments', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const parameters = ['foo desc', 'bar desc'];
+            const query = tableDelete(session).orderBy(parameters[0], parameters[1]);
+
+            expect(query.getOrderings()).to.deep.equal(parameters);
+        });
+    });
+
+    context('where()', () => {
+        let forceRestart;
+
+        beforeEach('create fakes', () => {
+            forceRestart = td.function();
+        });
+
+        it('mixes in TableFiltering with the proper state', () => {
+            const session = 'foo';
+
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            tableDelete(session).where();
+
+            expect(td.explain(forceRestart).callCount).to.equal(1);
+        });
+
+        it('sets the query criteria', () => {
+            const session = 'foo';
+            const criteria = 'bar';
+
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            expect(tableDelete(session).where(criteria).getCriteria()).to.equal(criteria);
+        });
+
+        it('resets any existing query criteria expression', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const stmt = tableDelete(session);
+            const setCriteriaExpr = td.replace(stmt, 'setCriteriaExpr');
+
+            stmt.where();
+
+            expect(td.explain(setCriteriaExpr).callCount).to.equal(1);
+            return expect(td.explain(setCriteriaExpr).calls[0].args).to.be.empty;
         });
     });
 });

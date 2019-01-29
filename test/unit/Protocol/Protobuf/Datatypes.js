@@ -24,7 +24,7 @@ describe('Protobuf', () => {
                 scalar.setType(Scalar.Type.V_OCTETS);
                 scalar.setVOctets(octets);
 
-                expect(Datatypes.decodeScalar(scalar)).to.deep.equal(data);
+                expect(Datatypes.extractScalar(scalar)).to.deep.equal(data);
             });
 
             it('should return a JavaScript string for textual data', () => {
@@ -38,23 +38,23 @@ describe('Protobuf', () => {
                 scalar.setType(Scalar.Type.V_OCTETS);
                 scalar.setVOctets(octets);
 
-                expect(Datatypes.decodeScalar(scalar)).to.equal('foo');
+                expect(Datatypes.extractScalar(scalar)).to.equal('foo');
             });
         });
 
         context('encodeScalar()', () => {
             it('should return a Mysqlx.Datatypes.Scalar.Type.V_NULL for `null`', () => {
-                expect(Datatypes.encodeScalar(null).getType()).to.equal(Scalar.Type.V_NULL);
+                expect(Datatypes.createScalar(null).getType()).to.equal(Scalar.Type.V_NULL);
             });
 
             it('should return a Mysqlx.Datatypes.Scalar.Type.V_NULL for `undefined`', () => {
-                expect(Datatypes.encodeScalar().getType()).to.equal(Scalar.Type.V_NULL);
+                expect(Datatypes.createScalar().getType()).to.equal(Scalar.Type.V_NULL);
             });
         });
 
         context('encodeAny()', () => {
             it('should return a Mysqlx.Datatypes.Any object for valid literals', () => {
-                let any = Datatypes.encodeAny('foo');
+                let any = Datatypes.createAny('foo');
 
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
                 expect(any.getScalar().getType()).to.equal(Scalar.Type.V_STRING);
@@ -62,54 +62,64 @@ describe('Protobuf', () => {
                 expect(new Buffer(any.getScalar().getVString().getValue()).toString()).to.equal('foo');
                 /* eslint-enable node/no-deprecated-api */
 
-                any = Datatypes.encodeAny(1);
+                any = Datatypes.createAny(1);
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
                 expect(any.getScalar().getType()).to.equal(Scalar.Type.V_UINT);
                 expect(any.getScalar().getVUnsignedInt()).to.equal(1);
 
-                any = Datatypes.encodeAny(1.2);
+                any = Datatypes.createAny(1.2);
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
                 expect(any.getScalar().getType()).to.equal(Scalar.Type.V_FLOAT);
                 expect(any.getScalar().getVFloat()).to.equal(1.2);
 
-                any = Datatypes.encodeAny(1.2345678910);
+                any = Datatypes.createAny(1.2345678910);
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
                 expect(any.getScalar().getType()).to.equal(Scalar.Type.V_DOUBLE);
                 expect(any.getScalar().getVDouble()).to.equal(1.2345678910);
 
-                any = Datatypes.encodeAny(true);
+                any = Datatypes.createAny(true);
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
                 expect(any.getScalar().getType()).to.equal(Scalar.Type.V_BOOL);
                 expect(any.getScalar().getVBool()).to.equal(true);
 
-                any = Datatypes.encodeAny(false);
+                any = Datatypes.createAny(false);
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
                 expect(any.getScalar().getType()).to.equal(Scalar.Type.V_BOOL);
                 expect(any.getScalar().getVBool()).to.equal(false);
 
-                any = Datatypes.encodeAny(null);
+                any = Datatypes.createAny(null);
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
                 expect(any.getScalar().getType()).to.equal(Scalar.Type.V_NULL);
+
+                const literal = new Scalar();
+                literal.setType(Scalar.Type.V_BOOL);
+                literal.setVBool(true);
+
+                any = Datatypes.createAny(literal);
+
+                expect(any.getType()).to.equal(Any.Type.SCALAR);
+                expect(any.getScalar().getType()).to.equal(Scalar.Type.V_BOOL);
+                expect(any.getScalar().getVBool()).to.equal(true);
             });
 
             it('should return a Mysqlx.Datatypes.Any object for arrays', () => {
-                let any = Datatypes.encodeAny([]);
+                let any = Datatypes.createAny([]);
 
                 expect(any.getType()).to.equal(Any.Type.ARRAY);
                 expect(any.getArray().getValueList()).to.have.lengthOf(0);
 
-                any = Datatypes.encodeAny(['foo', 1, 1.2, 1.2345678910, true, false, null]);
+                any = Datatypes.createAny(['foo', 1, 1.2, 1.2345678910, true, false, null]);
                 expect(any.getType()).to.equal(Any.Type.ARRAY);
                 expect(any.getArray().getValueList()).to.have.lengthOf(7);
             });
 
             it('should return a Mysqlx.Datatypes.Any object for objects', () => {
-                let any = Datatypes.encodeAny({});
+                let any = Datatypes.createAny({});
 
                 expect(any.getType()).to.equal(Any.Type.OBJECT);
                 expect(any.getObj().getFldList()).to.have.lengthOf(0);
 
-                any = Datatypes.encodeAny({ name: 'bar', age: 23, active: true });
+                any = Datatypes.createAny({ name: 'bar', age: 23, active: true });
 
                 expect(any.getType()).to.equal(Any.Type.OBJECT);
                 expect(any.getObj().getFldList()).to.have.lengthOf(3);
@@ -118,14 +128,14 @@ describe('Protobuf', () => {
             it('should throw an error if the input is not a valid array', () => {
                 const exception = 'Invalid datatype for Mysqlx.Datatypes.Array';
 
-                expect(() => Datatypes.encodeArray()).to.throw(exception);
-                expect(() => Datatypes.encodeArray(() => {})).to.throw(exception);
+                expect(() => Datatypes.createArray()).to.throw(exception);
+                expect(() => Datatypes.createArray(() => {})).to.throw(exception);
             });
         });
 
         context('encodeArray()', () => {
             it('should return a Mysqlx.Datatypes.Array object for arrays', () => {
-                const array = Datatypes.encodeArray([1, { foo: ['bar'] }]);
+                const array = Datatypes.createArray([1, { foo: ['bar'] }]);
                 let values = array.getValueList();
 
                 expect(values).to.have.lengthOf(2);
@@ -151,21 +161,21 @@ describe('Protobuf', () => {
             it('should throw an error if the input is not a valid array', () => {
                 const exception = 'Invalid datatype for Mysqlx.Datatypes.Array.';
 
-                expect(() => Datatypes.encodeArray()).to.throw(exception);
-                expect(() => Datatypes.encodeArray(null)).to.throw(exception);
-                expect(() => Datatypes.encodeArray(1)).to.throw(exception);
-                expect(() => Datatypes.encodeArray(1.2)).to.throw(exception);
-                expect(() => Datatypes.encodeArray(true)).to.throw(exception);
-                expect(() => Datatypes.encodeArray(false)).to.throw(exception);
-                expect(() => Datatypes.encodeArray({})).to.throw(exception);
-                expect(() => Datatypes.encodeArray({ foo: 'bar' })).to.throw(exception);
-                expect(() => Datatypes.encodeArray(() => {})).to.throw(exception);
+                expect(() => Datatypes.createArray()).to.throw(exception);
+                expect(() => Datatypes.createArray(null)).to.throw(exception);
+                expect(() => Datatypes.createArray(1)).to.throw(exception);
+                expect(() => Datatypes.createArray(1.2)).to.throw(exception);
+                expect(() => Datatypes.createArray(true)).to.throw(exception);
+                expect(() => Datatypes.createArray(false)).to.throw(exception);
+                expect(() => Datatypes.createArray({})).to.throw(exception);
+                expect(() => Datatypes.createArray({ foo: 'bar' })).to.throw(exception);
+                expect(() => Datatypes.createArray(() => {})).to.throw(exception);
             });
         });
 
         context('encodeObject()', () => {
             it('should return a Mysqlx.Datatypes.Object object for objects', () => {
-                const obj = Datatypes.encodeObject({
+                const obj = Datatypes.createObject({
                     root: 'foo',
                     nested: [{
                         root: 'bar'
@@ -201,15 +211,15 @@ describe('Protobuf', () => {
             it('should throw an error if the input is not a valid array', () => {
                 const exception = 'Invalid datatype for Mysqlx.Datatypes.Object.';
 
-                expect(() => Datatypes.encodeObject()).to.throw(exception);
-                expect(() => Datatypes.encodeObject(null)).to.throw(exception);
-                expect(() => Datatypes.encodeObject(1)).to.throw(exception);
-                expect(() => Datatypes.encodeObject(1.2)).to.throw(exception);
-                expect(() => Datatypes.encodeObject(true)).to.throw(exception);
-                expect(() => Datatypes.encodeObject(false)).to.throw(exception);
-                expect(() => Datatypes.encodeObject([])).to.throw(exception);
-                expect(() => Datatypes.encodeObject(['foo'])).to.throw(exception);
-                expect(() => Datatypes.encodeObject(() => {})).to.throw(exception);
+                expect(() => Datatypes.createObject()).to.throw(exception);
+                expect(() => Datatypes.createObject(null)).to.throw(exception);
+                expect(() => Datatypes.createObject(1)).to.throw(exception);
+                expect(() => Datatypes.createObject(1.2)).to.throw(exception);
+                expect(() => Datatypes.createObject(true)).to.throw(exception);
+                expect(() => Datatypes.createObject(false)).to.throw(exception);
+                expect(() => Datatypes.createObject([])).to.throw(exception);
+                expect(() => Datatypes.createObject(['foo'])).to.throw(exception);
+                expect(() => Datatypes.createObject(() => {})).to.throw(exception);
             });
         });
     });

@@ -5,139 +5,272 @@
 // npm `test` script was updated to use NODE_PATH=.
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const collectionFind = require('lib/DevAPI/CollectionFind');
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
-describe('DevAPI CollectionFind', () => {
+describe('CollectionFind', () => {
+    let collectionFind, preparing;
+
+    beforeEach('create fakes', () => {
+        preparing = td.function();
+
+        td.replace('../../../lib/DevAPI/Preparing', preparing);
+        collectionFind = require('lib/DevAPI/CollectionFind');
+    });
+
     afterEach('reset fakes', () => {
         td.reset();
     });
 
-    context('getClassName()', () => {
-        it('should return the correct class name (to avoid duck typing)', () => {
-            expect(collectionFind().getClassName()).to.equal('CollectionFind');
-        });
-    });
+    context('execute()', () => {
+        it('wraps an operation without a cursor in a preparable instance', () => {
+            const execute = td.function();
+            const session = 'foo';
 
-    context('lockShared()', () => {
-        it('should include the method', () => {
-            expect(collectionFind().lockShared).to.be.a('function');
-        });
-    });
+            td.when(execute(td.matchers.isA(Function), undefined)).thenReturn('bar');
+            td.when(preparing({ session })).thenReturn({ execute });
 
-    context('lockExclusive()', () => {
-        it('should include the method', () => {
-            expect(collectionFind().lockExclusive).to.be.a('function');
+            return expect(collectionFind(session).execute()).to.deep.equal('bar');
+        });
+
+        it('wraps an operation with a cursor in a preparable instance', () => {
+            const execute = td.function();
+            const session = 'foo';
+
+            td.when(execute(td.matchers.isA(Function), td.matchers.isA(Function))).thenReturn('bar');
+            td.when(preparing({ session })).thenReturn({ execute });
+
+            return expect(collectionFind(session).execute(td.callback())).to.deep.equal('bar');
         });
     });
 
     context('fields()', () => {
-        let collectionFind, parseFlexibleParamList, projecting, setProjections;
+        let parseFlexibleParamList, projecting, forceRestart, setProjections;
 
         beforeEach('create fakes', () => {
             parseFlexibleParamList = td.function();
             projecting = td.function();
+            forceRestart = td.function();
             setProjections = td.function();
 
-            collectionFind = proxyquire('lib/DevAPI/CollectionFind', {
-                './Util/parseFlexibleParamList': parseFlexibleParamList,
-                './Projecting': projecting
-            });
+            td.replace('../../../lib/DevAPI/Projecting', projecting);
+            td.replace('../../../lib/DevAPI/Util/parseFlexibleParamList', parseFlexibleParamList);
+
+            collectionFind = require('lib/DevAPI/CollectionFind');
         });
 
-        it('should set projections provided as an array', () => {
+        it('sets projections provided as an array', () => {
+            const session = 'foo';
+
+            td.when(preparing({ session })).thenReturn({ forceRestart });
             td.when(projecting()).thenReturn({ setProjections });
             td.when(parseFlexibleParamList([['foo', 'bar']])).thenReturn(['baz', 'qux']);
 
-            collectionFind().fields(['foo', 'bar']);
+            collectionFind(session).fields(['foo', 'bar']);
 
             expect(td.explain(setProjections).callCount).to.equal(1);
-            expect(td.explain(setProjections).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
+            return expect(td.explain(setProjections).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
         });
 
-        it('should set projections provided as multiple arguments', () => {
+        it('sets projections provided as multiple arguments', () => {
+            const session = 'foo';
+
+            td.when(preparing({ session })).thenReturn({ forceRestart });
             td.when(projecting()).thenReturn({ setProjections });
             td.when(parseFlexibleParamList(['foo', 'bar'])).thenReturn(['baz', 'qux']);
 
-            collectionFind().fields('foo', 'bar');
+            collectionFind(session).fields('foo', 'bar');
 
             expect(td.explain(setProjections).callCount).to.equal(1);
-            expect(td.explain(setProjections).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
+            return expect(td.explain(setProjections).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
         });
     });
 
-    context('execute()', () => {
-        let crudFind;
+    context('getClassName()', () => {
+        it('returns the correct class name (to avoid duck typing)', () => {
+            return expect(collectionFind().getClassName()).to.equal('CollectionFind');
+        });
+    });
+
+    context('groupBy()', () => {
+        let forceRestart;
 
         beforeEach('create fakes', () => {
-            crudFind = td.function();
+            forceRestart = td.function();
         });
 
-        it('should return a Result instance containing the operation details', () => {
-            const expected = { done: true };
-            const state = { ok: true };
-            const fakeResult = td.function();
-            const fakeCollectionFind = proxyquire('lib/DevAPI/CollectionFind', { './Result': fakeResult });
+        it('mixes in Grouping with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
 
-            const query = fakeCollectionFind({ _client: { crudFind } });
+            collectionFind(session).groupBy('foo');
 
-            td.when(fakeResult(state)).thenReturn(expected);
-            td.when(crudFind(query, undefined)).thenResolve(state);
-
-            return expect(query.execute()).to.eventually.deep.equal(expected);
+            return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
-        it('should use a custom cursor to handle result set data', () => {
-            const query = collectionFind({ _client: { crudFind } });
-            const sideEffects = [];
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
 
-            td.when(crudFind(query, td.callback(['foo']))).thenResolve({});
+            const query = collectionFind(session).groupBy();
 
-            const callback = (value) => sideEffects.push(value);
-
-            return expect(query.execute(callback)).to.eventually.be.fulfilled.then(() => {
-                return expect(sideEffects).to.deep.equal(['foo']);
-            });
+            expect(query.groupBy).to.be.a('function');
         });
 
-        it('should fail if an unexpected error occurs', () => {
-            const error = new Error('foobar');
-            const query = collectionFind({ _client: { crudFind } });
+        it('sets the grouping columns provided as an array', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
 
-            td.when(crudFind(query), { ignoreExtraArgs: true }).thenReject(error);
+            const grouping = ['foo', 'bar'];
+            const query = collectionFind(session).groupBy(grouping);
 
-            return expect(query.execute()).to.eventually.be.rejectedWith(error);
+            expect(query.getGroupings()).to.deep.equal(grouping);
+        });
+
+        it('sets the grouping columns provided as an array', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const grouping = ['foo', 'bar'];
+            const query = collectionFind(session).groupBy(grouping[0], grouping[1]);
+
+            expect(query.getGroupings()).to.deep.equal(grouping);
+        });
+    });
+
+    context('limit()', () => {
+        let forceReprepare;
+
+        beforeEach('create fakes', () => {
+            forceReprepare = td.function();
+        });
+
+        it('mixes in Limiting with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
+
+            collectionFind(session).limit(1);
+
+            return expect(td.explain(forceReprepare).callCount).equal(1);
+        });
+
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
+
+            const query = collectionFind(session).limit(1);
+
+            return expect(query.limit).to.be.a('function');
+        });
+
+        it('sets a default offset implicitely', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
+
+            const query = collectionFind(session).limit(1);
+
+            return expect(query.getOffset()).to.equal(0);
+        });
+    });
+
+    context('lockShared()', () => {
+        let forceRestart;
+
+        beforeEach('create fakes', () => {
+            forceRestart = td.function();
+        });
+
+        it('mixes in Locking with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            collectionFind(session).lockShared();
+
+            return expect(td.explain(forceRestart).callCount).equal(1);
+        });
+
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const query = collectionFind(session).groupBy();
+
+            expect(query.lockShared).to.be.a('function');
+        });
+    });
+
+    context('lockExclusive()', () => {
+        let forceRestart;
+
+        beforeEach('create fakes', () => {
+            forceRestart = td.function();
+        });
+
+        it('mixes in Locking with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            collectionFind(session).lockExclusive();
+
+            return expect(td.explain(forceRestart).callCount).equal(1);
+        });
+
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const query = collectionFind(session).groupBy();
+
+            expect(query.lockExclusive).to.be.a('function');
         });
     });
 
     context('sort()', () => {
-        it('should mix-in CollectionOrdering', () => {
-            expect(collectionFind().sort).to.be.a('function');
+        let forceRestart;
+
+        beforeEach('create fakes', () => {
+            forceRestart = td.function();
         });
 
-        it('should be fluent', () => {
-            const query = collectionFind().sort();
+        it('mixes in CollectionOrdering with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
 
-            expect(query.sort).to.be.a('function');
+            collectionFind(session).sort();
+
+            return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
-        it('should set the order parameters provided as an array', () => {
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const query = collectionFind(session).sort();
+
+            return expect(query.sort).to.be.a('function');
+        });
+
+        it('sets the order parameters provided as an array', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
             const parameters = ['foo desc', 'bar desc'];
-            const query = collectionFind().sort(parameters);
+            const query = collectionFind(session).sort(parameters);
 
-            expect(query.getOrderings()).to.deep.equal(parameters);
+            return expect(query.getOrderings()).to.deep.equal(parameters);
         });
 
-        it('should set the order parameters provided as multiple arguments', () => {
-            const parameters = ['foo desc', 'bar desc'];
-            const query = collectionFind().sort(parameters[0], parameters[1]);
+        it('sets the order parameters provided as multiple arguments', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
 
-            expect(query.getOrderings()).to.deep.equal(parameters);
+            const parameters = ['foo desc', 'bar desc'];
+            const query = collectionFind(session).sort(parameters[0], parameters[1]);
+
+            return expect(query.getOrderings()).to.deep.equal(parameters);
         });
     });
 });

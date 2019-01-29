@@ -5,8 +5,6 @@
 // npm `test` script was updated to use NODE_PATH=.
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const proxyquire = require('proxyquire');
-const tableSelect = require('lib/DevAPI/TableSelect');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -14,128 +12,282 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('TableSelect', () => {
+    let tableSelect, preparing;
+
+    beforeEach('create fakes', () => {
+        preparing = td.function();
+
+        td.replace('../../../lib/DevAPI/Preparing', preparing);
+        tableSelect = require('lib/DevAPI/TableSelect');
+    });
+
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
+    context('execute()', () => {
+        let execute, metaCB;
+
+        beforeEach('create fakes', () => {
+            execute = td.function();
+            metaCB = td.function();
+
+            td.replace('../../../lib/DevAPI/Column', { metaCB });
+
+            tableSelect = require('lib/DevAPI/TableSelect');
+        });
+
+        it('wraps an operation without a cursor in a preparable instance', () => {
+            const session = 'foo';
+
+            td.when(execute(td.matchers.isA(Function), undefined, undefined)).thenReturn('foo');
+            td.when(preparing({ session })).thenReturn({ execute });
+
+            return expect(tableSelect(session).execute()).to.deep.equal('foo');
+        });
+
+        it('wraps an operation with a data cursor in a preparable instance', () => {
+            const session = 'foo';
+
+            td.when(execute(td.matchers.isA(Function), 'foo', undefined)).thenReturn('bar');
+            td.when(preparing({ session })).thenReturn({ execute });
+
+            return expect(tableSelect(session).execute('foo')).to.deep.equal('bar');
+        });
+
+        it('wraps an operation with both a data and metadata cursors in a preparable instance', () => {
+            const session = 'foo';
+
+            td.when(metaCB('bar')).thenReturn('baz');
+            td.when(execute(td.matchers.isA(Function), 'foo', 'baz')).thenReturn('qux');
+            td.when(preparing({ session })).thenReturn({ execute });
+
+            return expect(tableSelect(session).execute('foo', 'bar')).to.deep.equal('qux');
+        });
+    });
+
     context('getClassName()', () => {
-        it('should return the correct class name (to avoid duck typing)', () => {
+        it('returns the correct class name (to avoid duck typing)', () => {
             expect(tableSelect().getClassName()).to.equal('TableSelect');
         });
     });
 
-    context('lockShared()', () => {
-        it('should include the method', () => {
-            expect(tableSelect().lockShared).to.be.a('function');
-        });
-    });
-
-    context('lockExclusive()', () => {
-        it('should include the method', () => {
-            expect(tableSelect().lockExclusive).to.be.a('function');
-        });
-    });
-
-    context('execute()', () => {
-        let crudFind;
+    context('groupBy()', () => {
+        let forceRestart;
 
         beforeEach('create fakes', () => {
-            crudFind = td.function();
+            forceRestart = td.function();
         });
 
-        afterEach('reset fakes', () => {
-            td.reset();
+        it('mixes in Grouping with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            tableSelect(session).groupBy();
+
+            return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
-        it('should return a Result instance containing the operation details', () => {
-            const expected = { done: true };
-            const state = { ok: true };
-            const fakeResult = td.function();
-            const fakeTableSelect = proxyquire('lib/DevAPI/TableSelect', { './Result': fakeResult });
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
 
-            const query = fakeTableSelect({ _client: { crudFind } });
-
-            td.when(fakeResult(state)).thenReturn(expected);
-            td.when(crudFind(query, undefined, undefined)).thenResolve(state);
-
-            return expect(query.execute()).to.eventually.deep.equal(expected);
-        });
-
-        it('should use a custom cursor to handle result set data', () => {
-            const query = tableSelect({ _client: { crudFind } });
-            const sideEffects = [];
-            const callback = value => sideEffects.push(value);
-
-            td.when(crudFind(query, td.callback('foo'), undefined)).thenResolve({});
-
-            return expect(query.execute(callback)).to.eventually.be.fulfilled.then(() => {
-                return expect(sideEffects).to.deep.equal(['foo']);
-            });
-        });
-
-        it('should use a custom cursor to handle operation metadata', () => {
-            const metaCB = td.function();
-            const fakeTableSelect = proxyquire('lib/DevAPI/TableSelect', { './Column': { metaCB } });
-            const query = fakeTableSelect({ _client: { crudFind } });
-            const sideEffects = [];
-            const callback = 'foo';
-            const wrappedCallback = value => sideEffects.push(value);
-
-            td.when(metaCB(callback)).thenReturn(wrappedCallback);
-            td.when(crudFind(query, null, td.callback('bar'))).thenResolve({});
-
-            return expect(query.execute(null, callback)).to.eventually.be.fulfilled.then(() => {
-                return expect(sideEffects).to.deep.equal(['bar']);
-            });
-        });
-
-        it('should fail if an unexpected error occurs', () => {
-            const error = new Error('foobar');
-            const query = tableSelect({ _client: { crudFind } });
-
-            td.when(crudFind(query), { ignoreExtraArgs: true }).thenReject(error);
-
-            return expect(query.execute()).to.eventually.be.rejectedWith(error);
-        });
-    });
-
-    context('orderBy()', () => {
-        it('should be fluent', () => {
-            const query = tableSelect().orderBy();
-
-            expect(query.orderBy).to.be.a('function');
-        });
-
-        it('should set the order parameters provided as an array', () => {
-            const parameters = ['foo desc', 'bar desc'];
-            const query = tableSelect().orderBy(parameters);
-
-            expect(query.getOrderings()).to.deep.equal(parameters);
-        });
-
-        it('should set the order parameters provided as multiple arguments', () => {
-            const parameters = ['foo desc', 'bar desc'];
-            const query = tableSelect().orderBy(parameters[0], parameters[1]);
-
-            expect(query.getOrderings()).to.deep.equal(parameters);
-        });
-    });
-
-    context('groupBy()', () => {
-        it('should be fluent', () => {
-            const query = tableSelect().groupBy();
+            const query = tableSelect(session).groupBy();
 
             expect(query.groupBy).to.be.a('function');
         });
 
-        it('should set the grouping columns provided as an array', () => {
+        it('sets the grouping columns provided as an array', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
             const grouping = ['foo', 'bar'];
-            const query = tableSelect().groupBy(grouping);
+            const query = tableSelect(session).groupBy(grouping);
 
             expect(query.getGroupings()).to.deep.equal(grouping);
         });
 
-        it('should set the grouping columns provided as an array', () => {
+        it('sets the grouping columns provided as an array', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
             const grouping = ['foo', 'bar'];
-            const query = tableSelect().groupBy(grouping[0], grouping[1]);
+            const query = tableSelect(session).groupBy(grouping[0], grouping[1]);
 
             expect(query.getGroupings()).to.deep.equal(grouping);
+        });
+    });
+
+    context('limit()', () => {
+        let forceReprepare;
+
+        beforeEach('create fakes', () => {
+            forceReprepare = td.function();
+        });
+
+        it('mixes in Limiting with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
+
+            tableSelect(session).limit(1);
+
+            return expect(td.explain(forceReprepare).callCount).equal(1);
+        });
+
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
+
+            const query = tableSelect(session).limit(1);
+
+            return expect(query.limit).to.be.a('function');
+        });
+
+        it('sets a default offset implicitely', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceReprepare });
+
+            const query = tableSelect(session).limit(1);
+
+            return expect(query.getOffset()).to.equal(0);
+        });
+    });
+
+    context('lockShared()', () => {
+        let forceRestart;
+
+        beforeEach('create fakes', () => {
+            forceRestart = td.function();
+        });
+
+        it('mixes in Locking with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            tableSelect(session).lockShared();
+
+            return expect(td.explain(forceRestart).callCount).equal(1);
+        });
+
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const query = tableSelect(session).groupBy();
+
+            expect(query.lockShared).to.be.a('function');
+        });
+    });
+
+    context('lockExclusive()', () => {
+        let forceRestart;
+
+        beforeEach('create fakes', () => {
+            forceRestart = td.function();
+        });
+
+        it('mixes in Locking with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            tableSelect(session).lockExclusive();
+
+            return expect(td.explain(forceRestart).callCount).equal(1);
+        });
+
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const query = tableSelect(session).groupBy();
+
+            expect(query.lockExclusive).to.be.a('function');
+        });
+    });
+
+    context('orderBy()', () => {
+        let forceRestart;
+
+        beforeEach('create fakes', () => {
+            forceRestart = td.function();
+        });
+
+        it('mixes in TableOrdering with the proper state', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            tableSelect(session).orderBy();
+
+            return expect(td.explain(forceRestart).callCount).equal(1);
+        });
+
+        it('is fluent', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const query = tableSelect(session).orderBy();
+
+            expect(query.orderBy).to.be.a('function');
+        });
+
+        it('sets the order parameters provided as an array', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const parameters = ['foo desc', 'bar desc'];
+            const query = tableSelect(session).orderBy(parameters);
+
+            expect(query.getOrderings()).to.deep.equal(parameters);
+        });
+
+        it('sets the order parameters provided as multiple arguments', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const parameters = ['foo desc', 'bar desc'];
+            const query = tableSelect(session).orderBy(parameters[0], parameters[1]);
+
+            expect(query.getOrderings()).to.deep.equal(parameters);
+        });
+    });
+
+    context('where()', () => {
+        let forceRestart;
+
+        beforeEach('create fakes', () => {
+            forceRestart = td.function();
+        });
+
+        it('mixes in TableFiltering with the proper state', () => {
+            const session = 'foo';
+
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            tableSelect(session).where();
+
+            expect(td.explain(forceRestart).callCount).to.equal(1);
+        });
+
+        it('sets the query criteria', () => {
+            const session = 'foo';
+            const criteria = 'bar';
+
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            expect(tableSelect(session).where(criteria).getCriteria()).to.equal(criteria);
+        });
+
+        it('resets any existing query criteria expression', () => {
+            const session = 'foo';
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            const stmt = tableSelect(session);
+            const setCriteriaExpr = td.replace(stmt, 'setCriteriaExpr');
+
+            stmt.where();
+
+            expect(td.explain(setCriteriaExpr).callCount).to.equal(1);
+            return expect(td.explain(setCriteriaExpr).calls[0].args).to.be.empty;
         });
     });
 });

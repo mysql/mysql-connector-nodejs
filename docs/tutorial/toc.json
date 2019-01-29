@@ -22,5 +22,8 @@
     },
     "Row_Locking": {
         "title": "Row Locking"
+    },
+    "Prepared_Statements": {
+        "title": "Prepared Statements"
     }
 }

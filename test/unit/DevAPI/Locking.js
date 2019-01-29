@@ -5,9 +5,14 @@
 // npm `test` script was updated to use NODE_PATH=.
 const locking = require('lib/DevAPI/Locking');
 const expect = require('chai').expect;
+const td = require('testdouble');
 
-describe('DevAPI locking', () => {
-    it('should set the default lock type and mode', () => {
+describe('Locking', () => {
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
+    it('sets the default lock type and mode', () => {
         const query = locking();
 
         expect(query.getRowLock()).to.equal(locking.Type.NONE);
@@ -15,14 +20,23 @@ describe('DevAPI locking', () => {
     });
 
     context('lockShared()', () => {
-        it('should allow the default locking mode', () => {
+        it('forces an associated statement to be re-prepared', () => {
+            const forceRestart = td.function();
+            const statement = locking({ preparable: { forceRestart } });
+
+            statement.lockShared();
+
+            return expect(td.explain(forceRestart).callCount).to.equal(1);
+        });
+
+        it('allows the default locking mode', () => {
             const query = locking().lockShared();
 
             expect(query.getRowLock()).to.equal(locking.Type.SHARED_LOCK);
             expect(query.getLockContention()).to.equal(locking.LockContention.DEFAULT);
         });
 
-        it('should set a valid given locking mode', () => {
+        it('sets a valid given locking mode', () => {
             let query = locking().lockShared(locking.LockContention.NOWAIT);
 
             expect(query.getRowLock()).to.equal(locking.Type.SHARED_LOCK);
@@ -34,20 +48,29 @@ describe('DevAPI locking', () => {
             expect(query.getLockContention()).to.equal(locking.LockContention.SKIP_LOCKED);
         });
 
-        it('should throw an error if the locking mode is not valid', () => {
+        it('throws an error if the locking mode is not valid', () => {
             expect(() => locking().lockShared('foo')).to.throw('Invalid lock contention mode. Use "NOWAIT" or "SKIP_LOCKED".');
         });
     });
 
     context('lockExclusive()', () => {
-        it('should allow the default locking mode', () => {
+        it('forces an associated statement to be re-prepared', () => {
+            const forceRestart = td.function();
+            const statement = locking({ preparable: { forceRestart } });
+
+            statement.lockExclusive();
+
+            return expect(td.explain(forceRestart).callCount).to.equal(1);
+        });
+
+        it('allows the default locking mode', () => {
             const query = locking().lockExclusive();
 
             expect(query.getRowLock()).to.equal(locking.Type.EXCLUSIVE_LOCK);
             expect(query.getLockContention()).to.equal(locking.LockContention.DEFAULT);
         });
 
-        it('should set a valid given locking mode', () => {
+        it('sets a valid given locking mode', () => {
             let query = locking().lockExclusive(locking.LockContention.NOWAIT);
 
             expect(query.getRowLock()).to.equal(locking.Type.EXCLUSIVE_LOCK);
@@ -59,7 +82,7 @@ describe('DevAPI locking', () => {
             expect(query.getLockContention()).to.equal(locking.LockContention.SKIP_LOCKED);
         });
 
-        it('should throw an error if the locking mode is not valid', () => {
+        it('throws an error if the locking mode is not valid', () => {
             expect(() => locking().lockExclusive('foo')).to.throw('Invalid lock contention mode. Use "NOWAIT" or "SKIP_LOCKED".');
         });
     });

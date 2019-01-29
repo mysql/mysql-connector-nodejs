@@ -5,7 +5,6 @@
 // npm `test` script was updated to use NODE_PATH=.
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -19,7 +18,9 @@ describe('Table', () => {
         execute = td.function();
         sqlExecute = td.function();
 
-        table = proxyquire('lib/DevAPI/Table', { './SqlExecute': sqlExecute });
+        td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
+
+        table = require('lib/DevAPI/Table');
     });
 
     afterEach('reset fakes', () => {
@@ -107,21 +108,24 @@ describe('Table', () => {
 
     context('select()', () => {
         it('should return an instance of the proper class', () => {
-            const instance = table().select();
+            const session = { _statements: [] };
+            const instance = table(session).select();
 
             expect(instance.getClassName()).to.equal('TableSelect');
         });
 
         it('should set the projection parameters provided as an array', () => {
+            const session = { _statements: [] };
             const expressions = ['foo', 'bar'];
-            const instance = table().select(expressions);
+            const instance = table(session).select(expressions);
 
             expect(instance.getProjections()).to.deep.equal(expressions);
         });
 
         it('should set the projection parameters provided as multiple arguments', () => {
+            const session = { _statements: [] };
             const expressions = ['foo', 'bar'];
-            const instance = table().select(expressions[0], expressions[1]);
+            const instance = table(session).select(expressions[0], expressions[1]);
 
             expect(instance.getProjections()).to.deep.equal(expressions);
         });

@@ -136,10 +136,10 @@ exports.getClient = function (connection, options) {
  * Parse an expression string into a Mysqlx.Expr.Expr.
  * @param {string} expr - expression string
  * @param {ParserOptions} options - additional options
- * @return {proto.Mysqlx.Expr.Expr} The protobuf encoded object.
+ * @return {proto.Mysqlx.Expr.Expr} The protobuf object version.
  */
 exports.expr = function (expr, options) {
-    return Expr.encodeExpr(expr, options);
+    return Expr.createExpr(expr, options);
 };
 
 /**
