@@ -95,41 +95,6 @@ describe('TableSelect', () => {
         });
     });
 
-    context('getViewDefinition()', () => {
-        it('should generate a simple projection table view query', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const expected = 'SELECT foo, bar FROM baz.qux';
-            const query = tableSelect(null, schema, 'qux', ['foo', 'bar']);
-
-            td.when(getName()).thenReturn('baz');
-
-            expect(query.getViewDefinition()).to.equal(expected);
-        });
-
-        it('should generate a filtered table view query', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const expected = 'SELECT * FROM foo.bar WHERE baz == "qux"';
-            const query = tableSelect(null, schema, 'bar', ['*']).where('baz == "qux"');
-
-            td.when(getName()).thenReturn('foo');
-
-            expect(query.getViewDefinition()).to.equal(expected);
-        });
-
-        it('should generate a ordered table view query', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const expected = 'SELECT baz FROM foo.bar ORDER BY qux';
-            const query = tableSelect(null, schema, 'bar', ['baz']).orderBy(['qux']);
-
-            td.when(getName()).thenReturn('foo');
-
-            expect(query.getViewDefinition()).to.equal(expected);
-        });
-    });
-
     context('orderBy()', () => {
         it('should be fluent', () => {
             const query = tableSelect().orderBy();
