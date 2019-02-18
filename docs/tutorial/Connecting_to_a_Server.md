@@ -338,3 +338,76 @@ Overall, when connection pooling is enabled, the following scenarios are likely 
 3. A timeout error will be thrown if the time specified by `queueTimeout` is exceeded.
 
 Each X Protocol connection matches it's own regular X DevAPI {@link Session}, which means that everytime the {@link module:Client|Client} `getSession()` method is called, a new server session is also created with from a clean slate.
+
+## Connection Attributes
+
+You can attach custom operational details about the application using connection attributes and make that information available at the server side, under the following `PERFORMANCE_SCHEMA` tables:
+
+- `session_account_connect_attrs`, attributes for the current session, and other sessions associated with the session
+- `session_connect_attrs`, attributes for all sessions
+
+These attributes are be defined when creating a new X DevAPI session and will be immutable during the life-time of that session. That means that you can’t use them to store transient information, such as the number of rows that have been processed up to a give point, or whether the connection has an active transaction, what line of application code is being executed, etc. They are useful for troubleshooting purposes nonetheless.
+
+There are two different kinds of attributes. Client-defined attributes, are reserved key-value mappings implicitely encoded by the connector. User-defined attributes are key-value mappings provided by the user/application via the public API.
+
+Connector/Node.js uses, by default, the following list of client-defined attributes:
+
+- `_pid`, the process identifier on the machine where the application is running
+- `_platform`, the platform architecture where the application is running
+- `_os`, the platform name and version where the application is running (e.g `Linux-4.15.0`)
+- `_source_host`, the hostname of the machine where the application is running
+- `_client_name` (`mysql-connector-nodejs`)
+- `_client_version`, the version of Connector/Node.js used by the application
+- `_client_license` (`GPL-2.0`)
+
+By default, in the following scenarios, when no attributes are defined explicitely, the client-defined attributes will be sent to the server regardless.
+
+```js
+mysqlx.getSession('mysqlx://root@localhost')
+
+mysqlx.getSession({ user: 'root' })
+mysqlx.getSession('{ "user": "root" }')
+
+mysqlx.getSession('mysqlx://root@localhost?connection-attributes')
+mysqlx.getSession('mysqlx://root@localhost?connection-attributes=')
+mysqlx.getSession('mysqlx://root@localhost?connection-attributes=[]')
+
+mysqlx.getSession({ user: 'root', connectionAttributes: {} })
+mysqlx.getSession('{ "user": "root", "connectionAttributes": {} }')
+
+mysqlx.getSession('mysqlx://root@localhost?connection-attributes=true')
+
+mysqlx.getSession({ user: 'root', connectionAttributes: true })
+mysqlx.getSession('{ "user": "root", "connectionAttributes": true }')
+```
+
+Sending user-defined attributes can be done like the following:
+
+```js
+mysqlx.getSession('mysqlx://root@localhost?connection-attributes=[foo=bar,baz=qux,quux]')
+mysqlx.getSession('mysqlx://root@localhost?connection-attributes=[foo=bar,baz=qux,quux=]')
+
+mysqlx.getSession({ user: 'root', connectionAttributes: { foo: 'bar', baz: 'qux', quux: '' } })
+mysqlx.getSession({ user: 'root', connectionAttributes: { foo: 'bar', baz: 'qux', quux: undefined } })
+mysqlx.getSession({ user: 'root', connectionAttributes: { foo: 'bar', baz: 'qux', quux: null } })
+
+mysqlx.getSession('{ "user": "root", "connectionAttributes": { "foo": "bar", "baz": "qux", "quux": "" } }')
+mysqlx.getSession('{ "user": "root", "connectionAttributes": { "foo": "bar", "baz": "qux", "quux": null } }')
+```
+
+Duplicate attribute names are not allowed when using a connection string. When using a plain JavaScript or JSON object, the last attribute value definition will stand. Client-defined attribute names start with an `"_"`, which means that this convention is not allowed for user-defined attributes. Also, due to schema restricitions by the `PERFORMANCE_SCHEMA` tables, the X Protocol only allows string-based key-value mappings, which means that non-primitive and/or nested values don't have first-class support and are "stringified" by default.
+
+Also note that empty strings, `undefined` or `null` attribute values will be coerced to MySQL's `NULL` value.
+
+You can disable this feature and avoid sending any attribute whatsoever (client-defined or user-defined) with one of the following:
+
+```js
+mysqlx.getSession('mysqlx://root@localhost?connection-attributes=false')
+mysqlx.getSession({ user: 'root', connectionAttributes: false })
+mysqlx.getSession('{ "user": "root", "connectionAttributes": false }')
+
+mysqlx.getSession({ user: 'root', connectionAttributes: null })
+mysqlx.getSession('{ "user": "root", "connectionAttributes": null }')
+
+mysqlx.getSession({ user: 'root', connectionAttributes: undefined })
+```
