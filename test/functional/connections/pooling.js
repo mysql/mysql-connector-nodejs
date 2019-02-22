@@ -199,6 +199,84 @@ describe('@functional connection pooling', () => {
                         return client.close();
                     });
             });
+
+            it('prioritizes idle connections instead of unused ones', () => {
+                const client = mysqlx.getClient(config, { pooling: { enabled: true, maxSize: 3 } });
+                const connections = [];
+
+                return client.getSession()
+                    .then(session1 => {
+                        return session1.sql('SELECT CONNECTION_ID()')
+                            .execute(row => connections.push(row[0]))
+                            .then(() => client.getSession())
+                            .then(session2 => {
+                                return session2.sql('SELECT CONNECTION_ID()')
+                                    .execute(row => connections.push(row[0]))
+                                    // close the second session
+                                    .then(() => session2.close());
+                            })
+                            .then(() => client.getSession())
+                            .then(session3 => {
+                                return session3.sql('SELECT CONNECTION_ID()')
+                                    .execute(row => connections.push(row[0]))
+                                    // close the first session
+                                    .then(() => session1.close());
+                            })
+                            .then(() => client.getSession())
+                            .then(session4 => {
+                                return session4.sql('SELECT CONNECTION_ID()')
+                                    .execute(row => connections.push(row[0]));
+                            });
+                    })
+                    .then(() => {
+                        expect(connections).to.have.lengthOf(4);
+                        expect(connections[2]).to.equal(connections[1]);
+                        expect(connections[3]).to.equal(connections[0]);
+
+                        return client.close();
+                    });
+            });
+
+            it('prioritizes idle connections instead of closed ones', () => {
+                const client = mysqlx.getClient(config, { pooling: { enabled: true, maxSize: 3, maxIdleTime: 10 } });
+                const connections = [];
+
+                return client.getSession()
+                    .then(session1 => {
+                        return session1.sql('SELECT CONNECTION_ID()')
+                            .execute(row => connections.push(row[0]))
+                            .then(() => client.getSession())
+                            .then(session2 => {
+                                return session2.sql('SELECT CONNECTION_ID()')
+                                    .execute(row => connections.push(row[0]))
+                                    // close the second session
+                                    .then(() => session2.close());
+                            })
+                            .then(() => new Promise(resolve => {
+                                setTimeout(() => client.getSession().then(resolve), 100);
+                            }))
+                            .then(session3 => {
+                                return session3.sql('SELECT CONNECTION_ID()')
+                                    .execute(row => connections.push(row[0]))
+                                    // close the first session
+                                    .then(() => session1.close());
+                            })
+                            .then(() => new Promise(resolve => {
+                                setTimeout(() => client.getSession().then(resolve), 100);
+                            }))
+                            .then(session4 => {
+                                return session4.sql('SELECT CONNECTION_ID()')
+                                    .execute(row => connections.push(row[0]));
+                            });
+                    })
+                    .then(() => {
+                        expect(connections).to.have.lengthOf(4);
+                        expect(connections[2]).to.equal(connections[1]);
+                        expect(connections[3]).to.equal(connections[0]);
+
+                        return client.close();
+                    });
+            });
         });
 
         context('and there are no idle connections', () => {
@@ -258,48 +336,62 @@ describe('@functional connection pooling', () => {
 
         context('killing connections', () => {
             it('should not fail when closing connections that have been killed', () => {
-                let connectionId;
                 const client = mysqlx.getClient(config, { pooling: { maxSize: 2 } });
+                const connections = [];
 
                 return client.getSession()
-                    .then(session => {
-                        return session.sql('SELECT CONNECTION_ID()').execute(row => { connectionId = row[0]; })
+                    .then(session1 => {
+                        return session1.sql('SELECT CONNECTION_ID()').execute(row => connections.push(row[0]))
                             .then(() => {
-                                return session.close();
+                                return session1.close();
                             });
                     })
                     .then(() => {
-                        return client.getSession();
+                        return Promise.all([client.getSession(), client.getSession()]);
                     })
-                    .then(session => {
-                        return session.sql(`KILL ${connectionId}`).execute();
+                    .then(sessions => {
+                        // sessions[0] should have the same id as session1
+                        return sessions[1].sql(`KILL ${connections[0]}`)
+                            .execute()
+                            .then(() => {
+                                return expect(sessions[0].close()).to.be.fulfilled;
+                            });
                     })
                     .then(() => {
-                        return expect(client.close()).to.be.fulfilled;
+                        return client.close();
                     });
             });
 
             it('should properly re-use a connection that has been killed', () => {
-                let connectionId;
                 const client = mysqlx.getClient(config, { pooling: { maxSize: 2 } });
+                const connections = [];
 
                 return client.getSession()
-                    .then(session => {
-                        return session.sql('SELECT CONNECTION_ID()').execute(row => { connectionId = row[0]; })
+                    .then(session1 => {
+                        return session1.sql('SELECT CONNECTION_ID()')
+                            .execute(row => connections.push(row[0]))
                             .then(() => {
-                                return session.close();
+                                return session1.close();
                             });
                     })
                     .then(() => {
-                        return client.getSession();
+                        return Promise.all([client.getSession(), client.getSession()]);
                     })
-                    .then(session => {
-                        return session.sql(`KILL ${connectionId}`).execute();
+                    .then(sessions => {
+                        return Promise.all([sessions[0].close(), sessions[1].sql(`KILL ${connections[0]}`).execute()]);
                     })
                     .then(() => {
                         return expect(client.getSession()).to.be.fulfilled;
                     })
+                    .then(session4 => {
+                        return session4.sql('SELECT CONNECTION_ID()')
+                            .execute(row => connections.push(row[0]));
+                    })
                     .then(() => {
+                        expect(connections).to.have.lengthOf(2);
+                        // session1 and session4 should have different ids since the connection was re-created
+                        expect(connections[0]).to.not.equal(connections[1]);
+
                         return client.close();
                     });
             });
