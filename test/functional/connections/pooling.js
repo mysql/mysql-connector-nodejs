@@ -425,4 +425,32 @@ describe('@functional connection pooling', () => {
             });
         });
     });
+
+    context('closing the pool', () => {
+        it('closes all the active connections in the server', () => {
+            const client = mysqlx.getClient(config, { pooling: { maxSize: 3 } });
+            const processIds = [];
+            const connectionIds = [];
+
+            const trackConnectionId = () => {
+                return client.getSession()
+                    .then(session => {
+                        return session.sql('SELECT CONNECTION_ID()')
+                            .execute(row => connectionIds.push(row[0]));
+                    });
+            };
+
+            return Promise.all([trackConnectionId(), trackConnectionId(), trackConnectionId()])
+                .then(() => client.close())
+                .then(() => mysqlx.getSession(config))
+                .then(session => {
+                    return session.sql('SHOW PROCESSLIST')
+                        .execute(row => processIds.push(row[0]))
+                        .then(() => session.close());
+                })
+                .then(() => {
+                    expect(processIds).to.not.include.members(connectionIds);
+                });
+        });
+    });
 });
