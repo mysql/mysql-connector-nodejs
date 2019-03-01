@@ -277,6 +277,34 @@ describe('@functional connection pooling', () => {
                         return client.close();
                     });
             });
+
+            it('re-uses idle connections after some period of inactivity', () => {
+                const baseConfig = Object.assign({}, config, { connectTimeout: 100 });
+                const client = mysqlx.getClient(baseConfig, { pooling: { maxSize: 2 } });
+
+                const connections = [];
+
+                return client.getSession()
+                    .then(session1 => {
+                        return session1.sql('SELECT CONNECTION_ID()')
+                            .execute(row => connections.push(row[0]))
+                            .then(() => session1.close());
+                    })
+                    .then(() => {
+                        return new Promise(resolve => setTimeout(() => client.getSession().then(resolve), 200));
+                    })
+                    .then(session2 => {
+                        return session2.sql('SELECT CONNECTION_ID()')
+                            .execute(row => connections.push(row[0]))
+                            .then(() => session2.close());
+                    })
+                    .then(() => {
+                        expect(connections).to.have.lengthOf(2);
+                        expect(connections[1]).to.equal(connections[0]);
+
+                        return client.close();
+                    });
+            });
         });
 
         context('and there are no idle connections', () => {
