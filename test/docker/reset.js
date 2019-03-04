@@ -70,4 +70,40 @@ describe('@docker session reset behavior with older servers', () => {
                 });
         });
     });
+
+    context('reaching the maximum number of connections supported by the server', () => {
+        let client;
+
+        beforeEach('create pool', () => {
+            client = mysqlx.getClient(baseConfig, { pooling: { maxSize: 1 } });
+        });
+
+        beforeEach('update mysqlx_max_connections', () => {
+            return mysqlx.getSession(baseConfig)
+                .then(session => {
+                    return session.sql('SET GLOBAL mysqlx_max_connections=1')
+                        .execute()
+                        .then(() => session.close());
+                });
+        });
+
+        afterEach('destroy pool', () => {
+            return client.close();
+        });
+
+        afterEach('reset mysqlx_max_connections', () => {
+            return mysqlx.getSession(baseConfig)
+                .then(session => {
+                    return session.sql('SET GLOBAL mysqlx_max_connections=100')
+                        .execute()
+                        .then(() => session.close());
+                });
+        });
+
+        it('BUG#29436892 does not fail when re-creating an idle connection', () => {
+            return client.getSession()
+                .then(session => session.close())
+                .then(() => expect(client.getSession()).to.be.fulfilled);
+        });
+    });
 });
