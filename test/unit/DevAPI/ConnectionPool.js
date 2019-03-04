@@ -18,11 +18,11 @@ describe('DevAPI ConnectionPool', () => {
     });
 
     context('factory', () => {
-        it('should throw an error when unknown options are provided', () => {
+        it('throws an error when unknown options are provided', () => {
             expect(() => connectionPool({ foo: 'bar' })).to.throw(`Client option 'pooling.foo' is not recognized as valid.`);
         });
 
-        it('should throw an error when invalid option values are provided', () => {
+        it('throws an error when invalid option values are provided', () => {
             const nonBooleans = [undefined, null, 1, 2.2, 'foo', {}, [], () => {}];
             const nonPositiveIntegers = [undefined, null, true, false, 2.2, -1, 'foo', {}, [], () => {}];
             const nonZeroOrPositiveIntegers = nonPositiveIntegers.concat(0);
@@ -53,7 +53,7 @@ describe('DevAPI ConnectionPool', () => {
             reset = td.function();
         });
 
-        it('should pick a new connection and create the given session', () => {
+        it('picks a new connection and create the given session', () => {
             const pool = connectionPool({ idle: [{ connect }, {}], maxIdleTime: 0, maxSize: 2 });
 
             td.when(connect()).thenResolve('foo');
@@ -61,7 +61,7 @@ describe('DevAPI ConnectionPool', () => {
             return expect(pool.acquire()).to.eventually.equal('foo');
         });
 
-        it('should pick and reset an idle connection', () => {
+        it('picks and reset an idle connection', () => {
             const pool = connectionPool({ idle: [{ _isOpen: true, reset }, {}], maxIdleTime: 0, maxSize: 2 });
 
             td.when(reset()).thenResolve('foo');
@@ -69,7 +69,7 @@ describe('DevAPI ConnectionPool', () => {
             return expect(pool.acquire()).to.eventually.equal('foo');
         });
 
-        it('should create a new connection if it cannot reset the underlying session', () => {
+        it('creates a new connection if it cannot reset the underlying session', () => {
             const pool = connectionPool({ idle: [{ connect, reset }, { connect, reset }], maxIdleTime: 0, maxSize: 2 });
 
             td.when(connect()).thenResolve('foo');
@@ -78,7 +78,7 @@ describe('DevAPI ConnectionPool', () => {
             return expect(pool.acquire()).to.eventually.equal('foo');
         });
 
-        it('should wait for an idle connection before timing out', () => {
+        it('waits for an idle connection before timing out', () => {
             const active = [{ _isValid: true, _isOpen: true, reset }, {}];
             const pool = connectionPool({ active, queueTimeout: 0, maxSize: 2 });
 
@@ -89,7 +89,7 @@ describe('DevAPI ConnectionPool', () => {
             return expect(pool.acquire()).to.eventually.equal('foo');
         });
 
-        it('should fail when the queue timeout is exceeded', () => {
+        it('fails when the queue timeout is exceeded', () => {
             const queueTimeout = 100;
             const pool = connectionPool({ active: [{ reset }, { reset }], idle: [], maxSize: 2, queueTimeout });
             const error = `Could not retrieve a connection from the pool. Timeout of ${queueTimeout} ms was exceeded.`;
@@ -106,7 +106,7 @@ describe('DevAPI ConnectionPool', () => {
             done = td.function();
         });
 
-        it('should close all connections and disconnect from the server', () => {
+        it('closes all connections and disconnect from the server', () => {
             const maxSize = 4;
             const connections = [{ done }, { done }, { done }];
             const pool = connectionPool({ active: connections, idle: [{ done }], maxSize });
@@ -119,7 +119,7 @@ describe('DevAPI ConnectionPool', () => {
                 });
         });
 
-        it('should not fail if there is an error closing a connection', () => {
+        it('does not fail if there is an error closing a connection', () => {
             const active = [{ done }, { done }];
             const pool = connectionPool({ active, maxSize: active.length });
             const error = new Error('foobar');
@@ -134,46 +134,46 @@ describe('DevAPI ConnectionPool', () => {
     });
 
     context('pick()', () => {
+        let pool;
+
         context('legacy connections', () => {
             let disconnect;
 
             beforeEach('create fakes', () => {
                 disconnect = td.function();
+
+                pool = connectionPool({ enabled: false, idle: [{ disconnect }] });
             });
 
-            it('should return an idle legacy connection if pooling is not enabled', () => {
-                const pool = connectionPool({ enabled: false, idle: [{ disconnect }] });
-                pool.destroy = td.function();
-
+            it('returns an idle legacy connection if pooling is not enabled', () => {
                 td.when(disconnect()).thenResolve();
-                td.when(pool.destroy()).thenResolve('foo');
 
-                expect(pool.pick().close()).to.eventually.equal('foo')
+                expect(pool.pick().close()).to.eventually.be.fulfilled
                     .then(() => expect(td.explain(disconnect).callCount).to.equal(1));
             });
 
-            it('should clear the pool if the connection is closed', () => {
+            it('clears the pool if the connection is closed', () => {
                 const pool = connectionPool({ enabled: false, idle: [{ disconnect }] });
-                pool.destroy = td.function();
-                pool.clear = td.function();
+                const clear = td.replace(pool, 'clear');
 
                 td.when(disconnect()).thenResolve();
-                td.when(pool.destroy()).thenResolve('foo');
 
-                expect(pool.pick().close()).to.eventually.equal('foo')
-                    .then(() => expect(td.explain(pool.clear).callCount).to.equal(1));
+                expect(pool.pick().close()).to.be.fulfilled
+                    .then(() => expect(td.explain(clear).callCount).to.equal(1));
             });
         });
 
         context('pooling connections', () => {
-            it('should return an idle pooled connection if pooling is enabled', () => {
-                const maxSize = 3;
-                const pool = connectionPool({ active: [{}, {}], enabled: true, idle: [{}], maxSize });
-                pool.release = td.function();
+            it('returns an idle pooled connection if pooling is enabled', () => {
+                const session = {};
+                const pool = connectionPool({ active: [{}, {}], enabled: true, idle: [session] });
+                const release = td.replace(pool, 'release');
 
-                td.when(pool.release(maxSize - 1)).thenReturn('foo');
-
-                expect(pool.pick().close()).to.eventually.equal('foo');
+                expect(pool.pick().close()).to.be.fulfilled
+                    .then(() => {
+                        expect(td.explain(release).callCount).to.equal(1);
+                        expect(td.explain(release).calls[0].args[0]).to.equal(session);
+                    });
             });
         });
     });
@@ -185,7 +185,7 @@ describe('DevAPI ConnectionPool', () => {
             close = td.function();
         });
 
-        it('should close all idle connections where the maximum idle time was exceeded', () => {
+        it('closes all idle connections where the maximum idle time was exceeded', () => {
             const timestamp = Date.now();
             const pool = connectionPool({ idle: [{ close, timestamp }, { close, timestamp }, { close, timestamp: timestamp + 200 }], maxIdleTime: 50, maxSize: 3 });
 
@@ -197,7 +197,7 @@ describe('DevAPI ConnectionPool', () => {
                 .then(() => expect(td.explain(close).callCount).to.equal(2));
         });
 
-        it('should not close any connection if the maximum idle time time is infinite', () => {
+        it('does not close any connection if the maximum idle time time is infinite', () => {
             const timestamp = Date.now();
             const pool = connectionPool({ idle: [{ close, timestamp }, { close, timestamp }], maxIdleTime: 0, maxSize: 3 });
 
@@ -211,7 +211,7 @@ describe('DevAPI ConnectionPool', () => {
     });
 
     context('release()', () => {
-        it('should move move a connection from active state into idle state', () => {
+        it('moves move a connection from active state into idle state', () => {
             const active = [{ id: 'foo' }, { id: 'bar' }];
             const pool = connectionPool({ active, idle: [], maxSize: 2 });
 
