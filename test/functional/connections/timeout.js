@@ -94,4 +94,19 @@ describe('@functional connect timeout', () => {
             });
         });
     });
+
+    context('successful connections', () => {
+        it('does not timeout the connection after it was established', () => {
+            const validConfig = Object.assign({}, config, { connectTimeout: 100, schema: undefined });
+
+            return mysqlx.getSession(validConfig)
+                .then(session => {
+                    return new Promise(resolve => setTimeout(() => resolve(session), 200));
+                })
+                .then(session => {
+                    return expect(session.sql('SELECT 1').execute()).to.be.fulfilled
+                        .then(() => session.close());
+                });
+        });
+    });
 });
