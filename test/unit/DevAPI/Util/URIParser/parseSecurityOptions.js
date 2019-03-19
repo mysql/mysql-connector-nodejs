@@ -8,64 +8,76 @@ const parseSecurityOptions = require('../../../../../lib/DevAPI/Util/URIParser/p
 describe('parseSecurityOptions', () => {
     it('enables ssl if any of the security related properties are provided', () => {
         // TODO(Rui): add `ssl-mode=VERIFY_CA`, `ssl-mode=VERIFY_IDENTITY` and/or `ssl-mode=VERIFY_CRL`?
-        ['ssl-mode=REQUIRED', 'ssl-ca=foo', 'ssl-crl=bar'].forEach(pair => {
-            expect(parseSecurityOptions(`?${pair}`)).to.deep.include({ enable: true });
-        });
+        expect(parseSecurityOptions('?ssl-mode=REQUIRED')).to.deep.include({ enabled: true });
+        expect(parseSecurityOptions('?ssl-ca=foo')).to.deep.include({ enabled: true });
+        expect(parseSecurityOptions(`?ssl-crl=bar`)).to.deep.include({ enabled: true });
+        expect(parseSecurityOptions(`?tls-versions=[foo,bar]`)).to.deep.include({ enabled: true });
     });
 
     it('enables ssl by default if no security properties are provided', () => {
-        expect(parseSecurityOptions('?foo=bar&baz=qux')).to.deep.equal({ enable: true });
+        expect(parseSecurityOptions('?foo=bar&baz=qux')).to.deep.equal({ enabled: true });
     });
 
     it('does not enable ssl if explicitely stated', () => {
-        expect(parseSecurityOptions('?ssl-mode=DISABLED')).to.deep.equal({ enable: false });
+        expect(parseSecurityOptions('?ssl-mode=DISABLED')).to.deep.equal({ enabled: false });
     });
 
     it('parses all the related security properties', () => {
-        expect(parseSecurityOptions('?ssl-ca=foo&ssl-crl=bar')).to.deep.equal({ enable: true, ca: 'foo', crl: 'bar' });
+        expect(parseSecurityOptions('?ssl-ca=foo&ssl-crl=bar')).to.deep.equal({ enabled: true, ca: 'foo', crl: 'bar' });
     });
 
     it('parses a pct-encoded CA file path', () => {
-        expect(parseSecurityOptions('?ssl-ca=foo%2Fbar')).to.deep.equal({ enable: true, ca: 'foo/bar' });
+        expect(parseSecurityOptions('?ssl-ca=foo%2Fbar')).to.deep.equal({ enabled: true, ca: 'foo/bar' });
     });
 
     it('parses a custom encoded CA file path', () => {
-        expect(parseSecurityOptions('?ssl-ca=(/foo/bar')).to.deep.equal({ enable: true, ca: '/foo/bar' });
+        expect(parseSecurityOptions('?ssl-ca=(/foo/bar')).to.deep.equal({ enabled: true, ca: '/foo/bar' });
     });
 
     it('parses a pct-encoded CRL file path', () => {
-        expect(parseSecurityOptions('?ssl-crl=foo%2Fbar')).to.deep.equal({ enable: true, crl: 'foo/bar' });
+        expect(parseSecurityOptions('?ssl-crl=foo%2Fbar')).to.deep.equal({ enabled: true, crl: 'foo/bar' });
     });
 
     it('parses a custom encoded CRL file path', () => {
-        expect(parseSecurityOptions('?ssl-crl=(/foo/bar)')).to.deep.equal({ enable: true, crl: '/foo/bar' });
+        expect(parseSecurityOptions('?ssl-crl=(/foo/bar)')).to.deep.equal({ enabled: true, crl: '/foo/bar' });
     });
 
-    it('throws an error for inconsistent option combination', () => {
-        ['ssl-ca=foo', 'ssl-crl=bar', 'ssl-ca=foo&ssl-crl=bar'].forEach(inconsistent => {
-            expect(() => parseSecurityOptions(`?ssl-mode=DISABLED&${inconsistent}`)).to.throw('Inconsistent security options');
-        });
+    it('parses a list of TLS versions', () => {
+        expect(parseSecurityOptions('?tls-versions=[foo,bar,baz]')).to.deep.equal({ enabled: true, versions: ['foo', 'bar', 'baz'] });
+    });
+
+    it('parses other values for TLS versions', () => {
+        expect(parseSecurityOptions('?tls-versions=foo')).to.deep.equal({ enabled: true, versions: 'foo' });
     });
 
     it('throws an error for duplicate options', () => {
-        ['?ssl-mode=REQUIRED&ssl-mode=DISABLED', '?ssl-ca=foo&ssl-ca=bar', '?ssl-crl=foo&ssl-crl=bar'].forEach(duplicate => {
-            expect(() => parseSecurityOptions(duplicate)).to.throw('Duplicate options');
-        });
+        const error = 'The connection string cannot contain duplicate query parameters.';
+
+        expect(() => parseSecurityOptions('?ssl-mode=REQUIRED&ssl-mode=DISABLED')).to.throw(error);
+        expect(() => parseSecurityOptions('?ssl-ca=foo&ssl-ca=bar')).to.throw(error);
+        expect(() => parseSecurityOptions('?ssl-crl=foo&ssl-crl=bar')).to.throw(error);
+        expect(() => parseSecurityOptions('?tls-versions=[foo,bar]&tls-versions=[baz]')).to.throw(error);
     });
 
-    it('ignores case of `ssl-mode` value', () => {
+    it('ignores case of "ssl-mode" key and value', () => {
         ['?sSl-MoDe=required', '?SSL-MODE=REQUIRED', '?ssl-mode=REQUired'].forEach(valid => {
-            expect(parseSecurityOptions(valid)).to.deep.equal({ enable: true });
+            expect(parseSecurityOptions(valid)).to.deep.equal({ enabled: true });
         });
 
         ['?sSl-MoDe=disabled', '?SSL-MODE=DISABLED', '?ssl-mode=DISAbled'].forEach(valid => {
-            expect(parseSecurityOptions(valid)).to.deep.equal({ enable: false });
+            expect(parseSecurityOptions(valid)).to.deep.equal({ enabled: false });
         });
     });
 
-    it('does not ignore case of security options except `ssl-mode`', () => {
-        expect(parseSecurityOptions('?sSl-mOdE=requIRED&ssl-ca=(/Path/TO/ca.pem)')).to.deep.equal({ enable: true, ca: '/Path/TO/ca.pem' });
+    it('ignores case of "tls-versions" key', () => {
+        expect(parseSecurityOptions('?tLS-veRsionS=[foo,bar]')).to.deep.equal({ enabled: true, versions: ['foo', 'bar'] });
+        expect(parseSecurityOptions('?TLS-VERSIONS=[bar,baz]')).to.deep.equal({ enabled: true, versions: ['bar', 'baz'] });
+        expect(parseSecurityOptions('?tls-versions=[baz,qux]')).to.deep.equal({ enabled: true, versions: ['baz', 'qux'] });
+    });
 
-        expect(parseSecurityOptions('?sSl-mOdE=requIRED&ssl-crl=(/paTH/tO/CA.PEM)')).to.deep.equal({ enable: true, crl: '/paTH/tO/CA.PEM' });
+    it('does not ignore case of security options except `ssl-mode`', () => {
+        expect(parseSecurityOptions('?sSl-mOdE=requIRED&ssl-ca=(/Path/TO/ca.pem)')).to.deep.equal({ enabled: true, ca: '/Path/TO/ca.pem' });
+        expect(parseSecurityOptions('?sSl-mOdE=requIRED&ssl-crl=(/paTH/tO/CA.PEM)')).to.deep.equal({ enabled: true, crl: '/paTH/tO/CA.PEM' });
+        expect(parseSecurityOptions('?sSl-mOdE=requIRED&tls-versions=[FOO,bar,bAz,QuX]')).to.deep.equal({ enabled: true, versions: ['FOO', 'bar', 'bAz', 'QuX'] });
     });
 });

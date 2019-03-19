@@ -30,7 +30,7 @@ describe('parseQueryParameters', () => {
     });
 
     it('optionally throws an error for duplicate parameters', () => {
-        expect(() => parseQueryParameters('foo=bar&foo=baz', { allowDuplicates: false })).to.throw('Duplicate options');
+        expect(() => parseQueryParameters('foo=bar&foo=baz', { allowDuplicates: false })).to.throw('The connection string cannot contain duplicate query parameters.');
     });
 
     it('supports case-insensitive option keys', () => {

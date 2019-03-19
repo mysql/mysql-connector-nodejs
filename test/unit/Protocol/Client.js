@@ -70,156 +70,151 @@ describe('Client', () => {
         });
     });
 
-    context('enableSSL()', () => {
-        let FakeClient, connect, getServerCipherSuite, parseX509Bundle, readFile;
+    context('enableTLS', () => {
+        let FakeClient, capabilitiesSet, handleNetworkFragment, handleServerClose, socket, tls;
 
         beforeEach('create fakes', () => {
-            connect = td.function();
-            readFile = td.function();
-            getServerCipherSuite = td.function();
-            parseX509Bundle = td.function();
+            socket = new PassThrough();
 
-            td.replace('../../../lib/Protocol/Util/parseX509Bundle', parseX509Bundle);
-            td.replace('../../../lib/Protocol/Util/getServerCipherSuite', getServerCipherSuite);
-            td.replace('../../../lib/Adapters/fs', { readFile });
-            td.replace('tls', { connect });
+            tls = td.replace('../../../lib/Protocol/Security/tls');
+
             FakeClient = require('../../../lib/Protocol/Client');
+            capabilitiesSet = td.replace(FakeClient.prototype, 'capabilitiesSet');
+            handleNetworkFragment = td.replace(FakeClient.prototype, 'handleNetworkFragment');
+            handleServerClose = td.replace(FakeClient.prototype, 'handleServerClose');
         });
 
-        it('enables TLS in the connection socket', () => {
-            const stream = { on };
-            const client = new FakeClient(stream);
-            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
-
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(connect(td.matchers.contains({ rejectUnauthorized: false, socket: stream }), td.callback())).thenReturn(stream);
-
-            return client.enableSSL({})
-                .then(actual => expect(actual).to.be.true);
-        });
-
-        it('uses the server cipher suite by default', () => {
-            const stream = { on };
-            const client = new FakeClient(stream);
-            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
-
-            td.when(getServerCipherSuite()).thenReturn('foo:bar:!baz');
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(connect({ ciphers: 'foo:bar:!baz', rejectUnauthorized: false, socket: stream }, td.callback())).thenReturn(stream);
-
-            return client.enableSSL({})
-                .then(actual => expect(actual).to.be.true);
-        });
-
-        // TODO(Rui): this will change for a future milestone.
-        it('uses the server cipher suite even if a custom one is provided', () => {
-            const stream = { on };
-            const client = new FakeClient(stream);
-            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
-
-            td.when(getServerCipherSuite()).thenReturn('foo:bar:!baz');
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(connect({ ciphers: 'foo:bar:!baz', rejectUnauthorized: false, socket: stream }, td.callback())).thenReturn(stream);
-
-            return client.enableSSL({ ciphers: 'qux:!quux' })
-                .then(actual => expect(actual).to.be.true);
-        });
-
-        it('enables server certificate authority validation if requested', () => {
-            const stream = { on };
-            const client = new FakeClient(stream);
-            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
-
-            td.when(readFile('foobar', 'ascii')).thenResolve('--base64Giberish--');
-            td.when(parseX509Bundle('--base64Giberish--')).thenReturn(['foo']);
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(connect(td.matchers.contains({ ca: ['foo'], rejectUnauthorized: true, socket: stream }), td.callback())).thenReturn(stream);
-
-            return client.enableSSL({ ca: 'foobar' })
-                .then(actual => expect(actual).to.be.true);
-        });
-
-        it('enables server certificate revocation validation if requested', () => {
-            const stream = { on };
-            const client = new FakeClient(stream);
-            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
-
-            td.when(readFile('foobar', 'ascii')).thenResolve('--base64Giberish--');
-            td.when(readFile('bazqux', 'ascii')).thenResolve('foo');
-            td.when(parseX509Bundle('--base64Giberish--')).thenReturn(['bar']);
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(connect(td.matchers.contains({ ca: ['bar'], crl: 'foo', rejectUnauthorized: true, socket: stream }), td.callback())).thenReturn(stream);
-
-            return client.enableSSL({ ca: 'foobar', crl: 'bazqux' })
-                .then(actual => expect(actual).to.be.true);
-        });
-
-        // TODO(Rui): evaluate this approach. Should this not fail if no CA is provided?
-        it('does not enable server certificate revocation validation if no CA certificate is provided', () => {
-            const stream = { on };
-            const client = new FakeClient(stream);
-            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
-
-            td.when(getServerCipherSuite()).thenReturn('foo:bar:!baz');
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-
-            const matcher = options => {
-                return Object.keys(options).indexOf('crl') === -1 &&
-                    options.ciphers === 'foo:bar:!baz' &&
-                    options.rejectUnauthorized === false &&
-                    options.socket === stream;
-            };
-
-            // The custom matcher makes sure the options do not contain `crl: undefined`.
-            td.when(connect(td.matchers.argThat(matcher), td.callback())).thenReturn(stream);
-
-            return client.enableSSL({ crl: 'foobar' })
-                .then(actual => expect(actual).to.be.true);
-        });
-
-        it('fails for empty CA path', () => {
-            const client = new Client({ on });
-
-            return client.enableSSL({ ca: '' })
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('CA value must not be empty string'));
-        });
-
-        it('fails for empty CRL path', () => {
-            const client = new Client({ on });
-
-            return client.enableSSL({ crl: '' })
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('CRL value must not be empty string'));
-        });
-
-        it('fails with a specific error if the server\'s X plugin version does not support SSL', () => {
-            const stream = { on };
-            const client = new FakeClient(stream);
-            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
-
+        it('fails if the server does not support TLS', () => {
+            const client = new FakeClient(socket);
             const error = new Error();
             error.info = { code: 5001 };
 
             td.when(capabilitiesSet({ tls: true })).thenReject(error);
 
-            return client.enableSSL({})
+            return client.enableTLS()
                 .then(() => expect.fail())
-                .catch(err => expect(err.message).to.match(/The server's X plugin version does not support SSL/));
+                .catch(err => expect(err.message).to.equal('The X Plugin version installed in the server does not support TLS. Check https://dev.mysql.com/doc/refman/8.0/en/x-plugin-ssl-connections.html for more details on how to enable secure connections.'));
         });
 
-        it('fails with any other error thrown when setting capabilities', () => {
-            const stream = { on };
-            const client = new FakeClient(stream);
-            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
-
+        it('fails if there is an unexpected error while setting the capabilities in the server', () => {
+            const client = new FakeClient(socket);
             const error = new Error('foobar');
 
             td.when(capabilitiesSet({ tls: true })).thenReject(error);
 
-            return client.enableSSL({})
+            return client.enableTLS()
                 .then(() => expect.fail())
                 .catch(err => expect(err).to.deep.equal(error));
+        });
+
+        it('fails if there is an error while creating the security context', () => {
+            const config = { foo: 'bar' };
+            const baseContext = Object.assign({}, config, { socket });
+            const client = new FakeClient(socket);
+            const error = new Error('foobar');
+
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
+            td.when(tls.createCustomSecurityContext(baseContext)).thenReject(error);
+
+            return client.enableTLS(config)
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
+
+        it('fails if there is an error while creating the secure channel', () => {
+            const config = { foo: 'bar' };
+            const baseContext = Object.assign({}, config, { socket });
+            const secureContext = { baz: 'qux' };
+            const client = new FakeClient(socket);
+            const error = new Error('foobar');
+
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
+            td.when(tls.createCustomSecurityContext(baseContext)).thenResolve(secureContext);
+            td.when(tls.createSecureChannel(secureContext)).thenReject(error);
+
+            return client.enableTLS(config)
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
+
+        it('adds an event listener for incoming data in the secure socket', () => {
+            const config = { foo: 'bar' };
+            const baseContext = Object.assign({}, config, { socket });
+            const secureContext = { baz: 'qux' };
+            const client = new FakeClient(socket);
+            const secureSocket = new PassThrough();
+
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
+            td.when(tls.createCustomSecurityContext(baseContext)).thenResolve(secureContext);
+            td.when(tls.createSecureChannel(secureContext)).thenResolve(secureSocket);
+
+            return client.enableTLS(config)
+                .then(() => {
+                    secureSocket.emit('data', 'quux');
+                    expect(td.explain(handleNetworkFragment).callCount).to.equal(1);
+                    expect(td.explain(handleNetworkFragment).calls[0].args[0]).to.equal('quux');
+                });
+        });
+
+        it('adds an event listener for errors in the secure socket', () => {
+            const session = { _isOpen: true, _isValid: true };
+            const config = { foo: 'bar' };
+            const baseContext = Object.assign({}, config, { socket });
+            const secureContext = { baz: 'qux' };
+            const client = new FakeClient(socket, session);
+            const secureSocket = new PassThrough();
+
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
+            td.when(tls.createCustomSecurityContext(baseContext)).thenResolve(secureContext);
+            td.when(tls.createSecureChannel(secureContext)).thenResolve(secureSocket);
+
+            return client.enableTLS(config)
+                .then(() => {
+                    secureSocket.emit('error');
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(session._isOpen).to.be.false;
+                    return expect(session._isValid).to.be.false;
+                });
+        });
+
+        it('adds an event listener for cleanup when the socket finishes receiving data', () => {
+            const session = { _isOpen: true, _isValid: true };
+            const config = { foo: 'bar' };
+            const baseContext = Object.assign({}, config, { socket });
+            const secureContext = { baz: 'qux' };
+            const client = new FakeClient(socket, session);
+            const secureSocket = new PassThrough();
+
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
+            td.when(tls.createCustomSecurityContext(baseContext)).thenResolve(secureContext);
+            td.when(tls.createSecureChannel(secureContext)).thenResolve(secureSocket);
+
+            return client.enableTLS(config)
+                .then(() => {
+                    secureSocket.emit('end');
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(session._isOpen).to.be.false;
+                    return expect(session._isValid).to.be.false;
+                });
+        });
+
+        it('adds an event listener for cleanup when the socket is closed', () => {
+            const session = { _isOpen: true, _isValid: true };
+            const config = { foo: 'bar' };
+            const baseContext = Object.assign({}, config, { socket });
+            const secureContext = { baz: 'qux' };
+            const client = new FakeClient(socket, session);
+            const secureSocket = new PassThrough();
+
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
+            td.when(tls.createCustomSecurityContext(baseContext)).thenResolve(secureContext);
+            td.when(tls.createSecureChannel(secureContext)).thenResolve(secureSocket);
+
+            return client.enableTLS(config)
+                .then(() => {
+                    secureSocket.emit('close');
+                    expect(td.explain(handleServerClose).callCount).to.equal(1);
+                });
         });
     });
 

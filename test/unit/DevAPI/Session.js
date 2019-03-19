@@ -191,12 +191,12 @@ describe('Session', () => {
             });
 
             context('secure connection', () => {
-                let enableSSL;
+                let enableTLS;
 
                 beforeEach('create fakes', () => {
-                    enableSSL = td.function();
+                    enableTLS = td.function();
 
-                    Client.prototype.enableSSL = enableSSL;
+                    Client.prototype.enableTLS = enableTLS;
                 });
 
                 it('is able to setup a SSL/TLS connection', () => {
@@ -204,7 +204,7 @@ describe('Session', () => {
                     const session = new Session(properties);
                     const expected = { 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] };
 
-                    td.when(enableSSL({})).thenResolve();
+                    td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve(expected);
 
                     setTimeout(() => socket.emit('connect'));
@@ -217,14 +217,14 @@ describe('Session', () => {
                     const properties = { dbPassword: 'bar', ssl: false, user: 'foo', connectionAttributes: false };
                     const session = new Session(properties);
 
-                    td.when(enableSSL(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     setTimeout(() => socket.emit('connect'));
 
                     return session.connect()
                         .then(() => {
-                            expect(td.explain(enableSSL).callCount).to.equal(0);
+                            expect(td.explain(enableTLS).callCount).to.equal(0);
                             return expect(session._serverCapabilities.tls).to.be.undefined;
                         });
                 });
@@ -233,7 +233,7 @@ describe('Session', () => {
                     const properties = { dbPassword: 'bar', ssl: true, user: 'foo' };
                     const session = new Session(properties);
 
-                    td.when(enableSSL({})).thenReject(new Error());
+                    td.when(enableTLS({ enabled: true })).thenReject(new Error());
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     setTimeout(() => socket.emit('connect'));
@@ -243,23 +243,11 @@ describe('Session', () => {
                         .catch(() => expect(session._serverCapabilities).to.be.empty);
                 });
 
-                it('passs down any custom SSL/TLS-related option', () => {
-                    const properties = { dbPassword: 'bar', sslOptions: { foo: 'bar' }, user: 'foo', connectionAttributes: false };
-                    const session = new Session(properties);
-
-                    td.when(enableSSL({ foo: 'bar' })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
-
-                    setTimeout(() => socket.emit('connect'));
-
-                    return session.connect();
-                });
-
                 it('enables TLS/SSL if the server supports it', () => {
                     const properties = { user: 'foo', dbPassword: 'bar', connectionAttributes: false };
                     const session = new Session(properties);
 
-                    td.when(enableSSL({})).thenResolve();
+                    td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
 
                     setTimeout(() => socket.emit('connect'));
@@ -274,7 +262,7 @@ describe('Session', () => {
                     const error = new Error();
                     error.info = { code: 5001 };
 
-                    td.when(enableSSL({})).thenReject(error);
+                    td.when(enableTLS({ enabled: true })).thenReject(error);
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     setTimeout(() => socket.emit('connect'));
@@ -288,7 +276,7 @@ describe('Session', () => {
                     const properties = { dbPassword: 'bar', user: 'foo', connectionAttributes: false };
                     const session = new Session(properties);
 
-                    td.when(enableSSL({})).thenResolve();
+                    td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
 
                     setTimeout(() => socket.emit('connect'));
@@ -301,7 +289,7 @@ describe('Session', () => {
                     const properties = { auth: 'MYSQL41', dbPassword: 'bar', user: 'foo', connectionAttributes: false };
                     const session = new Session(properties);
 
-                    td.when(enableSSL({})).thenResolve();
+                    td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
 
                     setTimeout(() => socket.emit('connect'));
@@ -326,12 +314,12 @@ describe('Session', () => {
             });
 
             context('failover', () => {
-                let enableSSL;
+                let enableTLS;
 
                 beforeEach('create fakes', () => {
-                    enableSSL = td.function();
+                    enableTLS = td.function();
 
-                    Client.prototype.enableSSL = enableSSL;
+                    Client.prototype.enableTLS = enableTLS;
                 });
 
                 it('failovers to the next available address if the connection fails', () => {
@@ -426,7 +414,7 @@ describe('Session', () => {
                     const error = new Error();
                     error.code = 'ENOTFOUND';
 
-                    td.when(enableSSL({})).thenResolve();
+                    td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
 
                     setTimeout(() => {
@@ -447,7 +435,7 @@ describe('Session', () => {
                     const error = new Error();
                     error.code = 'ENOTFOUND';
 
-                    td.when(enableSSL({})).thenResolve();
+                    td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     setTimeout(() => {
@@ -468,7 +456,7 @@ describe('Session', () => {
                     const error = new Error();
                     error.code = 'ENOTFOUND';
 
-                    td.when(enableSSL({})).thenResolve();
+                    td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
 
                     setTimeout(() => {

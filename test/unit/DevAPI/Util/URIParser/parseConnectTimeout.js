@@ -23,6 +23,6 @@ describe('parseConnectTimeout', () => {
     });
 
     it('throws an error for duplicate options', () => {
-        expect(() => parseConnectTimeout('?connect-timeout=10&connect-timeout=20')).to.throw('Duplicate options');
+        expect(() => parseConnectTimeout('?connect-timeout=10&connect-timeout=20')).to.throw('The connection string cannot contain duplicate query parameters.');
     });
 });

@@ -11,7 +11,7 @@ describe('parseAuthenticationMechanism', () => {
     });
 
     it('throws an error for duplicate options', () => {
-        expect(() => parseAuthenticationMechanism('?auth=FOO&auth=BAR')).to.throw('Duplicate options');
+        expect(() => parseAuthenticationMechanism('?auth=FOO&auth=BAR')).to.throw('The connection string cannot contain duplicate query parameters.');
     });
 
     it('ignores case of `auth` value', () => {

@@ -21,10 +21,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -45,10 +43,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -69,10 +65,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -93,10 +87,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -117,10 +109,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -141,10 +131,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -165,10 +153,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -189,10 +175,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -213,10 +197,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: 'schema',
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -237,10 +219,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -266,10 +246,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: 'schema',
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -298,10 +276,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: 'schema',
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -343,10 +319,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -367,10 +341,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: false,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: false
                     }
                 };
 
@@ -391,8 +363,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
+                    tls: {
+                        enabled: true,
                         ca: '/path/to/ca',
                         crl: '/path/to/crl'
                     }
@@ -415,8 +387,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
+                    tls: {
+                        enabled: true,
                         ca: '/path/to/ca',
                         crl: '/path/to/crl'
                     }
@@ -439,8 +411,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
+                    tls: {
+                        enabled: true,
                         ca: '',
                         crl: ''
                     }
@@ -463,14 +435,37 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
+                    tls: {
+                        enabled: true,
                         ca: '',
                         crl: ''
                     }
                 };
 
                 expect(parseUri('mysqlx://user:password@hostname:33060?ssl-ca=()&ssl-crl=()')).to.deep.equal(expected);
+            });
+
+            it('parses a list of TLS versions', () => {
+                const expected = {
+                    auth: '',
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    connectTimeout: '10000',
+                    connectionAttributes: {},
+                    endpoints: [{
+                        host: 'hostname',
+                        port: 33060,
+                        socket: undefined
+                    }],
+                    resolveSrv: false,
+                    schema: undefined,
+                    tls: {
+                        enabled: true,
+                        versions: ['TLSv1.2', 'TLSv1.3']
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@hostname:33060?tls-versions=[TLSv1.2,TLSv1.3]')).to.deep.equal(expected);
             });
         });
 
@@ -489,10 +484,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -513,10 +506,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -539,10 +530,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -565,10 +554,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -606,10 +593,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -630,10 +615,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -654,10 +637,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -678,10 +659,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -702,10 +681,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -726,10 +703,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -750,10 +725,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -774,10 +747,8 @@ describe('parseUri', () => {
                 }],
                 resolveSrv: false,
                 schema: undefined,
-                ssl: true,
-                sslOptions: {
-                    ca: undefined,
-                    crl: undefined
+                tls: {
+                    enabled: true
                 }
             };
 
@@ -807,10 +778,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: 'schema',
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -839,10 +808,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: 'schema',
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -885,10 +852,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -909,10 +874,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: false,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: false
                     }
                 };
 
@@ -933,8 +896,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
+                    tls: {
+                        enabled: true,
                         ca: '/path/to/ca',
                         crl: '/path/to/crl'
                     }
@@ -957,8 +920,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
+                    tls: {
+                        enabled: true,
                         ca: '/path/to/ca',
                         crl: '/path/to/crl'
                     }
@@ -981,8 +944,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
+                    tls: {
+                        enabled: true,
                         ca: '',
                         crl: ''
                     }
@@ -1005,8 +968,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
+                    tls: {
+                        enabled: true,
                         ca: '',
                         crl: ''
                     }
@@ -1031,10 +994,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -1055,10 +1016,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: 'schema',
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -1081,10 +1040,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 
@@ -1107,10 +1064,8 @@ describe('parseUri', () => {
                     }],
                     resolveSrv: false,
                     schema: undefined,
-                    ssl: true,
-                    sslOptions: {
-                        ca: undefined,
-                        crl: undefined
+                    tls: {
+                        enabled: true
                     }
                 };
 

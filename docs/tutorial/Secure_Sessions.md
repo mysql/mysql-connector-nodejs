@@ -7,9 +7,9 @@ By default, the connector creates a new session using SSL/TLS for TCP connection
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx.getSession('mysqlx://foobar')
+mysqlx.getSession('mysqlx://localhost')
     .then(session => {
-        console.log(session.inspect()); // { host: 'foobar', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', ssl: true }
     });
 ```
 
@@ -18,11 +18,11 @@ mysqlx.getSession('mysqlx://foobar')
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const options = { host: 'foobar', ssl: true };
+const options = { host: 'localhost', ssl: true };
 
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect()); // { host: 'foobar', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', ssl: true }
     });
 ```
 
@@ -31,7 +31,7 @@ If the server does not support secure TCP connections, the operation will fail.
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx.getSession('mysqlx://foobar')
+mysqlx.getSession('mysqlx://localhost')
     .catch(err => {
         console.log(err.message); // will print the error message
     });
@@ -45,33 +45,80 @@ SSL/TLS is not used with local Unix sockets.
 
 The user can easily disable this feature explicitly (thus avoiding failures when using a server that does not support SSL/TLS connections):
 
-#### URI or unified-connection string
-
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx.getSession('mysqlx://foobar?ssl-mode=DISABLED')
+mysqlx.getSession('mysqlx://localhost?ssl-mode=DISABLED')
     .then(session => {
-        console.log(session.inspect()); // { host: 'foobar', ssl: false }
+        console.log(session.inspect()); // { host: 'localhost', ssl: false }
     });
-```
 
-#### Connection options
+// you can also use a plain JavaScript configuration object
 
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-const options = { host: 'foobar', ssl: false };
+const options = { host: 'localhost', tls: { enabled: true };
 
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect()); // { host: 'foobar', ssl: false }
+        console.log(session.inspect()); // { host: 'localhost', ssl: false }
     });
 ```
 
 ## Additional security options
 
-For additional security, the user is able to verify that the server certificate is signed and/or isn't revoked by a given certificate authority (each one works independently of the other). To enable this additional security step, a link to each PEM file (CA and CRL) should be provided (certificate chaining and ordering should be done by the user beforehand).
+For additional security, the user is able to customize the setup and do other things such as provide a list of hand-picked TLS protocol versions, verify that the server certificate is signed and/or isn't revoked by a given certificate authority (each one works independently of the other). To enable this additional security step, a link to each PEM file (CA and CRL) should be provided (certificate chaining and ordering should be done by the user beforehand). All these options are interchangeable and decoupled, altough a CRL is of no use in the absense of an associated CA.
+
+### TLS versions
+
+You can provide a handpicked list of TLS versions or rely on the default list supported by the client which includes `TLSv1`, `TLSv1.1` and `TLSv1.2` and `TLSv1.3` (depending on the Node.js version).
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.2,TLSv1.3]')
+    .catch(err => {
+        console.log(err.message); // { host: 'localhost', ssl: true }
+    });
+
+
+const options = { host: 'localhost', tls: { enabled: true, versions: ['TLSv1.2', 'TLSv1.3'] } };
+
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect()); // { host: 'localhost', ssl: true }
+    });
+```
+
+If you are using Node.js v10.0.0 (or higher), where the TLS negotiation supports a range of versions, as long as the MySQL server supports the oldest TLS version in the list, the connection will be sucessful. however, on older Node.js versions, where range negotiation is not supported, since the client picks up the latest TLS version in the list by default, the connection will fail if the server does not support that specific version.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+// With older Node.js versions, if the server does not support TLSv1.2
+mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.1,TLSv1.2]')
+    .catch(err => {
+        console.log(err.message); // OpenSSL wrong version number error
+    });
+
+// With Node.js >=v10.0.0, with support for range-based negotiation, TLSv1.1 will be used
+mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.1,TLSv1.2]')
+    .then(session => {
+        console.log(session.inspect()); // { host: 'localhost', ssl: true }
+    });
+```
+
+If the oldest version of TLS supported by the server is newer than the one used by the client, the socket will hang up during the negotiation, regardless of the Node.js engine version being used.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+// The server supports only TLSv1.2 or higher
+mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1,TLSv1.1]')
+    .catch(err => {
+        console.log(err.message); // TCP socket hang
+    });
+```
+
+### Certificate authority validation
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
@@ -80,22 +127,17 @@ mysqlx.getSession('mysqlx://foobar?ssl-ca=(/path/to/ca.pem)&ssl-crl=(/path/to/cr
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: true }
     });
-```
 
-Note: file paths can be either [pct-encoded](https://en.wikipedia.org/wiki/Percent-encoding) or unencoded but enclosed by parenthesis (as demonstrated in the example).
 
-#### Connection options
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-const options = { host: 'foobar', ssl: true, sslOptions: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem' } };
+const options = { host: 'foobar', tls: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem', enabled: true } };
 
 mysqlx.getSession(options)
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: true }
     });
 ```
+
+Note: file paths can be either [pct-encoded](https://en.wikipedia.org/wiki/Percent-encoding) or unencoded but enclosed by parenthesis (as demonstrated in the example).
 
 ## Authentication mechanisms
 
