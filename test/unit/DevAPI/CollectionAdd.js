@@ -6,7 +6,6 @@
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const collectionAdd = require('lib/DevAPI/CollectionAdd');
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -71,7 +70,10 @@ describe('CollectionAdd', () => {
             const expected = { done: true };
             const state = { ok: true };
             const fakeResult = td.function();
-            const fakeCollectionAdd = proxyquire('lib/DevAPI/CollectionAdd', { './Result': fakeResult });
+
+            td.replace('../../../lib/DevAPI/Result', fakeResult);
+
+            const fakeCollectionAdd = require('lib/DevAPI/CollectionAdd');
 
             const query = fakeCollectionAdd({ _client: { crudInsert } }, 'bar', 'baz')
                 .add({ name: 'qux' })

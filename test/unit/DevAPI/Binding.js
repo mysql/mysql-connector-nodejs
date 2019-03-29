@@ -4,15 +4,17 @@
 
 // npm `test` script was updated to use NODE_PATH=.
 const expect = require('chai').expect;
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
-describe('DevAPI Binding', () => {
+describe('Binding', () => {
     let binding, parse;
 
     beforeEach('create fakes', () => {
         parse = td.function();
-        binding = proxyquire('lib/DevAPI/Binding', { '../ExprParser': { parse } });
+
+        td.replace('../../../lib/ExprParser', { parse });
+
+        binding = require('lib/DevAPI/Binding');
     });
 
     afterEach('reset fakes', () => {

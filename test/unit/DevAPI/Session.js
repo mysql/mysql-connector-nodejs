@@ -6,7 +6,6 @@ const Client = require('lib/Protocol/Client');
 const PassThrough = require('stream').PassThrough;
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -21,7 +20,10 @@ describe('Session', () => {
         execute = td.function();
         sqlExecute = td.function();
 
-        Session = proxyquire('lib/DevAPI/Session', { './SqlExecute': sqlExecute, 'net': { connect } });
+        td.replace('net', { connect });
+        td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
+
+        Session = require('lib/DevAPI/Session');
     });
 
     afterEach('reset fakes', () => {

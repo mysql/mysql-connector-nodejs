@@ -3,21 +3,23 @@
 /* eslint-env node, mocha */
 
 // npm `test` script was updated to use NODE_PATH=.
-const crypto = require('lib/Authentication/Util/crypto');
 const expect = require('chai').expect;
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 describe('crypto utilities', () => {
+    let crypto;
+
     context('hashing functions', () => {
-        let createHash, digest, fakeCrypto, update;
+        let createHash, digest, update;
 
         beforeEach('setup fakes', () => {
             createHash = td.function();
             digest = td.function();
             update = td.function();
 
-            fakeCrypto = proxyquire('lib/Authentication/Util/crypto', { crypto: { createHash } });
+            td.replace('crypto', { createHash });
+
+            crypto = require('lib/Authentication/Util/crypto');
         });
 
         context('sha1()', () => {
@@ -27,7 +29,7 @@ describe('crypto utilities', () => {
                 td.when(update('foo')).thenReturn();
                 td.when(createHash('sha1')).thenReturn({ update, digest });
 
-                expect(fakeCrypto.sha1('foo', 'bar')).to.equal('foobar');
+                expect(crypto.sha1('foo', 'bar')).to.equal('foobar');
                 expect(td.explain(update).callCount).to.equal(2);
                 expect(td.explain(update).calls[0].args).to.deep.equal(['foo']);
                 expect(td.explain(update).calls[1].args).to.deep.equal(['bar']);
@@ -41,7 +43,7 @@ describe('crypto utilities', () => {
                 td.when(update('foo')).thenReturn();
                 td.when(createHash('sha256')).thenReturn({ update, digest });
 
-                expect(fakeCrypto.sha256('foo', 'bar')).to.equal('foobar');
+                expect(crypto.sha256('foo', 'bar')).to.equal('foobar');
                 expect(td.explain(update).callCount).to.equal(2);
                 expect(td.explain(update).calls[0].args).to.deep.equal(['foo']);
                 expect(td.explain(update).calls[1].args).to.deep.equal(['bar']);
@@ -50,6 +52,10 @@ describe('crypto utilities', () => {
     });
 
     context('xor()', () => {
+        beforeEach('load module', () => {
+            crypto = require('lib/Authentication/Util/crypto');
+        });
+
         it('should throw an error if the given buffers have different sizes', () => {
             /* eslint-disable node/no-deprecated-api */
             expect(() => crypto.xor(new Buffer('x'), new Buffer('yy'))).to.throw();

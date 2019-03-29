@@ -5,8 +5,6 @@
 // npm `test` script was updated to use NODE_PATH=.
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const proxyquire = require('proxyquire');
-const tableInsert = require('lib/DevAPI/TableInsert');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -14,6 +12,12 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('TableInsert', () => {
+    let tableInsert;
+
+    beforeEach('load module', () => {
+        tableInsert = require('lib/DevAPI/TableInsert');
+    });
+
     context('getClassName()', () => {
         it('should return the correct class name (to avoid duck typing)', () => {
             expect(tableInsert().getClassName()).to.equal('TableInsert');
@@ -21,10 +25,15 @@ describe('TableInsert', () => {
     });
 
     context('execute()', () => {
-        let crudInsert;
+        let crudInsert, fakeResult;
 
-        beforeEach('create fake session', () => {
+        beforeEach('create fakes', () => {
             crudInsert = td.function();
+            fakeResult = td.function();
+
+            td.replace('../../../lib/DevAPI/Result', fakeResult);
+
+            tableInsert = require('lib/DevAPI/TableInsert');
         });
 
         afterEach('reset fakes', () => {
@@ -34,10 +43,8 @@ describe('TableInsert', () => {
         it('should return a Result instance containing the operation details', () => {
             const expected = { done: true };
             const state = { ok: true };
-            const fakeResult = td.function();
-            const fakeTableInsert = proxyquire('lib/DevAPI/TableInsert', { './Result': fakeResult });
 
-            const query = fakeTableInsert({ _client: { crudInsert } });
+            const query = tableInsert({ _client: { crudInsert } });
 
             td.when(fakeResult(state)).thenReturn(expected);
             td.when(crudInsert(query)).thenResolve(state);

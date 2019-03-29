@@ -8,7 +8,6 @@ const ExprStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
 const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
 const Type = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr.Type;
 const expect = require('chai').expect;
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 describe('Protobuf', () => {
@@ -18,7 +17,9 @@ describe('Protobuf', () => {
         beforeEach('setup fakes', () => {
             parse = td.function();
 
-            FakeExpr = proxyquire('lib/Protocol/Protobuf/Adapters/Expr', { '../../../ExprParser': { parse } });
+            td.replace('../../../../lib/ExprParser', { parse });
+
+            FakeExpr = require('lib/Protocol/Protobuf/Adapters/Expr');
         });
 
         afterEach('reset fakes', () => {

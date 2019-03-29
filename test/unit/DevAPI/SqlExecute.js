@@ -5,15 +5,18 @@
 // npm `test` script was updated to use NODE_PATH=.
 const Column = require('lib/DevAPI/Column');
 const expect = require('chai').expect;
-const proxyquire = require('proxyquire');
-const sqlExecute = require('lib/DevAPI/SqlExecute');
 const td = require('testdouble');
 
 describe('SqlExecute', () => {
-    let sqlStmtExecute;
+    let fakeResult, sqlExecute, sqlStmtExecute;
 
     beforeEach('create fakes', () => {
+        fakeResult = td.function();
         sqlStmtExecute = td.function();
+
+        td.replace('../../../lib/DevAPI/Result', fakeResult);
+
+        sqlExecute = require('lib/DevAPI/SqlExecute');
     });
 
     afterEach('reset fakes', () => {
@@ -24,10 +27,8 @@ describe('SqlExecute', () => {
         it('should execute the context statement', () => {
             const expected = { done: true };
             const state = { ok: true };
-            const fakeResult = td.function();
-            const fakeSqlExecute = proxyquire('lib/DevAPI/SqlExecute', { './Result': fakeResult });
 
-            const query = fakeSqlExecute({ _client: { sqlStmtExecute } }, 'foo', 'bar', 'baz');
+            const query = sqlExecute({ _client: { sqlStmtExecute } }, 'foo', 'bar', 'baz');
 
             td.when(fakeResult(state)).thenReturn(expected);
             td.when(sqlStmtExecute(query), { ignoreExtraArgs: true }).thenResolve(state);

@@ -5,7 +5,6 @@
 // npm `test` script was updated to use NODE_PATH=.
 const sha256MemoryAuth = require('lib/Authentication/SHA256MemoryAuth');
 const expect = require('chai').expect;
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 describe('SHA256MemoryAuth', () => {
@@ -41,11 +40,17 @@ describe('SHA256MemoryAuth', () => {
         context('valid handshake', () => {
             let fakeSHA256MemoryAuth, nonce, passwordHash, passwordHashHash, hashWithNonce, scramble, sha256, xor;
 
+            afterEach('reset fakes', () => {
+                td.reset();
+            });
+
             beforeEach('create fakes', () => {
                 sha256 = td.function();
                 xor = td.function();
 
-                fakeSHA256MemoryAuth = proxyquire('lib/Authentication/SHA256MemoryAuth', { './Util/crypto': { sha256, xor } });
+                td.replace('../../../lib/Authentication/Util/crypto', { sha256, xor });
+
+                fakeSHA256MemoryAuth = require('lib/Authentication/SHA256MemoryAuth');
 
                 scramble = 'scramble';
                 nonce = 'n'.repeat(20);

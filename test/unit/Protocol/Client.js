@@ -10,11 +10,9 @@ const OkHandler = require('lib/Protocol/ResponseHandlers/OkHandler');
 const PassThrough = require('stream').PassThrough;
 const Scope = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Frame.Scope;
 const ServerMessages = require('lib/Protocol/Protobuf/Stubs/mysqlx_pb').ServerMessages;
-const SqlResultHandler = require('lib/Protocol/ResponseHandlers/SqlResultHandler');
 const WorkQueue = require('lib/WorkQueue');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -22,18 +20,13 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('Client', () => {
-    let on, sendMessage, fakeSendMessage;
+    let on;
 
     beforeEach('create fakes', () => {
         on = td.function();
-        fakeSendMessage = td.function();
-
-        sendMessage = SqlResultHandler.prototype.sendMessage;
-        SqlResultHandler.prototype.sendMessage = fakeSendMessage;
     });
 
     afterEach('reset fakes', () => {
-        SqlResultHandler.prototype.sendMessage = sendMessage;
         td.reset();
     });
 
@@ -91,21 +84,20 @@ describe('Client', () => {
             getServerCipherSuite = td.function();
             parseX509Bundle = td.function();
 
-            FakeClient = proxyquire('lib/Protocol/Client', {
-                './Util/parseX509Bundle': parseX509Bundle,
-                './Util/getServerCipherSuite': getServerCipherSuite,
-                '../Adapters/fs': { readFile },
-                tls: { connect }
-            });
+            td.replace('../../../lib/Protocol/Util/parseX509Bundle', parseX509Bundle);
+            td.replace('../../../lib/Protocol/Util/getServerCipherSuite', getServerCipherSuite);
+            td.replace('../../../lib/Adapters/fs', { readFile });
+            td.replace('tls', { connect });
+
+            FakeClient = require('lib/Protocol/Client');
         });
 
         it('should enable TLS in the connection socket', () => {
             const stream = { on };
             const client = new FakeClient(stream);
+            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
 
-            client.capabilitiesSet = td.function();
-
-            td.when(client.capabilitiesSet({ tls: true })).thenResolve();
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
             td.when(connect(td.matchers.contains({ rejectUnauthorized: false, socket: stream }), td.callback())).thenReturn(stream);
 
             return expect(client.enableSSL({})).to.eventually.be.true;
@@ -114,11 +106,10 @@ describe('Client', () => {
         it('should use the server cipher suite by default', () => {
             const stream = { on };
             const client = new FakeClient(stream);
-
-            client.capabilitiesSet = td.function();
+            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
 
             td.when(getServerCipherSuite()).thenReturn('foo:bar:!baz');
-            td.when(client.capabilitiesSet({ tls: true })).thenResolve();
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
             td.when(connect({ ciphers: 'foo:bar:!baz', rejectUnauthorized: false, socket: stream }, td.callback())).thenReturn(stream);
 
             return expect(client.enableSSL({})).to.eventually.be.true;
@@ -128,11 +119,10 @@ describe('Client', () => {
         it('should use the server cipher suite even if a custom one is provided', () => {
             const stream = { on };
             const client = new FakeClient(stream);
-
-            client.capabilitiesSet = td.function();
+            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
 
             td.when(getServerCipherSuite()).thenReturn('foo:bar:!baz');
-            td.when(client.capabilitiesSet({ tls: true })).thenResolve();
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
             td.when(connect({ ciphers: 'foo:bar:!baz', rejectUnauthorized: false, socket: stream }, td.callback())).thenReturn(stream);
 
             return expect(client.enableSSL({ ciphers: 'qux:!quux' })).to.eventually.be.true;
@@ -141,12 +131,11 @@ describe('Client', () => {
         it('should enable server certificate authority validation if requested', () => {
             const stream = { on };
             const client = new FakeClient(stream);
-
-            client.capabilitiesSet = td.function();
+            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
 
             td.when(readFile('foobar', 'ascii')).thenResolve('--base64Giberish--');
             td.when(parseX509Bundle('--base64Giberish--')).thenReturn(['foo']);
-            td.when(client.capabilitiesSet({ tls: true })).thenResolve();
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
             td.when(connect(td.matchers.contains({ ca: ['foo'], rejectUnauthorized: true, socket: stream }), td.callback())).thenReturn(stream);
 
             return expect(client.enableSSL({ ca: 'foobar' })).to.eventually.be.true;
@@ -155,13 +144,12 @@ describe('Client', () => {
         it('should enable server certificate revocation validation if requested', () => {
             const stream = { on };
             const client = new FakeClient(stream);
-
-            client.capabilitiesSet = td.function();
+            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
 
             td.when(readFile('foobar', 'ascii')).thenResolve('--base64Giberish--');
             td.when(readFile('bazqux', 'ascii')).thenResolve('foo');
             td.when(parseX509Bundle('--base64Giberish--')).thenReturn(['bar']);
-            td.when(client.capabilitiesSet({ tls: true })).thenResolve();
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
             td.when(connect(td.matchers.contains({ ca: ['bar'], crl: 'foo', rejectUnauthorized: true, socket: stream }), td.callback())).thenReturn(stream);
 
             return expect(client.enableSSL({ ca: 'foobar', crl: 'bazqux' })).to.eventually.be.true;
@@ -171,11 +159,10 @@ describe('Client', () => {
         it('should not enable server certificate revocation validation if no CA certificate is provided', () => {
             const stream = { on };
             const client = new FakeClient(stream);
-
-            client.capabilitiesSet = td.function();
+            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
 
             td.when(getServerCipherSuite()).thenReturn('foo:bar:!baz');
-            td.when(client.capabilitiesSet({ tls: true })).thenResolve();
+            td.when(capabilitiesSet({ tls: true })).thenResolve();
 
             const matcher = options => {
                 return Object.keys(options).indexOf('crl') === -1 &&
@@ -205,13 +192,12 @@ describe('Client', () => {
         it('should fail with a specific error if the server\'s X plugin version does not support SSL', () => {
             const stream = { on };
             const client = new FakeClient(stream);
+            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
 
             const error = new Error();
             error.info = { code: 5001 };
 
-            client.capabilitiesSet = td.function();
-
-            td.when(client.capabilitiesSet({ tls: true })).thenReject(error);
+            td.when(capabilitiesSet({ tls: true })).thenReject(error);
 
             return expect(client.enableSSL({})).to.eventually.be.rejectedWith('The server\'s X plugin version does not support SSL');
         });
@@ -219,11 +205,11 @@ describe('Client', () => {
         it('should fail with any other error thrown when setting capabilities', () => {
             const stream = { on };
             const client = new FakeClient(stream);
+            const capabilitiesSet = td.replace(client, 'capabilitiesSet');
+
             const error = new Error('foobar');
 
-            client.capabilitiesSet = td.function();
-
-            td.when(client.capabilitiesSet({ tls: true })).thenReject(error);
+            td.when(capabilitiesSet({ tls: true })).thenReject(error);
 
             return expect(client.enableSSL({})).to.eventually.be.rejectedWith(error);
         });
@@ -657,10 +643,9 @@ describe('Client', () => {
 
             it('sends a Mysqlx.Connection.Close message to the server', () => {
                 const client = new FakeClient(network);
-                client.encodeMessage = td.function();
 
                 td.when(encodeClose()).thenReturn('foo');
-                td.when(client.encodeMessage(ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
+                td.when(encodeMessage(ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
                 td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
 
                 return expect(client.connectionClose()).to.eventually.equal('baz');
@@ -699,15 +684,14 @@ describe('Client', () => {
 
             const socket = new PassThrough();
             const client = new Client(socket);
-
-            client.decodeMessage = td.function();
-            client._workQueue = { process };
+            const decodeMessage = td.replace(client, 'decodeMessage');
 
             const message = { id: ServerMessages.Type.NOTICE, payload: 'bar' };
             const notice = { scope: Scope.GLOBAL };
 
+            td.replace(client, '_workQueue', { process });
             td.when(decodeFrame(message.payload)).thenReturn(notice);
-            td.when(client.decodeMessage('foo')).thenReturn(message);
+            td.when(decodeMessage('foo')).thenReturn(message);
 
             client.handleServerMessage('foo');
 
@@ -715,30 +699,19 @@ describe('Client', () => {
         });
 
         context('empty notices', () => {
-            // stubs
-            let fakeProcess, workQueueProto;
+            let fakeProcess;
 
             beforeEach('create fakes', () => {
-                workQueueProto = Object.assign({}, WorkQueue.prototype);
-
-                fakeProcess = td.function('process');
-
-                WorkQueue.prototype.process = fakeProcess;
-            });
-
-            afterEach('reset fakes', () => {
-                WorkQueue.prototype = workQueueProto;
+                fakeProcess = td.replace(WorkQueue.prototype, 'process');
             });
 
             it('should ignore empty notices', () => {
                 const network = new EventEmitter();
-                /* eslint-disable no-unused-vars */
+                // eslint-disable-next-line no-unused-vars
                 const client = new Client(network);
-                /* eslint-enable no-unused-vars */
 
-                /* eslint-disable node/no-deprecated-api */
+                // eslint-disable-next-line node/no-deprecated-api
                 const fragment = new Buffer('010000000b', 'hex');
-                /* eslint-enable node/no-deprecated-api */
 
                 network.emit('data', fragment);
 
@@ -750,13 +723,11 @@ describe('Client', () => {
     context('classic protocol', () => {
         it('should fail with an unsupported protocol error', () => {
             const network = new EventEmitter();
-            /* eslint-disable no-unused-vars */
+            // eslint-disable-next-line no-unused-vars
             const client = new Client(network);
-            /* eslint-enable no-unused-vars */
 
-            /* eslint-disable node/no-deprecated-api */
+            // eslint-disable-next-line node/no-deprecated-api
             const classicServerGreeting = new Buffer('010000000a', 'hex');
-            /* eslint-enable node/no-deprecated-api */
 
             expect(() => network.emit('data', classicServerGreeting)).to.throw(/^The server connection is not using the X Protocol/);
         });

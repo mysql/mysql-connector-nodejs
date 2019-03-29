@@ -5,7 +5,7 @@
 // npm `test` script was updated to use NODE_PATH=.
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const proxyquire = require('proxyquire');
+const statement = require('lib/DevAPI/Statement');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -18,7 +18,11 @@ describe('Schema', () => {
     beforeEach('create fakes', () => {
         execute = td.function();
         sqlExecute = td.function();
-        schema = proxyquire('lib/DevAPI/Schema', { './SqlExecute': sqlExecute });
+        sqlExecute.Namespace = statement.Type;
+
+        td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
+
+        schema = require('lib/DevAPI/Schema');
     });
 
     afterEach('reset fakes', () => {

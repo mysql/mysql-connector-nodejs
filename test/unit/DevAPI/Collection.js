@@ -5,8 +5,8 @@
 // npm `test` script was updated to use NODE_PATH=.
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const proxyquire = require('proxyquire');
 const result = require('lib/DevAPI/Result');
+const statement = require('lib/DevAPI/Statement');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -14,17 +14,16 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('Collection', () => {
-    let collection, collectionRemove, execute, sqlExecute;
+    let collection, execute, sqlExecute;
 
     beforeEach('create fakes', () => {
-        collectionRemove = td.function();
         execute = td.function();
         sqlExecute = td.function();
+        sqlExecute.Namespace = statement.Type;
 
-        collection = proxyquire('lib/DevAPI/Collection', {
-            './CollectionRemove': collectionRemove,
-            './SqlExecute': sqlExecute
-        });
+        td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
+
+        collection = require('lib/DevAPI/Collection');
     });
 
     afterEach('reset fakes', () => {
@@ -175,16 +174,16 @@ describe('Collection', () => {
     });
 
     context('replaceOne()', () => {
-        let collection, collectionModify, execute, setDouble;
+        let collectionModify, execute, setDouble;
 
         beforeEach('create fakes', () => {
             collectionModify = td.function();
             execute = td.function();
             setDouble = td.function();
 
-            collection = proxyquire('lib/DevAPI/Collection', {
-                './CollectionModify': collectionModify
-            });
+            td.replace('../../../lib/DevAPI/CollectionModify', collectionModify);
+
+            collection = require('lib/DevAPI/Collection');
         });
 
         it('should return the result of executing a modify operation for a given document', () => {
@@ -228,15 +227,15 @@ describe('Collection', () => {
     });
 
     context('addOrReplaceOne()', () => {
-        let collectionAdd, collectionDouble, execute;
+        let collectionAdd, execute;
 
         beforeEach('create fakes', () => {
             collectionAdd = td.function();
             execute = td.function();
 
-            collectionDouble = proxyquire('lib/DevAPI/Collection', {
-                './CollectionAdd': collectionAdd
-            });
+            td.replace('../../../lib/DevAPI/CollectionAdd', collectionAdd);
+
+            collection = require('lib/DevAPI/Collection');
         });
 
         it('should return the result of executing a "upsert" operation for a given document', () => {
@@ -244,7 +243,7 @@ describe('Collection', () => {
             const name = 'foo';
             const schema = 'baz';
             const session = 'qux';
-            const instance = collectionDouble(session, schema, name);
+            const instance = collection(session, schema, name);
 
             td.when(execute()).thenResolve(expected);
             td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
@@ -257,7 +256,7 @@ describe('Collection', () => {
             const name = 'foo';
             const schema = 'baz';
             const session = 'qux';
-            const instance = collectionDouble(session, schema, name);
+            const instance = collection(session, schema, name);
 
             td.when(execute()).thenResolve(expected);
             td.when(collectionAdd(session, schema, name, [{ _id: 'fo\\"o', name: 'bar' }], { upsert: true })).thenReturn({ execute });
@@ -270,7 +269,7 @@ describe('Collection', () => {
             const name = 'foo';
             const schema = 'baz';
             const session = 'qux';
-            const instance = collectionDouble(session, schema, name);
+            const instance = collection(session, schema, name);
 
             td.when(execute()).thenResolve(expected);
             td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
@@ -283,7 +282,7 @@ describe('Collection', () => {
             const name = 'foo';
             const schema = 'baz';
             const session = 'qux';
-            const instance = collectionDouble(session, schema, name);
+            const instance = collection(session, schema, name);
 
             td.when(execute()).thenReject(error);
             td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
@@ -297,10 +296,11 @@ describe('Collection', () => {
 
         beforeEach('create fakes', () => {
             collectionFind = td.function();
-            collection = proxyquire('lib/DevAPI/Collection', {
-                './CollectionFind': collectionFind
-            });
             execute = td.function();
+
+            td.replace('../../../lib/DevAPI/CollectionFind', collectionFind);
+
+            collection = require('lib/DevAPI/Collection');
         });
 
         it('should return the document instance if it exists', () => {
@@ -351,10 +351,15 @@ describe('Collection', () => {
     });
 
     context('removeOne()', () => {
-        let execute;
+        let collectionRemove, execute;
 
         beforeEach('create fakes', () => {
+            collectionRemove = td.function();
             execute = td.function();
+
+            td.replace('../../../lib/DevAPI/CollectionRemove', collectionRemove);
+
+            collection = require('lib/DevAPI/Collection');
         });
 
         it('should return the document instance if it exists', () => {

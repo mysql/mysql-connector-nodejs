@@ -47,5 +47,8 @@
   },
   "engines": {
     "node": ">=4.2.0"
+  },
+  "devDependencies": {
+    "testdouble": "3.7.0"
   }
 }

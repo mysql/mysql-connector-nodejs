@@ -4,7 +4,6 @@
 
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 chai.use(chaiAsPromised);
@@ -18,7 +17,9 @@ describe('fs adapter', () => {
         readFile = td.function();
         writeFile = td.function();
 
-        fs = proxyquire('lib/Adapters/fs', { fs: { readFile, writeFile } });
+        td.replace('fs', { readFile, writeFile });
+
+        fs = require('lib/Adapters/fs');
     });
 
     afterEach('reset fakes', () => {

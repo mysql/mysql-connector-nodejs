@@ -5,7 +5,6 @@
 // npm `test` script was updated to use NODE_PATH=.
 const mysql41Auth = require('lib/Authentication/MySQL41Auth');
 const expect = require('chai').expect;
-const proxyquire = require('proxyquire');
 const td = require('testdouble');
 
 describe('MySQL41Auth', () => {
@@ -33,6 +32,10 @@ describe('MySQL41Auth', () => {
     });
 
     context('getNextAuthData()', () => {
+        afterEach('reset fakes', () => {
+            td.reset();
+        });
+
         it('should throw an error if the nonce does not have 20 bytes', () => {
             expect(() => mysql41Auth({ user: 'foo' }).getNextAuthData('bar')).to.throw();
             expect(() => mysql41Auth({ user: 'foo' }).getNextAuthData('bar'.repeat(20))).to.throw();
@@ -50,7 +53,10 @@ describe('MySQL41Auth', () => {
             it('should generate a valid payload with a password', () => {
                 const sha1 = td.function();
                 const xor = td.function();
-                const fakeMySQL41Auth = proxyquire('lib/Authentication/MySQL41Auth', { './Util/crypto': { sha1, xor } });
+
+                td.replace('../../../lib/Authentication/Util/crypto', { sha1, xor });
+
+                const fakeMySQL41Auth = require('lib/Authentication/MySQL41Auth');
 
                 const password = 'foo';
                 const nonce = 'n'.repeat(20);
@@ -80,7 +86,10 @@ describe('MySQL41Auth', () => {
             it('should generate a valid payload with a password', () => {
                 const sha1 = td.function();
                 const xor = td.function();
-                const fakeMySQL41Auth = proxyquire('lib/Authentication/MySQL41Auth', { './Util/crypto': { sha1, xor } });
+
+                td.replace('../../../lib/Authentication/Util/crypto', { sha1, xor });
+
+                const fakeMySQL41Auth = require('lib/Authentication/MySQL41Auth');
 
                 const password = 'foo';
                 const nonce = 'n'.repeat(20);
