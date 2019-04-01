@@ -6,8 +6,8 @@ const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const config = require('test/properties');
 const fixtures = require('test/fixtures');
-const pTimeout = require('p-timeout');
 const mysqlx = require('index');
+const util = require('test/util');
 
 chai.use(chaiAsPromised);
 
@@ -332,7 +332,7 @@ describe('@functional row locking in table transactions', () => {
                             .lockShared()
                             .execute(doc => actual.push(doc));
 
-                        return pTimeout(read, 2000);
+                        return util.timeout(read, 2000);
                     })
                     .catch(err => {
                         // pTimeout error

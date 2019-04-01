@@ -21,3 +21,14 @@ exports.getPreparedStatements = function (session, ids) {
     return Promise.all(ids.map(id => this.getPreparedStatement(session, id)))
         .then(result => result.filter(value => typeof value !== 'undefined'));
 };
+
+exports.timeout = function (promise, timeout) {
+    const error = new Error();
+    error.name = 'TimeoutError';
+
+    return new Promise((resolve, reject) => {
+        setTimeout(() => reject(error), timeout);
+
+        return promise;
+    });
+};
