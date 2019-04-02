@@ -2,15 +2,9 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
+const expect = require('chai').expect;
 const td = require('testdouble');
-const updating = require('lib/DevAPI/Updating');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
+const updating = require('../../../lib/DevAPI/Updating');
 
 describe('TableUpdate', () => {
     let tableUpdate, preparing;
@@ -19,7 +13,7 @@ describe('TableUpdate', () => {
         preparing = td.function();
 
         td.replace('../../../lib/DevAPI/Preparing', preparing);
-        tableUpdate = require('lib/DevAPI/TableUpdate');
+        tableUpdate = require('../../../lib/DevAPI/TableUpdate');
     });
 
     afterEach('reset fakes', () => {
@@ -28,31 +22,32 @@ describe('TableUpdate', () => {
 
     context('execute()', () => {
         it('fails if a condition query is not provided', () => {
-            const query = tableUpdate();
-
-            return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
+            return tableUpdate().execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
         });
 
         it('fails if a condition query is empty', () => {
-            const query = tableUpdate(null, null, null, '');
-
-            return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
+            return tableUpdate(null, null, null, '').execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
         });
 
         it('fails if a condition query is not valid', () => {
-            const query = tableUpdate(null, null, null, ' ');
-
-            return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
+            tableUpdate(null, null, null, ' ').execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
         });
 
         it('wraps the operation in a preparable instance', () => {
             const execute = td.function();
             const session = 'foo';
 
-            td.when(execute(td.matchers.isA(Function))).thenReturn('bar');
+            td.when(execute(td.matchers.isA(Function))).thenResolve('bar');
             td.when(preparing({ session })).thenReturn({ execute });
 
-            return expect(tableUpdate(session, null, null, 'true').execute()).to.equal('bar');
+            return tableUpdate(session, null, null, 'true').execute()
+                .then(actual => expect(actual).to.equal('bar'));
         });
     });
 

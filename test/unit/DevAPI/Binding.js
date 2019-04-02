@@ -2,7 +2,6 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -13,8 +12,7 @@ describe('Binding', () => {
         parse = td.function();
 
         td.replace('../../../lib/ExprParser', { parse });
-
-        binding = require('lib/DevAPI/Binding');
+        binding = require('../../../lib/DevAPI/Binding');
     });
 
     afterEach('reset fakes', () => {
@@ -22,18 +20,18 @@ describe('Binding', () => {
     });
 
     context('bind()', () => {
-        it('should be fluent', () => {
+        it('is fluent', () => {
             const query = binding().bind('foo', 'bar');
 
             expect(query.bind).to.be.a('function');
         });
 
-        it('should do nothing if no argument is provided', () => {
+        it('does nothing if no argument is provided', () => {
             expect(binding().bind().getBindings()).to.deep.equal({});
         });
 
         context('using unordered mapping dictionaries', () => {
-            it('should replace duplicates', () => {
+            it('replaces duplicates', () => {
                 const query = binding().bind({ foo: 'qux' });
 
                 expect(query.getBindings()).to.deep.equal({ foo: 'qux' });
@@ -45,7 +43,7 @@ describe('Binding', () => {
         });
 
         context('using multiple unordered calls', () => {
-            it('should replace duplicates', () => {
+            it('replaces duplicates', () => {
                 const query = binding().bind('foo', 'qux');
 
                 expect(query.getBindings()).to.deep.equal({ foo: 'qux' });
@@ -56,7 +54,7 @@ describe('Binding', () => {
             });
         });
 
-        it('should mix and match both type of parameters', () => {
+        it('mixes and match both type of parameters', () => {
             const query = binding().bind('foo', 'qux').bind({ 'bar': 'quux' });
 
             expect(query.getBindings()).to.deep.equal({ foo: 'qux', bar: 'quux' });

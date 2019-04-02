@@ -2,17 +2,16 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const mysql41Auth = require('lib/Authentication/MySQL41Auth');
 const expect = require('chai').expect;
+const mysql41Auth = require('../../../lib/Authentication/MySQL41Auth');
 const td = require('testdouble');
 
 describe('MySQL41Auth', () => {
-    it('should throw an error if the username is not provided', () => {
+    it('throws an error if the username is not provided', () => {
         expect(() => mysql41Auth()).to.throw();
     });
 
-    it('should mix-in AuthPlugin', () => {
+    it('mixes-in AuthPlugin', () => {
         expect(mysql41Auth({ user: 'foo' }).getPassword).to.be.a('function');
         expect(mysql41Auth({ user: 'foo' }).getSchema).to.be.a('function');
         expect(mysql41Auth({ user: 'foo' }).getUser).to.be.a('function');
@@ -20,13 +19,13 @@ describe('MySQL41Auth', () => {
     });
 
     context('getInitialAuthData()', () => {
-        it('should return `undefined`', () => {
+        it('returns `undefined`', () => {
             return expect(mysql41Auth({ user: 'foo' }).getInitialAuthData()).to.be.undefined;
         });
     });
 
     context('getName()', () => {
-        it('should return the name assigned to the plugin', () => {
+        it('returns the name assigned to the plugin', () => {
             expect(mysql41Auth({ user: 'foo' }).getName()).to.equal('MYSQL41');
         });
     });
@@ -36,27 +35,26 @@ describe('MySQL41Auth', () => {
             td.reset();
         });
 
-        it('should throw an error if the nonce does not have 20 bytes', () => {
+        it('throws an error if the nonce does not have 20 bytes', () => {
             expect(() => mysql41Auth({ user: 'foo' }).getNextAuthData('bar')).to.throw();
             expect(() => mysql41Auth({ user: 'foo' }).getNextAuthData('bar'.repeat(20))).to.throw();
         });
 
         context('without a default schema', () => {
-            it('should generate a valid payload without a password', () => {
+            it('generates a valid payload without a password', () => {
                 const authData = mysql41Auth({ user: 'user' }).getNextAuthData('n'.repeat(20));
 
-                /* eslint-disable no-control-regex */
+                // eslint-disable-next-line
                 expect(authData.toString()).to.match(/\u0000user\u0000\**/);
-                /* eslint-enable no-control-regex */
             });
 
-            it('should generate a valid payload with a password', () => {
+            it('generates a valid payload with a password', () => {
                 const sha1 = td.function();
                 const xor = td.function();
 
                 td.replace('../../../lib/Authentication/Util/crypto', { sha1, xor });
 
-                const fakeMySQL41Auth = require('lib/Authentication/MySQL41Auth');
+                const fakeMySQL41Auth = require('../../../lib/Authentication/MySQL41Auth');
 
                 const password = 'foo';
                 const nonce = 'n'.repeat(20);
@@ -68,28 +66,26 @@ describe('MySQL41Auth', () => {
 
                 const authData = fakeMySQL41Auth({ password, user: 'user' }).getNextAuthData(nonce);
 
-                /* eslint-disable no-control-regex */
+                // eslint-disable-next-line no-control-regex
                 expect(authData.toString()).to.match(/\u0000user\u0000\*scramble*/);
-                /* eslint-enable no-control-regex */
             });
         });
 
         context('with a default schema', () => {
-            it('should generate a valid payload without a password', () => {
+            it('generates a valid payload without a password', () => {
                 const authData = mysql41Auth({ schema: 'schema', user: 'user' }).getNextAuthData('n'.repeat(20));
 
-                /* eslint-disable no-control-regex */
+                // eslint-disable-next-line no-control-regex
                 expect(authData.toString()).to.match(/schema\u0000user\u0000\**/);
-                /* eslint-enable no-control-regex */
             });
 
-            it('should generate a valid payload with a password', () => {
+            it('generates a valid payload with a password', () => {
                 const sha1 = td.function();
                 const xor = td.function();
 
                 td.replace('../../../lib/Authentication/Util/crypto', { sha1, xor });
 
-                const fakeMySQL41Auth = require('lib/Authentication/MySQL41Auth');
+                const fakeMySQL41Auth = require('../../../lib/Authentication/MySQL41Auth');
 
                 const password = 'foo';
                 const nonce = 'n'.repeat(20);
@@ -101,9 +97,8 @@ describe('MySQL41Auth', () => {
 
                 const authData = fakeMySQL41Auth({ password, schema: 'schema', user: 'user' }).getNextAuthData(nonce);
 
-                /* eslint-disable no-control-regex */
+                // eslint-disable-next-line no-control-regex
                 expect(authData.toString()).to.match(/schema\u0000user\u0000\*scramble*/);
-                /* eslint-enable no-control-regex */
             });
         });
     });

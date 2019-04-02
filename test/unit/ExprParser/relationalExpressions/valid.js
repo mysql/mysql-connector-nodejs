@@ -2,11 +2,10 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const Expr = require('lib/ExprParser/lib/stubs/mysqlx_expr_pb').Expr;
-const DocumentPathItem = require('lib/ExprParser/lib/stubs/mysqlx_expr_pb').DocumentPathItem;
-const Parser = require('lib/ExprParser');
-const Scalar = require('lib/ExprParser/lib/stubs/mysqlx_datatypes_pb').Scalar;
+const Expr = require('../../../../lib/ExprParser/lib/stubs/mysqlx_expr_pb').Expr;
+const DocumentPathItem = require('../../../../lib/ExprParser/lib/stubs/mysqlx_expr_pb').DocumentPathItem;
+const Parser = require('../../../../lib/ExprParser');
+const Scalar = require('../../../../lib/ExprParser/lib/stubs/mysqlx_datatypes_pb').Scalar;
 const expect = require('chai').expect;
 
 describe('ExprParser', () => {
@@ -14,7 +13,7 @@ describe('ExprParser', () => {
         const options = { mode: Parser.Mode.TABLE };
 
         context('boolean expressions', () => {
-            it('should parse valid binary operations', () => {
+            it('parses valid binary operations', () => {
                 let input = '1 <> 2';
                 let expr = Parser.parse(input, options);
                 expect(expr.input).to.equal(input);
@@ -118,7 +117,7 @@ describe('ExprParser', () => {
                 expect(params[1].getLiteral().getVUnsignedInt()).to.equal(1010);
             });
 
-            it('should parse valid JSON syntax', () => {
+            it('parses valid JSON syntax', () => {
                 const input = '{"foo" : "bar", "baz": [1,2,[3],{}, TRUE, true, false, False, null, NULL, Null]}';
                 const expr = Parser.parse(input, options);
 
@@ -163,7 +162,7 @@ describe('ExprParser', () => {
                 });
             });
 
-            it('should parse empty JSON expressions', () => {
+            it('parses empty JSON expressions', () => {
                 let input = '[]';
                 let expr = Parser.parse(input, options);
 
@@ -181,7 +180,7 @@ describe('ExprParser', () => {
         });
 
         context('relational-only expressions', () => {
-            it('should parse expressions containing valid column names', () => {
+            it('parses expressions containing valid column names', () => {
                 let input = "doc->'$.foo.bar[*]'";
                 let expr = Parser.parse(input, options);
 
@@ -509,7 +508,7 @@ describe('ExprParser', () => {
         });
 
         context('"IN" syntax', () => {
-            it('should parse valid "in" operations', () => {
+            it('parses valid "in" operations', () => {
                 let input = 'column in (1,2,3)';
                 let expr = Parser.parse(input, options);
 
@@ -553,7 +552,7 @@ describe('ExprParser', () => {
                 /* eslint-enable node/no-deprecated-api */
             });
 
-            it('should parse valid "cont_in" operations', () => {
+            it('parses valid "cont_in" operations', () => {
                 let input = "cast(column as json) in doc->'$.field.array'";
                 let expr = Parser.parse(input, options);
 
@@ -924,7 +923,7 @@ describe('ExprParser', () => {
         });
 
         context('interval expressions', () => {
-            it('should parse multi-parameter interval expressions', () => {
+            it('parses multi-parameter interval expressions', () => {
                 // date_add(date_add(date_add('2000-12-31 23:59:59', INTERVAL 30 SECOND), INTERVAL 4 HOUR), INTERVAL 8 DAY)
                 let input = "'2000-12-31 23:59:59' + INTERVAL 30 SECOND + INTERVAL 4 HOUR + INTERVAL 8 DAY";
                 let expr = Parser.parse(input, options);

@@ -2,14 +2,8 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
+const expect = require('chai').expect;
 const td = require('testdouble');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 describe('Table', () => {
     let execute, sqlExecute, table;
@@ -19,8 +13,7 @@ describe('Table', () => {
         sqlExecute = td.function();
 
         td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
-
-        table = require('lib/DevAPI/Table');
+        table = require('../../../lib/DevAPI/Table');
     });
 
     afterEach('reset fakes', () => {
@@ -28,7 +21,7 @@ describe('Table', () => {
     });
 
     context('getName()', () => {
-        it('should return the table name', () => {
+        it('returns the table name', () => {
             const instance = table(null, null, 'foobar');
 
             expect(instance.getName()).to.equal('foobar');
@@ -36,7 +29,7 @@ describe('Table', () => {
     });
 
     context('getSchema()', () => {
-        it('should return the instance of the table schema', () => {
+        it('returns the instance of the table schema', () => {
             const getSchema = td.function();
             const getName = td.function();
             const session = { getSchema };
@@ -51,7 +44,7 @@ describe('Table', () => {
     });
 
     context('existsInDatabase()', () => {
-        it('should return true if the table exists in database', () => {
+        it('returns true if the table exists in database', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = table('foo', schema, 'baz');
@@ -61,10 +54,11 @@ describe('Table', () => {
             td.when(execute(td.callback(['bar']))).thenResolve();
             td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
-            return expect(instance.existsInDatabase()).to.eventually.be.true;
+            return instance.existsInDatabase()
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should return false if the table does not exist in database', () => {
+        it('returns false if the table does not exist in database', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = table('foo', schema, 'baz');
@@ -74,12 +68,13 @@ describe('Table', () => {
             td.when(execute(td.callback([]))).thenResolve();
             td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
-            return expect(instance.existsInDatabase()).to.eventually.be.false;
+            return instance.existsInDatabase()
+                .then(actual => expect(actual).to.be.false);
         });
     });
 
     context('isView()', () => {
-        it('should return true if the table exists in database', () => {
+        it('returns true if the table exists in database', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = table('foo', schema, 'baz');
@@ -89,10 +84,11 @@ describe('Table', () => {
             td.when(execute(td.callback(['bar']))).thenResolve();
             td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
-            return expect(instance.isView()).to.eventually.be.true;
+            return instance.isView()
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should return false if the table does not exist in database', () => {
+        it('returns false if the table does not exist in database', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = table('foo', schema, 'baz');
@@ -102,19 +98,20 @@ describe('Table', () => {
             td.when(execute(td.callback([]))).thenResolve();
             td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
 
-            return expect(instance.isView()).to.eventually.be.false;
+            return instance.isView()
+                .then(actual => expect(actual).to.be.false);
         });
     });
 
     context('select()', () => {
-        it('should return an instance of the proper class', () => {
+        it('returns an instance of the proper class', () => {
             const session = { _statements: [] };
             const instance = table(session).select();
 
             expect(instance.getClassName()).to.equal('TableSelect');
         });
 
-        it('should set the projection parameters provided as an array', () => {
+        it('sets the projection parameters provided as an array', () => {
             const session = { _statements: [] };
             const expressions = ['foo', 'bar'];
             const instance = table(session).select(expressions);
@@ -122,7 +119,7 @@ describe('Table', () => {
             expect(instance.getProjections()).to.deep.equal(expressions);
         });
 
-        it('should set the projection parameters provided as multiple arguments', () => {
+        it('sets the projection parameters provided as multiple arguments', () => {
             const session = { _statements: [] };
             const expressions = ['foo', 'bar'];
             const instance = table(session).select(expressions[0], expressions[1]);
@@ -132,34 +129,34 @@ describe('Table', () => {
     });
 
     context('insert()', () => {
-        it('should return an instance of the proper class', () => {
+        it('returns an instance of the proper class', () => {
             const instance = table().insert([]);
 
             expect(instance.getClassName()).to.equal('TableInsert');
         });
 
-        it('should set column names provided as an array', () => {
+        it('sets column names provided as an array', () => {
             const expressions = ['foo', 'bar'];
             const instance = table().insert(expressions);
 
             expect(instance.getColumns()).to.deep.equal(expressions);
         });
 
-        it('should set column names provided as multiple arguments', () => {
+        it('sets column names provided as multiple arguments', () => {
             const expressions = ['foo', 'bar'];
             const instance = table().insert(expressions[0], expressions[1]);
 
             expect(instance.getColumns()).to.deep.equal(expressions);
         });
 
-        it('should set column names provided as object keys', () => {
+        it('sets column names provided as object keys', () => {
             const expressions = ['foo', 'bar'];
             const instance = table().insert({ foo: 'baz', bar: 'qux' });
 
             expect(instance.getColumns()).to.deep.equal(expressions);
         });
 
-        it('should throw an error if the columns are invalid', () => {
+        it('throws an error if the columns are invalid', () => {
             const instance = table();
 
             expect(() => instance.insert()).to.throw(Error);
@@ -167,7 +164,7 @@ describe('Table', () => {
     });
 
     context('count()', () => {
-        it('should return the number of records found', () => {
+        it('returns the number of records found', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = table('foo', schema, 'baz');
@@ -177,10 +174,11 @@ describe('Table', () => {
             td.when(execute(td.callback([count]))).thenResolve();
             td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
-            return expect(instance.count()).to.eventually.equal(count);
+            return instance.count()
+                .then(actual => expect(actual).to.equal(count));
         });
 
-        it('should fail if an expected error is thrown', () => {
+        it('fails if an expected error is thrown', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = table('foo', schema, 'baz');
@@ -190,12 +188,14 @@ describe('Table', () => {
             td.when(execute(), { ignoreExtraArgs: true }).thenReject(error);
             td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
-            return expect(instance.count()).to.eventually.be.rejectedWith(error);
+            return instance.count()
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
     });
 
     context('inspect()', () => {
-        it('should hide internals', () => {
+        it('hides internals', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = table(null, schema, 'bar');
@@ -208,7 +208,7 @@ describe('Table', () => {
     });
 
     context('delete()', () => {
-        it('should return an operation instance for a valid condition query', () => {
+        it('returns an operation instance for a valid condition query', () => {
             const session = 'foo';
             const schema = 'bar';
             const name = 'baz';
@@ -220,7 +220,7 @@ describe('Table', () => {
     });
 
     context('update()', () => {
-        it('should return an operation instance for a valid condition query', () => {
+        it('returns an operation instance for a valid condition query', () => {
             const session = 'foo';
             const schema = 'bar';
             const name = 'baz';
@@ -232,7 +232,7 @@ describe('Table', () => {
     });
 
     context('escapeIdentifier()', () => {
-        it('should escape and wrap the identifier with a set of backticks', () => {
+        it('escapes and wrap the identifier with a set of backticks', () => {
             expect(table.escapeIdentifier('foo')).to.equal('`foo`');
             expect(table.escapeIdentifier('fo`o')).to.equal('`fo``o`');
             expect(table.escapeIdentifier('fo``o-ba``r')).to.equal('`fo````o-ba````r`');

@@ -2,18 +2,13 @@
 
 /* eslint-env node, mocha */
 
-const config = require('test/properties');
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
-const util = require('test/util');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
+const util = require('../../util');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional prepared statements for TableSelect', () => {
+describe('prepared statements for TableSelect', () => {
     let schema, session, table;
 
     beforeEach('create default schema', () => {
@@ -183,7 +178,7 @@ describe('@functional prepared statements for TableSelect', () => {
             const op = table.select().where('_id = :id').bind('id', '1');
 
             return op.execute(row => actual.push(row))
-                .then(() => expect(op.bind('id', '2').execute(row => actual.push(row))).to.be.fulfilled)
+                .then(() => op.bind('id', '2').execute(row => actual.push(row)))
                 .then(() => util.getPreparedStatement(session, 1))
                 .then(statement => expect(statement).to.not.exist)
                 .then(() => expect(actual).to.deep.equal(expected));

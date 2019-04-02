@@ -2,22 +2,17 @@
 
 /* eslint-env node, mocha */
 
-const Client = require('lib/Protocol/Client');
-const ClientMessages = require('lib/Protocol/Protobuf/Stubs/mysqlx_pb').ClientMessages;
+const Client = require('../../../lib/Protocol/Client');
+const ClientMessages = require('../../../lib/Protocol/Protobuf/Stubs/mysqlx_pb').ClientMessages;
 const EventEmitter = require('events');
-const Expect = require('lib/Protocol/Protobuf/Adapters/Expect');
-const OkHandler = require('lib/Protocol/ResponseHandlers/OkHandler');
+const Expect = require('../../../lib/Protocol/Protobuf/Adapters/Expect');
+const OkHandler = require('../../../lib/Protocol/ResponseHandlers/OkHandler');
 const PassThrough = require('stream').PassThrough;
-const Scope = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Frame.Scope;
-const ServerMessages = require('lib/Protocol/Protobuf/Stubs/mysqlx_pb').ServerMessages;
-const WorkQueue = require('lib/WorkQueue');
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
+const Scope = require('../../../lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Frame.Scope;
+const ServerMessages = require('../../../lib/Protocol/Protobuf/Stubs/mysqlx_pb').ServerMessages;
+const WorkQueue = require('../../../lib/WorkQueue');
+const expect = require('chai').expect;
 const td = require('testdouble');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 describe('Client', () => {
     let on;
@@ -31,26 +26,26 @@ describe('Client', () => {
     });
 
     context('constructor', () => {
-        it('should save the provided stream as an instance variable', () => {
+        it('saves the provided stream as an instance variable', () => {
             const stream = { on, foo: 'bar' };
             const client = new Client(stream);
 
             return expect(client._stream).to.equal(stream);
         });
 
-        it('should create a `WorkQueue` instance', () => {
+        it('creates a `WorkQueue` instance', () => {
             const client = new Client({ on });
 
             return expect(client._workQueue).to.be.an.instanceof(WorkQueue);
         });
 
-        it('should set `danglingFragment` to `null`', () => {
+        it('sets `danglingFragment` to `null`', () => {
             const client = new Client({ on });
 
             return expect(client._danglingFragment).to.be.null;
         });
 
-        it('should register a `data` event listener for the provided stream', () => {
+        it('registers a `data` event listener for the provided stream', () => {
             const stream = { on };
             const handleNetworkFragment = td.function();
 
@@ -62,7 +57,7 @@ describe('Client', () => {
             return expect(td.explain(handleNetworkFragment).callCount).to.equal(1);
         });
 
-        it('should register a `close` event listener for the provided stream', () => {
+        it('registers a `close` event listener for the provided stream', () => {
             const stream = { on };
             const handleServerClose = td.function();
 
@@ -88,11 +83,10 @@ describe('Client', () => {
             td.replace('../../../lib/Protocol/Util/getServerCipherSuite', getServerCipherSuite);
             td.replace('../../../lib/Adapters/fs', { readFile });
             td.replace('tls', { connect });
-
-            FakeClient = require('lib/Protocol/Client');
+            FakeClient = require('../../../lib/Protocol/Client');
         });
 
-        it('should enable TLS in the connection socket', () => {
+        it('enables TLS in the connection socket', () => {
             const stream = { on };
             const client = new FakeClient(stream);
             const capabilitiesSet = td.replace(client, 'capabilitiesSet');
@@ -100,10 +94,11 @@ describe('Client', () => {
             td.when(capabilitiesSet({ tls: true })).thenResolve();
             td.when(connect(td.matchers.contains({ rejectUnauthorized: false, socket: stream }), td.callback())).thenReturn(stream);
 
-            return expect(client.enableSSL({})).to.eventually.be.true;
+            return client.enableSSL({})
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should use the server cipher suite by default', () => {
+        it('uses the server cipher suite by default', () => {
             const stream = { on };
             const client = new FakeClient(stream);
             const capabilitiesSet = td.replace(client, 'capabilitiesSet');
@@ -112,11 +107,12 @@ describe('Client', () => {
             td.when(capabilitiesSet({ tls: true })).thenResolve();
             td.when(connect({ ciphers: 'foo:bar:!baz', rejectUnauthorized: false, socket: stream }, td.callback())).thenReturn(stream);
 
-            return expect(client.enableSSL({})).to.eventually.be.true;
+            return client.enableSSL({})
+                .then(actual => expect(actual).to.be.true);
         });
 
         // TODO(Rui): this will change for a future milestone.
-        it('should use the server cipher suite even if a custom one is provided', () => {
+        it('uses the server cipher suite even if a custom one is provided', () => {
             const stream = { on };
             const client = new FakeClient(stream);
             const capabilitiesSet = td.replace(client, 'capabilitiesSet');
@@ -125,10 +121,11 @@ describe('Client', () => {
             td.when(capabilitiesSet({ tls: true })).thenResolve();
             td.when(connect({ ciphers: 'foo:bar:!baz', rejectUnauthorized: false, socket: stream }, td.callback())).thenReturn(stream);
 
-            return expect(client.enableSSL({ ciphers: 'qux:!quux' })).to.eventually.be.true;
+            return client.enableSSL({ ciphers: 'qux:!quux' })
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should enable server certificate authority validation if requested', () => {
+        it('enables server certificate authority validation if requested', () => {
             const stream = { on };
             const client = new FakeClient(stream);
             const capabilitiesSet = td.replace(client, 'capabilitiesSet');
@@ -138,10 +135,11 @@ describe('Client', () => {
             td.when(capabilitiesSet({ tls: true })).thenResolve();
             td.when(connect(td.matchers.contains({ ca: ['foo'], rejectUnauthorized: true, socket: stream }), td.callback())).thenReturn(stream);
 
-            return expect(client.enableSSL({ ca: 'foobar' })).to.eventually.be.true;
+            return client.enableSSL({ ca: 'foobar' })
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should enable server certificate revocation validation if requested', () => {
+        it('enables server certificate revocation validation if requested', () => {
             const stream = { on };
             const client = new FakeClient(stream);
             const capabilitiesSet = td.replace(client, 'capabilitiesSet');
@@ -152,11 +150,12 @@ describe('Client', () => {
             td.when(capabilitiesSet({ tls: true })).thenResolve();
             td.when(connect(td.matchers.contains({ ca: ['bar'], crl: 'foo', rejectUnauthorized: true, socket: stream }), td.callback())).thenReturn(stream);
 
-            return expect(client.enableSSL({ ca: 'foobar', crl: 'bazqux' })).to.eventually.be.true;
+            return client.enableSSL({ ca: 'foobar', crl: 'bazqux' })
+                .then(actual => expect(actual).to.be.true);
         });
 
         // TODO(Rui): evaluate this approach. Should this not fail if no CA is provided?
-        it('should not enable server certificate revocation validation if no CA certificate is provided', () => {
+        it('does not enable server certificate revocation validation if no CA certificate is provided', () => {
             const stream = { on };
             const client = new FakeClient(stream);
             const capabilitiesSet = td.replace(client, 'capabilitiesSet');
@@ -174,22 +173,27 @@ describe('Client', () => {
             // The custom matcher makes sure the options do not contain `crl: undefined`.
             td.when(connect(td.matchers.argThat(matcher), td.callback())).thenReturn(stream);
 
-            return expect(client.enableSSL({ crl: 'foobar' })).to.eventually.be.true;
+            return client.enableSSL({ crl: 'foobar' })
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should fail for empty CA path', () => {
+        it('fails for empty CA path', () => {
             const client = new Client({ on });
 
-            return expect(client.enableSSL({ ca: '' })).to.be.eventually.rejectedWith('CA value must not be empty string');
+            return client.enableSSL({ ca: '' })
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('CA value must not be empty string'));
         });
 
-        it('should fail for empty CRL path', () => {
+        it('fails for empty CRL path', () => {
             const client = new Client({ on });
 
-            return expect(client.enableSSL({ crl: '' })).to.be.eventually.rejectedWith('CRL value must not be empty string');
+            return client.enableSSL({ crl: '' })
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('CRL value must not be empty string'));
         });
 
-        it('should fail with a specific error if the server\'s X plugin version does not support SSL', () => {
+        it('fails with a specific error if the server\'s X plugin version does not support SSL', () => {
             const stream = { on };
             const client = new FakeClient(stream);
             const capabilitiesSet = td.replace(client, 'capabilitiesSet');
@@ -199,10 +203,12 @@ describe('Client', () => {
 
             td.when(capabilitiesSet({ tls: true })).thenReject(error);
 
-            return expect(client.enableSSL({})).to.eventually.be.rejectedWith('The server\'s X plugin version does not support SSL');
+            return client.enableSSL({})
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.match(/The server's X plugin version does not support SSL/));
         });
 
-        it('should fail with any other error thrown when setting capabilities', () => {
+        it('fails with any other error thrown when setting capabilities', () => {
             const stream = { on };
             const client = new FakeClient(stream);
             const capabilitiesSet = td.replace(client, 'capabilitiesSet');
@@ -211,7 +217,9 @@ describe('Client', () => {
 
             td.when(capabilitiesSet({ tls: true })).thenReject(error);
 
-            return expect(client.enableSSL({})).to.eventually.be.rejectedWith(error);
+            return client.enableSSL({})
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
     });
 
@@ -259,7 +267,7 @@ describe('Client', () => {
             WorkQueue.prototype = workQueueProto;
         });
 
-        it('should handle messages fully-contained in a fragment', () => {
+        it('handles messages fully-contained in a fragment', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
             const client = new Client(network);
@@ -275,7 +283,7 @@ describe('Client', () => {
             expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
         });
 
-        it('should handle message headers split between fragments', () => {
+        it('handles message headers split between fragments', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
             const client = new Client(network);
@@ -295,7 +303,7 @@ describe('Client', () => {
             expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
         });
 
-        it('should handle message headers and payloads split between fragments', () => {
+        it('handles message headers and payloads split between fragments', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
             const client = new Client(network);
@@ -315,7 +323,7 @@ describe('Client', () => {
             expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
         });
 
-        it('should handle message payloads split between fragments', () => {
+        it('handles message payloads split between fragments', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
             const client = new Client(network);
@@ -335,7 +343,7 @@ describe('Client', () => {
             expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
         });
 
-        it('should handle smaller fragments', () => {
+        it('handles smaller fragments', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
             const client = new Client(network);
@@ -355,7 +363,7 @@ describe('Client', () => {
             expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
         });
 
-        it('should handle messages split between more than two fragments', () => {
+        it('handles messages split between more than two fragments', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
             const client = new Client(network);
@@ -373,7 +381,7 @@ describe('Client', () => {
             expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
         });
 
-        it('should handle fragments containing a lot of messages', () => {
+        it('handles fragments containing a lot of messages', () => {
             const network = new EventEmitter();
             /* eslint-disable no-unused-vars */
             const client = new Client(network);
@@ -399,27 +407,27 @@ describe('Client', () => {
     // TODO(Rui): add tests when the remaining Client interface is refactored.
     context('CRUD message encoding', () => {
         context('crudInsert', () => {
-            it('should send an encoded message to the server');
-            it('should fail if the message cannot be encoded');
-            it('should fail if an unexpected error occurs');
+            it('sends an encoded message to the server');
+            it('fails if the message cannot be encoded');
+            it('fails if an unexpected error occurs');
         });
 
         context('crudFind()', () => {
-            it('should send an encoded message to the server');
-            it('should fail if the message cannot be encoded');
-            it('should fail if an unexpected error occurs');
+            it('sends an encoded message to the server');
+            it('fails if the message cannot be encoded');
+            it('fails if an unexpected error occurs');
         });
 
         context('crudDelete', () => {
-            it('should send an encoded message to the server');
-            it('should fail if the message cannot be encoded');
-            it('should fail if an unexpected error occurs');
+            it('sends an encoded message to the server');
+            it('fails if the message cannot be encoded');
+            it('fails if an unexpected error occurs');
         });
 
         context('crudUpdate', () => {
-            it('should send an encoded message to the server');
-            it('should fail if the message cannot be encoded');
-            it('should fail if an unexpected error occurs');
+            it('sends an encoded message to the server');
+            it('fails if the message cannot be encoded');
+            it('fails if an unexpected error occurs');
         });
     });
 
@@ -445,7 +453,7 @@ describe('Client', () => {
 
                 td.replace('../../../lib/Protocol/Protobuf/Adapters/Session', { encodeReset });
 
-                FakeClient = require('lib/Protocol/Client');
+                FakeClient = require('../../../lib/Protocol/Client');
                 authenticate = td.replace(FakeClient.prototype, 'authenticate');
                 encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
             });
@@ -473,7 +481,7 @@ describe('Client', () => {
                         td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
                         td.when(expectClose()).thenResolve();
 
-                        return expect(client.sessionReset()).to.eventually.be.fulfilled
+                        return client.sessionReset()
                             .then(() => expect(client._requiresAuthenticationAfterReset).to.equal('NO'));
                     });
                 });
@@ -498,8 +506,11 @@ describe('Client', () => {
                         td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
                         td.when(authenticate('foo'), { ignoreExtraArgs: true }).thenResolve('qux');
 
-                        return expect(client.sessionReset()).to.eventually.equal('qux')
-                            .then(() => expect(client._requiresAuthenticationAfterReset).to.equal('YES'));
+                        return client.sessionReset()
+                            .then(actual => {
+                                expect(actual).to.equal('qux');
+                                expect(client._requiresAuthenticationAfterReset).to.equal('YES');
+                            });
                     });
                 });
 
@@ -510,7 +521,9 @@ describe('Client', () => {
 
                     td.when(expectOpen(), { ignoreExtraArgs: true }).thenReject(error);
 
-                    return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
+                    return client.sessionReset()
+                        .then(() => expect.fail())
+                        .catch(err => expect(err).to.deep.equal(error));
                 });
 
                 it('fails if there is an unexpected error while encoding the Mysqlx.Session.Reset message ', () => {
@@ -522,7 +535,9 @@ describe('Client', () => {
                     td.when(encodeReset(), { ignoreExtraArgs: true }).thenReturn();
                     td.when(encodeMessage(), { ignoreExtraArgs: true }).thenThrow(error);
 
-                    return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
+                    return client.sessionReset()
+                        .then(() => expect.fail())
+                        .catch(err => expect(err).to.deep.equal(error));
                 });
 
                 it('fails if there is an unexpected error while resetting the connection ', () => {
@@ -535,7 +550,9 @@ describe('Client', () => {
                     td.when(encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
                     td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenReject(error);
 
-                    return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
+                    return client.sessionReset()
+                        .then(() => expect.fail())
+                        .catch(err => expect(err).to.deep.equal(error));
                 });
 
                 it('fails if there is an unexpected error while closing the expectation block', () => {
@@ -549,7 +566,9 @@ describe('Client', () => {
                     td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenResolve();
                     td.when(expectClose()).thenReject(error);
 
-                    return expect(client.sessionReset()).to.eventually.be.rejectedWith(error);
+                    return client.sessionReset()
+                        .then(() => expect.fail())
+                        .catch(err => expect(err).to.deep.equal(error));
                 });
             });
 
@@ -557,21 +576,22 @@ describe('Client', () => {
                 it('resets the session and keeps it open with new servers in subsequent calls', () => {
                     const client = new FakeClient(network);
 
-                    // should not require re-authentication
+                    // does not require re-authentication
                     td.replace(client, '_requiresAuthenticationAfterReset', 'NO');
 
                     td.when(encodeReset({ keepOpen: true })).thenReturn('bar');
                     td.when(encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
                     td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve('qux');
 
-                    return expect(client.sessionReset()).to.eventually.equal('qux');
+                    return client.sessionReset()
+                        .then(actual => expect(actual).to.equal('qux'));
                 });
 
                 it('resets the session and re-authenticates with older servers in subsequent calls', () => {
                     const client = new FakeClient(network);
 
                     td.replace(client, '_authenticator', 'foo');
-                    // should require re-authentication
+                    // requires re-authentication
                     td.replace(client, '_requiresAuthenticationAfterReset', 'YES');
 
                     td.when(encodeReset({ keepOpen: false })).thenReturn('bar');
@@ -579,7 +599,8 @@ describe('Client', () => {
                     td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
                     td.when(authenticate('foo')).thenResolve('qux');
 
-                    return expect(client.sessionReset()).to.eventually.equal('qux');
+                    return client.sessionReset()
+                        .then(actual => expect(actual).to.equal('qux'));
                 });
             });
         });
@@ -593,7 +614,7 @@ describe('Client', () => {
 
                 td.replace('../../../lib/Protocol/Protobuf/Adapters/Session', { encodeClose });
 
-                FakeClient = require('lib/Protocol/Client');
+                FakeClient = require('../../../lib/Protocol/Client');
                 encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
             });
 
@@ -604,7 +625,8 @@ describe('Client', () => {
                 td.when(encodeMessage(ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
                 td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
 
-                return expect(client.sessionClose()).to.eventually.equal('baz');
+                return client.sessionClose()
+                    .then(actual => expect(actual).to.equal('baz'));
             });
 
             it('fails if there is an error while encoding the message', () => {
@@ -613,7 +635,9 @@ describe('Client', () => {
 
                 td.when(encodeClose()).thenThrow(error);
 
-                return expect(client.sessionClose()).to.eventually.be.rejectedWith(error);
+                return client.sessionClose()
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
             });
 
             it('fails if there is an error while sending the message to the server', () => {
@@ -624,7 +648,9 @@ describe('Client', () => {
                 td.when(encodeMessage(ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
                 td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenReject(error);
 
-                return expect(client.sessionClose()).to.eventually.be.rejectedWith(error);
+                return client.sessionClose()
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
             });
         });
 
@@ -637,7 +663,7 @@ describe('Client', () => {
 
                 td.replace('../../../lib/Protocol/Protobuf/Adapters/Connection', { encodeClose });
 
-                FakeClient = require('lib/Protocol/Client');
+                FakeClient = require('../../../lib/Protocol/Client');
                 encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
             });
 
@@ -648,7 +674,8 @@ describe('Client', () => {
                 td.when(encodeMessage(ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
                 td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
 
-                return expect(client.connectionClose()).to.eventually.equal('baz');
+                return client.connectionClose()
+                    .then(actual => expect(actual).to.equal('baz'));
             });
 
             it('fails if there is an error while encoding the message', () => {
@@ -657,7 +684,9 @@ describe('Client', () => {
 
                 td.when(encodeClose()).thenThrow(error);
 
-                return expect(client.connectionClose()).to.eventually.be.rejectedWith(error);
+                return client.connectionClose()
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
             });
 
             it('fails if there is an error while sending the message to the server', () => {
@@ -668,19 +697,21 @@ describe('Client', () => {
                 td.when(encodeMessage(ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
                 td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenReject(error);
 
-                return expect(client.connectionClose()).to.eventually.be.rejectedWith(error);
+                return client.connectionClose()
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
             });
         });
     });
 
     // TODO(Rui): this will be part of a different component.
     context('handling notices', () => {
-        it('should not process global notices', () => {
+        it('does not process global notices', () => {
             const decodeFrame = td.function();
             const process = td.function();
 
             td.replace('../../../lib/Protocol/Protobuf/Adapters/Notice', { decodeFrame });
-            const Client = require('lib/Protocol/Client');
+            const Client = require('../../../lib/Protocol/Client');
 
             const socket = new PassThrough();
             const client = new Client(socket);
@@ -705,7 +736,7 @@ describe('Client', () => {
                 fakeProcess = td.replace(WorkQueue.prototype, 'process');
             });
 
-            it('should ignore empty notices', () => {
+            it('ignores empty notices', () => {
                 const network = new EventEmitter();
                 // eslint-disable-next-line no-unused-vars
                 const client = new Client(network);
@@ -721,7 +752,7 @@ describe('Client', () => {
     });
 
     context('classic protocol', () => {
-        it('should fail with an unsupported protocol error', () => {
+        it('fails with an unsupported protocol error', () => {
             const network = new EventEmitter();
             // eslint-disable-next-line no-unused-vars
             const client = new Client(network);

@@ -2,18 +2,15 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const mysqlx = require('index');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const mysqlx = require('../../../');
 
-chai.use(chaiAsPromised);
+describe('server drops the connection', () => {
+    const schemalessSocketConfig = Object.assign({}, config, { schema: undefined, socket: undefined });
 
-const expect = chai.expect;
-
-describe('@functional server drops the connection', () => {
     beforeEach(() => {
-        return mysqlx.getSession(config)
+        return mysqlx.getSession(schemalessSocketConfig)
             .then(session => {
                 return session.sql('SET GLOBAL mysqlx_wait_timeout=1').execute()
                     .then(() => session.close());
@@ -21,7 +18,7 @@ describe('@functional server drops the connection', () => {
     });
 
     afterEach(() => {
-        return mysqlx.getSession(config)
+        return mysqlx.getSession(schemalessSocketConfig)
             .then(session => {
                 return session.sql('SET GLOBAL mysqlx_wait_timeout=28800').execute()
                     .then(() => session.close());
@@ -29,26 +26,30 @@ describe('@functional server drops the connection', () => {
     });
 
     context('with SSL', () => {
-        it('should make a session unusable for subsequent operations', () => {
+        it('the session becomes unusable on subsequent operations', () => {
             const error = 'This session was closed. Use "mysqlx.getSession()" or "mysqlx.getClient()" to create a new one.';
 
-            return mysqlx.getSession(Object.assign({}, config, { socket: undefined }))
+            return mysqlx.getSession(schemalessSocketConfig)
                 .then(session => {
-                    return new Promise(resolve => setTimeout(resolve, 3000))
-                        .then(() => expect(session.sql('SELECT 1').execute()).to.be.rejectedWith(error));
-                });
+                    return new Promise(resolve => setTimeout(resolve, 2000))
+                        .then(() => session.sql('SELECT 1').execute());
+                })
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal(error));
         });
     });
 
     context('without SSL', () => {
-        it('should make a session unusable for subsequent operations', () => {
+        it('the session becomes unusable on subsequent operations', () => {
             const error = 'This session was closed. Use "mysqlx.getSession()" or "mysqlx.getClient()" to create a new one.';
 
-            return mysqlx.getSession(Object.assign({}, config, { socket: undefined, ssl: false }))
+            return mysqlx.getSession(Object.assign({}, schemalessSocketConfig, { ssl: false }))
                 .then(session => {
-                    return new Promise(resolve => setTimeout(resolve, 3000))
-                        .then(() => expect(session.sql('SELECT 1').execute()).to.be.rejectedWith(error));
-                });
+                    return new Promise(resolve => setTimeout(resolve, 2000))
+                        .then(() => session.sql('SELECT 1').execute());
+                })
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal(error));
         });
     });
 });

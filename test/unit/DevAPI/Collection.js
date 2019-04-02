@@ -2,16 +2,10 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const result = require('lib/DevAPI/Result');
-const statement = require('lib/DevAPI/Statement');
+const expect = require('chai').expect;
+const result = require('../../../lib/DevAPI/Result');
+const statement = require('../../../lib/DevAPI/Statement');
 const td = require('testdouble');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 describe('Collection', () => {
     let collection, execute, sqlExecute;
@@ -22,8 +16,7 @@ describe('Collection', () => {
         sqlExecute.Namespace = statement.Type;
 
         td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
-
-        collection = require('lib/DevAPI/Collection');
+        collection = require('../../../lib/DevAPI/Collection');
     });
 
     afterEach('reset fakes', () => {
@@ -31,13 +24,13 @@ describe('Collection', () => {
     });
 
     context('getName()', () => {
-        it('should return the collection name', () => {
+        it('returns the collection name', () => {
             expect(collection(null, null, 'foobar').getName()).to.equal('foobar');
         });
     });
 
     context('getSchema()', () => {
-        it('should return the instance of the collection schema', () => {
+        it('returns the instance of the collection schema', () => {
             const getSchema = td.function();
             const getName = td.function();
             const session = { getSchema };
@@ -52,7 +45,7 @@ describe('Collection', () => {
     });
 
     context('getSession()', () => {
-        it('should return the associated session', () => {
+        it('returns the associated session', () => {
             const instance = collection({ foo: 'bar' });
 
             expect(instance.getSession()).to.deep.equal({ foo: 'bar' });
@@ -60,7 +53,7 @@ describe('Collection', () => {
     });
 
     context('existsInDatabase()', () => {
-        it('should return true if exists in database', () => {
+        it('returns true if exists in database', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = collection('foo', schema, 'baz');
@@ -69,10 +62,11 @@ describe('Collection', () => {
             td.when(execute(td.callback(['baz']))).thenResolve();
             td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.existsInDatabase()).to.eventually.be.true;
+            return instance.existsInDatabase()
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should return false if it does not exist in database', () => {
+        it('returns false if it does not exist in database', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = collection('foo', schema, 'baz');
@@ -81,12 +75,13 @@ describe('Collection', () => {
             td.when(execute(td.callback([]))).thenResolve();
             td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.existsInDatabase()).to.eventually.be.false;
+            return instance.existsInDatabase()
+                .then(actual => expect(actual).to.be.false);
         });
     });
 
     context('count()', () => {
-        it('should return the number of documents in a collection', () => {
+        it('returns the number of documents in a collection', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = collection('foo', schema, 'baz');
@@ -95,10 +90,11 @@ describe('Collection', () => {
             td.when(execute(td.callback([1]))).thenResolve();
             td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
-            return expect(instance.count()).to.eventually.equal(1);
+            return instance.count()
+                .then(actual => expect(actual).to.equal(1));
         });
 
-        it('should fail if an unexpected error is thrown', () => {
+        it('fails if an unexpected error is thrown', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = collection('foo', schema, 'baz');
@@ -108,11 +104,13 @@ describe('Collection', () => {
             td.when(execute(td.callback([1]))).thenReject(error);
             td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
-            return expect(instance.count()).to.eventually.be.rejectedWith(error);
+            return instance.count()
+                .then(() => expect.fail('must fail'))
+                .catch(err => expect(err).to.deep.equal(error));
         });
 
         // TODO(Rui): Maybe this will become the job of the plugin at some point.
-        it('should replace "Table" by "Collection" on server error messages', () => {
+        it('replaces "Table" by "Collection" on server error messages', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = collection('foo', schema, 'baz');
@@ -122,12 +120,14 @@ describe('Collection', () => {
             td.when(execute(td.callback([1]))).thenReject(error);
             td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
-            return expect(instance.count()).to.eventually.be.rejectedWith("Collection 'bar.baz' doesn't exist.");
+            return instance.count()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal("Collection 'bar.baz' doesn't exist."));
         });
     });
 
     context('inspect()', () => {
-        it('should hide internals', () => {
+        it('hides internals', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = collection(null, schema, 'bar');
@@ -140,20 +140,20 @@ describe('Collection', () => {
     });
 
     context('add()', () => {
-        it('should return an instance of the proper class', () => {
+        it('returns an instance of the proper class', () => {
             const instance = collection().add({});
 
             expect(instance.getClassName()).to.equal('CollectionAdd');
         });
 
-        it('should acknowledge documents provided as an array', () => {
+        it('acknowledges documents provided as an array', () => {
             const documents = [{ foo: 'bar' }, { foo: 'baz' }];
             const instance = collection().add(documents);
 
             expect(instance.getItems()).to.deep.equal(documents);
         });
 
-        it('should acknowledge documents provided as multiple arguments', () => {
+        it('acknowledges documents provided as multiple arguments', () => {
             const documents = [{ foo: 'bar' }, { foo: 'baz' }];
             const instance = collection().add(documents[0], documents[1]);
 
@@ -162,7 +162,7 @@ describe('Collection', () => {
     });
 
     context('modify()', () => {
-        it('should return an operation instance for a valid condition query', () => {
+        it('returns an operation instance for a valid condition query', () => {
             const session = 'foo';
             const schema = 'bar';
             const name = 'baz';
@@ -182,11 +182,10 @@ describe('Collection', () => {
             setDouble = td.function();
 
             td.replace('../../../lib/DevAPI/CollectionModify', collectionModify);
-
-            collection = require('lib/DevAPI/Collection');
+            collection = require('../../../lib/DevAPI/Collection');
         });
 
-        it('should return the result of executing a modify operation for a given document', () => {
+        it('returns the result of executing a modify operation for a given document', () => {
             const instance = collection('foo', 'bar', 'baz');
             const state = { ok: true };
             const expected = result(state);
@@ -195,13 +194,13 @@ describe('Collection', () => {
             td.when(setDouble('$', { a: 'quux' })).thenReturn({ execute });
             td.when(collectionModify('foo', 'bar', 'baz', '_id = "qux"')).thenReturn({ set: setDouble });
 
-            return expect(instance.replaceOne('qux', { a: 'quux' })).to.eventually.deep.equal(expected);
+            return instance.replaceOne('qux', { a: 'quux' })
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('should escape the id value', () => {
-            /* eslint-disable no-useless-escape */
+        it('escapes the id value', () => {
+            // eslint-disable-next-line no-useless-escape
             const documentId = 'b\"ar';
-            /* eslint-enable no-useless-escape */
             const criteria = `_id = "b\\"ar"`;
             const instance = collection('foo', 'bar', 'baz');
             const state = { ok: true };
@@ -211,10 +210,11 @@ describe('Collection', () => {
             td.when(setDouble(), { ignoreExtraArgs: true }).thenReturn({ execute });
             td.when(collectionModify('foo', 'bar', 'baz', criteria)).thenReturn({ set: setDouble });
 
-            return expect(instance.replaceOne(documentId, { a: 'a' })).to.eventually.deep.equal(expected);
+            return instance.replaceOne(documentId, { a: 'a' })
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('should fail if an unexpected error is thrown when modifying the document', () => {
+        it('fails if an unexpected error is thrown when modifying the document', () => {
             const instance = collection('foo', 'bar', 'baz');
             const error = new Error('foobar');
 
@@ -222,7 +222,9 @@ describe('Collection', () => {
             td.when(setDouble(), { ignoreExtraArgs: true }).thenReturn({ execute });
             td.when(collectionModify('foo', 'bar', 'baz', '_id = "qux"')).thenReturn({ set: setDouble });
 
-            return expect(instance.replaceOne('qux', { a: 'quux' })).to.eventually.be.rejectedWith(error);
+            return instance.replaceOne('qux', { a: 'quux' })
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
     });
 
@@ -234,11 +236,10 @@ describe('Collection', () => {
             execute = td.function();
 
             td.replace('../../../lib/DevAPI/CollectionAdd', collectionAdd);
-
-            collection = require('lib/DevAPI/Collection');
+            collection = require('../../../lib/DevAPI/Collection');
         });
 
-        it('should return the result of executing a "upsert" operation for a given document', () => {
+        it('returns the result of executing a "upsert" operation for a given document', () => {
             const expected = { ok: 'true' };
             const name = 'foo';
             const schema = 'baz';
@@ -248,10 +249,11 @@ describe('Collection', () => {
             td.when(execute()).thenResolve(expected);
             td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
-            return expect(instance.addOrReplaceOne('foo', { name: 'bar' })).to.eventually.deep.equal(expected);
+            return instance.addOrReplaceOne('foo', { name: 'bar' })
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('should escape the id value', () => {
+        it('escapes the id value', () => {
             const expected = { ok: 'true' };
             const name = 'foo';
             const schema = 'baz';
@@ -261,10 +263,11 @@ describe('Collection', () => {
             td.when(execute()).thenResolve(expected);
             td.when(collectionAdd(session, schema, name, [{ _id: 'fo\\"o', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
-            return expect(instance.addOrReplaceOne('fo"o', { name: 'bar' })).to.eventually.deep.equal(expected);
+            return instance.addOrReplaceOne('fo"o', { name: 'bar' })
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('should ignore any additional `_id` property', () => {
+        it('ignores any additional `_id` property', () => {
             const expected = { ok: 'true' };
             const name = 'foo';
             const schema = 'baz';
@@ -274,10 +277,11 @@ describe('Collection', () => {
             td.when(execute()).thenResolve(expected);
             td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
-            return expect(instance.addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })).to.eventually.deep.equal(expected);
+            return instance.addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('should fail if an unexpected error is thrown', () => {
+        it('fails if an unexpected error is thrown', () => {
             const error = new Error('foobar');
             const name = 'foo';
             const schema = 'baz';
@@ -287,7 +291,9 @@ describe('Collection', () => {
             td.when(execute()).thenReject(error);
             td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
-            return expect(instance.addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })).to.eventually.be.rejectedWith(error);
+            return instance.addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
     });
 
@@ -299,11 +305,10 @@ describe('Collection', () => {
             execute = td.function();
 
             td.replace('../../../lib/DevAPI/CollectionFind', collectionFind);
-
-            collection = require('lib/DevAPI/Collection');
+            collection = require('../../../lib/DevAPI/Collection');
         });
 
-        it('should return the document instance if it exists', () => {
+        it('returns the document instance if it exists', () => {
             const collectionName = 'foobar';
             const documentId = 'foo';
             const criteria = `_id = "${documentId}"`;
@@ -315,14 +320,14 @@ describe('Collection', () => {
             td.when(execute(td.callback(expected))).thenResolve();
             td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ execute });
 
-            return expect(instance.getOne(documentId)).to.eventually.deep.equal(expected);
+            return instance.getOne(documentId)
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('should escape the id value', () => {
+        it('escapes the id value', () => {
             const collectionName = 'foobar';
-            /* eslint-disable no-useless-escape */
+            // eslint-disable-next-line no-useless-escape
             const documentId = 'fo\"o';
-            /* eslint-enable no-useless-escape */
             const criteria = `_id = "fo\\"o"`;
             const expected = { _id: documentId, name: 'bar' };
             const schema = 'baz';
@@ -332,10 +337,11 @@ describe('Collection', () => {
             td.when(execute(td.callback(expected))).thenResolve();
             td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ execute });
 
-            return expect(instance.getOne(documentId)).to.eventually.deep.equal(expected);
+            return instance.getOne(documentId)
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('should return `null` if the document does not exist', () => {
+        it('returns `null` if the document does not exist', () => {
             const collectionName = 'foobar';
             const documentId = 'foo';
             const criteria = `_id = "${documentId}"`;
@@ -346,7 +352,8 @@ describe('Collection', () => {
             td.when(execute(td.matchers.isA(Function))).thenResolve();
             td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ execute });
 
-            return expect(instance.getOne(documentId)).to.eventually.be.null;
+            return instance.getOne(documentId)
+                .then(actual => expect(actual).to.be.null);
         });
     });
 
@@ -358,11 +365,10 @@ describe('Collection', () => {
             execute = td.function();
 
             td.replace('../../../lib/DevAPI/CollectionRemove', collectionRemove);
-
-            collection = require('lib/DevAPI/Collection');
+            collection = require('../../../lib/DevAPI/Collection');
         });
 
-        it('should return the document instance if it exists', () => {
+        it('returns the document instance if it exists', () => {
             const documentId = 'foo';
             const state = { rows_affected: 1 };
             const expected = result(state);
@@ -372,13 +378,13 @@ describe('Collection', () => {
             td.when(execute()).thenResolve(expected);
             td.when(collectionRemove('bar', 'baz', 'qux', criteria)).thenReturn({ execute });
 
-            return expect(instance.removeOne(documentId)).to.eventually.deep.equal(expected);
+            return instance.removeOne(documentId)
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('should escape the id value', () => {
-            /* eslint-disable no-useless-escape */
+        it('escapes the id value', () => {
+            // eslint-disable-next-line no-useless-escape
             const documentId = 'fo\"o';
-            /* eslint-enable no-useless-escape */
             const state = { rows_affected: 1 };
             const expected = result(state);
             const criteria = `_id = "fo\\"o"`;
@@ -387,10 +393,11 @@ describe('Collection', () => {
             td.when(execute()).thenResolve(expected);
             td.when(collectionRemove('bar', 'baz', 'qux', criteria)).thenReturn({ execute });
 
-            return expect(instance.removeOne(documentId)).to.eventually.deep.equal(expected);
+            return instance.removeOne(documentId)
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('should fail if an unexpected error is thrown', () => {
+        it('fails if an unexpected error is thrown', () => {
             const documentId = 'foo';
             const criteria = `_id = "${documentId}"`;
             const instance = collection('bar', 'baz', 'qux');
@@ -399,16 +406,20 @@ describe('Collection', () => {
             td.when(execute()).thenReject(error);
             td.when(collectionRemove('bar', 'baz', 'qux', criteria)).thenReturn({ execute });
 
-            return expect(instance.removeOne(documentId)).to.eventually.be.rejectedWith(error);
+            return instance.removeOne(documentId)
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
     });
 
     context('dropIndex()', () => {
-        it('should not accept invalid index name', () => {
-            return expect(collection().dropIndex()).to.be.rejectedWith('Invalid index name.');
+        it('does not accept an invalid index name', () => {
+            return collection().dropIndex()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Invalid index name.'));
         });
 
-        it('should accept valid index name', () => {
+        it('accepts valid index name', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = collection('bar', schema, 'qux');
@@ -417,16 +428,19 @@ describe('Collection', () => {
             td.when(execute()).thenResolve(true);
             td.when(sqlExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.dropIndex('index')).to.eventually.be.true;
+            return instance.dropIndex('index')
+                .then(actual => expect(actual).to.be.true);
         });
     });
 
     context('createIndex()', () => {
-        it('should not accept invalid index name', () => {
-            return expect(collection().createIndex()).to.be.rejectedWith('Invalid index name.');
+        it('does not accept an invalid index name', () => {
+            return collection().createIndex()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Invalid index name.'));
         });
 
-        it('should accept a valid index name and valid index definition', () => {
+        it('accepts a valid index name and valid index definition', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = collection('bar', schema, 'qux');
@@ -451,18 +465,23 @@ describe('Collection', () => {
             td.when(execute()).thenResolve(true);
             td.when(sqlExecute('bar', 'create_collection_index', args, 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.createIndex('index', index)).to.eventually.be.true;
+            return instance.createIndex('index', index)
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should not accept index definition without valid field list', () => {
-            return expect(collection().createIndex('index', {})).to.be.rejectedWith('Invalid index definition.');
+        it('does not accept an index definition without valid field list', () => {
+            return collection().createIndex('index', {})
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Invalid index definition.'));
         });
 
-        it('should not accept index definition with empty field list', () => {
-            return expect(collection().createIndex('index', { fields: [] })).to.be.rejectedWith('Invalid index definition.');
+        it('does not accept an index definition with empty field list', () => {
+            return collection().createIndex('index', { fields: [] })
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Invalid index definition.'));
         });
 
-        it('should not accept index definition with invalid field definition', () => {
+        it('does not accept an index definition with invalid field definition', () => {
             const index = {
                 fields: [{
                     field: null,
@@ -470,30 +489,36 @@ describe('Collection', () => {
                 }]
             };
 
-            return expect(collection().createIndex('index', index)).to.be.rejectedWith('Invalid index definition.');
+            return collection().createIndex('index', index)
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Invalid index definition.'));
         });
 
-        it('should not accept index definition with any of the field definitions missing field', () => {
+        it('does not accept an index definition with any of the field definitions missing field', () => {
             const index = {
                 fields: [{
                     type: 'TINYINT'
                 }]
             };
 
-            return expect(collection().createIndex('index', index)).to.be.rejectedWith('Invalid index definition.');
+            return collection().createIndex('index', index)
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Invalid index definition.'));
         });
 
-        it('should not accept index definition with any of the field definitions missing type', () => {
+        it('does not accept an index definition with any of the field definitions missing type', () => {
             const index = {
                 fields: [{
                     field: '$.age'
                 }]
             };
 
-            return expect(collection().createIndex('index', index)).to.be.rejectedWith('Invalid index definition.');
+            return collection().createIndex('index', index)
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Invalid index definition.'));
         });
 
-        it('should not allow unique option to be true in the index definition', () => {
+        it('does not allow unique option to be true in the index definition', () => {
             const index = {
                 fields: [{
                     field: '$.age',
@@ -502,7 +527,9 @@ describe('Collection', () => {
                 unique: true
             };
 
-            return expect(collection().createIndex('index', index)).to.be.rejectedWith('Unique indexes are currently not supported.');
+            return collection().createIndex('index', index)
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Unique indexes are currently not supported.'));
         });
     });
 });

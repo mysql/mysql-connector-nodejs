@@ -2,13 +2,13 @@
 
 /* eslint-env node, mocha */
 
+const Expr = require('../lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
 const expect = require('chai').expect;
-const mysqlx = require('index');
-const Expr = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
+const mysqlx = require('../');
 
 describe('mysqlx', () => {
     context('expr()', () => {
-        it('should parse a string into a document-mode expression by default', () => {
+        it('parses a string into a document-mode expression by default', () => {
             const expression = mysqlx.expr('foo');
             const typed = new Expr(expression.toArray());
 
@@ -19,7 +19,7 @@ describe('mysqlx', () => {
             expect(documentPath[0].getValue()).to.equal('foo');
         });
 
-        it('should parse a string into a table-mode expression if explicitely requested', () => {
+        it('parses a string into a table-mode expression if explicitely requested', () => {
             const expression = mysqlx.expr('foo', { mode: mysqlx.Mode.TABLE });
             const typed = new Expr(expression.toArray());
 

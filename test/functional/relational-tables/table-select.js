@@ -2,12 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const config = require('test/properties');
+const config = require('../../properties');
 const expect = require('chai').expect;
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
 
-describe('@functional relational table select', () => {
+describe('relational table select', () => {
     let session, schema, table;
 
     beforeEach('create default schema', () => {
@@ -52,9 +52,9 @@ describe('@functional relational table select', () => {
                 .execute();
         });
 
-        it('should include all columns without projection', () => {
+        it('includes all columns without projection', () => {
             const expected = [[1, 'bar', 23], [2, 'foo', 42]];
-            let actual = [];
+            const actual = [];
 
             return table.select()
                 .execute(row => actual.push(row))
@@ -70,18 +70,18 @@ describe('@functional relational table select', () => {
                 .execute();
         });
 
-        it('should include only columns provided as an expression array', () => {
+        it('includes only columns provided as an expression array', () => {
             const expected = [['bar', 23], ['foo', 42]];
-            let actual = [];
+            const actual = [];
 
             return table.select(['name', 'age'])
                 .execute(row => actual.push(row))
                 .then(() => expect(actual).to.deep.include.members(expected));
         });
 
-        it('should include only columns provided as expression arguments', () => {
+        it('includes only columns provided as expression arguments', () => {
             const expected = [['bar', 23], ['foo', 42]];
-            let actual = [];
+            const actual = [];
 
             return table.select('name', 'age')
                 .execute(row => actual.push(row))
@@ -98,9 +98,9 @@ describe('@functional relational table select', () => {
                 .execute();
         });
 
-        it('should sort by columns provided as an expression array', () => {
+        it('sorts by columns provided as an expression array', () => {
             const expected = [['foo', 23], ['foo', 42], ['bar', 23]];
-            let actual = [];
+            const actual = [];
 
             return table.select('name', 'age')
                 .orderBy(['name desc', 'age asc'])
@@ -108,9 +108,9 @@ describe('@functional relational table select', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should sort by columns provided as expression arguments', () => {
+        it('sorts by columns provided as expression arguments', () => {
             const expected = [['foo', 42], ['foo', 23], ['bar', 23]];
-            let actual = [];
+            const actual = [];
 
             return table.select('name', 'age')
                 .orderBy('age desc', 'name desc')
@@ -131,9 +131,9 @@ describe('@functional relational table select', () => {
                 .execute();
         });
 
-        it('should group columns provided as an expression array', () => {
+        it('groups columns provided as an expression array', () => {
             const expected = [['bar', 42], ['bar', 23], ['foo', 42], ['foo', 23]];
-            let actual = [];
+            const actual = [];
 
             return table.select('name', 'age')
                 .groupBy(['name', 'age'])
@@ -143,9 +143,9 @@ describe('@functional relational table select', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should group columns provided as expression arguments', () => {
+        it('groups columns provided as expression arguments', () => {
             const expected = [['bar', 23], ['foo', 23], ['bar', 42], ['foo', 42]];
-            let actual = [];
+            const actual = [];
 
             return table.select('name', 'age')
                 .groupBy('age', 'name')
@@ -168,9 +168,9 @@ describe('@functional relational table select', () => {
                 .execute();
         });
 
-        it('should group columns provided as an expression array', () => {
+        it('groups columns provided as an expression array', () => {
             const expected = [['bar', 42], ['foo', 42]];
-            let actual = [];
+            const actual = [];
 
             return table.select('name', 'age')
                 .groupBy(['name', 'age'])
@@ -181,9 +181,9 @@ describe('@functional relational table select', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should group columns provided as expression arguments', () => {
+        it('groups columns provided as expression arguments', () => {
             const expected = [['bar', 23], ['foo', 23]];
-            let actual = [];
+            const actual = [];
 
             return table.select('name', 'age')
                 .groupBy('age', 'name')
@@ -206,9 +206,9 @@ describe('@functional relational table select', () => {
                 .execute();
         });
 
-        it('should return a given number of row', () => {
+        it('returns a given number of row', () => {
             const expected = [[1, 'foo', 42], [2, 'bar', 23], [3, 'baz', 42]];
-            let actual = [];
+            const actual = [];
 
             return table.select()
                 .limit(3)
@@ -217,9 +217,9 @@ describe('@functional relational table select', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should return the rows after a given offset', () => {
+        it('returns the rows after a given offset', () => {
             const expected = [[3, 'baz', 42], [4, 'qux', 23]];
-            let actual = [];
+            const actual = [];
 
             return table.select()
                 .limit(2)
@@ -239,9 +239,9 @@ describe('@functional relational table select', () => {
                 .execute();
         });
 
-        it('should return all documents that match a criteria specified by a grouped expression', () => {
+        it('returns all documents that match a criteria specified by a grouped expression', () => {
             const expected = [[1, 'foo', 42], [3, 'baz', 42]];
-            let actual = [];
+            const actual = [];
 
             return table.select()
                 .where("name in ('foo', 'baz')")
@@ -250,9 +250,9 @@ describe('@functional relational table select', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should return all documents that do not match a criteria specified by a grouped expression', () => {
+        it('returns all documents that do not match a criteria specified by a grouped expression', () => {
             const expected = [[2, 'bar', 23]];
-            let actual = [];
+            const actual = [];
 
             return table.select()
                 .where('age not in (50, 42)')

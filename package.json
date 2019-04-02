@@ -39,7 +39,11 @@
     "url": "http://bugs.mysql.com"
   },
   "scripts": {
-    "prepack": "node bin/prepack.js"
+    "prepack": "node bin/prepack.js",
+    "test:docker": "mocha --exclude=test/functional/**/*.js --exclude=test/unit/**/*.js",
+    "test:functional": "mocha --exclude=test/docker/**/*.js --exclude=test/unit/**/*.js",
+    "test:unit": "mocha --exclude=test/docker/**/*.js --exclude=test/functional/**/*.js",
+    "test": "mocha"
   },
   "dependencies": {
     "google-protobuf": "3.4.0",
@@ -49,6 +53,8 @@
     "node": ">=4.2.0"
   },
   "devDependencies": {
+    "chai": "4.2.0",
+    "mocha": "5.2.0",
     "testdouble": "3.7.0"
   }
 }

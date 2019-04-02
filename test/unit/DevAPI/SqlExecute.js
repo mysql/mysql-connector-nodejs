@@ -2,8 +2,7 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const Column = require('lib/DevAPI/Column');
+const Column = require('../../../lib/DevAPI/Column');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -15,8 +14,7 @@ describe('SqlExecute', () => {
         sqlStmtExecute = td.function();
 
         td.replace('../../../lib/DevAPI/Result', fakeResult);
-
-        sqlExecute = require('lib/DevAPI/SqlExecute');
+        sqlExecute = require('../../../lib/DevAPI/SqlExecute');
     });
 
     afterEach('reset fakes', () => {
@@ -24,7 +22,7 @@ describe('SqlExecute', () => {
     });
 
     context('execute()', () => {
-        it('should execute the context statement', () => {
+        it('executes the context statement', () => {
             const expected = { done: true };
             const state = { ok: true };
 
@@ -33,10 +31,11 @@ describe('SqlExecute', () => {
             td.when(fakeResult(state)).thenReturn(expected);
             td.when(sqlStmtExecute(query), { ignoreExtraArgs: true }).thenResolve(state);
 
-            return expect(query.execute()).to.eventually.deep.equal(expected);
+            return query.execute()
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('should call a result handler provided as an `execute` argument', () => {
+        it('calls a result handler provided as an `execute` argument', () => {
             const query = sqlExecute({ _client: { sqlStmtExecute } });
 
             td.when(sqlStmtExecute(td.matchers.anything(), td.callback('foo')), { ignoreExtraArgs: true }).thenResolve();
@@ -44,7 +43,7 @@ describe('SqlExecute', () => {
             return query.execute(actual => expect(actual).to.equal('foo'));
         });
 
-        it('should call a metadata handler provided as an `execute` argument', () => {
+        it('calls a metadata handler provided as an `execute` argument', () => {
             const query = sqlExecute({ _client: { sqlStmtExecute } });
             const meta = ['foo'];
 
@@ -53,7 +52,7 @@ describe('SqlExecute', () => {
             return query.execute(td.function(), actual => expect(actual).to.deep.equal([new Column(meta)]));
         });
 
-        it('should call a handlers provided as an `execute` object argument', () => {
+        it('calls a handlers provided as an `execute` object argument', () => {
             const query = sqlExecute({ _client: { sqlStmtExecute } });
             const meta = ['bar'];
 
@@ -69,7 +68,7 @@ describe('SqlExecute', () => {
             });
         });
 
-        it('should fail if an unexpected error is thrown', () => {
+        it('fails if an unexpected error is thrown', () => {
             const query = sqlExecute({ _client: { sqlStmtExecute } });
             const error = new Error('foobar');
 

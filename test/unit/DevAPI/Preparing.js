@@ -2,15 +2,9 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const preparing = require('lib/DevAPI/Preparing');
+const expect = require('chai').expect;
+const preparing = require('../../../lib/DevAPI/Preparing');
 const td = require('testdouble');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 describe('Preparing', () => {
     afterEach('reset fakes', () => {
@@ -48,7 +42,8 @@ describe('Preparing', () => {
 
             td.when(deallocate(statement)).thenResolve();
 
-            return expect(statement.deallocate()).to.eventually.deep.equal(statement);
+            return statement.deallocate()
+                .then(actual => expect(actual).to.deep.equal(statement));
         });
 
         it('requires the statement to restart in the next execution if the query scope changes', () => {
@@ -57,7 +52,7 @@ describe('Preparing', () => {
 
             td.when(deallocate(statement)).thenResolve();
 
-            return expect(statement.deallocate()).to.eventually.be.fulfilled
+            return statement.deallocate()
                 .then(() => expect(statement.getStage()).to.equal(preparing.Stages.TO_START));
         });
 
@@ -67,7 +62,7 @@ describe('Preparing', () => {
 
             td.when(deallocate(statement)).thenResolve();
 
-            return expect(statement.deallocate()).to.eventually.be.fulfilled
+            return statement.deallocate()
                 .then(() => expect(statement.getStage()).to.equal(preparing.Stages.TO_PREPARE));
         });
 
@@ -77,7 +72,7 @@ describe('Preparing', () => {
 
             td.when(deallocate(statement)).thenResolve();
 
-            return expect(statement.deallocate()).to.be.fulfilled
+            return statement.deallocate()
                 .then(() => expect(session._statements).to.deep.equal([undefined, 'bar']));
         });
 
@@ -88,7 +83,9 @@ describe('Preparing', () => {
 
             td.when(deallocate(statement)).thenReject(error);
 
-            return expect(statement.deallocate()).to.eventually.be.rejectedWith(error);
+            return statement.deallocate()
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
     });
 
@@ -99,7 +96,8 @@ describe('Preparing', () => {
 
             td.when(executePlain('foo')).thenResolve('bar');
 
-            return expect(statement.execute('foo')).to.eventually.equal('bar');
+            return statement.execute('foo')
+                .then(actual => expect(actual).to.equal('bar'));
         });
 
         it('executes a plain statement when the session does not support prepared statements', () => {
@@ -108,7 +106,8 @@ describe('Preparing', () => {
 
             td.when(executePlain('foo')).thenResolve('bar');
 
-            return expect(statement.execute('foo')).to.eventually.equal('bar');
+            return statement.execute('foo')
+                .then(actual => expect(actual).to.equal('bar'));
         });
 
         it('prepares a statement and executes it when the scope does not change', () => {
@@ -121,7 +120,8 @@ describe('Preparing', () => {
             td.when(prepare(statement)).thenResolve();
             td.when(executePrepared('bar', 'baz')).thenResolve('qux');
 
-            return expect(statement.execute('foo', 'bar', 'baz')).to.eventually.equal('qux');
+            return statement.execute('foo', 'bar', 'baz')
+                .then(actual => expect(actual).to.equal('qux'));
         });
 
         it('executes a plain statement when the server does not support prepared statements', () => {
@@ -132,7 +132,8 @@ describe('Preparing', () => {
             td.when(prepare()).thenReject('qux');
             td.when(handlePrepareError('qux', 'foo')).thenResolve('quux');
 
-            return expect(statement.execute('foo', 'bar', 'baz')).to.eventually.equal('quux');
+            return statement.execute('foo', 'bar', 'baz')
+                .then(actual => expect(actual).to.equal('quux'));
         });
 
         it('fails if the server sends an unexpected error', () => {
@@ -144,7 +145,9 @@ describe('Preparing', () => {
             td.when(prepare()).thenReject('qux');
             td.when(handlePrepareError('qux', 'foo')).thenReject(error);
 
-            return expect(statement.execute('foo', 'bar', 'baz')).to.eventually.be.rejectedWith(error);
+            return statement.execute('foo', 'bar', 'baz')
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
 
         it('executes a statement that has been previously prepared', () => {
@@ -153,7 +156,8 @@ describe('Preparing', () => {
 
             td.when(executePrepared('bar', 'baz')).thenResolve('qux');
 
-            return expect(statement.execute('foo', 'bar', 'baz')).to.eventually.equal('qux');
+            return statement.execute('foo', 'bar', 'baz')
+                .then(actual => expect(actual).to.equal('qux'));
         });
 
         it('deallocates a statement that has been re-created and executes it', () => {
@@ -165,7 +169,8 @@ describe('Preparing', () => {
             td.when(deallocate(statement)).thenResolve();
             td.when(executePlain('foo')).thenResolve('bar');
 
-            return expect(statement.execute('foo')).to.eventually.equal('bar');
+            return statement.execute('foo')
+                .then(actual => expect(actual).to.equal('bar'));
         });
 
         it('deallocates a statement that has been modified, re-prepares and executes it', () => {
@@ -179,7 +184,8 @@ describe('Preparing', () => {
             td.when(prepare(statement)).thenResolve();
             td.when(executePrepared('bar', 'baz')).thenResolve('qux');
 
-            return expect(statement.execute('foo', 'bar', 'baz')).to.eventually.equal('qux');
+            return statement.execute('foo', 'bar', 'baz')
+                .then(actual => expect(actual).to.equal('qux'));
         });
     });
 
@@ -192,7 +198,7 @@ describe('Preparing', () => {
 
             td.when(wrapper()).thenResolve(state);
 
-            return expect(statement.executePlain(wrapper)).to.eventually.be.fulfilled
+            return statement.executePlain(wrapper)
                 .then(result => {
                     expect(result.getWarningsCount()).to.equal(2);
                     return expect(result.getWarnings()).to.deep.equal(warnings);
@@ -205,7 +211,7 @@ describe('Preparing', () => {
 
             td.when(wrapper()).thenResolve();
 
-            return expect(statement.executePlain(wrapper)).to.eventually.be.fulfilled
+            return statement.executePlain(wrapper)
                 .then(() => expect(statement.getStage()).to.equal(preparing.Stages.TO_PREPARE));
         });
     });
@@ -224,7 +230,7 @@ describe('Preparing', () => {
 
             td.when(prepareExecute(statement, 'foo', 'bar')).thenResolve(state);
 
-            return expect(statement.executePrepared('foo', 'bar')).to.eventually.be.fulfilled
+            return statement.executePrepared('foo', 'bar')
                 .then(result => {
                     expect(result.getWarningsCount()).to.equal(2);
                     return expect(result.getWarnings()).to.deep.equal(warnings);
@@ -237,7 +243,7 @@ describe('Preparing', () => {
 
             td.when(prepareExecute(), { ignoreExtraArgs: true }).thenResolve();
 
-            return expect(statement.executePrepared()).to.eventually.be.fulfilled
+            return statement.executePrepared()
                 .then(() => expect(statement.getStage()).to.equal(stage));
         });
 
@@ -247,7 +253,9 @@ describe('Preparing', () => {
 
             td.when(prepareExecute(statement, 'foo', 'bar')).thenReject(error);
 
-            return expect(statement.executePrepared('foo', 'bar')).to.eventually.be.rejectedWith(error);
+            return statement.executePrepared('foo', 'bar')
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
     });
 
@@ -276,7 +284,9 @@ describe('Preparing', () => {
             const statement = preparing();
             const error = new Error('foobar');
 
-            return expect(statement.handlePrepareError(error, 'foo')).to.be.rejectedWith(error);
+            return statement.handlePrepareError(error, 'foo')
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
 
         it('disables client-side prepared statement support if the plugin does not provide it', () => {
@@ -288,7 +298,7 @@ describe('Preparing', () => {
 
             td.when(fallback()).thenResolve();
 
-            return expect(statement.handlePrepareError(error, fallback)).to.eventually.be.fulfilled
+            return statement.handlePrepareError(error, fallback)
                 .then(() => {
                     expect(statement.getStage()).to.equal(preparing.Stages.TO_SKIP);
                     return expect(session._canPrepareStatements).to.be.false;
@@ -304,7 +314,7 @@ describe('Preparing', () => {
 
             td.when(fallback()).thenResolve();
 
-            return expect(statement.handlePrepareError(error, fallback)).to.eventually.be.fulfilled
+            return statement.handlePrepareError(error, fallback)
                 .then(() => {
                     expect(statement.getStage()).to.equal(preparing.Stages.TO_SKIP);
                     return expect(session._canPrepareStatements).to.be.false;
@@ -319,7 +329,8 @@ describe('Preparing', () => {
 
             td.when(fallback()).thenResolve('foo');
 
-            return expect(statement.handlePrepareError(error, fallback)).to.eventually.equal('foo');
+            return statement.handlePrepareError(error, fallback)
+                .then(actual => expect(actual).to.equal('foo'));
         });
     });
 
@@ -336,7 +347,7 @@ describe('Preparing', () => {
 
             td.when(prepare(), { ignoreExtraArgs: true }).thenResolve();
 
-            return expect(statement.prepare()).to.eventually.be.fulfilled
+            return statement.prepare()
                 .then(() => expect(td.explain(allocate).callCount).to.equal(1));
         });
 
@@ -346,7 +357,7 @@ describe('Preparing', () => {
             td.replace(statement, 'allocate');
             td.when(prepare(), { ignoreExtraArgs: true }).thenResolve();
 
-            return expect(statement.prepare()).to.eventually.be.fulfilled
+            return statement.prepare()
                 .then(() => expect(statement.getStage()).to.equal(preparing.Stages.TO_EXECUTE));
         });
 
@@ -357,7 +368,9 @@ describe('Preparing', () => {
             td.replace(statement, 'allocate');
             td.when(prepare(), { ignoreExtraArgs: true }).thenReject(error);
 
-            return expect(statement.prepare()).to.eventually.be.rejectedWith(error);
+            return statement.prepare()
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
     });
 });

@@ -2,10 +2,9 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const PrepareStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_prepare_pb').Prepare;
-const DeallocateStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_prepare_pb').Deallocate;
-const ExecuteStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_prepare_pb').Execute;
+const PrepareStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_prepare_pb').Prepare;
+const DeallocateStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_prepare_pb').Deallocate;
+const ExecuteStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_prepare_pb').Execute;
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -36,7 +35,7 @@ describe('Protobuf', () => {
                 td.when(getType()).thenReturn(type);
                 td.when(createFind(statement, 'foo')).thenReturn('bar');
 
-                Prepare = require('lib/Protocol/Protobuf/Adapters/Prepare');
+                Prepare = require('../../../../lib/Protocol/Protobuf/Adapters/Prepare');
                 Prepare.createOneOfMessage(statement, 'foo');
 
                 expect(td.explain(FakeOneOfMessageStub.prototype.setType).callCount).to.equal(1);
@@ -54,7 +53,7 @@ describe('Protobuf', () => {
                 td.when(getType()).thenReturn(type);
                 td.when(createUpdate(statement, 'foo')).thenReturn('bar');
 
-                Prepare = require('lib/Protocol/Protobuf/Adapters/Prepare');
+                Prepare = require('../../../../lib/Protocol/Protobuf/Adapters/Prepare');
                 Prepare.createOneOfMessage(statement, 'foo');
 
                 expect(td.explain(FakeOneOfMessageStub.prototype.setType).callCount).to.equal(1);
@@ -72,7 +71,7 @@ describe('Protobuf', () => {
                 td.when(getType()).thenReturn(type);
                 td.when(createDelete(statement, 'foo')).thenReturn('bar');
 
-                Prepare = require('lib/Protocol/Protobuf/Adapters/Prepare');
+                Prepare = require('../../../../lib/Protocol/Protobuf/Adapters/Prepare');
                 Prepare.createOneOfMessage(statement, 'foo');
 
                 expect(td.explain(FakeOneOfMessageStub.prototype.setType).callCount).to.equal(1);
@@ -91,7 +90,7 @@ describe('Protobuf', () => {
 
                 td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_prepare_pb', { Deallocate: FakeDeallocateStub });
 
-                Prepare = require('lib/Protocol/Protobuf/Adapters/Prepare');
+                Prepare = require('../../../../lib/Protocol/Protobuf/Adapters/Prepare');
             });
 
             it('encodes a Mysqlx.Prepare.Deallocate message', () => {
@@ -127,7 +126,7 @@ describe('Protobuf', () => {
                 const statement = { getStatementId, getType };
 
                 td.replace('../../../../lib/Protocol/Protobuf/Adapters/Crud', { createPreparedStatementArgs });
-                Prepare = require('lib/Protocol/Protobuf/Adapters/Prepare');
+                Prepare = require('../../../../lib/Protocol/Protobuf/Adapters/Prepare');
 
                 td.when(getType()).thenReturn(type);
                 td.when(getStatementId()).thenReturn('foo');
@@ -154,7 +153,7 @@ describe('Protobuf', () => {
 
                 td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_prepare_pb', { Prepare: FakePrepareStub });
 
-                Prepare = require('lib/Protocol/Protobuf/Adapters/Prepare');
+                Prepare = require('../../../../lib/Protocol/Protobuf/Adapters/Prepare');
                 createOneOfMessage = td.replace(Prepare, 'createOneOfMessage');
             });
 

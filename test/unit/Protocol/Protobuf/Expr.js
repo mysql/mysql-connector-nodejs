@@ -2,11 +2,10 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const Expr = require('lib/Protocol/Protobuf/Adapters/Expr');
-const ExprStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
-const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
-const Type = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr.Type;
+const Expr = require('../../../../lib/Protocol/Protobuf/Adapters/Expr');
+const ExprStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
+const Scalar = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
+const Type = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr.Type;
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -18,8 +17,7 @@ describe('Protobuf', () => {
             parse = td.function();
 
             td.replace('../../../../lib/ExprParser', { parse });
-
-            FakeExpr = require('lib/Protocol/Protobuf/Adapters/Expr');
+            FakeExpr = require('../../../../lib/Protocol/Protobuf/Adapters/Expr');
         });
 
         afterEach('reset fakes', () => {
@@ -31,7 +29,7 @@ describe('Protobuf', () => {
                 td.when(parse(), { ignoreExtraArgs: true }).thenReturn({ output: {} });
             });
 
-            it('should return the input value if it is an expression', () => {
+            it('returns the input value if it is an expression', () => {
                 const literal = new Scalar();
                 literal.setType(Scalar.Type.V_NULL);
 
@@ -45,27 +43,27 @@ describe('Protobuf', () => {
                 expect(actual.toObject()).to.deep.equal(expected.toObject());
             });
 
-            it('should enable expression parsing by default', () => {
+            it('enables expression parsing by default', () => {
                 FakeExpr.createExpr('foo');
 
                 expect(td.explain(parse).callCount).to.equal(1);
                 expect(td.explain(parse).calls[0].args[0]).to.equal('foo');
             });
 
-            it('should stringify non-string input for parsing', () => {
+            it('stringifies non-string input for parsing', () => {
                 FakeExpr.createExpr({ foo: 'bar' });
 
                 expect(td.explain(parse).callCount).to.equal(1);
                 expect(td.explain(parse).calls[0].args[0]).to.equal('{"foo":"bar"}');
             });
 
-            it('should disable expression parsing on demand', () => {
+            it('disables expression parsing on demand', () => {
                 FakeExpr.createExpr({ foo: 'bar' }, { parse: false });
 
                 expect(td.explain(parse).callCount).to.equal(0);
             });
 
-            it('should encode a JavaScript array', () => {
+            it('encodes a JavaScript array', () => {
                 const array1 = Expr.createExpr(['foo', 'bar']);
                 const array2 = Expr.createExpr(['foo', 'bar'], { parse: false });
 
@@ -73,7 +71,7 @@ describe('Protobuf', () => {
                 expect(array2.getType()).to.equal(Type.ARRAY);
             });
 
-            it('should encode a JavaScript plain object', () => {
+            it('encodes a JavaScript plain object', () => {
                 const obj1 = Expr.createExpr({ foo: 'bar' });
                 const obj2 = Expr.createExpr({ foo: 'bar' }, { parse: false });
 
@@ -81,7 +79,7 @@ describe('Protobuf', () => {
                 expect(obj2.getType()).to.equal(Type.OBJECT);
             });
 
-            it('should encode a JavaScript primitive type', () => {
+            it('encodes a JavaScript primitive type', () => {
                 const id = Expr.createExpr('foo');
                 const literal = Expr.createExpr('foo', { parse: false });
 
@@ -89,7 +87,7 @@ describe('Protobuf', () => {
                 expect(literal.getType()).to.equal(Type.LITERAL);
             });
 
-            it('should encode a JavaScript Date object', () => {
+            it('encodes a JavaScript Date object', () => {
                 const now = new Date();
                 const obj = Expr.createExpr({ foo: now });
 

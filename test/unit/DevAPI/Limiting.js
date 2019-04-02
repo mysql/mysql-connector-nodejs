@@ -2,9 +2,8 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
 const expect = require('chai').expect;
-const limiting = require('lib/DevAPI/Limiting');
+const limiting = require('../../../lib/DevAPI/Limiting');
 const td = require('testdouble');
 
 describe('Limiting', () => {

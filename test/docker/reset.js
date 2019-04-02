@@ -2,16 +2,11 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const mysqlx = require('index');
+const config = require('../../test/properties');
+const expect = require('chai').expect;
+const mysqlx = require('../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@docker session reset behavior with older servers', () => {
+describe('session reset behavior with older servers', () => {
     const baseConfig = Object.assign({}, config, { port: 33065, schema: undefined });
 
     context('closing legacy sessions', () => {
@@ -103,7 +98,7 @@ describe('@docker session reset behavior with older servers', () => {
         it('BUG#29436892 does not fail when re-creating an idle connection', () => {
             return client.getSession()
                 .then(session => session.close())
-                .then(() => expect(client.getSession()).to.be.fulfilled);
+                .then(() => client.getSession());
         });
     });
 });

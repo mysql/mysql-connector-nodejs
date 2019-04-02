@@ -2,17 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const config = require('../../../../test/properties');
+const expect = require('chai').expect;
+const fixtures = require('../../../../test/fixtures');
+const mysqlx = require('../../../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@docker MySQL 5.7 authentication', () => {
+describe('MySQL 5.7 authentication', () => {
     context('mysql_native_password', () => {
         let auth;
 
@@ -28,20 +23,20 @@ describe('@docker MySQL 5.7 authentication', () => {
         });
 
         context('default authentication mechanism', () => {
-            it('should authenticate with TLS', () => {
+            it('authenticates with TLS', () => {
                 const authConfig = Object.assign({}, config, baseConfig, { ssl: true });
 
-                return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                return mysqlx.getSession(authConfig)
                     .then(session => {
                         expect(session.inspect().auth).to.equal('PLAIN');
                         return session.close();
                     });
             });
 
-            it('should authenticate without TLS', () => {
+            it('authenticates without TLS', () => {
                 const authConfig = Object.assign({}, config, baseConfig, { ssl: false });
 
-                return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                return mysqlx.getSession(authConfig)
                     .then(session => {
                         expect(session.inspect().auth).to.equal('MYSQL41');
                         return session.close();
@@ -54,20 +49,20 @@ describe('@docker MySQL 5.7 authentication', () => {
                 auth = 'MYSQL41';
             });
 
-            it('should authenticate with TLS', () => {
+            it('authenticates with TLS', () => {
                 const authConfig = Object.assign({}, config, baseConfig, { auth, ssl: true });
 
-                return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                return mysqlx.getSession(authConfig)
                     .then(session => {
                         expect(session.inspect().auth).to.equal(auth);
                         return session.close();
                     });
             });
 
-            it('should authenticate without TLS', () => {
+            it('authenticates without TLS', () => {
                 const authConfig = Object.assign({}, config, baseConfig, { auth, ssl: false });
 
-                return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                return mysqlx.getSession(authConfig)
                     .then(session => {
                         expect(session.inspect().auth).to.equal(auth);
                         return session.close();
@@ -80,21 +75,22 @@ describe('@docker MySQL 5.7 authentication', () => {
                 auth = 'PLAIN';
             });
 
-            it('should authenticate with TLS', () => {
+            it('authenticates with TLS', () => {
                 const authConfig = Object.assign({}, config, baseConfig, { auth, ssl: true });
 
-                return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                return mysqlx.getSession(authConfig)
                     .then(session => {
                         expect(session.inspect().auth).to.equal(auth);
                         return session.close();
                     });
             });
 
-            it('should fail to authenticate without TLS', () => {
+            it('fails to authenticate without TLS', () => {
                 const authConfig = Object.assign({}, config, baseConfig, { auth, ssl: false });
 
-                return expect(mysqlx.getSession(authConfig)).to.be.rejected
-                    .then(err => {
+                return mysqlx.getSession(authConfig)
+                    .then(() => expect.fail())
+                    .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1251);
                     });
@@ -107,40 +103,43 @@ describe('@docker MySQL 5.7 authentication', () => {
             });
 
             context('without cached password', () => {
-                it('should fail to authenticate with TLS', () => {
+                it('fails to authenticate with TLS', () => {
                     const authConfig = Object.assign({}, config, baseConfig, { auth, ssl: true });
 
-                    return expect(mysqlx.getSession(authConfig))
-                        .to.be.rejectedWith('SHA256_MEMORY authentication is not supported by the server.');
+                    return mysqlx.getSession(authConfig)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('SHA256_MEMORY authentication is not supported by the server.'));
                 });
 
-                it('should fail to authenticate without TLS', () => {
+                it('fails to authenticate without TLS', () => {
                     const authConfig = Object.assign({}, config, baseConfig, { auth, ssl: false });
 
-                    return expect(mysqlx.getSession(authConfig))
-                        .to.be.rejectedWith('SHA256_MEMORY authentication is not supported by the server.');
+                    return mysqlx.getSession(authConfig)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('SHA256_MEMORY authentication is not supported by the server.'));
                 });
             });
 
             context('with cached password', () => {
                 beforeEach('setup connection to save the password in the server cache', () => {
-                    return mysqlx
-                        .getSession(Object.assign({}, config, baseConfig, { auth: 'PLAIN', ssl: true }))
+                    return mysqlx.getSession(Object.assign({}, config, baseConfig, { auth: 'PLAIN', ssl: true }))
                         .then(session => session.close());
                 });
 
-                it('should fail to authenticate with TLS', () => {
+                it('fails to authenticate with TLS', () => {
                     const authConfig = Object.assign({}, config, baseConfig, { auth, ssl: true });
 
-                    return expect(mysqlx.getSession(authConfig))
-                        .to.be.rejectedWith('SHA256_MEMORY authentication is not supported by the server.');
+                    return mysqlx.getSession(authConfig)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('SHA256_MEMORY authentication is not supported by the server.'));
                 });
 
-                it('should fail to authenticate without TLS', () => {
+                it('fails to authenticate without TLS', () => {
                     const authConfig = Object.assign({}, config, baseConfig, { auth, ssl: false });
 
-                    return expect(mysqlx.getSession(authConfig))
-                        .to.be.rejectedWith('SHA256_MEMORY authentication is not supported by the server.');
+                    return mysqlx.getSession(authConfig)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('SHA256_MEMORY authentication is not supported by the server.'));
                 });
             });
         });

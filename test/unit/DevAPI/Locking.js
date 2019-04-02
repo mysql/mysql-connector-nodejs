@@ -2,9 +2,8 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const locking = require('lib/DevAPI/Locking');
 const expect = require('chai').expect;
+const locking = require('../../../lib/DevAPI/Locking');
 const td = require('testdouble');
 
 describe('Locking', () => {

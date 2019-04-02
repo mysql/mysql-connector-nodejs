@@ -2,10 +2,9 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const ConditionStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb').Open.Condition;
-const OpenStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb').Open;
-const CloseStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb').Close;
+const ConditionStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb').Open.Condition;
+const OpenStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb').Open;
+const CloseStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb').Close;
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -24,8 +23,7 @@ describe('Protobuf', () => {
                 FakeConditionStub = td.constructor(ConditionStub);
 
                 td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb', { Open: { Condition: FakeConditionStub } });
-
-                Expect = require('lib/Protocol/Protobuf/Adapters/Expect');
+                Expect = require('../../../../lib/Protocol/Protobuf/Adapters/Expect');
             });
 
             it('creates a valid Mysqlx.Expect.Open.Condition object type given an expecation object', () => {
@@ -52,8 +50,7 @@ describe('Protobuf', () => {
                 FakeConditionStub = td.constructor(ConditionStub);
 
                 td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb', { Close: FakeCloseStub, Open: { Condition: FakeConditionStub } });
-
-                Expect = require('lib/Protocol/Protobuf/Adapters/Expect');
+                Expect = require('../../../../lib/Protocol/Protobuf/Adapters/Expect');
             });
 
             it('returns a Buffer-encoded version of Mysqlx.Expect.Close object', () => {
@@ -71,8 +68,7 @@ describe('Protobuf', () => {
                 FakeOpenStub = td.constructor(OpenStub);
 
                 td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb', { Open: FakeOpenStub });
-
-                Expect = require('lib/Protocol/Protobuf/Adapters/Expect');
+                Expect = require('../../../../lib/Protocol/Protobuf/Adapters/Expect');
                 createCondition = td.replace(Expect, 'createCondition');
             });
 

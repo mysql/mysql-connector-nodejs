@@ -2,8 +2,8 @@
 
 /* eslint-env node, mocha */
 
-const parseConnectionAttributes = require('lib/DevAPI/Util/URIParser/parseConnectionAttributes');
 const expect = require('chai').expect;
+const parseConnectionAttributes = require('../../../../../lib/DevAPI/Util/URIParser/parseConnectionAttributes');
 
 describe('parseConnectionAttributes', () => {
     it('returns an empty object if no attribute element are provided', () => {

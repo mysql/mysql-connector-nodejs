@@ -2,17 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const config = require('test/properties');
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const config = require('../../../test/properties');
+const expect = require('chai').expect;
+const fixtures = require('../../../test/fixtures');
+const mysqlx = require('../../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@docker autonomous prepared statements for tables without server support', () => {
+describe('autonomous prepared statements for tables without server support', () => {
     let schema, session, table;
 
     // MySQL 8.0.13 server port (defined in docker.compose.yml)
@@ -66,7 +61,7 @@ describe('@docker autonomous prepared statements for tables without server suppo
             const op = table.select('_id').where('name = :name');
             const names = ['foo', 'bar', 'baz'];
 
-            return expect(Promise.all(names.map(name => op.bind('name', name).execute(row => actual.push(row))))).to.be.fulfilled
+            return Promise.all(names.map(name => op.bind('name', name).execute(row => actual.push(row))))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
@@ -79,7 +74,7 @@ describe('@docker autonomous prepared statements for tables without server suppo
             const op = table.update().where('name = :name').set('name', 'qux');
             const names = ['foo', 'bar', 'baz'];
 
-            return expect(Promise.all(names.map(name => op.bind('name', name).execute()))).to.be.fulfilled
+            return Promise.all(names.map(name => op.bind('name', name).execute()))
                 .then(() => table.select().orderBy('_id').execute(row => actual.push(row)))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
@@ -92,7 +87,7 @@ describe('@docker autonomous prepared statements for tables without server suppo
             const op = table.delete().where('name = :name');
             const names = ['foo', 'bar', 'baz'];
 
-            return expect(Promise.all(names.map(name => op.bind('name', name).execute()))).to.be.fulfilled
+            return Promise.all(names.map(name => op.bind('name', name).execute()))
                 .then(() => table.select().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.be.empty);
         });

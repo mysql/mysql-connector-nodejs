@@ -2,17 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional collection contains', () => {
+describe('collection contains', () => {
     let schema, session, collection;
 
     beforeEach('create default schema', () => {
@@ -53,7 +48,7 @@ describe('@functional collection contains', () => {
         return session.close();
     });
 
-    it('should return all documents where some field contains a given value', () => {
+    it('returns all documents where some field contains a given value', () => {
         const expected = [{ _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } }];
         let actual = [];
 
@@ -63,7 +58,7 @@ describe('@functional collection contains', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where some field does not contain a given value', () => {
+    it('returns all documents where some field does not contain a given value', () => {
         const expected = [
             { _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } },
             { _id: 3, categories: ['MySQL', 'Shell'], author: 48, reviewers: [48, 48] }
@@ -76,7 +71,7 @@ describe('@functional collection contains', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where some field contains the value of another field', () => {
+    it('returns all documents where some field contains the value of another field', () => {
         const expected = [
             { _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } },
             { _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } },
@@ -90,7 +85,7 @@ describe('@functional collection contains', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where some field does not contain the value of another field', () => {
+    it('returns all documents where some field does not contain the value of another field', () => {
         const expected = [];
         let actual = [];
 
@@ -100,7 +95,7 @@ describe('@functional collection contains', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where the value of some field exists in a given set of values', () => {
+    it('returns all documents where the value of some field exists in a given set of values', () => {
         const expected = [
             { _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } },
             { _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } }
@@ -113,7 +108,7 @@ describe('@functional collection contains', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where the value of some field does not exist in a given set of values', () => {
+    it('returns all documents where the value of some field does not exist in a given set of values', () => {
         const expected = [{ _id: 3, categories: ['MySQL', 'Shell'], author: 48, reviewers: [48, 48] }];
         let actual = [];
 
@@ -123,7 +118,7 @@ describe('@functional collection contains', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where some nested field contains a given value', () => {
+    it('returns all documents where some nested field contains a given value', () => {
         const expected = [{ _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } }];
         let actual = [];
 
@@ -133,7 +128,7 @@ describe('@functional collection contains', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should return all documents where some nested field does not contain a given value', () => {
+    it('returns all documents where some nested field does not contain a given value', () => {
         const expected = [{ _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } }];
         let actual = [];
 
@@ -143,9 +138,10 @@ describe('@functional collection contains', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
-    it('should fail if the left-side operand is not castable to JSON', () => {
-        return expect(collection.find('(1+2) in [1, 2, 3]').execute()).to.be.rejected
-            .then(err => {
+    it('fails if the left-side operand is not castable to JSON', () => {
+        return collection.find('(1+2) in [1, 2, 3]').execute()
+            .then(() => expect.fail())
+            .catch(err => {
                 expect(err.info).to.include.keys('code');
                 expect(err.info.code).to.equal(5154);
             });

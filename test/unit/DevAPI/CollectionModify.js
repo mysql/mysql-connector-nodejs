@@ -2,15 +2,9 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
+const expect = require('chai').expect;
 const td = require('testdouble');
-const updating = require('lib/DevAPI/Updating');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
+const updating = require('../../../lib/DevAPI/Updating');
 
 describe('CollectionModify', () => {
     let collectionModify, preparing;
@@ -19,7 +13,7 @@ describe('CollectionModify', () => {
         preparing = td.function();
 
         td.replace('../../../lib/DevAPI/Preparing', preparing);
-        collectionModify = require('lib/DevAPI/CollectionModify');
+        collectionModify = require('../../../lib/DevAPI/CollectionModify');
     });
 
     afterEach('reset fakes', () => {
@@ -108,34 +102,41 @@ describe('CollectionModify', () => {
         it('fails if a condition query is not provided', () => {
             const query = collectionModify();
 
-            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `modify()`');
+            return query.execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('A valid condition needs to be provided with `modify()`'));
         });
 
         it('fails if a condition query is empty', () => {
             const query = collectionModify(null, null, null, '');
 
-            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `modify()`');
+            return query.execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('A valid condition needs to be provided with `modify()`'));
         });
 
         it('fails if the condition is not valid', () => {
             const query = collectionModify(null, null, null, ' ');
 
-            return expect(query.execute()).to.eventually.be.rejectedWith('A valid condition needs to be provided with `modify()`');
+            return query.execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('A valid condition needs to be provided with `modify()`'));
         });
 
         it('wraps the operation in a preparable instance', () => {
             const execute = td.function();
             const session = 'foo';
 
-            td.when(execute(td.matchers.isA(Function))).thenReturn('bar');
+            td.when(execute(td.matchers.isA(Function))).thenResolve('bar');
             td.when(preparing({ session })).thenReturn({ execute });
 
-            return expect(collectionModify(session, null, null, 'true').execute()).to.equal('bar');
+            return collectionModify(session, null, null, 'true').execute()
+                .then(actual => expect(actual).to.equal('bar'));
         });
     });
 
     context('getClassName()', () => {
-        it('should return the correct class name (to avoid duck typing)', () => {
+        it('returns the correct class name (to avoid duck typing)', () => {
             return expect(collectionModify().getClassName()).to.equal('CollectionModify');
         });
     });

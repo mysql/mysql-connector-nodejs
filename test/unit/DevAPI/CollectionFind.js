@@ -2,14 +2,8 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
+const expect = require('chai').expect;
 const td = require('testdouble');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 describe('CollectionFind', () => {
     let collectionFind, preparing;
@@ -18,7 +12,7 @@ describe('CollectionFind', () => {
         preparing = td.function();
 
         td.replace('../../../lib/DevAPI/Preparing', preparing);
-        collectionFind = require('lib/DevAPI/CollectionFind');
+        collectionFind = require('../../../lib/DevAPI/CollectionFind');
     });
 
     afterEach('reset fakes', () => {
@@ -30,20 +24,22 @@ describe('CollectionFind', () => {
             const execute = td.function();
             const session = 'foo';
 
-            td.when(execute(td.matchers.isA(Function), undefined)).thenReturn('bar');
+            td.when(execute(td.matchers.isA(Function), undefined)).thenResolve('bar');
             td.when(preparing({ session })).thenReturn({ execute });
 
-            return expect(collectionFind(session).execute()).to.deep.equal('bar');
+            return collectionFind(session).execute()
+                .then(actual => expect(actual).to.deep.equal('bar'));
         });
 
         it('wraps an operation with a cursor in a preparable instance', () => {
             const execute = td.function();
             const session = 'foo';
 
-            td.when(execute(td.matchers.isA(Function), td.matchers.isA(Function))).thenReturn('bar');
+            td.when(execute(td.matchers.isA(Function), td.matchers.isA(Function))).thenResolve('bar');
             td.when(preparing({ session })).thenReturn({ execute });
 
-            return expect(collectionFind(session).execute(td.callback())).to.deep.equal('bar');
+            return collectionFind(session).execute(td.callback())
+                .then(actual => expect(actual).to.deep.equal('bar'));
         });
     });
 
@@ -59,7 +55,7 @@ describe('CollectionFind', () => {
             td.replace('../../../lib/DevAPI/Projecting', projecting);
             td.replace('../../../lib/DevAPI/Util/parseFlexibleParamList', parseFlexibleParamList);
 
-            collectionFind = require('lib/DevAPI/CollectionFind');
+            collectionFind = require('../../../lib/DevAPI/CollectionFind');
         });
 
         it('sets projections provided as an array', () => {

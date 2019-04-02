@@ -2,15 +2,14 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const Parser = require('lib/ExprParser');
+const Parser = require('../../../../lib/ExprParser');
 const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('invalid Relational Expressions', () => {
         const options = { mode: Parser.Mode.TABLE };
 
-        it('should not parse invalid document-mode expressions', () => {
+        it('does not parse invalid document-mode expressions', () => {
             expect(() => Parser.parse("doc->'foo**.bar'", options)).to.throw();
             expect(() => Parser.parse("doc->'foo[*].bar", options)).to.throw();
             expect(() => Parser.parse("doc->'_**._'", options)).to.throw();
@@ -21,7 +20,7 @@ describe('ExprParser', () => {
             expect(() => Parser.parse("{<doc->'$.foobar'>}", options)).to.throw();
         });
 
-        it('should not parse document-only expressions', () => {
+        it('does not parse document-only expressions', () => {
             expect(() => Parser.parse('foo**.bar', options)).to.throw();
             expect(() => Parser.parse('foo[*].bar', options)).to.throw();
             expect(() => Parser.parse('_**._', options)).to.throw();

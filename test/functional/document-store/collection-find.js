@@ -2,12 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const config = require('test/properties');
+const config = require('../../properties');
 const expect = require('chai').expect;
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
 
-describe('@functional collection find', () => {
+describe('finding documents in collections', () => {
     let schema, session, collection;
 
     beforeEach('create default schema', () => {
@@ -48,7 +48,7 @@ describe('@functional collection find', () => {
                 .execute();
         });
 
-        it('should return all documents in the database', () => {
+        it('returns all documents in the database', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }];
             let actual = [];
 
@@ -72,7 +72,7 @@ describe('@functional collection find', () => {
                 .execute();
         });
 
-        it('should return documents that match a criteria specified with named parameter pairs', () => {
+        it('returns documents that match a criteria specified with named parameter pairs', () => {
             const expected = [{ _id: 'foo', foo: 'bar', size: 42 }];
             let actual = [];
 
@@ -83,7 +83,7 @@ describe('@functional collection find', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should return documents that match a criteria specified with a named parameter mapping', () => {
+        it('returns documents that match a criteria specified with a named parameter mapping', () => {
             const expected = [{ _id: 'foo', foo: 'bar', size: 42 }];
             let actual = [];
 
@@ -103,7 +103,7 @@ describe('@functional collection find', () => {
                 .execute();
         });
 
-        it('should include only columns provided as an expression array', () => {
+        it('includes only columns provided as an expression array', () => {
             const expected = [{ name: 'foo', size: 42 }, { name: 'bar', size: 23 }];
             let actual = [];
 
@@ -114,7 +114,7 @@ describe('@functional collection find', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should include only columns provided as expression arguments', () => {
+        it('includes only columns provided as expression arguments', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }];
             let actual = [];
 
@@ -125,7 +125,7 @@ describe('@functional collection find', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should perform computed projections', () => {
+        it('performs computed projections', () => {
             const expected = [{ name: 'bar', newSize: 24 }, { name: 'foo', newSize: 43 }];
             let actual = [];
 
@@ -149,7 +149,7 @@ describe('@functional collection find', () => {
                 .execute();
         });
 
-        it('should return a given number of documents', () => {
+        it('returns a given number of documents', () => {
             const expected = [{ _id: 1, name: 'foo' }, { _id: 2, name: 'bar' }, { _id: 3, name: 'baz' }];
             let actual = [];
 
@@ -160,7 +160,7 @@ describe('@functional collection find', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should return the documents after a given offset', () => {
+        it('returns the documents after a given offset', () => {
             const expected = [{ _id: 3, name: 'baz' }, { _id: 4, name: 'qux' }];
             let actual = [];
 
@@ -181,7 +181,7 @@ describe('@functional collection find', () => {
                 .execute();
         });
 
-        it('should return an existing document with the given id', () => {
+        it('returns an existing document with the given id', () => {
             const expected = { _id: '1', name: 'foo' };
 
             return collection
@@ -189,7 +189,7 @@ describe('@functional collection find', () => {
                 .then(doc => expect(doc).to.deep.equal(expected));
         });
 
-        it('should return null if a document with the given id does not exist', () => {
+        it('returns null if a document with the given id does not exist', () => {
             return collection
                 .getOne('3')
                 .then(doc => expect(doc).to.be.null);
@@ -205,7 +205,7 @@ describe('@functional collection find', () => {
                 .execute();
         });
 
-        it('should return all documents that match a criteria specified by a grouped expression', () => {
+        it('returns all documents that match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -215,7 +215,7 @@ describe('@functional collection find', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should return all documents that do not match a criteria specified by a grouped expression', () => {
+        it('returns all documents that do not match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '2', name: 'bar' }];
             let actual = [];
 
@@ -235,7 +235,7 @@ describe('@functional collection find', () => {
                 .execute();
         });
 
-        it('should sort the results according the order clauses provided as an expression array', () => {
+        it('sorts the results according the order clauses provided as an expression array', () => {
             const expected = [{ _id: '3', name: 'baz', age: 23 }, { _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar', age: 42 }];
             const actual = [];
 
@@ -246,7 +246,7 @@ describe('@functional collection find', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should sort the results according the order clauses provided as expression arguments', () => {
+        it('sorts the results according the order clauses provided as expression arguments', () => {
             const expected = [{ _id: '2', name: 'bar', age: 42 }, { _id: '3', name: 'baz', age: 23 }, { _id: '1', name: 'foo', age: 23 }];
             const actual = [];
 

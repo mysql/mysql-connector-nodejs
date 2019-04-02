@@ -2,17 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional collection indexes', () => {
+describe('collection indexes', () => {
     let schema, session, collection;
 
     beforeEach('create default schema', () => {
@@ -46,11 +41,16 @@ describe('@functional collection indexes', () => {
     });
 
     context('dropping indexes', () => {
-        it('should not drop non-existent index', () => {
-            return expect(collection.dropIndex('foo')).to.be.rejected;
+        it('fails to drop a non-existent index', () => {
+            return collection.dropIndex('foo')
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(1091);
+                });
         });
 
-        it('should drop a valid index', () => {
+        it('drops a valid index', () => {
             return collection
                 .createIndex('age', {
                     fields: [{
@@ -58,14 +58,12 @@ describe('@functional collection indexes', () => {
                         type: 'TINYINT'
                     }]
                 })
-                .then(() => {
-                    return expect(collection.dropIndex('age')).to.be.fulfilled;
-                });
+                .then(() => collection.dropIndex('age'));
         });
     });
 
     context('creating indexes', () => {
-        it('should create regular index', () => {
+        it('creates regular index', () => {
             const index = {
                 fields: [{
                     field: '$.zip',
@@ -74,10 +72,11 @@ describe('@functional collection indexes', () => {
                 }]
             };
 
-            return expect(collection.createIndex('zip', index)).to.eventually.be.true;
+            return collection.createIndex('zip', index)
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should fail to create duplicate index', () => {
+        it('fails to create a duplicate index', () => {
             const index = {
                 fields: [{
                     field: '$.zip',
@@ -86,14 +85,18 @@ describe('@functional collection indexes', () => {
                 }]
             };
 
-            return collection
-                .createIndex('zip', index)
+            return collection.createIndex('zip', index)
                 .then(() => {
-                    return expect(collection.createIndex('zip', index)).to.be.rejected;
+                    return collection.createIndex('zip', index)
+                        .then(() => expect.fail())
+                        .catch(err => {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(1061);
+                        });
                 });
         });
 
-        it('should create spatial index', () => {
+        it('creates spatial index', () => {
             const index = {
                 fields: [{
                     field: '$.coords',
@@ -105,7 +108,7 @@ describe('@functional collection indexes', () => {
                 type: 'SPATIAL'
             };
 
-            return expect(collection.createIndex('coords', index)).to.be.fulfilled;
+            return collection.createIndex('coords', index);
         });
     });
 });

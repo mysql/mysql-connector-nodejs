@@ -2,17 +2,16 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const Expr = require('lib/ExprParser/lib/stubs/mysqlx_expr_pb').Expr;
-const DocumentPathItem = require('lib/ExprParser/lib/stubs/mysqlx_expr_pb').DocumentPathItem;
-const Parser = require('lib/ExprParser');
-const Scalar = require('lib/ExprParser/lib/stubs/mysqlx_datatypes_pb').Scalar;
+const Expr = require('../../../../lib/ExprParser/lib/stubs/mysqlx_expr_pb').Expr;
+const DocumentPathItem = require('../../../../lib/ExprParser/lib/stubs/mysqlx_expr_pb').DocumentPathItem;
+const Parser = require('../../../../lib/ExprParser');
+const Scalar = require('../../../../lib/ExprParser/lib/stubs/mysqlx_datatypes_pb').Scalar;
 const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('valid Document Expressions', () => {
         context('boolean expressions', () => {
-            it('should parse valid "IN" syntax', () => {
+            it('parses valid "IN" syntax', () => {
                 let input = '(1 in (1,2,3)) = TRUE';
                 let expr = Parser.parse(input);
 
@@ -94,7 +93,7 @@ describe('ExprParser', () => {
                 /* eslint-enable node/no-deprecated-api */
             });
 
-            it('should parse valid "NOT IN" syntax', () => {
+            it('parses valid "NOT IN" syntax', () => {
                 const input = '(1 not in (1,2,3)) = FALSE';
                 const expr = Parser.parse(input);
 
@@ -128,7 +127,7 @@ describe('ExprParser', () => {
                 expect(equalityOperator.getParamList()[1].getLiteral().getVBool()).to.equal(false);
             });
 
-            it('should parse valid JSON syntax', () => {
+            it('parses valid JSON syntax', () => {
                 const input = '{"foo" : "bar", "baz": [1,2,[3],{}, TRUE, true, false, False, null, NULL, Null]}';
                 const expr = Parser.parse(input);
 
@@ -173,7 +172,7 @@ describe('ExprParser', () => {
                 });
             });
 
-            it('should parse valid double-quoted literals', () => {
+            it('parses valid double-quoted literals', () => {
                 let input = `"foo'bar"`;
                 let expr = Parser.parse(input);
                 expect(expr.input).to.equal(input);
@@ -259,7 +258,7 @@ describe('ExprParser', () => {
                 /* eslint-enable node/no-deprecated-api */
             });
 
-            it('should parse valid single-quoted literals', () => {
+            it('parses valid single-quoted literals', () => {
                 let input = `'foo"bar'`;
                 let expr = Parser.parse(input);
                 expect(expr.input).to.equal(input);
@@ -347,7 +346,7 @@ describe('ExprParser', () => {
 
             // Following test-cases were not included in original EBNF, but are valid
 
-            it('should parse valid binary operations', () => {
+            it('parses valid binary operations', () => {
                 let input = `1 <> 2`;
                 let expr = Parser.parse(input);
                 expect(expr.input).to.equal(input);
@@ -561,7 +560,7 @@ describe('ExprParser', () => {
                 /* eslint-enable node/no-deprecated-api */
             });
 
-            it('should parse empty JSON expressions', () => {
+            it('parses empty JSON expressions', () => {
                 let input = '[]';
                 let expr = Parser.parse(input);
 
@@ -577,7 +576,7 @@ describe('ExprParser', () => {
                 expect(expr.output.getObject().getFldList()).to.have.lengthOf(0);
             });
 
-            it('should parse placeholders', () => {
+            it('parses placeholders', () => {
                 const input = ':foo AND :bar';
                 const expr = Parser.parse(input);
 
@@ -595,7 +594,7 @@ describe('ExprParser', () => {
         });
 
         context('document-only expressions', () => {
-            it('should parse valid "cont_in" syntax', () => {
+            it('parses valid "cont_in" syntax', () => {
                 let input = '1 in [1,2,3]';
                 let expr = Parser.parse(input);
 
@@ -842,7 +841,7 @@ describe('ExprParser', () => {
                 expect(args[1].getLiteral().getVBool()).to.equal(false);
             });
 
-            it('should parse valid function syntax', () => {
+            it('parses valid function syntax', () => {
                 let input = "substr('foobar', 1, 3) = 'foo'";
                 let expr = Parser.parse(input);
 
@@ -917,7 +916,7 @@ describe('ExprParser', () => {
                 /* eslint-enable node/no-deprecated-api */
             });
 
-            it('should parse expressions containing valid document paths', () => {
+            it('parses expressions containing valid document paths', () => {
                 let input = 'foo = bar.baz';
                 let expr = Parser.parse(input);
 

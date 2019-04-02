@@ -2,17 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional collection add', () => {
+describe('adding documents to a collection', () => {
     let schema, session, collection;
 
     beforeEach('create default schema', () => {
@@ -46,7 +41,7 @@ describe('@functional collection add', () => {
     });
 
     context('with a single call', () => {
-        it('should add documents provided as an array', () => {
+        it('saves documents provided as an array', () => {
             const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
             let actual = [];
 
@@ -60,7 +55,7 @@ describe('@functional collection add', () => {
                 });
         });
 
-        it('should add documents provided as multiple arguments', () => {
+        it('saves documents provided as multiple arguments', () => {
             const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
             let actual = [];
 
@@ -76,7 +71,7 @@ describe('@functional collection add', () => {
     });
 
     context('with multiple calls', () => {
-        it('should add documents provided as an array', () => {
+        it('saves documents provided as an array', () => {
             const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }, { name: 'baz', age: 50 }];
             let actual = [];
 
@@ -91,7 +86,7 @@ describe('@functional collection add', () => {
                 });
         });
 
-        it('should add documents provided as multiple arguments', () => {
+        it('saves documents provided as multiple arguments', () => {
             const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }, { name: 'baz', age: 50 }];
             let actual = [];
 
@@ -108,23 +103,18 @@ describe('@functional collection add', () => {
     });
 
     context('with an empty array', () => {
-        it('should not throw an error if the collection exists', () => {
-            return expect(collection.add([]).execute()).to.not.be.rejected;
+        it('does not throw an error if the collection exists', () => {
+            return collection.add([]).execute();
         });
 
-        it('should not throw an error if the collection does not exist', () => {
-            const promise = schema
-                .dropCollection('test')
-                .then(() => {
-                    return collection.add([]).execute();
-                });
-
-            return expect(promise).to.not.be.rejected;
+        it('does not throw an error if the collection does not exist', () => {
+            return schema.dropCollection('test')
+                .then(() => collection.add([]).execute());
         });
     });
 
     context('uuid generation', () => {
-        it('should generate a UUID as the document id by default', () => {
+        it('generates a UUID as the document id by default', () => {
             const actual = [];
 
             return collection
@@ -134,7 +124,7 @@ describe('@functional collection add', () => {
                 .then(() => expect(actual[0]._id).to.match(/^[a-f0-9]{28,32}$/));
         });
 
-        it('should not generate a UUID if the document already provides an id', () => {
+        it('does not generate a UUID if the document already provides an id', () => {
             const documents = [{ _id: '1', name: 'foo' }];
             const actual = [];
 
@@ -145,7 +135,7 @@ describe('@functional collection add', () => {
                 .then(() => expect(actual).to.deep.equal(documents));
         });
 
-        it('should generate the random node identifier once per session', () => {
+        it('generates the random node identifier once per session', () => {
             const actual = [];
 
             return collection
@@ -155,7 +145,7 @@ describe('@functional collection add', () => {
                 .then(() => expect(actual[0]._id.substring(0, 12)).to.equal(actual[1]._id.substring(0, 12)));
         });
 
-        it('should generate sequential UUIDs if some documents already provide an id', () => {
+        it('generates sequential UUIDs if some documents already provide an id', () => {
             const documents = [{ name: 'foo' }, { _id: '1', name: 'bar' }, { name: 'baz' }];
             const actual = [];
 
@@ -182,7 +172,7 @@ describe('@functional collection add', () => {
                 });
         });
 
-        it('should return the list of server generated ids on the result', () => {
+        it('returns the list of server generated ids on the result', () => {
             const documents = [{ name: 'foo' }, { name: 'bar' }, { name: 'baz' }];
             const actual = [];
 

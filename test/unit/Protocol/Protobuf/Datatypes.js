@@ -2,17 +2,16 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const Any = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Any;
-const ContentType = require('lib/Protocol/Protobuf/Stubs/mysqlx_resultset_pb').ContentType_BYTES;
-const Datatypes = require('lib/Protocol/Protobuf/Adapters/Datatypes');
-const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
+const Any = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Any;
+const ContentType = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_resultset_pb').ContentType_BYTES;
+const Datatypes = require('../../../../lib/Protocol/Protobuf/Adapters/Datatypes');
+const Scalar = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
 const expect = require('chai').expect;
 
 describe('Protobuf', () => {
     context('Datatypes', () => {
         context('decodeScalar()', () => {
-            it('should return a Node.js buffer for binary data', () => {
+            it('returns a Node.js buffer for binary data', () => {
                 const octets = new Scalar.Octets();
                 octets.setContentType(ContentType.GEOMETRY);
                 /* eslint-disable node/no-deprecated-api */
@@ -27,7 +26,7 @@ describe('Protobuf', () => {
                 expect(Datatypes.extractScalar(scalar)).to.deep.equal(data);
             });
 
-            it('should return a JavaScript string for textual data', () => {
+            it('returns a JavaScript string for textual data', () => {
                 const octets = new Scalar.Octets();
                 octets.setContentType(ContentType.JSON);
                 /* eslint-disable node/no-deprecated-api */
@@ -43,17 +42,17 @@ describe('Protobuf', () => {
         });
 
         context('encodeScalar()', () => {
-            it('should return a Mysqlx.Datatypes.Scalar.Type.V_NULL for `null`', () => {
+            it('returns a Mysqlx.Datatypes.Scalar.Type.V_NULL for `null`', () => {
                 expect(Datatypes.createScalar(null).getType()).to.equal(Scalar.Type.V_NULL);
             });
 
-            it('should return a Mysqlx.Datatypes.Scalar.Type.V_NULL for `undefined`', () => {
+            it('returns a Mysqlx.Datatypes.Scalar.Type.V_NULL for `undefined`', () => {
                 expect(Datatypes.createScalar().getType()).to.equal(Scalar.Type.V_NULL);
             });
         });
 
         context('encodeAny()', () => {
-            it('should return a Mysqlx.Datatypes.Any object for valid literals', () => {
+            it('returns a Mysqlx.Datatypes.Any object for valid literals', () => {
                 let any = Datatypes.createAny('foo');
 
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
@@ -102,7 +101,7 @@ describe('Protobuf', () => {
                 expect(any.getScalar().getVBool()).to.equal(true);
             });
 
-            it('should return a Mysqlx.Datatypes.Any object for arrays', () => {
+            it('returns a Mysqlx.Datatypes.Any object for arrays', () => {
                 let any = Datatypes.createAny([]);
 
                 expect(any.getType()).to.equal(Any.Type.ARRAY);
@@ -113,7 +112,7 @@ describe('Protobuf', () => {
                 expect(any.getArray().getValueList()).to.have.lengthOf(7);
             });
 
-            it('should return a Mysqlx.Datatypes.Any object for objects', () => {
+            it('returns a Mysqlx.Datatypes.Any object for objects', () => {
                 let any = Datatypes.createAny({});
 
                 expect(any.getType()).to.equal(Any.Type.OBJECT);
@@ -125,7 +124,7 @@ describe('Protobuf', () => {
                 expect(any.getObj().getFldList()).to.have.lengthOf(3);
             });
 
-            it('should throw an error if the input is not a valid array', () => {
+            it('throws an error if the input is not a valid array', () => {
                 const exception = 'Invalid datatype for Mysqlx.Datatypes.Array';
 
                 expect(() => Datatypes.createArray()).to.throw(exception);
@@ -134,7 +133,7 @@ describe('Protobuf', () => {
         });
 
         context('encodeArray()', () => {
-            it('should return a Mysqlx.Datatypes.Array object for arrays', () => {
+            it('returns a Mysqlx.Datatypes.Array object for arrays', () => {
                 const array = Datatypes.createArray([1, { foo: ['bar'] }]);
                 let values = array.getValueList();
 
@@ -158,7 +157,7 @@ describe('Protobuf', () => {
                 /* eslint-enable node/no-deprecated-api */
             });
 
-            it('should throw an error if the input is not a valid array', () => {
+            it('throws an error if the input is not a valid array', () => {
                 const exception = 'Invalid datatype for Mysqlx.Datatypes.Array.';
 
                 expect(() => Datatypes.createArray()).to.throw(exception);
@@ -174,7 +173,7 @@ describe('Protobuf', () => {
         });
 
         context('encodeObject()', () => {
-            it('should return a Mysqlx.Datatypes.Object object for objects', () => {
+            it('returns a Mysqlx.Datatypes.Object object for objects', () => {
                 const obj = Datatypes.createObject({
                     root: 'foo',
                     nested: [{
@@ -208,7 +207,7 @@ describe('Protobuf', () => {
                 /* eslint-enable node/no-deprecated-api */
             });
 
-            it('should throw an error if the input is not a valid array', () => {
+            it('throws an error if the input is not a valid array', () => {
                 const exception = 'Invalid datatype for Mysqlx.Datatypes.Object.';
 
                 expect(() => Datatypes.createObject()).to.throw(exception);

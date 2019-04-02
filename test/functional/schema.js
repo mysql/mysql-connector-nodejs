@@ -2,17 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const config = require('test/properties');
-const fixtures = require('test/fixtures');
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const mysqlx = require('index');
+const config = require('../properties');
+const expect = require('chai').expect;
+const fixtures = require('../fixtures');
+const mysqlx = require('../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional session schema', () => {
+describe('session schema', () => {
     let session, schema;
 
     beforeEach('create default schema', () => {
@@ -39,7 +34,7 @@ describe('@functional session schema', () => {
     });
 
     context('creating collections', () => {
-        it('should allow to create collections', () => {
+        it('allows to create collections', () => {
             const collections = ['test1', 'test2'];
 
             return Promise
@@ -59,7 +54,7 @@ describe('@functional session schema', () => {
     });
 
     context('fetching collections', () => {
-        it('should allow to retrieve a single collection', () => {
+        it('allows to retrieve a single collection', () => {
             return schema
                 .createCollection('foo')
                 .then(() => {
@@ -67,7 +62,7 @@ describe('@functional session schema', () => {
                 });
         });
 
-        it('should allow to retrieve the list of existing collections', () => {
+        it('allows to retrieve the list of existing collections', () => {
             return schema
                 .createCollection('foo')
                 .then(() => {
@@ -81,37 +76,42 @@ describe('@functional session schema', () => {
     });
 
     context('dropping collections', () => {
-        it('should allow to drop an existing collection', () => {
-            const collection = 'test';
-
-            return expect(Promise.all([
-                expect(schema.getCollections()).to.eventually.be.empty,
-                schema.createCollection(collection),
-                expect(schema.getCollections()).to.eventually.not.be.empty,
-                schema.dropCollection(collection),
-                expect(schema.getCollections()).to.eventually.be.empty
-            ])).to.eventually.be.fulfilled;
+        it('allows to drop an existing collection', () => {
+            return schema.getCollections()
+                .then(actual => expect(actual).to.be.empty)
+                .then(() => schema.createCollection('test'))
+                .then(() => schema.getCollections())
+                .then(actual => expect(actual).to.not.be.empty)
+                .then(() => schema.dropCollection('test'))
+                .then(() => schema.getCollections())
+                .then(actual => expect(actual).to.be.empty);
         });
 
-        it('should not fail to drop non-existent collections', () => {
-            return expect(schema.dropCollection('test')).to.eventually.be.fulfilled;
+        it('does not fail to drop non-existent collections', () => {
+            return schema.dropCollection('test');
         });
 
-        it('should fail to drop a collection with an empty name', () => {
-            return expect(schema.dropCollection('')).to.eventually.be.rejected;
+        it('fails to drop a collection with an empty name', () => {
+            return schema.dropCollection('')
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.not.equal('expect.fail()'));
         });
 
-        it('should fail to drop a collection with an invalid name', () => {
-            return expect(schema.dropCollection(' ')).to.eventually.be.rejected;
+        it('fails to drop a collection with an invalid name', () => {
+            return schema.dropCollection(' ')
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.not.equal('expect.fail()'));
         });
 
-        it('should fail to drop a collection with name set to `null`', () => {
-            return expect(schema.dropCollection(null)).to.eventually.be.rejected;
+        it('fails to drop a collection with name set to `null`', () => {
+            return schema.dropCollection(null)
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.not.equal('expect.fail()'));
         });
     });
 
     context('fetching tables', () => {
-        it('should allow to retrieve a single table', () => {
+        it('allows to retrieve a single table', () => {
             return session
                 .sql(`CREATE TABLE ${schema.getName()}.foo (_id SERIAL)`)
                 .execute()
@@ -120,7 +120,7 @@ describe('@functional session schema', () => {
                 });
         });
 
-        it('should allow to retrieve the list of existing tables', () => {
+        it('allows to retrieve the list of existing tables', () => {
             return session
                 .sql(`CREATE TABLE ${schema.getName()}.foo (_id SERIAL)`)
                 .execute()
@@ -135,7 +135,7 @@ describe('@functional session schema', () => {
     });
 
     context('available collections', () => {
-        it('BUG#28745240 should check if a collection exists in a given schema in the presence of other collections', () => {
+        it('BUG#28745240 checks if a collection exists in a given schema in the presence of other collections', () => {
             return schema.getCollection('noop').existsInDatabase()
                 .then(exists => {
                     return expect(exists).to.be.false;

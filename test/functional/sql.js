@@ -2,17 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const config = require('../properties');
+const expect = require('chai').expect;
+const fixtures = require('../fixtures');
+const mysqlx = require('../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional raw SQL', () => {
+describe('raw SQL', () => {
     beforeEach('create default schema', () => {
         return fixtures.createDefaultSchema();
     });
@@ -36,7 +31,7 @@ describe('@functional raw SQL', () => {
                 return fixtures.deleteAccount({ user });
             });
 
-            it('should set the given default schema', () => {
+            it('sets the given default schema', () => {
                 const options = Object.assign({}, config, { auth: 'MYSQL41', password, user });
                 const expected = options.schema;
 
@@ -45,21 +40,15 @@ describe('@functional raw SQL', () => {
                 return mysqlx.getSession(options)
                     .then(session => {
                         return session.sql('SELECT DATABASE()')
-                            .execute(schemas => {
-                                actual = schemas[0];
-                            })
-                            .then(() => {
-                                return expect(actual).to.equal(expected);
-                            })
-                            .then(() => {
-                                return session.close();
-                            });
+                            .execute(schemas => { actual = schemas[0]; })
+                            .then(() => expect(actual).to.equal(expected))
+                            .then(() => session.close());
                     });
             });
         });
 
         context('PLAIN', () => {
-            it('should set the given default schema', () => {
+            it('sets the given default schema', () => {
                 const options = Object.assign({}, config, { auth: 'PLAIN' });
                 const expected = options.schema;
 
@@ -68,25 +57,20 @@ describe('@functional raw SQL', () => {
                 return mysqlx.getSession(options)
                     .then(session => {
                         return session.sql('SELECT DATABASE()')
-                            .execute(schemas => {
-                                actual = schemas[0];
-                            })
-                            .then(() => {
-                                return expect(actual).to.equal(expected);
-                            })
-                            .then(() => {
-                                return session.close();
-                            });
+                            .execute(schemas => { actual = schemas[0]; })
+                            .then(() => expect(actual).to.equal(expected))
+                            .then(() => session.close());
                     });
             });
         });
 
         context('SHA256_MEMORY', () => {
             beforeEach('make sure the password is already cached', () => {
-                return mysqlx.getSession(config);
+                return mysqlx.getSession(config)
+                    .then(session => session.close());
             });
 
-            it('should set the given default schema', () => {
+            it('sets the given default schema', () => {
                 const options = Object.assign({}, config, { auth: 'SHA256_MEMORY' });
                 const expected = options.schema;
 
@@ -95,15 +79,9 @@ describe('@functional raw SQL', () => {
                 return mysqlx.getSession(options)
                     .then(session => {
                         return session.sql('SELECT DATABASE()')
-                            .execute(schemas => {
-                                actual = schemas[0];
-                            })
-                            .then(() => {
-                                return expect(actual).to.equal(expected);
-                            })
-                            .then(() => {
-                                return session.close();
-                            });
+                            .execute(schemas => { actual = schemas[0]; })
+                            .then(() => expect(actual).to.equal(expected))
+                            .then(() => session.close());
                     });
             });
         });

@@ -2,9 +2,8 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const tableOrdering = require('lib/DevAPI/TableOrdering');
 const expect = require('chai').expect;
+const tableOrdering = require('../../../lib/DevAPI/TableOrdering');
 const td = require('testdouble');
 
 describe('TableOrdering', () => {

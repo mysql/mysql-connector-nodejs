@@ -2,17 +2,16 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const WorkQueue = require('lib/WorkQueue');
+const WorkQueue = require('../../lib/WorkQueue');
 const expect = require('chai').expect;
 
 describe('WorkQueue', () => {
     describe('Simple queue processing', () => {
-        it('should throw an exception when empty', () => {
+        it('throws an exception when empty', () => {
             expect(() => (new WorkQueue()).process(true)).to.throw(/Queue is empty/);
         });
 
-        it('should call first handler on first call', () => {
+        it('calls first handler on first call', () => {
             const queue = new WorkQueue();
             let called = false;
 
@@ -23,7 +22,7 @@ describe('WorkQueue', () => {
             expect(called).to.equal(true);
         });
 
-        it('should call first handler on repeating calls', () => {
+        it('calls first handler on repeating calls', () => {
             const queue = new WorkQueue();
             let called = 0;
 
@@ -37,7 +36,7 @@ describe('WorkQueue', () => {
             }
         });
 
-        it('should provide the argument passed to process to the handler', () => {
+        it('provides the argument passed to process to the handler', () => {
             const queue = new WorkQueue();
 
             queue.push((arg) => {
@@ -47,7 +46,7 @@ describe('WorkQueue', () => {
             queue.process('teststring');
         });
 
-        it('should provide a callback as second argument to callback', () => {
+        it('provides a callback as second argument to callback', () => {
             const queue = new WorkQueue();
 
             queue.push((message, cb) => {
@@ -57,7 +56,7 @@ describe('WorkQueue', () => {
             queue.process(false);
         });
 
-        it('should throw exception when queue becomes empty', () => {
+        it('throws exception when queue becomes empty', () => {
             const queue = new WorkQueue();
             queue.push((message, cb) => cb());
             queue.process(true);
@@ -65,7 +64,7 @@ describe('WorkQueue', () => {
             expect(() => queue.process(true)).to.throw(/Queue is empty/);
         });
 
-        it('should clear', () => {
+        it('clears', () => {
             const queue = new WorkQueue();
             queue.push((message, cb) => cb());
             queue.clear();
@@ -73,7 +72,7 @@ describe('WorkQueue', () => {
             expect(() => queue.process(true)).to.throw(/Queue is empty/);
         });
 
-        it('should handle multiple handlers in order', () => {
+        it('handles multiple handlers in order', () => {
             const queue = new WorkQueue();
             let count = 0;
 
@@ -90,7 +89,7 @@ describe('WorkQueue', () => {
             }
         });
 
-        it('should throw after last handler', () => {
+        it('throws after last handler', () => {
             const queue = new WorkQueue();
 
             for (let i = 0; i < 10; ++i) {

@@ -2,15 +2,9 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const connectionPool = require('lib/DevAPI/ConnectionPool');
+const connectionPool = require('../../../lib/DevAPI/ConnectionPool');
+const expect = require('chai').expect;
 const td = require('testdouble');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 describe('DevAPI ConnectionPool', () => {
     afterEach('reset fakes', () => {
@@ -58,7 +52,8 @@ describe('DevAPI ConnectionPool', () => {
 
             td.when(connect()).thenResolve('foo');
 
-            return expect(pool.acquire()).to.eventually.equal('foo');
+            return pool.acquire()
+                .then(actual => expect(actual).to.equal('foo'));
         });
 
         it('picks and reset an idle connection', () => {
@@ -66,7 +61,8 @@ describe('DevAPI ConnectionPool', () => {
 
             td.when(reset()).thenResolve('foo');
 
-            return expect(pool.acquire()).to.eventually.equal('foo');
+            return pool.acquire()
+                .then(actual => expect(actual).to.equal('foo'));
         });
 
         it('creates a new connection if it cannot reset the underlying session', () => {
@@ -75,7 +71,8 @@ describe('DevAPI ConnectionPool', () => {
             td.when(connect()).thenResolve('foo');
             td.when(reset()).thenReject(new Error());
 
-            return expect(pool.acquire()).to.eventually.equal('foo');
+            return pool.acquire()
+                .then(actual => expect(actual).to.equal('foo'));
         });
 
         it('waits for an idle connection before timing out', () => {
@@ -86,7 +83,8 @@ describe('DevAPI ConnectionPool', () => {
 
             setTimeout(() => pool.release(active[0]), 200);
 
-            return expect(pool.acquire()).to.eventually.equal('foo');
+            return pool.acquire()
+                .then(actual => expect(actual).to.equal('foo'));
         });
 
         it('fails when the queue timeout is exceeded', () => {
@@ -94,7 +92,9 @@ describe('DevAPI ConnectionPool', () => {
             const pool = connectionPool({ active: [{ reset }, { reset }], idle: [], maxSize: 2, queueTimeout });
             const error = `Could not retrieve a connection from the pool. Timeout of ${queueTimeout} ms was exceeded.`;
 
-            return expect(pool.acquire()).to.be.rejectedWith(error);
+            return pool.acquire()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal(error));
         });
     });
 
@@ -113,7 +113,7 @@ describe('DevAPI ConnectionPool', () => {
 
             td.when(done()).thenResolve();
 
-            return expect(pool.destroy()).to.be.fulfilled
+            return pool.destroy()
                 .then(() => {
                     expect(td.explain(done).callCount).to.equal(4); // active connections
                 });
@@ -126,7 +126,7 @@ describe('DevAPI ConnectionPool', () => {
 
             td.when(done()).thenReject(error);
 
-            return expect(pool.destroy()).to.be.fulfilled
+            return pool.destroy()
                 .then(() => {
                     expect(td.explain(done).callCount).to.equal(2); // actice connections
                 });
@@ -148,7 +148,7 @@ describe('DevAPI ConnectionPool', () => {
             it('returns an idle legacy connection if pooling is not enabled', () => {
                 td.when(disconnect()).thenResolve();
 
-                expect(pool.pick().close()).to.eventually.be.fulfilled
+                return pool.pick().close()
                     .then(() => expect(td.explain(disconnect).callCount).to.equal(1));
             });
 
@@ -158,7 +158,7 @@ describe('DevAPI ConnectionPool', () => {
 
                 td.when(disconnect()).thenResolve();
 
-                expect(pool.pick().close()).to.be.fulfilled
+                return pool.pick().close()
                     .then(() => expect(td.explain(clear).callCount).to.equal(1));
             });
         });
@@ -169,7 +169,7 @@ describe('DevAPI ConnectionPool', () => {
                 const pool = connectionPool({ active: [{}, {}], enabled: true, idle: [session] });
                 const release = td.replace(pool, 'release');
 
-                expect(pool.pick().close()).to.be.fulfilled
+                return pool.pick().close()
                     .then(() => {
                         expect(td.explain(release).callCount).to.equal(1);
                         expect(td.explain(release).calls[0].args[0]).to.equal(session);
@@ -189,11 +189,11 @@ describe('DevAPI ConnectionPool', () => {
             const timestamp = Date.now();
             const pool = connectionPool({ idle: [{ close, timestamp }, { close, timestamp }, { close, timestamp: timestamp + 200 }], maxIdleTime: 50, maxSize: 3 });
 
-            const delayed = new Promise((resolve, reject) => {
+            const delay = () => new Promise((resolve, reject) => {
                 setTimeout(() => pool.refresh().then(resolve).catch(reject), 100);
             });
 
-            return expect(delayed).to.be.fulfilled
+            return delay()
                 .then(() => expect(td.explain(close).callCount).to.equal(2));
         });
 
@@ -201,11 +201,11 @@ describe('DevAPI ConnectionPool', () => {
             const timestamp = Date.now();
             const pool = connectionPool({ idle: [{ close, timestamp }, { close, timestamp }], maxIdleTime: 0, maxSize: 3 });
 
-            const delayed = new Promise((resolve, reject) => {
+            const delay = () => new Promise((resolve, reject) => {
                 setTimeout(() => pool.refresh().then(resolve).catch(reject), 100);
             });
 
-            return expect(delayed).to.be.fulfilled
+            return delay()
                 .then(() => expect(td.explain(close).callCount).to.equal(0));
         });
     });

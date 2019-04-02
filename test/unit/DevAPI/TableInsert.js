@@ -2,24 +2,18 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
+const expect = require('chai').expect;
 const td = require('testdouble');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 describe('TableInsert', () => {
     let tableInsert;
 
     beforeEach('load module', () => {
-        tableInsert = require('lib/DevAPI/TableInsert');
+        tableInsert = require('../../../lib/DevAPI/TableInsert');
     });
 
     context('getClassName()', () => {
-        it('should return the correct class name (to avoid duck typing)', () => {
+        it('returns the correct class name (to avoid duck typing)', () => {
             expect(tableInsert().getClassName()).to.equal('TableInsert');
         });
     });
@@ -32,15 +26,14 @@ describe('TableInsert', () => {
             fakeResult = td.function();
 
             td.replace('../../../lib/DevAPI/Result', fakeResult);
-
-            tableInsert = require('lib/DevAPI/TableInsert');
+            tableInsert = require('../../../lib/DevAPI/TableInsert');
         });
 
         afterEach('reset fakes', () => {
             td.reset();
         });
 
-        it('should return a Result instance containing the operation details', () => {
+        it('returns a Result instance containing the operation details', () => {
             const expected = { done: true };
             const state = { ok: true };
 
@@ -49,32 +42,33 @@ describe('TableInsert', () => {
             td.when(fakeResult(state)).thenReturn(expected);
             td.when(crudInsert(query)).thenResolve(state);
 
-            return expect(query.execute()).to.eventually.deep.equal(expected);
+            return query.execute()
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
     });
 
     context('values()', () => {
-        it('should be fluent', () => {
+        it('is fluent', () => {
             const query = tableInsert(null, null, null, ['foo']).values('bar');
 
             expect(query.values).to.be.a('function');
         });
 
-        it('should set the rows provided as an array', () => {
+        it('sets the rows provided as an array', () => {
             const values = ['baz', 'qux'];
             const query = tableInsert(null, null, null, ['foo', 'bar']).values(values);
 
             expect(query.getItems()).to.deep.equal([values]);
         });
 
-        it('should set the rows provided as arguments', () => {
+        it('sets the rows provided as arguments', () => {
             const values = ['baz', 'qux'];
             const query = tableInsert(null, null, null, ['foo', 'bar']).values(values[0], values[1]);
 
             expect(query.getItems()).to.deep.equal([values]);
         });
 
-        it('should throw error if the number of fields and rows do not match', () => {
+        it('throws error if the number of fields and rows do not match', () => {
             const values = ['baz', 'qux'];
             const query = tableInsert(null, null, null, ['foo']);
 

@@ -2,8 +2,7 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const collectionOrdering = require('lib/DevAPI/CollectionOrdering');
+const collectionOrdering = require('../../../lib/DevAPI/CollectionOrdering');
 const expect = require('chai').expect;
 const td = require('testdouble');
 

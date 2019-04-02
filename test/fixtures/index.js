@@ -2,9 +2,8 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const config = require('test/properties');
-const mysqlx = require('index');
+const config = require('../../test/properties');
+const mysqlx = require('../../');
 
 exports.createAccount = function (options) {
     options = Object.assign({}, config, { host: '%', plugin: 'caching_sha2_password', schema: '*' }, options);

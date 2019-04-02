@@ -2,12 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const config = require('test/properties');
+const config = require('../../properties');
 const expect = require('chai').expect;
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
 
-describe('@functional document collection remove', () => {
+describe('removing documents from a collection', () => {
     let schema, session, collection;
 
     beforeEach('create default schema', () => {
@@ -49,7 +49,7 @@ describe('@functional document collection remove', () => {
                 .execute();
         });
 
-        it('should remove all documents from a collection', () => {
+        it('removes all documents from a collection', () => {
             let actual = [];
 
             return collection
@@ -75,7 +75,7 @@ describe('@functional document collection remove', () => {
                 .execute();
         });
 
-        it('should remove the documents from a collection that match the criteria', () => {
+        it('removes the documents from a collection that match the criteria', () => {
             const expected = [{ _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -86,7 +86,7 @@ describe('@functional document collection remove', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should remove the documents from a collection that match a multi-stage bindable criteria', () => {
+        it('removes the documents from a collection that match a multi-stage bindable criteria', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -99,7 +99,7 @@ describe('@functional document collection remove', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should remove the documents from a collection that match an object bindable criteria', () => {
+        it('removes the documents from a collection that match an object bindable criteria', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -121,7 +121,7 @@ describe('@functional document collection remove', () => {
                 .execute();
         });
 
-        it('should remove a given number of documents', () => {
+        it('removes a given number of documents', () => {
             const expected = [{ _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -143,7 +143,7 @@ describe('@functional document collection remove', () => {
                 .execute();
         });
 
-        it('should remove an existing document with the given id', () => {
+        it('removes an existing document with the given id', () => {
             const expected = [{ _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -159,7 +159,7 @@ describe('@functional document collection remove', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should do nothing if no document exists with the given id', () => {
+        it('does nothing if no document exists with the given id', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -185,7 +185,7 @@ describe('@functional document collection remove', () => {
                 .execute();
         });
 
-        it('should remove all documents that match a criteria specified by a grouped expression', () => {
+        it('removes all documents that match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '2', name: 'bar' }];
             let actual = [];
 
@@ -200,7 +200,7 @@ describe('@functional document collection remove', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should remove all documents that do not match a criteria specified by a grouped expression', () => {
+        it('removes all documents that do not match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -225,7 +225,7 @@ describe('@functional document collection remove', () => {
                 .execute();
         });
 
-        it('should remove documents with a given order provided as an expression array', () => {
+        it('removes documents with a given order provided as an expression array', () => {
             const expected = [{ _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar', age: 42 }];
             const actual = [];
 
@@ -242,7 +242,7 @@ describe('@functional document collection remove', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should remove documents with a given order provided as multiple expressions', () => {
+        it('removes documents with a given order provided as multiple expressions', () => {
             const expected = [{ _id: '1', name: 'foo', age: 23 }];
             const actual = [];
 

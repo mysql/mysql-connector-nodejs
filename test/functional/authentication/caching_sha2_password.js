@@ -2,18 +2,13 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
 const os = require('os');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional authentication', () => {
+describe('authentication', () => {
     context('caching_sha2_password', () => {
         let auth, user, password;
 
@@ -36,18 +31,18 @@ describe('@functional authentication', () => {
             context('secure connections', () => {
                 // secure connections only make sense via TCP
 
-                it('should authenticate with a session configuration object property', () => {
+                it('authenticates with a session configuration object property', () => {
                     const authConfig = Object.assign({}, config, { user, password, socket: undefined, ssl: true });
 
-                    return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                    return mysqlx.getSession(authConfig)
                         .then(session => {
                             expect(session.inspect().auth).to.equal('PLAIN');
                             return session.close();
                         });
                 });
 
-                it('should authenticate with a URL parameter', () => {
-                    return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}`)).to.be.fulfilled
+                it('authenticates with a URL parameter', () => {
+                    return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}`)
                         .then(session => {
                             expect(session.inspect().auth).to.equal('PLAIN');
                             return session.close();
@@ -59,23 +54,22 @@ describe('@functional authentication', () => {
                 context('TCP', () => {
                     context('with cached password', () => {
                         beforeEach('setup connection to save the password in the server cache', () => {
-                            return mysqlx
-                                .getSession(Object.assign({}, config, { auth: 'PLAIN', user, password }))
+                            return mysqlx.getSession(Object.assign({}, config, { auth: 'PLAIN', user, password }))
                                 .then(session => session.close());
                         });
 
-                        it('should authenticate with a session configuration object property', () => {
+                        it('authenticates with a session configuration object property', () => {
                             const authConfig = Object.assign({}, config, { user, password, socket: undefined, ssl: false });
 
-                            return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                            return mysqlx.getSession(authConfig)
                                 .then(session => {
                                     expect(session.inspect().auth).to.equal('SHA256_MEMORY');
                                     return session.close();
                                 });
                         });
 
-                        it('should authenticate with a URL parameter', () => {
-                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED`)).to.be.fulfilled
+                        it('authenticates with a URL parameter', () => {
+                            return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED`)
                                 .then(session => {
                                     expect(session.inspect().auth).to.equal('SHA256_MEMORY');
                                     return session.close();
@@ -84,20 +78,22 @@ describe('@functional authentication', () => {
                     });
 
                     context('without cached password', () => {
-                        it('should fail to authenticate with a session configuration object property', () => {
+                        it('fails to authenticate with a session configuration object property', () => {
                             const authConfig = Object.assign({}, config, { user, password, socket: undefined, ssl: false });
 
-                            return expect(mysqlx.getSession(authConfig)).to.be.rejected
-                                .then(err => {
+                            return mysqlx.getSession(authConfig)
+                                .then(() => expect.fail())
+                                .catch(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
                                     expect(err.message).to.match(/Authentication failed using "MYSQL41" and "SHA256_MEMORY"/);
                                 });
                         });
 
-                        it('should fail to authenticate with a URL parameter', () => {
-                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED`)).to.be.rejected
-                                .then(err => {
+                        it('fails to authenticate with a URL parameter', () => {
+                            return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED`)
+                                .then(() => expect.fail())
+                                .catch(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
                                     expect(err.message).to.match(/Authentication failed using "MYSQL41" and "SHA256_MEMORY"/);
@@ -107,26 +103,26 @@ describe('@functional authentication', () => {
                 });
 
                 context('local UNIX socket', () => {
-                    it('should authenticate with a session configuration object property', function () {
+                    it('authenticates with a session configuration object property', function () {
                         if (!config.socket || os.platform() === 'win32') {
                             return this.skip();
                         }
 
                         const authConfig = Object.assign({}, config, { user, password, ssl: false });
 
-                        return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                        return mysqlx.getSession(authConfig)
                             .then(session => {
                                 expect(session.inspect().auth).to.equal('PLAIN');
                                 return session.close();
                             });
                     });
 
-                    it('should authenticate with a URL parameter', function () {
+                    it('authenticates with a URL parameter', function () {
                         if (!config.socket || os.platform() === 'win32') {
                             return this.skip();
                         }
 
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@(${config.socket})?ssl-mode=DISABLED`)).to.be.fulfilled
+                        return mysqlx.getSession(`mysqlx://${user}:${password}@(${config.socket})?ssl-mode=DISABLED`)
                             .then(session => {
                                 expect(session.inspect().auth).to.equal('PLAIN');
                                 return session.close();
@@ -144,19 +140,21 @@ describe('@functional authentication', () => {
             context('secure connections', () => {
                 // secure connections only make sense via TCP
 
-                it('should fail to authenticate with a session configuration object property', () => {
+                it('fails to authenticate with a session configuration object property', () => {
                     const authConfig = Object.assign({}, config, { auth, user, password, socket: undefined, ssl: true });
 
-                    return expect(mysqlx.getSession(authConfig)).to.be.rejected
-                        .then(err => {
+                    return mysqlx.getSession(authConfig)
+                        .then(() => expect.fail())
+                        .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
                         });
                 });
 
-                it('should authenticate with a URL parameter', () => {
-                    return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)).to.be.rejected
-                        .then(err => {
+                it('authenticates with a URL parameter', () => {
+                    return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)
+                        .then(() => expect.fail())
+                        .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
                         });
@@ -167,19 +165,21 @@ describe('@functional authentication', () => {
                 // secure connections only make sense via TCP
 
                 context('TCP', () => {
-                    it('should fail to authenticate with a session configuration object property', () => {
+                    it('fails to authenticate with a session configuration object property', () => {
                         const authConfig = Object.assign({}, config, { auth, user, password, socket: undefined, ssl: false });
 
-                        return expect(mysqlx.getSession(authConfig)).to.be.rejected
-                            .then(err => {
+                        return mysqlx.getSession(authConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
                             });
                     });
 
-                    it('should authenticate with a URL parameter', () => {
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
-                            .then(err => {
+                    it('authenticates with a URL parameter', () => {
+                        return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)
+                            .then(() => expect.fail())
+                            .catch(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
                             });
@@ -187,27 +187,29 @@ describe('@functional authentication', () => {
                 });
 
                 context('local UNIX socket', () => {
-                    it('should authenticate with a session configuration object property', function () {
+                    it('authenticates with a session configuration object property', function () {
                         if (!config.socket || os.platform() === 'win32') {
                             return this.skip();
                         }
 
                         const authConfig = Object.assign({}, config, { auth, user, password, ssl: false });
 
-                        return expect(mysqlx.getSession(authConfig)).to.be.rejected
-                            .then(err => {
+                        return mysqlx.getSession(authConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
                             });
                     });
 
-                    it('should authenticate with a URL parameter', function () {
+                    it('authenticates with a URL parameter', function () {
                         if (!config.socket || os.platform() === 'win32') {
                             return this.skip();
                         }
 
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@(${config.socket})?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
-                            .then(err => {
+                        return mysqlx.getSession(`mysqlx://${user}:${password}@(${config.socket})?ssl-mode=DISABLED&auth=${auth}`)
+                            .then(() => expect.fail())
+                            .catch(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
                             });
@@ -224,18 +226,18 @@ describe('@functional authentication', () => {
             context('secure connections', () => {
                 // secure connections only make sense via TCP
 
-                it('should authenticate with a session configuration object property', () => {
+                it('authenticates with a session configuration object property', () => {
                     const authConfig = Object.assign({}, config, { auth, user, password, socket: undefined, ssl: true });
 
-                    return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                    return mysqlx.getSession(authConfig)
                         .then(session => {
                             expect(session.inspect().auth).to.equal(auth);
                             return session.close();
                         });
                 });
 
-                it('should authenticate with a URL parameter', () => {
-                    return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)).to.be.fulfilled
+                it('authenticates with a URL parameter', () => {
+                    return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)
                         .then(session => {
                             expect(session.inspect().auth).to.equal(auth);
                             return session.close();
@@ -245,19 +247,21 @@ describe('@functional authentication', () => {
 
             context('insecure connections', () => {
                 context('TCP', () => {
-                    it('should fail to authenticate with a session configuration object property', () => {
+                    it('fails to authenticate with a session configuration object property', () => {
                         const authConfig = Object.assign({}, config, { auth, user, password, socket: undefined, ssl: false });
 
-                        return expect(mysqlx.getSession(authConfig)).to.be.rejected
-                            .then(err => {
+                        return mysqlx.getSession(authConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1251);
                             });
                     });
 
-                    it('should fail to authenticate with a URL parameter', () => {
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
-                            .then(err => {
+                    it('fails to authenticate with a URL parameter', () => {
+                        return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)
+                            .then(() => expect.fail())
+                            .catch(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1251);
                             });
@@ -265,26 +269,26 @@ describe('@functional authentication', () => {
                 });
 
                 context('local UNIX socket', () => {
-                    it('should authenticate with a session configuration object property', function () {
+                    it('authenticates with a session configuration object property', function () {
                         if (!config.socket || os.platform() === 'win32') {
                             return this.skip();
                         }
 
                         const authConfig = Object.assign({}, config, { auth, user, password, ssl: false });
 
-                        return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                        return mysqlx.getSession(authConfig)
                             .then(session => {
                                 expect(session.inspect().auth).to.equal(auth);
                                 return session.close();
                             });
                     });
 
-                    it('should authenticate with a URL parameter', function () {
+                    it('authenticates with a URL parameter', function () {
                         if (!config.socket || os.platform() === 'win32') {
                             return this.skip();
                         }
 
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@(${config.socket})?ssl-mode=DISABLED&auth=${auth}`)).to.be.fulfilled
+                        return mysqlx.getSession(`mysqlx://${user}:${password}@(${config.socket})?ssl-mode=DISABLED&auth=${auth}`)
                             .then(session => {
                                 expect(session.inspect().auth).to.equal(auth);
                                 return session.close();
@@ -303,19 +307,21 @@ describe('@functional authentication', () => {
                 context('secure connections', () => {
                     // secure connections only make sense via TCP
 
-                    it('should fail to authenticate with a session configuration object property', () => {
+                    it('fails to authenticate with a session configuration object property', () => {
                         const authConfig = Object.assign({}, config, { auth, user, password, socket: undefined, ssl: true });
 
-                        return expect(mysqlx.getSession(authConfig)).to.be.rejected
-                            .then(err => {
+                        return mysqlx.getSession(authConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
                             });
                     });
 
-                    it('should fail to authenticate with a URL parameter', () => {
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)).to.be.rejected
-                            .then(err => {
+                    it('fails to authenticate with a URL parameter', () => {
+                        return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)
+                            .then(() => expect.fail())
+                            .catch(err => {
                                 expect(err.info).to.include.keys('code');
                                 expect(err.info.code).to.equal(1045);
                             });
@@ -324,19 +330,21 @@ describe('@functional authentication', () => {
 
                 context('insecure connections', () => {
                     context('TCP', () => {
-                        it('should fail to authenticate with a session configuration object property', () => {
+                        it('fails to authenticate with a session configuration object property', () => {
                             const authConfig = Object.assign({}, config, { auth, user, password, socket: undefined, ssl: false });
 
-                            return expect(mysqlx.getSession(authConfig)).to.be.rejected
-                                .then(err => {
+                            return mysqlx.getSession(authConfig)
+                                .then(() => expect.fail())
+                                .catch(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
                                 });
                         });
 
-                        it('should fail to authenticate with a URL parameter', () => {
-                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
-                                .then(err => {
+                        it('fails to authenticate with a URL parameter', () => {
+                            return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)
+                                .then(() => expect.fail())
+                                .catch(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
                                 });
@@ -344,27 +352,29 @@ describe('@functional authentication', () => {
                     });
 
                     context('local UNIX socket', () => {
-                        it('should fail to authenticate with a session configuration object property', function () {
+                        it('fails to authenticate with a session configuration object property', function () {
                             if (!config.socket || os.platform() === 'win32') {
                                 return this.skip();
                             }
 
                             const authConfig = Object.assign({}, config, { auth, user, password, ssl: false });
 
-                            return expect(mysqlx.getSession(authConfig)).to.be.rejected
-                                .then(err => {
+                            return mysqlx.getSession(authConfig)
+                                .then(() => expect.fail())
+                                .catch(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
                                 });
                         });
 
-                        it('should fail to authenticate with a URL parameter', function () {
+                        it('fails to authenticate with a URL parameter', function () {
                             if (!config.socket || os.platform() === 'win32') {
                                 return this.skip();
                             }
 
-                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@(${config.socket})?ssl-mode=DISABLED&auth=${auth}`)).to.be.rejected
-                                .then(err => {
+                            return mysqlx.getSession(`mysqlx://${user}:${password}@(${config.socket})?ssl-mode=DISABLED&auth=${auth}`)
+                                .then(() => expect.fail())
+                                .catch(err => {
                                     expect(err.info).to.include.keys('code');
                                     expect(err.info.code).to.equal(1045);
                                 });
@@ -383,18 +393,18 @@ describe('@functional authentication', () => {
                 context('secure connections', () => {
                     // secure connections only make sense via TCP
 
-                    it('should authenticate with a session configuration object property', () => {
+                    it('authenticates with a session configuration object property', () => {
                         const authConfig = Object.assign({}, config, { auth, user, password, socket: undefined, ssl: true });
 
-                        return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                        return mysqlx.getSession(authConfig)
                             .then(session => {
                                 expect(session.inspect().auth).to.equal(auth);
                                 return session.close();
                             });
                     });
 
-                    it('should authenticate with a URL parameter', () => {
-                        return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)).to.be.fulfilled
+                    it('authenticates with a URL parameter', () => {
+                        return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?auth=${auth}`)
                             .then(session => {
                                 expect(session.inspect().auth).to.equal(auth);
                                 return session.close();
@@ -404,18 +414,18 @@ describe('@functional authentication', () => {
 
                 context('insecure connections', () => {
                     context('TCP', () => {
-                        it('should authenticate with a session configuration object property', () => {
+                        it('authenticates with a session configuration object property', () => {
                             const authConfig = Object.assign({}, config, { auth, user, password, socket: undefined, ssl: false });
 
-                            return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                            return mysqlx.getSession(authConfig)
                                 .then(session => {
                                     expect(session.inspect().auth).to.equal(auth);
                                     return session.close();
                                 });
                         });
 
-                        it('should authenticate with a URL parameter', () => {
-                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)).to.be.fulfilled
+                        it('authenticates with a URL parameter', () => {
+                            return mysqlx.getSession(`mysqlx://${user}:${password}@${config.host}:${config.port}?ssl-mode=DISABLED&auth=${auth}`)
                                 .then(session => {
                                     expect(session.inspect().auth).to.equal(auth);
                                     return session.close();
@@ -424,26 +434,26 @@ describe('@functional authentication', () => {
                     });
 
                     context('local UNIX socket', () => {
-                        it('should authenticate with a session configuration object property', function () {
+                        it('authenticates with a session configuration object property', function () {
                             if (!config.socket || os.platform() === 'win32') {
                                 return this.skip();
                             }
 
                             const authConfig = Object.assign({}, config, { auth, user, password, ssl: false });
 
-                            return expect(mysqlx.getSession(authConfig)).to.be.fulfilled
+                            return mysqlx.getSession(authConfig)
                                 .then(session => {
                                     expect(session.inspect().auth).to.equal(auth);
                                     return session.close();
                                 });
                         });
 
-                        it('should authenticate with a URL parameter', function () {
+                        it('authenticates with a URL parameter', function () {
                             if (!config.socket || os.platform() === 'win32') {
                                 return this.skip();
                             }
 
-                            return expect(mysqlx.getSession(`mysqlx://${user}:${password}@(${config.socket})?ssl-mode=DISABLED&auth=${auth}`)).to.be.fulfilled
+                            return mysqlx.getSession(`mysqlx://${user}:${password}@(${config.socket})?ssl-mode=DISABLED&auth=${auth}`)
                                 .then(session => {
                                     expect(session.inspect().auth).to.equal(auth);
                                     return session.close();

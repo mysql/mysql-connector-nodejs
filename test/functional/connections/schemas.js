@@ -2,16 +2,11 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const mysqlx = require('index');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const mysqlx = require('../../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional schema management', () => {
+describe('schema management', () => {
     let session;
 
     beforeEach('create session', () => {
@@ -35,7 +30,7 @@ describe('@functional schema management', () => {
         return session.close();
     });
 
-    it('should allow to create a new schema', () => {
+    it('allows to create a new schema', () => {
         let schemas = [];
 
         return session.createSchema(config.schema)
@@ -50,7 +45,7 @@ describe('@functional schema management', () => {
             });
     });
 
-    it('should allow to list the existing schemas', () => {
+    it('allows to list the existing schemas', () => {
         let expected = [];
 
         return session.sql('SHOW DATABASES')
@@ -65,39 +60,40 @@ describe('@functional schema management', () => {
             });
     });
 
-    it('should allow to drop an existing schema', () => {
+    it('allows to drop an existing schema', () => {
         return session.createSchema(config.schema)
-            .then(() => {
-                return expect(session.dropSchema(config.schema)).to.be.fulfilled;
-            });
+            .then(() => session.dropSchema(config.schema));
     });
 
-    it('should not fail to drop a non-existent schema', () => {
+    it('does not fail to drop a non-existent schema', () => {
         return session.dropSchema(config.schema)
-            .then(() => {
-                return expect(session.dropSchema(config.schema)).to.be.fulfilled;
-            });
+            .then(() => session.dropSchema(config.schema));
     });
 
-    it('should fail to drop a schema with an empty name', () => {
-        return expect(session.dropSchema('')).to.be.rejected;
+    it('fails to drop a schema with an empty name', () => {
+        return session.dropSchema('')
+            .then(() => expect.fail())
+            .catch(err => expect(err.message).to.not.equal('expect.fail()'));
     });
 
-    it('should fail to drop a schema with an invalid name', () => {
-        return expect(session.dropSchema(' ')).to.be.rejected;
+    it('fails to drop a schema with an invalid name', () => {
+        return session.dropSchema(' ')
+            .then(() => expect.fail())
+            .catch(err => expect(err.message).to.not.equal('expect.fail()'));
     });
 
-    it('should fail to drop a schema with name set to `null`', () => {
-        return expect(session.dropSchema(null)).to.be.rejected;
+    it('fails to drop a schema with name set to `null`', () => {
+        return session.dropSchema(null)
+            .then(() => expect.fail())
+            .catch(err => expect(err.message).to.not.equal('expect.fail()'));
     });
 
-    it('should allow to create a new session using an existing default schema', () => {
+    it('allows to create a new session using an existing default schema', () => {
         return session.createSchema(config.schema)
-            .then(() => {
-                return mysqlx.getSession(config);
-            })
+            .then(() => mysqlx.getSession(config))
             .then(session => {
-                return expect(session.getDefaultSchema().getName()).to.equal(config.schema);
+                expect(session.getDefaultSchema().getName()).to.equal(config.schema);
+                return session.close();
             });
     });
 });

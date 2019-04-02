@@ -2,18 +2,13 @@
 
 /* eslint-env node, mocha */
 
-const config = require('test/properties');
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
-const util = require('test/util');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
+const util = require('../../util');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional prepared statements for CollectionModify', () => {
+describe('prepared statements for CollectionModify', () => {
     let collection, schema, session;
 
     beforeEach('create default schema', () => {
@@ -155,7 +150,7 @@ describe('@functional prepared statements for CollectionModify', () => {
             const op = collection.modify('_id = :id').bind('id', '1').set('name', 'quux');
 
             return op.execute()
-                .then(() => expect(op.bind('id', '2').execute()).to.be.fulfilled)
+                .then(() => op.bind('id', '2').execute())
                 .then(() => util.getPreparedStatement(session, 1))
                 .then(statement => expect(statement).to.not.exist)
                 .then(() => collection.find().execute(doc => actual.push(doc)))

@@ -2,12 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const config = require('test/properties');
+const config = require('../../properties');
 const expect = require('chai').expect;
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
 
-describe('@functional document collection modify', () => {
+describe('modifying documents in a collection', () => {
     let schema, session, collection;
 
     beforeEach('create default schema', () => {
@@ -48,24 +48,22 @@ describe('@functional document collection modify', () => {
                 .execute();
         });
 
-        it('should update properties of all documents in a collection', () => {
+        it('updates properties of all documents in a collection', () => {
             const expected = [{ _id: '1', name: 'qux' }, { _id: '2', name: 'qux' }];
             let actual = [];
 
-            return collection
-                .modify('true')
+            return collection.modify('true')
                 .set('name', 'qux')
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should remove properties of all documents in a collection', () => {
+        it('removes properties of all documents in a collection', () => {
             const expected = [{ _id: '1' }, { _id: '2' }];
             let actual = [];
 
-            return collection
-                .modify('true')
+            return collection.modify('true')
                 .unset('name')
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
@@ -82,7 +80,7 @@ describe('@functional document collection modify', () => {
                 .execute();
         });
 
-        it('should update properties of the documents from a collection that match the criteria', () => {
+        it('updates properties of the documents from a collection that match the criteria', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'qux' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -94,7 +92,7 @@ describe('@functional document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should remove properties of the documents from a collection that match the criteria', () => {
+        it('removes properties of the documents from a collection that match the criteria', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -116,12 +114,11 @@ describe('@functional document collection modify', () => {
                 .execute();
         });
 
-        it('should modify a given number of documents', () => {
+        it('modifies a given number of documents', () => {
             const expected = [{ _id: '1', name: 'qux' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
-            return collection
-                .modify('true')
+            return collection.modify('true')
                 .set('name', 'qux')
                 .limit(1)
                 .execute()
@@ -139,7 +136,7 @@ describe('@functional document collection modify', () => {
                 .execute();
         });
 
-        it('should replace the entire document if it exists', () => {
+        it('replaces the entire document if it exists', () => {
             const expected = [{ _id: '1', age: 23 }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -155,7 +152,7 @@ describe('@functional document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should do nothing if the document does not exist', () => {
+        it('does nothing if the document does not exist', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -181,7 +178,7 @@ describe('@functional document collection modify', () => {
                 .execute();
         });
 
-        it('should modify all documents that match a criteria specified by a grouped expression', () => {
+        it('modifies all documents that match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '1', name: 'qux' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'qux' }];
             let actual = [];
 
@@ -197,7 +194,7 @@ describe('@functional document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should modify all documents that do not match a criteria specified by a grouped expression', () => {
+        it('modifies all documents that do not match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'qux' }, { _id: '3', name: 'baz' }];
             let actual = [];
 
@@ -223,7 +220,7 @@ describe('@functional document collection modify', () => {
                 .execute();
         });
 
-        it('should update all matching documents of a collection', () => {
+        it('updates all matching documents of a collection', () => {
             const expected = [
                 { _id: '1', name: 'qux', age: 23, address: { city: 'bar', street: 'baz', zip: 'qux' } },
                 { _id: '2', name: 'bar', age: 42, address: { city: 'baz', street: 'qux', zip: 'quux' } },
@@ -244,7 +241,7 @@ describe('@functional document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should replace values of document fields at any nesting level', () => {
+        it('replaces values of document fields at any nesting level', () => {
             const expected = [
                 { _id: '1', name: 'qux', age: 23, address: { city: 'foo', street: 'bar', zip: 'qux' } },
                 { _id: '2', name: 'bar', age: 42, address: { city: 'baz', street: 'qux', zip: 'quux' } },
@@ -265,7 +262,7 @@ describe('@functional document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should add new document fields at any nesting level', () => {
+        it('adds new document fields at any nesting level', () => {
             const expected = [
                 { _id: '1', name: 'foo', age: 23, more: true, address: { city: 'bar', street: 'baz', zip: 'qux', more: true } },
                 { _id: '2', name: 'bar', age: 42, more: true, address: { city: 'baz', street: 'qux', zip: 'quux', more: true } },
@@ -274,8 +271,7 @@ describe('@functional document collection modify', () => {
 
             let actual = [];
 
-            return collection
-                .modify('true')
+            return collection.modify('true')
                 .patch({ more: true, address: { more: true } })
                 .execute()
                 .then(() => {
@@ -286,7 +282,7 @@ describe('@functional document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should delete document fields at any nesting level', () => {
+        it('deletes document fields at any nesting level', () => {
             const expected = [
                 { _id: '1', name: 'foo', address: { city: 'bar', street: 'baz' } },
                 { _id: '2', name: 'bar', age: 42, address: { city: 'baz', street: 'qux', zip: 'quux' } },
@@ -307,7 +303,7 @@ describe('@functional document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should avoid any change to the `_id` field', () => {
+        it('avoids any change to the `_id` field', () => {
             const expected = [
                 { _id: '1', name: 'qux', age: 23 },
                 { _id: '2', name: 'bar', age: 42, address: { city: 'baz', street: 'qux', zip: 'quux' } },
@@ -338,12 +334,11 @@ describe('@functional document collection modify', () => {
                 .execute();
         });
 
-        it('should modify documents with a given order provided as an expression array', () => {
+        it('modifies documents with a given order provided as an expression array', () => {
             const expected = [{ _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar', age: 42, updated: true }, { _id: '3', name: 'baz', age: 23 }];
             const actual = [];
 
-            return collection
-                .modify('true')
+            return collection.modify('true')
                 .set('updated', true)
                 .limit(1)
                 .sort(['age DESC'])
@@ -356,12 +351,11 @@ describe('@functional document collection modify', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('should modify documents with a given order provided as multiple expressions', () => {
+        it('modifies documents with a given order provided as multiple expressions', () => {
             const expected = [{ _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar', age: 42 }, { _id: '3', name: 'baz', age: 23, updated: true }];
             const actual = [];
 
-            return collection
-                .modify('true')
+            return collection.modify('true')
                 .set('updated', true)
                 .limit(1)
                 .sort('age ASC', 'name ASC')

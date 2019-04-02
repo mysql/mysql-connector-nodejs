@@ -2,8 +2,7 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const StmtExecuteStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_sql_pb').StmtExecute;
+const StmtExecuteStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_sql_pb').StmtExecute;
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -25,8 +24,7 @@ describe('Protobuf', () => {
                 getSQL = td.function();
 
                 td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_sql_pb', { StmtExecute: FakeStmtExecuteStub });
-
-                Sql = require('lib/Protocol/Protobuf/Adapters/Sql');
+                Sql = require('../../../../lib/Protocol/Protobuf/Adapters/Sql');
                 createOperationArgs = td.replace(Sql, 'createOperationArgs');
             });
 
@@ -78,7 +76,7 @@ describe('Protobuf', () => {
                 td.when(toObject()).thenReturn('bar');
                 td.when(deserializeBinary(new Uint8Array(data))).thenReturn({ toObject });
 
-                Sql = require('lib/Protocol/Protobuf/Adapters/Sql');
+                Sql = require('../../../../lib/Protocol/Protobuf/Adapters/Sql');
 
                 return expect(Sql.decodeStmtExecuteOk(data)).to.equal('bar');
             });
@@ -95,7 +93,7 @@ describe('Protobuf', () => {
                 td.when(createAny('foo'), { times: 1 }).thenReturn('baz');
                 td.when(createAny('bar'), { times: 1 }).thenReturn('qux');
 
-                Sql = require('lib/Protocol/Protobuf/Adapters/Sql');
+                Sql = require('../../../../lib/Protocol/Protobuf/Adapters/Sql');
                 const args = Sql.createOperationArgs(statement);
 
                 expect(args).to.have.lengthOf(2);
@@ -109,7 +107,7 @@ describe('Protobuf', () => {
                 const serializeBinary = td.function();
                 const toObject = td.function();
 
-                Sql = require('lib/Protocol/Protobuf/Adapters/Sql');
+                Sql = require('../../../../lib/Protocol/Protobuf/Adapters/Sql');
                 const createStmtExecute = td.replace(Sql, 'createStmtExecute');
 
                 td.when(createStmtExecute(statement)).thenReturn({ serializeBinary, toObject });

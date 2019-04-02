@@ -2,14 +2,8 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
+const expect = require('chai').expect;
 const td = require('testdouble');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 describe('TableDelete', () => {
     let tableDelete, preparing;
@@ -18,7 +12,7 @@ describe('TableDelete', () => {
         preparing = td.function();
 
         td.replace('../../../lib/DevAPI/Preparing', preparing);
-        tableDelete = require('lib/DevAPI/TableDelete');
+        tableDelete = require('../../../lib/DevAPI/TableDelete');
     });
 
     afterEach('reset fakes', () => {
@@ -26,35 +20,38 @@ describe('TableDelete', () => {
     });
 
     context('execute()', () => {
-        it('should fail if a condition query is not provided', () => {
-            return expect(tableDelete().execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
+        it('fails if a condition query is not provided', () => {
+            return tableDelete().execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
         });
 
-        it('should fail if a condition query is empty', () => {
-            const query = tableDelete(null, null, null, '');
-
-            return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
+        it('fails if a condition query is empty', () => {
+            return tableDelete(null, null, null, '').execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
         });
 
-        it('should fail if a condition query is not valid', () => {
-            const query = tableDelete(null, null, null, ' ');
-
-            return expect(query.execute()).to.eventually.be.rejectedWith('An explicit criteria needs to be provided using where().');
+        it('fails if a condition query is not valid', () => {
+            return tableDelete(null, null, null, ' ').execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
         });
 
         it('wraps the operation in a preparable instance', () => {
             const execute = td.function();
             const session = 'foo';
 
-            td.when(execute(td.matchers.isA(Function))).thenReturn('bar');
+            td.when(execute(td.matchers.isA(Function))).thenResolve('bar');
             td.when(preparing({ session })).thenReturn({ execute });
 
-            return expect(tableDelete(session, null, null, 'true').execute()).to.equal('bar');
+            return tableDelete(session, null, null, 'true').execute()
+                .then(actual => expect(actual).to.equal('bar'));
         });
     });
 
     context('getClassName()', () => {
-        it('should return the correct class name (to avoid duck typing)', () => {
+        it('returns the correct class name (to avoid duck typing)', () => {
             expect(tableDelete().getClassName()).to.equal('TableDelete');
         });
     });

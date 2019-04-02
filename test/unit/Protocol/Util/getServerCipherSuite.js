@@ -3,10 +3,10 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const getServerCipherSuite = require('lib/Protocol/Util/getServerCipherSuite');
+const getServerCipherSuite = require('../../../../lib/Protocol/Util/getServerCipherSuite');
 
 describe('getServerCipherSuite', () => {
-    it('should return a list in OpenSSL cipher list format', () => {
+    it('returns a list in OpenSSL cipher list format', () => {
         const suite = getServerCipherSuite();
         const entries = suite.split(':');
 
@@ -15,7 +15,7 @@ describe('getServerCipherSuite', () => {
         expect(entries.filter(entry => entry[0] === '!')).to.have.length.above(0);
     });
 
-    it('should include the mandatory ciphers', () => {
+    it('includes the mandatory ciphers', () => {
         const suite = getServerCipherSuite();
         const mandatory = [
             'ECDHE-ECDSA-AES128-GCM-SHA256',
@@ -30,7 +30,7 @@ describe('getServerCipherSuite', () => {
         mandatory.forEach(entry => expect(suite).to.have.string(entry));
     });
 
-    it('should exclude the unacceptable ciphers', () => {
+    it('excludes the unacceptable ciphers', () => {
         const suite = getServerCipherSuite();
         const unacceptable = [
             'aNULL',
@@ -48,7 +48,7 @@ describe('getServerCipherSuite', () => {
         unacceptable.forEach(entry => expect(suite).to.have.string(entry));
     });
 
-    it('should include additional approved ciphers', () => {
+    it('includes additional approved ciphers', () => {
         const suite = getServerCipherSuite();
         const mandatory = [
             'ECDHE-ECDSA-AES128-GCM-SHA256',

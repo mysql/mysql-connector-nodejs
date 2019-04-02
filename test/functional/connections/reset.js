@@ -2,22 +2,18 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const properties = require('test/properties');
-const mysqlx = require('index');
+const expect = require('chai').expect;
+const config = require('../../properties');
+const mysqlx = require('../../../');
 
-chai.use(chaiAsPromised);
+describe('session reset behavior', () => {
+    const schemalessConfig = Object.assign({}, config, { schema: undefined });
 
-const expect = chai.expect;
-const config = Object.assign({}, properties, { schema: undefined });
-
-describe('@functional session reset behavior', () => {
     context('closing legacy sessions', () => {
         let session;
 
         beforeEach('create legacy session', () => {
-            return mysqlx.getSession(config)
+            return mysqlx.getSession(schemalessConfig)
                 .then(s => { session = s; });
         });
 
@@ -31,7 +27,7 @@ describe('@functional session reset behavior', () => {
             return session.sql('SELECT CONNECTION_ID()')
                 .execute(row => { beforeClose = row[0]; })
                 .then(() => session.close())
-                .then(() => mysqlx.getSession(config))
+                .then(() => mysqlx.getSession(schemalessConfig))
                 .then(s => {
                     session = s;
                     return session.sql('SELECT CONNECTION_ID()')
@@ -45,7 +41,7 @@ describe('@functional session reset behavior', () => {
         let client;
 
         beforeEach('create pool', () => {
-            client = mysqlx.getClient(config, { pooling: { maxSize: 1 } });
+            client = mysqlx.getClient(schemalessConfig, { pooling: { maxSize: 1 } });
         });
 
         afterEach('destroy pool', () => {

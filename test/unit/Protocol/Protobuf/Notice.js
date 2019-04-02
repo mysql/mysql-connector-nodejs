@@ -2,19 +2,18 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const Frame = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Frame;
-const Notice = require('lib/Protocol/Protobuf/Adapters/Notice');
-const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
-const SessionStateChanged = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').SessionStateChanged;
-const SessionVariableChanged = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').SessionVariableChanged;
-const Warning = require('lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Warning;
+const Frame = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Frame;
+const Notice = require('../../../../lib/Protocol/Protobuf/Adapters/Notice');
+const Scalar = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
+const SessionStateChanged = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').SessionStateChanged;
+const SessionVariableChanged = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').SessionVariableChanged;
+const Warning = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Warning;
 const expect = require('chai').expect;
 
 describe('Protobuf', () => {
     context('Notice', () => {
         context('decodeFrame()', () => {
-            it('should decode a Warning frame', () => {
+            it('decodes a Warning frame', () => {
                 const type = Frame.Type.WARNING;
                 const frame = new Frame();
                 frame.setScope(Frame.Scope.LOCAL);
@@ -35,7 +34,7 @@ describe('Protobuf', () => {
                 expect(Notice.decodeFrame(data)).to.deep.equal({ scope: Frame.Scope.LOCAL, type, warning: { level, code: 23, message: 'foo' } });
             });
 
-            it('should decode a SessionVariableChanged frame', () => {
+            it('decodes a SessionVariableChanged frame', () => {
                 const type = Frame.Type.SESSION_VARIABLE_CHANGED;
                 const frame = new Frame();
                 frame.setScope(Frame.Scope.LOCAL);
@@ -58,7 +57,7 @@ describe('Protobuf', () => {
                 expect(Notice.decodeFrame(data)).to.deep.equal({ scope: Frame.Scope.LOCAL, type, variable: { name: 'foo', value: 23 } });
             });
 
-            it('should decode a SessionStateChanged frame', () => {
+            it('decodes a SessionStateChanged frame', () => {
                 const type = Frame.Type.SESSION_STATE_CHANGED;
                 const frame = new Frame();
                 frame.setScope(Frame.Scope.LOCAL);
@@ -84,7 +83,7 @@ describe('Protobuf', () => {
         });
 
         context('decodeWarning()', () => {
-            it('should decode a note', () => {
+            it('decodes a note', () => {
                 const level = Warning.Level.NOTE;
                 const warning = new Warning();
                 warning.setLevel(level);
@@ -98,7 +97,7 @@ describe('Protobuf', () => {
                 expect(Notice.decodeWarning(data)).to.deep.equal({ code: 23, level: level, message: 'foo' });
             });
 
-            it('should decode a server warning', () => {
+            it('decodes a server warning', () => {
                 const level = Warning.Level.WARNING;
                 const warning = new Warning();
                 warning.setLevel(level);
@@ -112,7 +111,7 @@ describe('Protobuf', () => {
                 expect(Notice.decodeWarning(data)).to.deep.equal({ code: 23, level: level, message: 'foo' });
             });
 
-            it('should decode a server error', () => {
+            it('decodes a server error', () => {
                 const level = Warning.Level.ERROR;
                 const warning = new Warning();
                 warning.setLevel(level);

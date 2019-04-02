@@ -2,19 +2,14 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
-const util = require('test/util');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const fixtures = require('../../fixtures');
+const mysqlx = require('../../../');
+const util = require('../../util');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional row locking in collection transactions', () => {
-    let sessionA, sessionB;
+describe('row locking in collection transactions', () => {
+    let sessionA, sessionB, collectionFromA, collectionFromB;
 
     beforeEach('create default schema', () => {
         return fixtures.createDefaultSchema();
@@ -32,11 +27,13 @@ describe('@functional row locking in collection transactions', () => {
         return sessionA.getSchema(config.schema).createCollection('test');
     });
 
+    beforeEach('assign collection instances', () => {
+        collectionFromA = sessionA.getSchema(config.schema).getCollection('test');
+        collectionFromB = sessionB.getSchema(config.schema).getCollection('test');
+    });
+
     beforeEach('add fixtures', () => {
-        return sessionA.getSchema(config.schema).getCollection('test')
-            .add({ _id: '1', a: 1 })
-            .add({ _id: '2', a: 1 })
-            .add({ _id: '3', a: 1 })
+        return collectionFromA.add([{ _id: '1', a: 1 }, { _id: '2', a: 1 }, { _id: '3', a: 1 }])
             .execute();
     });
 
@@ -50,111 +47,73 @@ describe('@functional row locking in collection transactions', () => {
 
     context('exclusive locks', () => {
         context('default mode', () => {
-            it('should allow any session to consistently modify row data', () => {
+            it('allows any session to consistently modify row data', () => {
                 const expected = [{ _id: '1', a: 3, b: 'foo' }];
-                let samplesA = [];
-                let samplesB = [];
                 const actual = [];
 
-                const transaction1 = sessionA
-                    .startTransaction()
+                let samplesA = [];
+                let samplesB = [];
+
+                const transaction1 = sessionA.startTransaction()
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromA.find('_id = "1"')
                             .lockExclusive()
                             .execute(doc => samplesA.push(doc));
                     })
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .modify('_id = "1"')
+                        return collectionFromA.modify('_id = "1"')
                             .set('a', samplesA[0].a + 1)
                             .execute();
                     })
-                    .then(() => {
-                        return sessionA.commit();
-                    });
+                    .then(() => sessionA.commit());
 
-                const transaction2 = sessionB
-                    .startTransaction()
+                const transaction2 = sessionB.startTransaction()
                     .then(() => {
-                        return sessionB
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromB.find('_id = "1"')
                             .lockExclusive()
                             .execute(doc => samplesB.push(doc));
                     })
                     .then(() => {
-                        return sessionB
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .modify('_id = "1"')
+                        return collectionFromB.modify('_id = "1"')
                             .set('a', samplesB[0].a + 1)
                             .set('b', 'foo')
                             .execute();
                     })
-                    .then(() => {
-                        return sessionB.commit();
-                    });
+                    .then(() => sessionB.commit());
 
-                const sut = Promise
-                    .all([transaction1, transaction2])
+                return Promise.all([transaction1, transaction2])
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromA.find('_id = "1"')
                             .execute(doc => actual.push(doc));
-                    });
-
-                return expect(sut).to.eventually.be.fulfilled
-                    .then(() => {
-                        expect(actual).to.deep.equal(expected);
-                    });
+                    })
+                    .then(() => expect(actual).to.deep.equal(expected));
             });
         });
 
         context('NOWAIT mode', () => {
-            it('should fail if a session tries to read row data before the other session\'s transaction is committed', () => {
+            it('fails if a session tries to read row data before the other session\'s transaction is committed', () => {
                 const actual = [];
 
-                const sut = sessionA
-                    .startTransaction()
+                return sessionA.startTransaction()
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromA.find('_id = "1"')
                             .lockExclusive()
                             .execute();
                     })
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .modify('_id = "1"')
+                        return collectionFromA.modify('_id = "1"')
                             .set('a', 2)
                             .set('b', 'foo')
                             .execute();
                     })
+                    .then(() => sessionB.startTransaction())
                     .then(() => {
-                        return sessionB.startTransaction();
-                    })
-                    .then(() => {
-                        return sessionB
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromB.find('_id = "1"')
                             .lockExclusive(mysqlx.LockContention.NOWAIT)
                             .execute(doc => actual.push(doc));
-                    });
-
-                return expect(sut).to.eventually.be.rejected
-                    .then(err => {
+                    })
+                    .then(() => expect.fail())
+                    .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(3572);
 
@@ -164,48 +123,30 @@ describe('@functional row locking in collection transactions', () => {
         });
 
         context('SKIP LOCKED mode', () => {
-            it('should allow a session to read inconsistent row data before the other session\'s transaction is committed', () => {
+            it('allows a session to read inconsistent row data before the other session\'s transaction is committed', () => {
                 const expected = [{ _id: '1', a: 2, b: 'foo' }];
                 const actual = [];
 
-                const sut = sessionA
-                    .startTransaction()
+                return sessionA.startTransaction()
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromA.find('_id = "1"')
                             .lockExclusive()
                             .execute();
                     })
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .modify('_id = "1"')
+                        return collectionFromA.modify('_id = "1"')
                             .set('a', 2)
                             .set('b', 'foo')
                             .execute();
                     })
+                    .then(() => sessionB.startTransaction())
                     .then(() => {
-                        return sessionB.startTransaction();
-                    })
-                    .then(() => {
-                        return sessionB
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromB.find('_id = "1"')
                             .lockExclusive(mysqlx.LockContention.SKIP_LOCKED)
                             .execute(doc => actual.push(doc));
                     })
-                    .then(() => {
-                        return sessionB.commit();
-                    })
-                    .then(() => {
-                        return sessionA.commit();
-                    });
-
-                return expect(sut).to.eventually.be.fulfilled
+                    .then(() => sessionB.commit())
+                    .then(() => sessionA.commit())
                     .then(() => {
                         expect(actual).to.not.deep.equal(expected);
                     });
@@ -214,102 +155,67 @@ describe('@functional row locking in collection transactions', () => {
     });
 
     context('shared locks', () => {
-        it('should allow any session to consistently update row data when no other transaction is active', () => {
+        it('allows any session to consistently update row data when no other transaction is active', () => {
             const expected = [{ _id: '1', a: 3, b: 'foo' }];
-            let samplesA = [];
-            let samplesB = [];
             const actual = [];
 
-            const sut = sessionA
-                .startTransaction()
+            let samplesA = [];
+            let samplesB = [];
+
+            return sessionA.startTransaction()
                 .then(() => {
-                    return sessionA
-                        .getSchema(config.schema)
-                        .getCollection('test')
-                        .find('_id = "1"')
+                    return collectionFromA.find('_id = "1"')
                         .lockShared()
                         .execute(doc => samplesA.push(doc));
                 })
                 .then(() => {
-                    return sessionA
-                        .getSchema(config.schema)
-                        .getCollection('test')
-                        .modify('_id = "1"')
+                    return collectionFromA.modify('_id = "1"')
                         .set('a', samplesA[0].a + 1)
                         .execute();
                 })
+                .then(() => sessionA.commit())
+                .then(() => sessionB.startTransaction())
                 .then(() => {
-                    return sessionA.commit();
-                })
-                .then(() => {
-                    return sessionB.startTransaction();
-                })
-                .then(() => {
-                    return sessionB
-                        .getSchema(config.schema)
-                        .getCollection('test')
-                        .find('_id = "1"')
+                    return collectionFromB.find('_id = "1"')
                         .lockShared()
                         .execute(doc => samplesB.push(doc));
                 })
                 .then(() => {
-                    return sessionB
-                        .getSchema(config.schema)
-                        .getCollection('test')
-                        .modify('_id = "1"')
+                    return collectionFromB.modify('_id = "1"')
                         .set('a', samplesB[0].a + 1)
                         .set('b', 'foo')
                         .execute();
                 })
+                .then(() => sessionB.commit())
                 .then(() => {
-                    return sessionB.commit();
-                })
-                .then(() => {
-                    return sessionA
-                        .getSchema(config.schema)
-                        .getCollection('test')
-                        .find('_id = "1"')
+                    return collectionFromA.find('_id = "1"')
                         .execute(doc => actual.push(doc));
-                });
-
-            return expect(sut).to.eventually.be.fulfilled
+                })
                 .then(() => {
                     expect(actual).to.deep.equal(expected);
                 });
         });
 
         context('default mode', () => {
-            it('should allow a session to wait until the other session\'s transaction is committed before reading row data', () => {
+            it('allows a session to wait until the other session\'s transaction is committed before reading row data', () => {
                 const expected = [{ _id: '1', a: 2, b: 'foo' }];
                 const actual = [];
 
-                const sut = sessionA
-                    .startTransaction()
+                return sessionA.startTransaction()
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromA.find('_id = "1"')
                             .lockShared()
                             .execute();
                     })
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .modify('_id = "1"')
+                        return collectionFromA.modify('_id = "1"')
                             .set('a', 2)
                             .set('b', 'foo')
                             .execute();
                     })
+                    .then(() => sessionB.startTransaction())
                     .then(() => {
-                        return sessionB.startTransaction();
-                    })
-                    .then(() => {
-                        const read = sessionB
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        const read = collectionFromB.find('_id = "1"')
                             .lockShared()
                             .execute(doc => actual.push(doc));
 
@@ -322,58 +228,33 @@ describe('@functional row locking in collection transactions', () => {
 
                         return sessionA.commit();
                     })
-                    .then(() => {
-                        return sessionB.commit();
-                    });
-
-                return expect(sut).to.eventually.be.fulfilled
+                    .then(() => sessionB.commit())
                     .then(() => {
                         expect(actual).to.deep.equal(expected);
                     });
             });
 
-            it('should fail if a session tries to modify row data before the other session\'s transaction is committed', () => {
-                const deadlock = sessionA
-                    .startTransaction()
+            it('fails if a session tries to modify row data before the other session\'s transaction is committed', () => {
+                return sessionA.startTransaction()
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromA.find('_id = "1"')
                             .lockShared()
                             .execute();
                     })
+                    .then(() => sessionB.startTransaction())
                     .then(() => {
-                        return sessionB.startTransaction();
-                    })
-                    .then(() => {
-                        return sessionB
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromB.find('_id = "1"')
                             .lockShared()
                             .execute();
                     })
                     .then(() => {
                         return Promise.all([
-                            sessionA
-                                .getSchema(config.schema)
-                                .getCollection('test')
-                                .modify('_id = "1"')
-                                .set('a', 2)
-                                .execute(),
-                            sessionB
-                                .getSchema(config.schema)
-                                .getCollection('test')
-                                .modify('_id = "1"')
-                                .set('a', 3)
-                                .set('b', 'foo')
-                                .execute()
+                            collectionFromA.modify('_id = "1"').set('a', 2).execute(),
+                            collectionFromB.modify('_id = "1"').set('a', 3).set('b', 'foo').execute()
                         ]);
-                    });
-
-                return expect(deadlock).to.eventually.be.rejected
-                    .then(err => {
+                    })
+                    .then(() => expect.fail())
+                    .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1213);
 
@@ -383,42 +264,29 @@ describe('@functional row locking in collection transactions', () => {
         });
 
         context('NOWAIT mode', () => {
-            it('should fail if a session tries to read row data before the other session\'s transaction is committed', () => {
+            it('fails if a session tries to read row data before the other session\'s transaction is committed', () => {
                 const actual = [];
 
-                const sut = sessionA
-                    .startTransaction()
+                return sessionA.startTransaction()
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromA.find('_id = "1"')
                             .lockShared()
                             .execute();
                     })
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .modify('_id = "1"')
+                        return collectionFromA.modify('_id = "1"')
                             .set('a', 2)
                             .set('b', 'foo')
                             .execute();
                     })
+                    .then(() => sessionB.startTransaction())
                     .then(() => {
-                        return sessionB.startTransaction();
-                    })
-                    .then(() => {
-                        return sessionB
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromB.find('_id = "1"')
                             .lockShared(mysqlx.LockContention.NOWAIT)
                             .execute(doc => actual.push(doc));
-                    });
-
-                return expect(sut).to.eventually.be.rejected
-                    .then(err => {
+                    })
+                    .then(() => expect.fail())
+                    .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(3572);
 
@@ -428,48 +296,30 @@ describe('@functional row locking in collection transactions', () => {
         });
 
         context('SKIP LOCKED mode', () => {
-            it('should allow a session to read inconsistent row data before the other session\'s transaction is committed', () => {
+            it('allows a session to read inconsistent row data before the other session\'s transaction is committed', () => {
                 const expected = [{ _id: '1', a: 2, b: 'foo' }];
                 const actual = [];
 
-                const sut = sessionA
-                    .startTransaction()
+                return sessionA.startTransaction()
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromA.find('_id = "1"')
                             .lockShared()
                             .execute();
                     })
                     .then(() => {
-                        return sessionA
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .modify('_id = "1"')
+                        return collectionFromA.modify('_id = "1"')
                             .set('a', 2)
                             .set('b', 'foo')
                             .execute();
                     })
+                    .then(() => sessionB.startTransaction())
                     .then(() => {
-                        return sessionB.startTransaction();
-                    })
-                    .then(() => {
-                        return sessionB
-                            .getSchema(config.schema)
-                            .getCollection('test')
-                            .find('_id = "1"')
+                        return collectionFromB.find('_id = "1"')
                             .lockShared(mysqlx.LockContention.SKIP_LOCKED)
                             .execute(doc => actual.push(doc));
                     })
-                    .then(() => {
-                        return sessionB.commit();
-                    })
-                    .then(() => {
-                        return sessionA.commit();
-                    });
-
-                return expect(sut).to.eventually.be.fulfilled
+                    .then(() => sessionB.commit())
+                    .then(() => sessionA.commit())
                     .then(() => {
                         expect(actual).to.not.deep.equal(expected);
                     });
@@ -478,46 +328,28 @@ describe('@functional row locking in collection transactions', () => {
     });
 
     context('no locks', () => {
-        it('should prevent a session from reading row data until the other session\'s transaction is committed', () => {
+        it('prevents a session from reading row data until the other session\'s transaction is committed', () => {
             const expected = [{ _id: '1', a: 2, b: 'foo' }];
             const actual = [];
 
-            const sut = sessionA
-                .startTransaction()
+            return sessionA.startTransaction()
                 .then(() => {
-                    return sessionA
-                        .getSchema(config.schema)
-                        .getCollection('test')
-                        .find('_id = "1"')
+                    return collectionFromA.find('_id = "1"')
                         .execute();
                 })
                 .then(() => {
-                    return sessionA
-                        .getSchema(config.schema)
-                        .getCollection('test')
-                        .modify('_id = "1"')
+                    return collectionFromA.modify('_id = "1"')
                         .set('a', 2)
                         .set('b', 'foo')
                         .execute();
                 })
+                .then(() => sessionB.startTransaction())
                 .then(() => {
-                    return sessionB.startTransaction();
-                })
-                .then(() => {
-                    return sessionB
-                        .getSchema(config.schema)
-                        .getCollection('test')
-                        .find('_id = "1"')
+                    return collectionFromB.find('_id = "1"')
                         .execute(doc => actual.push(doc));
                 })
-                .then(() => {
-                    return sessionA.commit();
-                })
-                .then(() => {
-                    return sessionB.commit();
-                });
-
-            return expect(sut).to.eventually.be.fulfilled
+                .then(() => sessionA.commit())
+                .then(() => sessionB.commit())
                 .then(() => {
                     expect(actual).to.not.deep.equal(expected);
                 });

@@ -3,10 +3,10 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const parseX509Bundle = require('lib/Protocol/Util/parseX509Bundle');
+const parseX509Bundle = require('../../../../lib/Protocol/Util/parseX509Bundle');
 
 describe('parseX509Bundle', () => {
-    it('should return an array of certificates from a bundle', () => {
+    it('returns an array of certificates from a bundle', () => {
         const bundle = [
             '-----BEGIN CERTIFICATE-----',
             'bar',
@@ -22,7 +22,7 @@ describe('parseX509Bundle', () => {
         ]);
     });
 
-    it('should throw an error if the bundle is not valid', () => {
+    it('throws an error if the bundle is not valid', () => {
         [[], {}, 0].forEach(invalid => {
             expect(() => parseX509Bundle(invalid)).to.throw('invalid bundle format');
         });

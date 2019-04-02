@@ -2,15 +2,9 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const statement = require('lib/DevAPI/Statement');
+const expect = require('chai').expect;
+const statement = require('../../../lib/DevAPI/Statement');
 const td = require('testdouble');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 describe('Schema', () => {
     let execute, schema, sqlExecute;
@@ -21,8 +15,7 @@ describe('Schema', () => {
         sqlExecute.Namespace = statement.Type;
 
         td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
-
-        schema = require('lib/DevAPI/Schema');
+        schema = require('../../../lib/DevAPI/Schema');
     });
 
     afterEach('reset fakes', () => {
@@ -30,42 +23,45 @@ describe('Schema', () => {
     });
 
     context('existsInDatabase()', () => {
-        it('should return true if the schema exists in database', () => {
+        it('returns true if the schema exists in database', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute(td.callback(['bar']))).thenResolve();
             td.when(sqlExecute('foo', 'SHOW DATABASES LIKE ?', ['bar'])).thenReturn({ execute });
 
-            return expect(instance.existsInDatabase()).to.eventually.be.true;
+            return instance.existsInDatabase()
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should return false if the schema does not exist in database', () => {
+        it('returns false if the schema does not exist in database', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute(td.callback([]))).thenResolve();
             td.when(sqlExecute('foo', 'SHOW DATABASES LIKE ?', ['bar'])).thenReturn({ execute });
 
-            return expect(instance.existsInDatabase()).to.eventually.be.false;
+            return instance.existsInDatabase()
+                .then(actual => expect(actual).to.be.false);
         });
     });
 
     context('getCollections()', () => {
-        it('should return an empty object if there are no collections', () => {
+        it('returns an empty object if there are no collections', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute(td.matchers.isA(Function))).thenResolve();
             td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.getCollections()).to.eventually.be.an.instanceof(Array).and.be.empty;
+            return instance.getCollections()
+                .then(actual => expect(actual).to.be.an.instanceof(Array).and.be.empty);
         });
 
-        it('should return an object containing the existing collections', () => {
+        it('returns an object containing the existing collections', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute(td.callback(['baz', 'COLLECTION']))).thenResolve();
             td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.getCollections()).to.eventually.be.fulfilled
+            return instance.getCollections()
                 .then(actual => {
                     expect(actual).to.have.lengthOf(1);
                     expect(actual[0].getName()).to.deep.equal('baz');
@@ -75,7 +71,7 @@ describe('Schema', () => {
 
     context('createCollection', () => {
         context('when the collection already exists (error code 1050)', () => {
-            it('should return the existing collection if the option to re-use is enabled', () => {
+            it('returns the existing collection if the option to re-use is enabled', () => {
                 const instance = schema('foo', 'bar');
                 const expected = instance.getCollection('baz').inspect();
                 const error = new Error();
@@ -84,13 +80,11 @@ describe('Schema', () => {
                 td.when(execute()).thenReject(error);
                 td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-                return expect(instance.createCollection('baz', { ReuseExistingObject: true })).to.eventually.be.fulfilled
-                    .then(actual => {
-                        expect(actual.inspect()).deep.equal(expected);
-                    });
+                return instance.createCollection('baz', { ReuseExistingObject: true })
+                    .then(actual => expect(actual.inspect()).deep.equal(expected));
             });
 
-            it('should fail if the option to re-use is disabled', () => {
+            it('fails if the option to re-use is disabled', () => {
                 const instance = schema('foo', 'bar');
                 const error = new Error();
                 error.info = { code: 1050 };
@@ -98,25 +92,25 @@ describe('Schema', () => {
                 td.when(execute()).thenReject(error);
                 td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-                return expect(instance.createCollection('baz')).to.eventually.be.rejectedWith(error);
+                return instance.createCollection('baz')
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
             });
         });
 
         context('when the collection does not exist', () => {
-            it('should return a newly created collection', () => {
+            it('returns a newly created collection', () => {
                 const instance = schema('foo', 'bar');
                 const expected = instance.getCollection('baz').inspect();
 
                 td.when(execute()).thenResolve();
                 td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-                return expect(instance.createCollection('baz')).to.eventually.be.fulfilled
-                    .then(actual => {
-                        expect(actual.inspect()).to.deep.equal(expected);
-                    });
+                return instance.createCollection('baz')
+                    .then(actual => expect(actual.inspect()).to.deep.equal(expected));
             });
 
-            it('should fail if some unexpected error is thrown', () => {
+            it('fails if some unexpected error is thrown', () => {
                 const instance = schema('foo', 'bar');
                 const error = new Error();
                 error.info = {};
@@ -124,10 +118,12 @@ describe('Schema', () => {
                 td.when(execute()).thenReject(error);
                 td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-                return expect(instance.createCollection('baz')).to.eventually.be.rejectedWith(error);
+                return instance.createCollection('baz')
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
             });
 
-            it('should fail if some unexpected error is thrown even if the option to re-use is enabled', () => {
+            it('fails if some unexpected error is thrown even if the option to re-use is enabled', () => {
                 const instance = schema('foo', 'bar');
                 const error = new Error();
                 error.info = {};
@@ -135,22 +131,25 @@ describe('Schema', () => {
                 td.when(execute()).thenReject(error);
                 td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-                return expect(instance.createCollection('baz', { ReuseExistingObject: true })).to.eventually.be.rejectedWith(error);
+                return instance.createCollection('baz', { ReuseExistingObject: true })
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
             });
         });
     });
 
     context('dropCollection()', () => {
-        it('should return true if the collection was dropped', () => {
+        it('returns true if the collection was dropped', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute()).thenResolve();
             td.when(sqlExecute('foo', 'drop_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.dropCollection('baz')).to.eventually.be.true;
+            return instance.dropCollection('baz')
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should return true if the collection does not exist', () => {
+        it('returns true if the collection does not exist', () => {
             const instance = schema('foo', 'bar');
             const error = new Error();
             error.info = { code: 1051 };
@@ -158,50 +157,54 @@ describe('Schema', () => {
             td.when(execute()).thenReject(error);
             td.when(sqlExecute('foo', 'drop_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.dropCollection('baz')).to.eventually.be.true;
+            return instance.dropCollection('baz')
+                .then(actual => expect(actual).to.be.true);
         });
 
-        it('should fail if an unexpected error was thrown', () => {
+        it('fails if an unexpected error was thrown', () => {
             const instance = schema('foo', 'bar');
             const error = new Error('foobar');
 
             td.when(execute()).thenReject(error);
             td.when(sqlExecute('foo', 'drop_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.dropCollection('baz')).to.eventually.be.rejectedWith(error);
+            return instance.dropCollection('baz')
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
         });
     });
 
     context('getTables()', () => {
-        it('should return an empty object if there are no tables', () => {
+        it('returns an empty object if there are no tables', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute(td.matchers.isA(Function))).thenResolve();
             td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.getTables()).to.eventually.be.an.instanceof(Array).and.be.empty;
+            return instance.getTables()
+                .then(actual => expect(actual).to.be.an.instanceof(Array).and.be.empty);
         });
 
-        it('should return an object containing the existing tables', () => {
+        it('returns an object containing the existing tables', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute(td.callback(['baz', 'TABLE']))).thenResolve();
             td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.getTables()).to.eventually.be.fulfilled
+            return instance.getTables()
                 .then(actual => {
                     expect(actual).to.have.lengthOf(1);
                     expect(actual[0].getName()).to.equal('baz');
                 });
         });
 
-        it('should return an object containing the existing views', () => {
+        it('returns an object containing the existing views', () => {
             const instance = schema('foo', 'bar');
 
             td.when(execute(td.callback(['baz', 'VIEW']))).thenResolve();
             td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar' }], 'mysqlx')).thenReturn({ execute });
 
-            return expect(instance.getTables()).to.eventually.be.fulfilled
+            return instance.getTables()
                 .then(actual => {
                     expect(actual).to.have.lengthOf(1);
                     expect(actual[0].getName()).to.equal('baz');
@@ -210,7 +213,7 @@ describe('Schema', () => {
     });
 
     context('inspect()', () => {
-        it('should hide internals', () => {
+        it('hides internals', () => {
             const instance = schema(null, 'foobar');
             const expected = { name: 'foobar' };
 

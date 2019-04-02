@@ -2,27 +2,20 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const mysqlx = require('index');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const mysqlx = require('../../../');
 const os = require('os');
-const pkg = require('package');
-const properties = require('test/properties');
+const pkg = require('../../../package.json');
 
-chai.use(chaiAsPromised);
+describe('connection attributes', () => {
+    const schemalessConfig = Object.assign({}, config, { schema: undefined });
 
-const expect = chai.expect;
-
-const config = Object.assign({}, properties, { schema: undefined });
-
-describe('@functional connection attributes', () => {
-    it('should set the default attributes', () => {
-        const options = Object.assign({}, config, { });
+    it('sets the default attributes', () => {
         const expected = [ '_client_license', '_client_name', '_client_version', '_os', '_pid', '_platform', '_source_host' ];
+        const actual = [];
 
-        let actual = [];
-
-        return mysqlx.getSession(options)
+        return mysqlx.getSession(schemalessConfig)
             .then(session => {
                 return session
                     .getSchema('performance_schema')
@@ -42,8 +35,8 @@ describe('@functional connection attributes', () => {
             });
     });
 
-    it('should set the default attributes, even when custom ones are set', () => {
-        const options = Object.assign({}, config, { connectionAttributes: { foo: 'bar' } });
+    it('sets the default attributes, even when custom ones are set', () => {
+        const options = Object.assign({}, schemalessConfig, { connectionAttributes: { foo: 'bar' } });
         const expected = [ '_client_license', '_client_name', '_client_version', '_os', '_pid', '_platform', '_source_host', 'foo' ];
 
         let actual = [];
@@ -68,13 +61,11 @@ describe('@functional connection attributes', () => {
             });
     });
 
-    it('should send our name, version, license, pid and host', () => {
-        const options = Object.assign({}, config, { });
+    it('sends our name, version, license, pid and host', () => {
         const expected = [ pkg.license, 'mysql-connector-nodejs', pkg.version, process.pid.toString(), os.hostname() ];
+        const actual = [];
 
-        let actual = [];
-
-        return mysqlx.getSession(options)
+        return mysqlx.getSession(schemalessConfig)
             .then(session => {
                 return session
                     .getSchema('performance_schema')
@@ -94,11 +85,10 @@ describe('@functional connection attributes', () => {
             });
     });
 
-    it('should not send anything if we turn attributes off', () => {
-        const options = Object.assign({}, config, { connectionAttributes: false });
+    it('does not send anything if we turn attributes off', () => {
+        const options = Object.assign({}, schemalessConfig, { connectionAttributes: false });
         const expected = [];
-
-        let actual = [];
+        const actual = [];
 
         return mysqlx.getSession(options)
             .then(session => {
@@ -119,8 +109,8 @@ describe('@functional connection attributes', () => {
             });
     });
 
-    it('should set custom attributes', () => {
-        const options = Object.assign({}, config, { connectionAttributes: { foo: 'bar', baz: 42 } });
+    it('sets custom attributes', () => {
+        const options = Object.assign({}, schemalessConfig, { connectionAttributes: { foo: 'bar', baz: 42 } });
         const expected = { foo: 'bar', baz: '42' };
 
         let actual = {};

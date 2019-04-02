@@ -2,11 +2,11 @@
 
 /* eslint-env node, mocha */
 
-const parseAddressList = require('lib/DevAPI/Util/URIParser/parseAddressList');
 const expect = require('chai').expect;
+const parseAddressList = require('../../../../../lib/DevAPI/Util/URIParser/parseAddressList');
 
 describe('parseAddressList', () => {
-    it('should parse a list of addresses with explicit priority', () => {
+    it('parses a list of addresses with explicit priority', () => {
         expect(parseAddressList('[(address=127.0.0.1, priority=98), (address=[::1], priority=100), (address=localhost, priority=99)]')).to.deep.equal([{
             host: '::1',
             port: undefined,
@@ -22,7 +22,7 @@ describe('parseAddressList', () => {
         }]);
     });
 
-    it('should parse a list of addresses with implict priority', () => {
+    it('parses a list of addresses with implict priority', () => {
         expect(parseAddressList('[[::1], localhost, 127.0.0.1]')).to.deep.equal([{
             host: '::1',
             port: undefined,
@@ -38,7 +38,7 @@ describe('parseAddressList', () => {
         }]);
     });
 
-    it('should throw an error if neither none or all addresses have explicit priority', () => {
+    it('throws an error if neither none or all addresses have explicit priority', () => {
         [
             '[127.0.0.1, (address=[::1], priority=100)]',
             '[(address=127.0.0.1), (address=[::1], 100)]',
@@ -48,7 +48,7 @@ describe('parseAddressList', () => {
         });
     });
 
-    it('should throw an error if any address priority is out of bounds', () => {
+    it('throws an error if any address priority is out of bounds', () => {
         [
             '[(address=127.0.0.1, priority=-1), (address=[::1], priority=-2)]',
             '[(address=127.0.0.1, priority=100), (address=[::1], priority=101)]'

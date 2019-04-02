@@ -2,8 +2,7 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const ResetStub = require('lib/Protocol/Protobuf/Stubs/mysqlx_session_pb').Reset;
+const ResetStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_session_pb').Reset;
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -22,7 +21,7 @@ describe('Protobuf', () => {
                 FakeResetStub = td.constructor(ResetStub);
 
                 td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_session_pb', { Reset: FakeResetStub });
-                Session = require('lib/Protocol/Protobuf/Adapters/Session');
+                Session = require('../../../../lib/Protocol/Protobuf/Adapters/Session');
             });
 
             it('require the session to be kept open by default (without need for re-authentication)', () => {

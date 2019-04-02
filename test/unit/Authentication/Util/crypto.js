@@ -2,7 +2,6 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -19,11 +18,11 @@ describe('crypto utilities', () => {
 
             td.replace('crypto', { createHash });
 
-            crypto = require('lib/Authentication/Util/crypto');
+            crypto = require('../../../../lib/Authentication/Util/crypto');
         });
 
         context('sha1()', () => {
-            it('should create an sha1 hash of the given parameters', () => {
+            it('creates an sha1 hash of the given parameters', () => {
                 td.when(digest()).thenReturn('foobar');
                 td.when(update('bar')).thenReturn();
                 td.when(update('foo')).thenReturn();
@@ -37,7 +36,7 @@ describe('crypto utilities', () => {
         });
 
         context('sha256()', () => {
-            it('should create an sha256 hash of the given parameters', () => {
+            it('creates an sha256 hash of the given parameters', () => {
                 td.when(digest()).thenReturn('foobar');
                 td.when(update('bar')).thenReturn();
                 td.when(update('foo')).thenReturn();
@@ -53,16 +52,16 @@ describe('crypto utilities', () => {
 
     context('xor()', () => {
         beforeEach('load module', () => {
-            crypto = require('lib/Authentication/Util/crypto');
+            crypto = require('../../../../lib/Authentication/Util/crypto');
         });
 
-        it('should throw an error if the given buffers have different sizes', () => {
+        it('throws an error if the given buffers have different sizes', () => {
             /* eslint-disable node/no-deprecated-api */
             expect(() => crypto.xor(new Buffer('x'), new Buffer('yy'))).to.throw();
             /* eslint-enable node/no-deprecated-api */
         });
 
-        it('should apply a bitwise xor to the given buffers', () => {
+        it('applies a bitwise xor to the given buffers', () => {
             /* eslint-disable node/no-deprecated-api */
             const bufferA = new Buffer(0b10101010.toString(16), 'hex');
             const bufferB = new Buffer(0b01010101.toString(16), 'hex');

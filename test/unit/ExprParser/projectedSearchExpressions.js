@@ -2,17 +2,16 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const Expr = require('lib/ExprParser/lib/stubs/mysqlx_expr_pb').Expr;
-const DocumentPathItem = require('lib/ExprParser/lib/stubs/mysqlx_expr_pb').DocumentPathItem;
-const Parser = require('lib/ExprParser');
+const Expr = require('../../../lib/ExprParser/lib/stubs/mysqlx_expr_pb').Expr;
+const DocumentPathItem = require('../../../lib/ExprParser/lib/stubs/mysqlx_expr_pb').DocumentPathItem;
+const Parser = require('../../../lib/ExprParser');
 const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('projectedSearchExpressions', () => {
         const type = Parser.Type.PROJECTED_SEARCH_EXPR;
 
-        it('should parse source without alias', () => {
+        it('parses source without alias', () => {
             const crud = Parser.parse('foo', { type });
             expect(crud.output.getSource().getType()).to.equal(Expr.Type.IDENT);
 
@@ -24,7 +23,7 @@ describe('ExprParser', () => {
             expect(crud.output.getAlias()).to.equal('foo');
         });
 
-        it('should parse lower-case alias', () => {
+        it('parses lower-case alias', () => {
             const crud = Parser.parse('bar as baz', { type });
             expect(crud.output.getSource().getType()).to.equal(Expr.Type.IDENT);
 
@@ -36,7 +35,7 @@ describe('ExprParser', () => {
             expect(crud.output.getAlias()).to.equal('baz');
         });
 
-        it('should parse upper-case alias', () => {
+        it('parses upper-case alias', () => {
             const crud = Parser.parse('baz AS qux', { type });
             expect(crud.output.getSource().getType()).to.equal(Expr.Type.IDENT);
 

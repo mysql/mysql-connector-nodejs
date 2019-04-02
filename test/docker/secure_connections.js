@@ -2,17 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const mysqlx = require('index');
+const config = require('../../test/properties');
+const expect = require('chai').expect;
+const mysqlx = require('../../');
 const path = require('path');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@docker secure connections', () => {
+describe('secure connections', () => {
     context('server with SSL/TLS support', () => {
         // port as defined in docker-compose.yml
         const baseConfig = { port: 33061, schema: undefined, socket: undefined };
@@ -23,12 +18,11 @@ describe('@docker secure connections', () => {
         // The main reason is that there are some issues with CRLs not signed by the Root CA.
         // This is not really a common practice, so, in the near future, the test must be changed to use
         // a certificate signed by an intermediate CA using the CA chain.
-        it('should connect to the server if the server certificate was issued by the authority', () => {
+        it('connects to the server if the server certificate was issued by the authority', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'ca.pem');
             const secureConfig = Object.assign({}, config, baseConfig, { ssl: true, sslOptions: { ca, servername } });
 
-            return mysqlx
-                .getSession(secureConfig)
+            return mysqlx.getSession(secureConfig)
                 .then(session => {
                     expect(session.inspect()).to.have.property('ssl', true);
                     return session.close();
@@ -39,37 +33,40 @@ describe('@docker secure connections', () => {
         // This will result in a different error from the expected one. So, in the near future, one must
         // make sure it uses a certificate signed by an intermediate CA (a different one maybe), which will
         // result in the expected error.
-        it('should not connect if the server certificate was not issued by the authority', () => {
+        it('fails to connect if the server certificate was not issued by the authority', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'non-authoritative-ca.pem');
             const secureConfig = Object.assign({}, config, baseConfig, { ssl: true, sslOptions: { ca, servername } });
 
-            return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejected.then(err => {
-                // FIXME(Rui): with an intermediate CA, the error code should be 'UNABLE_TO_GET_ISSUER_CERT'.
-                expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
-            });
+            return mysqlx.getSession(secureConfig)
+                .then(() => expect.fail())
+                .catch(err => {
+                    // FIXME(Rui): with an intermediate CA, the error code should be 'UNABLE_TO_GET_ISSUER_CERT'.
+                    expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+                });
         });
 
-        it('should connect to the server if the server certificate is not revoked', () => {
+        it('connects to the server if the server certificate is not revoked', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'ca.pem');
             const crl = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'empty-crl.pem');
             const secureConfig = Object.assign({}, config, baseConfig, { ssl: true, sslOptions: { ca, crl, servername } });
 
-            return mysqlx
-                .getSession(secureConfig)
+            return mysqlx.getSession(secureConfig)
                 .then(session => {
                     expect(session.inspect()).to.have.property('ssl', true);
                     return session.close();
                 });
         });
 
-        it('should not connect if the server certificate is revoked', () => {
+        it('fails to connect if the server certificate is revoked', () => {
             const ca = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'ca.pem');
             const crl = path.join(__dirname, '..', 'fixtures', 'ssl', 'client', 'crl.pem');
             const secureConfig = Object.assign({}, config, baseConfig, { ssl: true, sslOptions: { ca, crl, servername } });
 
-            return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejected.then(err => {
-                expect(err.code).to.equal('CERT_REVOKED');
-            });
+            return mysqlx.getSession(secureConfig)
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.code).to.equal('CERT_REVOKED');
+                });
         });
     });
 
@@ -77,12 +74,16 @@ describe('@docker secure connections', () => {
         // port as defined in docker-compose.yml
         const baseConfig = { port: 33062, schema: undefined, socket: undefined };
 
-        it('should not connect if the server does not support SSL/TLS', () => {
+        it('fails to connect if the server does not support SSL/TLS', () => {
             // Insecure server will be running on port 33061.
             const secureConfig = Object.assign({}, config, baseConfig, { ssl: true });
             const error = `The server's X plugin version does not support SSL. Please refer to https://dev.mysql.com/doc/refman/8.0/en/x-plugin-ssl-connections.html for more details on how to enable secure connections.`;
 
-            return expect(mysqlx.getSession(secureConfig)).to.eventually.be.rejectedWith(error);
+            return mysqlx.getSession(secureConfig)
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.message).to.equal(error);
+                });
         });
     });
 });

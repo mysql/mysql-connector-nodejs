@@ -2,9 +2,8 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
 const expect = require('chai').expect;
-const grouping = require('lib/DevAPI/Grouping');
+const grouping = require('../../../lib/DevAPI/Grouping');
 const td = require('testdouble');
 
 describe('Grouping', () => {

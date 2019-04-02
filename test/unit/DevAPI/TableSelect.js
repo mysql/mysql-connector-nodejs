@@ -2,14 +2,8 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
+const expect = require('chai').expect;
 const td = require('testdouble');
-
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
 
 describe('TableSelect', () => {
     let tableSelect, preparing;
@@ -18,7 +12,7 @@ describe('TableSelect', () => {
         preparing = td.function();
 
         td.replace('../../../lib/DevAPI/Preparing', preparing);
-        tableSelect = require('lib/DevAPI/TableSelect');
+        tableSelect = require('../../../lib/DevAPI/TableSelect');
     });
 
     afterEach('reset fakes', () => {
@@ -33,36 +27,38 @@ describe('TableSelect', () => {
             metaCB = td.function();
 
             td.replace('../../../lib/DevAPI/Column', { metaCB });
-
-            tableSelect = require('lib/DevAPI/TableSelect');
+            tableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
         it('wraps an operation without a cursor in a preparable instance', () => {
             const session = 'foo';
 
-            td.when(execute(td.matchers.isA(Function), undefined, undefined)).thenReturn('foo');
+            td.when(execute(td.matchers.isA(Function), undefined, undefined)).thenResolve('foo');
             td.when(preparing({ session })).thenReturn({ execute });
 
-            return expect(tableSelect(session).execute()).to.deep.equal('foo');
+            return tableSelect(session).execute()
+                .then(actual => expect(actual).to.deep.equal('foo'));
         });
 
         it('wraps an operation with a data cursor in a preparable instance', () => {
             const session = 'foo';
 
-            td.when(execute(td.matchers.isA(Function), 'foo', undefined)).thenReturn('bar');
+            td.when(execute(td.matchers.isA(Function), 'foo', undefined)).thenResolve('bar');
             td.when(preparing({ session })).thenReturn({ execute });
 
-            return expect(tableSelect(session).execute('foo')).to.deep.equal('bar');
+            return tableSelect(session).execute('foo')
+                .then(actual => expect(actual).to.deep.equal('bar'));
         });
 
         it('wraps an operation with both a data and metadata cursors in a preparable instance', () => {
             const session = 'foo';
 
             td.when(metaCB('bar')).thenReturn('baz');
-            td.when(execute(td.matchers.isA(Function), 'foo', 'baz')).thenReturn('qux');
+            td.when(execute(td.matchers.isA(Function), 'foo', 'baz')).thenResolve('qux');
             td.when(preparing({ session })).thenReturn({ execute });
 
-            return expect(tableSelect(session).execute('foo', 'bar')).to.deep.equal('qux');
+            return tableSelect(session).execute('foo', 'bar')
+                .then(actual => expect(actual).to.deep.equal('qux'));
         });
     });
 

@@ -2,17 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const config = require('test/properties');
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const config = require('../../../test/properties');
+const expect = require('chai').expect;
+const fixtures = require('../../../test/fixtures');
+const mysqlx = require('../../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@docker autonomous prepared statements for collections without server support', () => {
+describe('autonomous prepared statements for collections without server support', () => {
     let collection, schema, session;
 
     // MySQL 8.0.13 server port (defined in docker.compose.yml)
@@ -64,7 +59,7 @@ describe('@docker autonomous prepared statements for collections without server 
             const op = collection.find('name = :name').fields('_id');
             const names = ['foo', 'bar', 'baz'];
 
-            return expect(Promise.all(names.map(name => op.bind('name', name).execute(doc => actual.push(doc))))).to.be.fulfilled
+            return Promise.all(names.map(name => op.bind('name', name).execute(doc => actual.push(doc))))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
@@ -77,7 +72,7 @@ describe('@docker autonomous prepared statements for collections without server 
             const op = collection.modify('name = :name').set('name', 'qux');
             const names = ['foo', 'bar', 'baz'];
 
-            return expect(Promise.all(names.map(name => op.bind('name', name).execute()))).to.be.fulfilled
+            return Promise.all(names.map(name => op.bind('name', name).execute()))
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
@@ -90,7 +85,7 @@ describe('@docker autonomous prepared statements for collections without server 
             const op = collection.remove('name = :name');
             const names = ['foo', 'bar', 'baz'];
 
-            return expect(Promise.all(names.map(name => op.bind('name', name).execute()))).to.be.fulfilled
+            return Promise.all(names.map(name => op.bind('name', name).execute()))
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.be.empty);
         });

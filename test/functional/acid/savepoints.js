@@ -2,16 +2,11 @@
 
 /* eslint-env node, mocha */
 
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const config = require('test/properties');
-const mysqlx = require('index');
+const config = require('../../properties');
+const expect = require('chai').expect;
+const mysqlx = require('../../../');
 
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-
-describe('@functional transaction savepoints', () => {
+describe('transaction savepoints', () => {
     let session;
 
     beforeEach('create session', () => {
@@ -27,99 +22,72 @@ describe('@functional transaction savepoints', () => {
         return session.close();
     });
 
-    it('should create savepoint with a generated name if not provided', () => {
-        return session
-            .startTransaction()
-            .then(() => {
-                return expect(session.setSavepoint()).to.eventually.be.a('string').and.not.be.empty;
+    it('creates savepoint with a generated name if not provided', () => {
+        return session.startTransaction()
+            .then(() => session.setSavepoint())
+            .then(actual => expect(actual).to.be.a('string').and.not.be.empty);
+    });
+
+    it('creates a savepoint with the given name', () => {
+        return session.startTransaction()
+            .then(() => session.setSavepoint('foo'))
+            .then(actual => expect(actual).to.equal('foo'));
+    });
+
+    it('does not create a savepoint with empty string', () => {
+        return session.startTransaction()
+            .then(() => session.setSavepoint(''))
+            .then(() => expect.fail())
+            .catch(err => expect(err.message).to.equal('Invalid Savepoint name.'));
+    });
+
+    it('releases a valid savepoint', () => {
+        return session.startTransaction()
+            .then(() => session.setSavepoint('foo'))
+            .then(point => session.releaseSavepoint(point));
+    });
+
+    it('fails to release a savepoint identified with empty string', () => {
+        return session.startTransaction()
+            .then(() => session.setSavepoint('foo'))
+            .then(() => session.releaseSavepoint(''))
+            .then(() => expect.fail())
+            .catch(err => expect(err.message).to.equal('Invalid Savepoint name.'));
+    });
+
+    it('fails to release an non-matching savepoint', () => {
+        return session.startTransaction()
+            .then(() => session.setSavepoint('foo'))
+            .then(() => session.releaseSavepoint('s'))
+            .then(() => expect.fail())
+            .catch(err => {
+                expect(err.info).to.include.keys('code');
+                expect(err.info.code).to.equal(1305);
             });
     });
 
-    it('should create a savepoint with the given name', () => {
-        return session
-            .startTransaction()
-            .then(() => {
-                return expect(session.setSavepoint('foo')).to.eventually.equal('foo');
-            });
+    it('rolls back to a valid savepoint', () => {
+        return session.startTransaction()
+            .then(() => session.setSavepoint('foo'))
+            .then(point => session.rollbackTo(point));
     });
 
-    it('should not create a savepoint with empty string', () => {
-        return session
-            .startTransaction()
-            .then(() => {
-                return expect(session.setSavepoint('')).to.be.rejectedWith('Invalid Savepoint name.');
-            });
+    it('fails to rollback to a savepoint identified by an empty string', () => {
+        return session.startTransaction()
+            .then(() => session.setSavepoint('foo'))
+            .then(() => session.rollbackTo(''))
+            .then(() => expect.fail())
+            .catch(err => expect(err.message).to.equal('Invalid Savepoint name.'));
     });
 
-    it('should release a valid savepoint', () => {
-        return session
-            .startTransaction()
-            .then(() => {
-                return session.setSavepoint('foo');
-            })
-            .then(point => {
-                return expect(session.releaseSavepoint(point)).to.be.fulfilled;
-            });
-    });
-
-    it('should not release a savepoint with empty string', () => {
-        return session
-            .startTransaction()
-            .then(() => {
-                return session.setSavepoint('foo');
-            })
-            .then(point => {
-                return expect(session.releaseSavepoint('')).to.be.rejectedWith('Invalid Savepoint name.');
-            });
-    });
-
-    it('should raise error on an invalid savepoint', () => {
-        return session
-            .startTransaction()
-            .then(() => {
-                return session.setSavepoint('foo');
-            })
-            .then(point => {
-                return expect(session.releaseSavepoint('s')).to.be.rejected.then((err) => {
-                    expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1305);
-                });
-            });
-    });
-
-    it('should rollback to a valid savepoint', () => {
-        return session
-            .startTransaction()
-            .then(() => {
-                return session.setSavepoint('foo');
-            })
-            .then(point => {
-                return expect(session.rollbackTo(point)).to.be.fulfilled;
-            });
-    });
-
-    it('should not rollback to a savepoint with an empty string', () => {
-        return session
-            .startTransaction()
-            .then(() => {
-                return session.setSavepoint('foo');
-            })
-            .then(point => {
-                return expect(session.rollbackTo('')).to.be.rejectedWith('Invalid Savepoint name.');
-            });
-    });
-
-    it('should raise error on an invalid savepoint', () => {
-        return session
-            .startTransaction()
-            .then(() => {
-                return session.setSavepoint('foo');
-            })
-            .then(point => {
-                return expect(session.rollbackTo('s')).to.be.rejected.then((err) => {
-                    expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1305);
-                });
+    it('fails to rollback to a non-matching savepoint', () => {
+        return session.startTransaction()
+            .then(() => session.setSavepoint('foo'))
+            .then(() => session.rollbackTo('s'))
+            .then(() => expect.fail())
+            .catch(err => {
+                expect(err.info).to.include.keys('code');
+                expect(err.info.code).to.equal(1305);
             });
     });
 });

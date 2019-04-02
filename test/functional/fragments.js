@@ -2,12 +2,12 @@
 
 /* eslint-env node, mocha */
 
-const config = require('test/properties');
+const config = require('../properties');
 const expect = require('chai').expect;
-const fixtures = require('test/fixtures');
-const mysqlx = require('index');
+const fixtures = require('../fixtures');
+const mysqlx = require('../../');
 
-describe('@functional fragments', () => {
+describe('fragments', () => {
     let schema, session, collection;
 
     beforeEach('create default schema', () => {
@@ -47,7 +47,7 @@ describe('@functional fragments', () => {
         return session.close();
     });
 
-    it('should not fail when a message is split into more than two fragments', () => {
+    it('does not not fail when a message is split into more than two fragments', () => {
         const expected = 'x'.repeat(4096 * 2);
 
         return collection.find()

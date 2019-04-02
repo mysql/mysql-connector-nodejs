@@ -2,15 +2,14 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
-const ColumnIdentifier = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').ColumnIdentifier;
-const Crud = require('lib/Protocol/Protobuf/Adapters/Crud');
-const DataModel = require('lib/Protocol/Protobuf/Stubs/mysqlx_crud_pb').DataModel;
-const DocumentPathItem = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').DocumentPathItem;
-const Expr = require('lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
-const Parser = require('lib/ExprParser');
-const Scalar = require('lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
-const UpdateOperation = require('lib/Protocol/Protobuf/Stubs/mysqlx_crud_pb').UpdateOperation;
+const ColumnIdentifier = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').ColumnIdentifier;
+const Crud = require('../../../../lib/Protocol/Protobuf/Adapters/Crud');
+const DataModel = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_crud_pb').DataModel;
+const DocumentPathItem = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').DocumentPathItem;
+const Expr = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
+const Parser = require('../../../../lib/ExprParser');
+const Scalar = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
+const UpdateOperation = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_crud_pb').UpdateOperation;
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -39,8 +38,7 @@ describe('Protobuf', () => {
                     FakeStub = td.constructor(['setArgsList', 'setCollection', 'setCriteria', 'setDataModel', 'setLimit', 'setOrderList']);
 
                     td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_crud_pb', { FakeStub });
-
-                    FakeCrud = require('lib/Protocol/Protobuf/Adapters/Crud');
+                    FakeCrud = require('../../../../lib/Protocol/Protobuf/Adapters/Crud');
 
                     td.replace(FakeCrud, 'createCollection');
                     createLimit = td.replace(FakeCrud, 'createLimit');
@@ -113,8 +111,7 @@ describe('Protobuf', () => {
                     getBindings = td.function();
 
                     td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_crud_pb', { FakeStub });
-
-                    FakeCrud = require('lib/Protocol/Protobuf/Adapters/Crud');
+                    FakeCrud = require('../../../../lib/Protocol/Protobuf/Adapters/Crud');
 
                     td.replace(FakeCrud, 'createCollection');
                     createLimitExpr = td.replace(FakeCrud, 'createLimitExpr');
@@ -162,7 +159,7 @@ describe('Protobuf', () => {
                 const getCategory = td.function();
                 const statement = { getCategory };
 
-                const FakeCrud = require('lib/Protocol/Protobuf/Adapters/Crud');
+                const FakeCrud = require('../../../../lib/Protocol/Protobuf/Adapters/Crud');
                 const create = td.replace(FakeCrud, 'create');
 
                 td.when(getCategory()).thenReturn(mode);
@@ -258,7 +255,7 @@ describe('Protobuf', () => {
                 const setOperationList = td.function();
                 const statement = { getCategory, getOperations };
 
-                const FakeCrud = require('lib/Protocol/Protobuf/Adapters/Crud');
+                const FakeCrud = require('../../../../lib/Protocol/Protobuf/Adapters/Crud');
                 const create = td.replace(FakeCrud, 'create');
                 const createUpdateOperation = td.replace(FakeCrud, 'createUpdateOperation');
 

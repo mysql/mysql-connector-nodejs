@@ -2,13 +2,12 @@
 
 /* eslint-env node, mocha */
 
-// npm `test` script was updated to use NODE_PATH=.
 const expect = require('chai').expect;
-const filtering = require('lib/DevAPI/Filtering');
+const filtering = require('../../../lib/DevAPI/Filtering');
 
 describe('Filtering', () => {
     context('hasBaseCriteria()', () => {
-        it('should return true if the expression criteria does not need to be parsed', () => {
+        it('returns true if the expression criteria does not need to be parsed', () => {
             /* eslint-disable no-unused-expressions */
             expect(filtering({ criteria: true }).hasBaseCriteria()).to.be.true;
             expect(filtering({ criteria: '' }).hasBaseCriteria()).to.be.true;
@@ -17,7 +16,7 @@ describe('Filtering', () => {
             /* eslint-enable no-unused-expressions */
         });
 
-        it('should return false if the expression criteria needs to be parsed', () => {
+        it('returns false if the expression criteria needs to be parsed', () => {
             /* eslint-disable no-unused-expressions */
             expect(filtering({ criteria: 'foo' }).hasBaseCriteria()).to.be.false;
             expect(filtering({ criteria: 'false' }).hasBaseCriteria()).to.be.false;
@@ -25,7 +24,7 @@ describe('Filtering', () => {
             /* eslint-enable no-unused-expressions */
         });
 
-        it('should not fail if the criteria is invalid', () => {
+        it('does not fail if the criteria is invalid', () => {
             /* eslint-disable no-unused-expressions */
             expect(() => filtering({ criteria: undefined }).hasBaseCriteria()).to.not.throw;
             expect(() => filtering({ criteria: false }).hasBaseCriteria()).to.not.throw;
