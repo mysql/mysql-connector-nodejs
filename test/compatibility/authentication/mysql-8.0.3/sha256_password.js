@@ -7,24 +7,24 @@ const expect = require('chai').expect;
 const fixtures = require('../../../../test/fixtures');
 const mysqlx = require('../../../../');
 
-describe('MySQL 5.7 authentication', () => {
-    context('mysql_native_password', () => {
+describe('MySQL 8.0.3 authentication', () => {
+    context('sha256_password', () => {
         let auth;
 
-        // MySQL 5.7 server port (defined in docker.compose.yml)
-        const baseConfig = { password: 'mnpp', port: 33063, schema: undefined, socket: undefined, user: 'mnpu' };
+        // MySQL 8.0.3 server port (defined in docker.compose.yml)
+        const baseConfig = { password: 'mnpp', port: 33064, schema: undefined, socket: undefined, user: 'mnpu' };
 
         beforeEach('setup test account', () => {
-            return fixtures.createAccount({ password: baseConfig.password, plugin: 'mysql_native_password', port: baseConfig.port, user: baseConfig.user });
+            return fixtures.createAccount({ password: baseConfig.password, plugin: 'sha256_password', port: baseConfig.port, user: baseConfig.user });
         });
 
         afterEach('delete test account', () => {
-            return fixtures.deleteAccount({ user: baseConfig.user });
+            return fixtures.deleteAccount({ port: baseConfig.port, user: baseConfig.user });
         });
 
         context('default authentication mechanism', () => {
             it('authenticates with TLS', () => {
-                const authConfig = Object.assign({}, config, baseConfig, { ssl: true });
+                const authConfig = Object.assign({}, config, baseConfig, baseConfig, { ssl: true });
 
                 return mysqlx.getSession(authConfig)
                     .then(session => {
@@ -33,13 +33,14 @@ describe('MySQL 5.7 authentication', () => {
                     });
             });
 
-            it('authenticates without TLS', () => {
-                const authConfig = Object.assign({}, config, baseConfig, { ssl: false });
+            it('fails to authenticate without TLS', () => {
+                const authConfig = Object.assign({}, config, baseConfig, baseConfig, { ssl: false });
 
                 return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal('MYSQL41');
-                        return session.close();
+                    .then(() => expect.fail())
+                    .catch(err => {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(1045);
                     });
             });
         });
@@ -49,23 +50,25 @@ describe('MySQL 5.7 authentication', () => {
                 auth = 'MYSQL41';
             });
 
-            it('authenticates with TLS', () => {
+            it('fails to authenticate with TLS', () => {
                 const authConfig = Object.assign({}, config, baseConfig, { auth, ssl: true });
 
                 return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
+                    .then(() => expect.fail())
+                    .catch(err => {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(1045);
                     });
             });
 
-            it('authenticates without TLS', () => {
+            it('fails to authenticate without TLS', () => {
                 const authConfig = Object.assign({}, config, baseConfig, { auth, ssl: false });
 
                 return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
+                    .then(() => expect.fail())
+                    .catch(err => {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(1045);
                     });
             });
         });

@@ -8,7 +8,7 @@ const mysqlx = require('../../');
 exports.createAccount = function (options) {
     options = Object.assign({}, config, { host: '%', plugin: 'caching_sha2_password', schema: '*' }, options);
 
-    const baseConfig = Object.assign({}, config, { port: options.port, schema: undefined });
+    const baseConfig = Object.assign({}, config, { port: options.port, schema: undefined, socket: undefined });
 
     return mysqlx.getSession(baseConfig)
         .then(session => {
@@ -25,7 +25,7 @@ exports.createAccount = function (options) {
 };
 
 exports.createDefaultSchema = function (options) {
-    options = Object.assign({}, config, options, { schema: undefined });
+    options = Object.assign({}, config, options, { schema: undefined, socket: undefined });
 
     return mysqlx.getSession(options)
         .then(session => {
@@ -42,7 +42,7 @@ exports.createDefaultSchema = function (options) {
 exports.deleteAccount = function (options) {
     options = Object.assign({}, config, { host: '%' }, options);
 
-    const baseConfig = Object.assign({}, config, { port: options.port, schema: undefined });
+    const baseConfig = Object.assign({}, config, { port: options.port, schema: undefined, socket: undefined });
 
     return mysqlx.getSession(baseConfig)
         .then(session => {
@@ -57,9 +57,11 @@ exports.deleteAccount = function (options) {
 exports.deleteDefaultSchema = function (options) {
     options = Object.assign({}, config, options);
 
-    return mysqlx.getSession(config)
+    const baseConfig = Object.assign({}, config, { schema: undefined, socket: undefined });
+
+    return mysqlx.getSession(baseConfig)
         .then(session => {
-            return session.dropSchema(config.schema)
+            return session.dropSchema(options.schema)
                 .then(() => {
                     return session.close();
                 });

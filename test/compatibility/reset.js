@@ -7,7 +7,7 @@ const expect = require('chai').expect;
 const mysqlx = require('../../');
 
 describe('session reset behavior with older servers', () => {
-    const baseConfig = Object.assign({}, config, { port: 33065, schema: undefined });
+    const baseConfig = Object.assign({}, config, { port: 33065, schema: undefined, socket: undefined });
 
     context('closing legacy sessions', () => {
         let session;

@@ -1,46 +1,40 @@
 version: '2.1'
 
 services:
-    mysql-base:
+    mysql:
         environment:
             MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
             MYSQL_ROOT_HOST: '%'
         image: mysql/mysql-server:${MYSQL_VERSION:-8.0.16}
 
-    mysql:
-        extends:
-            service: mysql-base
-        ports:
-            - 33060:33060
-
     mysql-full-ssl:
-        command: mysqld --ssl-key=/ssl/key.pem --ssl-cert=/ssl/cert.pem
+        command: --ssl-key=/ssl/key.pem --ssl-cert=/ssl/cert.pem
         extends:
-            service: mysql-base
+            service: mysql
         ports:
             - 33061:33060
         volumes:
             - ./test/fixtures/ssl/server:/ssl:ro
 
     mysql-no-ssl:
-        command: mysqld --skip-ssl
+        command: --skip-ssl
         extends:
-            service: mysql-base
+            service: mysql
         ports:
             - 33062:33060
 
     mysql-5.7:
-        command: mysqld --plugin-load=mysqlx=mysqlx.so
+        command: --plugin-load=mysqlx=mysqlx.so
         extends:
-            service: mysql-base
+            service: mysql
         image: mysql/mysql-server:5.7
         ports:
             - 33063:33060
 
     mysql-8.0.3:
-        command: mysqld --plugin-load=mysqlx=mysqlx.so
+        command: --plugin-load=mysqlx=mysqlx.so
         extends:
-            service: mysql-base
+            service: mysql
         image: mysql/mysql-server:8.0.3
         ports:
             - 33064:33060
@@ -49,10 +43,7 @@ services:
     # sha256_password authentication plugin deprecated
     mysql-8.0.13:
         extends:
-            service: mysql-base
+            service: mysql
         image: mysql/mysql-server:8.0.13
         ports:
             - 33065:33060
-
-volumes:
-    ssl:

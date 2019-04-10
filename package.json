@@ -39,11 +39,14 @@
     "url": "http://bugs.mysql.com"
   },
   "scripts": {
+    "posttest": "docker-compose down --volumes",
     "prepack": "node bin/prepack.js",
-    "test:docker": "mocha --exclude=test/functional/**/*.js --exclude=test/unit/**/*.js",
-    "test:functional": "mocha --exclude=test/docker/**/*.js --exclude=test/unit/**/*.js",
-    "test:unit": "mocha --exclude=test/docker/**/*.js --exclude=test/functional/**/*.js",
-    "test": "mocha"
+    "pretest": "docker-compose up -d && sleep 30",
+    "test": "mocha",
+    "test:compatibility": "npm run pretest && mocha --exclude=test/functional/**/*.js --exclude=test/unit/**/*.js && npm run posttest",
+    "test:functional": "mocha --exclude=test/compatibility/**/*.js --exclude=test/unit/**/*.js",
+    "test:latest": "mocha --exclude=test/compatibility/**/*.js",
+    "test:unit": "mocha --exclude=test/compatibility/**/*.js --exclude=test/functional/**/*.js"
   },
   "dependencies": {
     "google-protobuf": "3.4.0",

@@ -7,19 +7,19 @@ const expect = require('chai').expect;
 const fixtures = require('../../../../test/fixtures');
 const mysqlx = require('../../../../');
 
-describe('MySQL 8.0.3 authentication', () => {
+describe('MySQL 5.7 authentication', () => {
     context('mysql_native_password', () => {
         let auth;
 
-        // MySQL 8.0.3 server port (defined in docker.compose.yml)
-        const baseConfig = { password: 'mnpp', port: 33064, schema: undefined, socket: undefined, user: 'mnpu' };
+        // MySQL 5.7 server port (defined in docker.compose.yml)
+        const baseConfig = { password: 'mnpp', port: 33063, schema: undefined, socket: undefined, user: 'mnpu' };
 
         beforeEach('setup test account', () => {
             return fixtures.createAccount({ password: baseConfig.password, plugin: 'mysql_native_password', port: baseConfig.port, user: baseConfig.user });
         });
 
         afterEach('delete test account', () => {
-            return fixtures.deleteAccount({ user: baseConfig.user });
+            return fixtures.deleteAccount({ port: baseConfig.port, user: baseConfig.user });
         });
 
         context('default authentication mechanism', () => {
