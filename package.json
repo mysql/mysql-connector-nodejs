@@ -15,13 +15,12 @@
   ],
   "license": "GPL-2.0",
   "files": [
-    "README.md",
-    "lib/",
-    "test/",
-    "docs/",
     "CHANGES.txt",
-    "COPYING",
-    "index.js"
+    "README",
+    "docs/",
+    "index.js",
+    "lib/",
+    "test/"
   ],
   "keywords": [
     "MySQL",
