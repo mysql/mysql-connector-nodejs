@@ -1,109 +1,56 @@
-# MySQL Connector/Node.js with X DevAPI
+# MySQL Connector/Node.js
 
-The Node.js Connector is an asynchronous promise-based client library for the X DevAPI (using the X Protocol) that was introduced in MySQL 5.7.12.
+[![Languages](https://img.shields.io/github/languages/top/mysql/mysql-connector-nodejs.svg?style=flat)](https://github.com/mysql/mysql-connector-nodejs) [![License: GPLv2 with FOSS exception](https://img.shields.io/badge/license-GPLv2_with_FOSS_exception-c30014.svg?style=flat)](https://github.com/mysql/mysql-connector-nodejs/blob/master/LICENSE) [![npm](https://img.shields.io/npm/v/@mysql/xdevapi.svg?style=flat)](https://www.npmjs.com/package/@mysql/xdevapi)
 
-MySQL is an open-source relational database that is secure, high performing, and easy to use. The X DevAPI, besides a traditional SQL interface, also supports a CRUD API for working with relational tables and JSON documents making it possible to use both tables and document-store collections at the same time.
+MySQL Connector/Node.js is a MySQL 8 driver for Node.js officially supported and maintained by Oracle. It contains an implementation of the [X DevAPI](https://dev.mysql.com/doc/x-devapi-userguide/en/), an Application Programming Interface for working with the [MySQL Document Store](https://dev.mysql.com/doc/refman/8.0/en/document-store.html) through CRUD-based, NoSQL operations.
 
-For general information about the X DevAPI, please refer to documentation on [https://dev.mysql.com/doc/x-devapi-userguide/en/](https://dev.mysql.com/doc/x-devapi-userguide/en/).
+For detailed information, please visit the official [MySQL Connector/Node.js documentation](https://dev.mysql.com/doc/dev/connector-nodejs/).
 
-## Requirements
+## Licensing
 
-This library requires Node.js 4.2.0 or higher and MySQL 8.0.11 or higher. You are able to use recent MySQL 5.7.x versions (with some limitations), however, MySQL 5.7 does not take advantage of the entire set of features provided by the connector.
+Please refer to the [README.txt](https://github.com/mysql/mysql-connector-nodejs/blob/master/README.txt) and [LICENSE](https://github.com/mysql/mysql-connector-nodejs/blob/master/LICENSE) files, available in this repository, for further details.
 
-## Installation
+## Getting the Latest Release
 
-This library is organized in a way that it can be installed into your project using Node.js's npm tool. Choose one of the following methods to get and install MySQL Connector/node.js:
+MySQL Connector/Node.js is free for usage under the terms of the specified licensing and it runs on any Operating System that supports a Node.js 4.2.0 (or higher) runtime. Packages can and should be installed in your project using the npm CLI.
 
-* manually download the package from [https://dev.mysql.com/downloads/connector/nodejs/](https://dev.mysql.com/downloads/connector/nodejs/) and import the library using npm:
+Since releases do **NOT** follow [Semantic Versioning](https://semver.org/) rules, it is advised to install a specific version of the package (the latest preferably) or by using an additional standard lockfile such as [`npm-shrinkwrap.json`](https://docs.npmjs.com/files/shrinkwrap.json.html) or [`package-lock.json`](https://docs.npmjs.com/files/package-lock.json) depending on the version of the npm CLI you are using.
+
+### Installing from the npm registry
+
+The recommended way for installing MySQL Connector/Node.js is by using the npm registry directly. That can be done by running following command in the project root directory:
+
 ```sh
-$ npm install /path/to/mysql-connector-nodejs-<version>.tar.gz
+$ npm install @mysql/xdevapi --save --save-exact
 ```
-* use the @mysql/xdevapi package from [https://npmjs.com](https://npmjs.com) and install it:
+
+### Downloading and Installing manually
+
+Alternatively, MySQL Connector/Node.js tarballs are also available in the [official download page](https://dev.mysql.com/downloads/connector/nodejs/). To install the package you can run the following command in the project root directory:
+
 ```sh
-$ npm install @mysql/xdevapi
+$ npm install /path/to/mysql-connector-nodejs-<version>.tar.gz --save --save-exact
 ```
 
-Please refer to [https://npmjs.com](https://npmjs.com) for more information on npm.
+### GitHub Repository
 
-## Getting Started
+The GitHub repository contains the MySQL Connector/Node.js source code as per the latest release. No changes are published in the repository between releases.
 
-Using the MySQL document-store is as easy as follows:
+## Contributing
 
-```js
-'use strict';
+There are a few ways to contribute to the Connector/Node.js code. Please refer to the [contributing guidelines](https://github.com/mysql/mysql-connector-nodejs/blob/master/CONTRIBUTING.md) for additional information.
 
-const mysqlx = require('@mysql/xdevapi');
+## Additional Resources
 
-const options = {
-  host: 'localhost',
-  port: 33060,
-  password: '<passwd>',
-  user: 'root',
-  schema: 'mySchema' // an error is thrown if it does not exist
-};
+* [MySQL Connector/Node.js Documentation](https://dev.mysql.com/doc/dev/connector-nodejs/)
+* [MySQL X DevAPI User Guide](https://dev.mysql.com/doc/x-devapi-userguide/en/)
+* [MySQL Document Store](https://dev.mysql.com/doc/refman/en/document-store.html)
+* [MySQL Connector/Node.js forum](http://forums.mysql.com/list.php?44)
+* [`#connectors` channel in MySQL Community Slack](https://mysqlcommunity.slack.com/messages/connectors) ([Sign-up](https://lefred.be/mysql-community-on-slack/) required if you do not have an Oracle account)
+* [Twitter](https://twitter.com/mysql)
+* [InsideMySQL.com Connectors Blog](https://insidemysql.com/category/mysql-development/connectors/)
+* [MySQL Public Bug Tracker](https://bugs.mysql.com/)
 
-mysqlx.getSession(options)
-  .then(session => {
-    return session
-      .getSchema(options.schema)
-      .createCollection('myCollection');
-  })
-  .then(collection => {
-    return collection
-      .add({ foo: 'bar' }, { baz: { qux: 'quux' } })
-      .execute()
-      .then(() => {
-        return collection
-          .find('foo = :value')
-          .bind('value', 'bar')
-          .execute(console.log);
-      })
-      .then(() => {
-        return collection
-          .remove('baz.qux = :value')
-          .bind('value', 'quux')
-          .execute();
-      })
-      .then(() => {
-        return collection
-          .getSession()
-          .getSchema(options.schema)
-          .dropCollection('myCollection');
-      })
-      .then(() => {
-        return collection
-          .getSession()
-          .dropSchema('myCollection');
-      })
-      .then(() => {
-        return collection
-          .getSession()
-          .close();
-      });
-  })
-  .catch(err => {
-    console.error(err.stack);
-    process.exit(1);
-  });
-```
+For more information about this and other MySQL products, please visit [MySQL Contact & Questions](https://www.mysql.com/about/contact/).
 
-Check out the official [documentation](https://dev.mysql.com/doc/dev/connector-nodejs/) for more details.
-
-## License
-
-Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
-
-This is a release of MySQL Connector/Node.js, Oracle's Node.js driver for MySQL.
-
-License information can be found in the LICENSE file.
-
-This distribution may include materials developed by third parties.
-For license and attribution notices for these materials, please refer to the LICENSE file.
-
-For more information on MySQL Connector/Node.js, visit
-http://dev.mysql.com/doc/dev/connector-nodejs/8.0/
-
-For additional downloads and the source of MySQL Connector/Node.js, visit
-http://dev.mysql.com/downloads
-
-MySQL Connector/Node.js is brought to you by the MySQL team at Oracle.
+[![Follow MySQL on Twitter](https://img.shields.io/twitter/follow/MySQL.svg?label=Follow%20%40MySQL&style=social)](https://twitter.com/intent/follow?screen_name=MySQL)

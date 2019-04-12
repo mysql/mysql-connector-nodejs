@@ -16,9 +16,9 @@
   "license": "GPL-2.0",
   "files": [
     "CHANGES.txt",
-    "README",
+    "README.md",
+    "README.txt",
     "docs/",
-    "index.js",
     "lib/",
     "test/"
   ],
