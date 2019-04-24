@@ -196,33 +196,79 @@ describe('finding documents in collections', () => {
         });
     });
 
-    context('multi-option expressions', () => {
+    context('predicate expressions', () => {
         beforeEach('add fixtures', () => {
             return collection
-                .add({ _id: '1', name: 'foo' })
-                .add({ _id: '2', name: 'bar' })
+                .add({ _id: '1', name: 'foo', list: [1, 4] })
+                .add({ _id: '2', name: 'bar', list: [4, 7] })
                 .add({ _id: '3', name: 'baz' })
                 .execute();
         });
 
-        it('returns all documents that match a criteria specified by a grouped expression', () => {
-            const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+        context('where the property value', () => {
+            it('is part of a set of values being provided', () => {
+                const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
+                const actual = [];
 
-            return collection
-                .find("_id in ('1', '3')")
-                .execute(doc => doc && actual.push(doc))
-                .then(() => expect(actual).to.deep.equal(expected));
+                return collection.find("_id in ('1', '3')")
+                    .fields('_id', 'name')
+                    .execute(doc => actual.push(doc))
+                    .then(() => expect(actual).to.deep.equal(expected));
+            });
+
+            it('is not part of a set of values being provided', () => {
+                const expected = [{ _id: '2', name: 'bar' }];
+                const actual = [];
+
+                return collection.find("_id not in ('1', '3')")
+                    .fields('_id', 'name')
+                    .execute(doc => actual.push(doc))
+                    .then(() => expect(actual).to.deep.equal(expected));
+            });
         });
 
-        it('returns all documents that do not match a criteria specified by a grouped expression', () => {
-            const expected = [{ _id: '2', name: 'bar' }];
-            let actual = [];
+        context('where a list of values being provided', () => {
+            it('overlaps a list of values of a given document property', () => {
+                const expected = [{ _id: '1' }];
+                const actual = [];
 
-            return collection
-                .find("_id not in ('1', '3')")
-                .execute(doc => doc && actual.push(doc))
-                .then(() => expect(actual).to.deep.equal(expected));
+                return collection.find('[1, 2, 3] OVERLAPS list')
+                    .fields('_id')
+                    .execute(doc => actual.push(doc))
+                    .then(() => expect(actual).to.deep.equal(expected));
+            });
+
+            it('does not overlap a list of values of a given document property', () => {
+                const expected = [{ _id: '1' }];
+                const actual = [];
+
+                return collection.find('[6, 7] NOT OVERLAPS list')
+                    .fields('_id')
+                    .execute(doc => actual.push(doc))
+                    .then(() => expect(actual).to.deep.equal(expected));
+            });
+        });
+
+        context('where a list of values of a given document property', () => {
+            it('overlaps a list of values being provided', () => {
+                const expected = [{ _id: '1' }, { _id: '2' }];
+                const actual = [];
+
+                return collection.find('list OVERLAPS [4]')
+                    .fields('_id')
+                    .execute(doc => actual.push(doc))
+                    .then(() => expect(actual).to.deep.equal(expected));
+            });
+
+            it('does not overlap a list of values being provided', () => {
+                const expected = [{ _id: '1' }, { _id: '2' }];
+                const actual = [];
+
+                return collection.find('list NOT OVERLAPS [8, 9]')
+                    .fields('_id')
+                    .execute(doc => actual.push(doc))
+                    .then(() => expect(actual).to.deep.equal(expected));
+            });
         });
     });
 
@@ -239,10 +285,9 @@ describe('finding documents in collections', () => {
             const expected = [{ _id: '3', name: 'baz', age: 23 }, { _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar', age: 42 }];
             const actual = [];
 
-            return collection
-                .find()
+            return collection.find()
                 .sort(['age ASC', 'name ASC'])
-                .execute(doc => doc && actual.push(doc))
+                .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
@@ -250,10 +295,9 @@ describe('finding documents in collections', () => {
             const expected = [{ _id: '2', name: 'bar', age: 42 }, { _id: '3', name: 'baz', age: 23 }, { _id: '1', name: 'foo', age: 23 }];
             const actual = [];
 
-            return collection
-                .find()
+            return collection.find()
                 .sort('age DESC', 'name ASC')
-                .execute(doc => doc && actual.push(doc))
+                .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });

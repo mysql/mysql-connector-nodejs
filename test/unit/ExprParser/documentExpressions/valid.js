@@ -1272,6 +1272,112 @@ describe('ExprParser', () => {
                 expect(pathItems[1].getType()).to.equal(DocumentPathItem.Type.DOUBLE_ASTERISK);
                 expect(pathItems[2].getType()).to.equal(DocumentPathItem.Type.ARRAY_INDEX_ASTERISK);
             });
+
+            it('parses valid "overlaps" syntax', () => {
+                let input = '[1, 2, 3] OVERLAPS $.foo';
+                let expr = Parser.parse(input);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.OPERATOR);
+                expect(expr.output.getOperator().getName()).to.equal('overlaps');
+
+                let params = expr.output.getOperator().getParamList();
+                expect(params).to.have.lengthOf(2);
+                expect(params[0].getType()).to.equal(Expr.Type.ARRAY);
+                expect(params[1].getType()).to.equal(Expr.Type.IDENT);
+
+                let values = params[0].getArray().getValueList();
+                expect(values).to.have.lengthOf(3);
+
+                values.forEach(value => {
+                    expect(value.getType()).to.equal(Expr.Type.LITERAL);
+                    expect(value.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                });
+
+                expect(values[0].getLiteral().getVUnsignedInt()).to.equal(1);
+                expect(values[1].getLiteral().getVUnsignedInt()).to.equal(2);
+                expect(values[2].getLiteral().getVUnsignedInt()).to.equal(3);
+
+                let pathItems = params[1].getIdentifier().getDocumentPathList();
+                expect(pathItems[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
+                expect(pathItems[0].getValue()).to.equal('foo');
+
+                input = 'foo OVERLAPS [4]';
+                expr = Parser.parse(input);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.OPERATOR);
+                expect(expr.output.getOperator().getName()).to.equal('overlaps');
+
+                params = expr.output.getOperator().getParamList();
+                expect(params).to.have.lengthOf(2);
+                expect(params[0].getType()).to.equal(Expr.Type.IDENT);
+                expect(params[1].getType()).to.equal(Expr.Type.ARRAY);
+
+                pathItems = params[0].getIdentifier().getDocumentPathList();
+                expect(pathItems[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
+                expect(pathItems[0].getValue()).to.equal('foo');
+
+                values = params[1].getArray().getValueList();
+                expect(values).to.have.lengthOf(1);
+                expect(values[0].getType()).to.equal(Expr.Type.LITERAL);
+                expect(values[0].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                expect(values[0].getLiteral().getVUnsignedInt()).to.equal(4);
+
+                input = '[6, 7] NOT OVERLAPS foo';
+                expr = Parser.parse(input);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.OPERATOR);
+                expect(expr.output.getOperator().getName()).to.equal('not_overlaps');
+
+                params = expr.output.getOperator().getParamList();
+                expect(params).to.have.lengthOf(2);
+                expect(params[0].getType()).to.equal(Expr.Type.ARRAY);
+                expect(params[1].getType()).to.equal(Expr.Type.IDENT);
+
+                values = params[0].getArray().getValueList();
+                expect(values).to.have.lengthOf(2);
+
+                values.forEach(value => {
+                    expect(value.getType()).to.equal(Expr.Type.LITERAL);
+                    expect(value.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                });
+
+                expect(values[0].getLiteral().getVUnsignedInt()).to.equal(6);
+                expect(values[1].getLiteral().getVUnsignedInt()).to.equal(7);
+
+                pathItems = params[1].getIdentifier().getDocumentPathList();
+                expect(pathItems[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
+                expect(pathItems[0].getValue()).to.equal('foo');
+
+                input = '$.foo NOT OVERLAPS [8, 9]';
+                expr = Parser.parse(input);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.OPERATOR);
+                expect(expr.output.getOperator().getName()).to.equal('not_overlaps');
+
+                params = expr.output.getOperator().getParamList();
+                expect(params).to.have.lengthOf(2);
+                expect(params[0].getType()).to.equal(Expr.Type.IDENT);
+                expect(params[1].getType()).to.equal(Expr.Type.ARRAY);
+
+                pathItems = params[0].getIdentifier().getDocumentPathList();
+                expect(pathItems[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
+                expect(pathItems[0].getValue()).to.equal('foo');
+
+                values = params[1].getArray().getValueList();
+                expect(values).to.have.lengthOf(2);
+
+                values.forEach(value => {
+                    expect(value.getType()).to.equal(Expr.Type.LITERAL);
+                    expect(value.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                });
+
+                expect(values[0].getLiteral().getVUnsignedInt()).to.equal(8);
+                return expect(values[1].getLiteral().getVUnsignedInt()).to.equal(9);
+            });
         });
     });
 });
