@@ -466,102 +466,138 @@ describe('Collection', () => {
     });
 
     context('createIndex()', () => {
-        it('does not accept an invalid index name', () => {
-            return collection().createIndex()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Invalid index name.'));
+        context('succeeds with a valid index name and a valid', () => {
+            let getName;
+
+            beforeEach('setup fakes', () => {
+                getName = td.function();
+            });
+
+            it('regular index definition', () => {
+                const instance = collection('bar', { getName }, 'qux');
+
+                const args = [{
+                    name: 'index',
+                    schema: 'baz',
+                    collection: 'qux',
+                    unique: false,
+                    type: 'INDEX',
+                    constraint: [ { array: false, member: '$.age', required: false, type: 'TINYINT' } ]
+                }];
+
+                const index = {
+                    fields: [{
+                        field: '$.age',
+                        type: 'TINYINT'
+                    }]
+                };
+
+                td.when(getName()).thenReturn('baz');
+                td.when(execute()).thenResolve(true);
+                td.when(sqlExecute('bar', 'create_collection_index', args, 'mysqlx')).thenReturn({ execute });
+
+                return instance.createIndex('index', index)
+                    .then(actual => expect(actual).to.be.true);
+            });
+
+            it('multi-value index definition', () => {
+                const instance = collection('bar', { getName }, 'qux');
+
+                const args = [{
+                    name: 'index',
+                    schema: 'baz',
+                    collection: 'qux',
+                    unique: false,
+                    type: 'INDEX',
+                    constraint: [ { array: true, member: '$.tags', required: false, type: 'CHAR' } ]
+                }];
+
+                const index = {
+                    fields: [{
+                        field: '$.tags',
+                        type: 'CHAR',
+                        array: true
+                    }]
+                };
+
+                td.when(getName()).thenReturn('baz');
+                td.when(execute()).thenResolve(true);
+                td.when(sqlExecute('bar', 'create_collection_index', args, 'mysqlx')).thenReturn({ execute });
+
+                return instance.createIndex('index', index)
+                    .then(actual => expect(actual).to.be.true);
+            });
         });
 
-        it('accepts a valid index name and valid index definition', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = collection('bar', schema, 'qux');
+        context('fails with', () => {
+            it('an invalid index name', () => {
+                return collection().createIndex()
+                    .then(() => expect.fail())
+                    .catch(err => expect(err.message).to.equal('Invalid index name.'));
+            });
 
-            const args = [{
-                name: 'index',
-                schema: 'baz',
-                collection: 'qux',
-                unique: false,
-                type: 'INDEX',
-                constraint: [ { required: false, type: 'TINYINT', member: '$.age' } ]
-            }];
+            it('an index definition without a valid field list', () => {
+                return collection().createIndex('index', {})
+                    .then(() => expect.fail())
+                    .catch(err => expect(err.message).to.equal('Invalid index definition.'));
+            });
 
-            const index = {
-                fields: [{
-                    field: '$.age',
-                    type: 'TINYINT'
-                }]
-            };
+            it('an index definition with an empty field list', () => {
+                return collection().createIndex('index', { fields: [] })
+                    .then(() => expect.fail())
+                    .catch(err => expect(err.message).to.equal('Invalid index definition.'));
+            });
 
-            td.when(getName()).thenReturn('baz');
-            td.when(execute()).thenResolve(true);
-            td.when(sqlExecute('bar', 'create_collection_index', args, 'mysqlx')).thenReturn({ execute });
+            it('an index definition with an invalid field definition', () => {
+                const index = {
+                    fields: [{
+                        field: null,
+                        type: null
+                    }]
+                };
 
-            return instance.createIndex('index', index)
-                .then(actual => expect(actual).to.be.true);
-        });
+                return collection().createIndex('index', index)
+                    .then(() => expect.fail())
+                    .catch(err => expect(err.message).to.equal('Invalid index definition.'));
+            });
 
-        it('does not accept an index definition without valid field list', () => {
-            return collection().createIndex('index', {})
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Invalid index definition.'));
-        });
+            it('an index definition with any of the field definitions missing the document field', () => {
+                const index = {
+                    fields: [{
+                        type: 'TINYINT'
+                    }]
+                };
 
-        it('does not accept an index definition with empty field list', () => {
-            return collection().createIndex('index', { fields: [] })
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Invalid index definition.'));
-        });
+                return collection().createIndex('index', index)
+                    .then(() => expect.fail())
+                    .catch(err => expect(err.message).to.equal('Invalid index definition.'));
+            });
 
-        it('does not accept an index definition with invalid field definition', () => {
-            const index = {
-                fields: [{
-                    field: null,
-                    type: null
-                }]
-            };
+            it('an index definition with any of the field definitions missing its type', () => {
+                const index = {
+                    fields: [{
+                        field: '$.age'
+                    }]
+                };
 
-            return collection().createIndex('index', index)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Invalid index definition.'));
-        });
+                return collection().createIndex('index', index)
+                    .then(() => expect.fail())
+                    .catch(err => expect(err.message).to.equal('Invalid index definition.'));
+            });
 
-        it('does not accept an index definition with any of the field definitions missing field', () => {
-            const index = {
-                fields: [{
-                    type: 'TINYINT'
-                }]
-            };
+            it('an index definition enabling uniqueness', () => {
+                const index = {
+                    fields: [{
+                        field: '$.age',
+                        type: 'INT'
+                    }],
+                    unique: true
+                };
 
-            return collection().createIndex('index', index)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Invalid index definition.'));
-        });
-
-        it('does not accept an index definition with any of the field definitions missing type', () => {
-            const index = {
-                fields: [{
-                    field: '$.age'
-                }]
-            };
-
-            return collection().createIndex('index', index)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Invalid index definition.'));
-        });
-
-        it('does not allow unique option to be true in the index definition', () => {
-            const index = {
-                fields: [{
-                    field: '$.age',
-                    type: 'INT'
-                }],
-                unique: true
-            };
-
-            return collection().createIndex('index', index)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Unique indexes are currently not supported.'));
+                return collection().createIndex('index', index)
+                    .then(() => expect.fail())
+                    .catch(err => expect(err.message).to.equal('Unique indexes are currently not supported.'));
+            });
         });
     });
 });

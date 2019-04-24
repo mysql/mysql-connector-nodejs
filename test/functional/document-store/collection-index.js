@@ -5,6 +5,7 @@
 const config = require('../../properties');
 const expect = require('chai').expect;
 const fixtures = require('../../fixtures');
+const util = require('../../util');
 const mysqlx = require('../../../');
 
 describe('collection indexes', () => {
@@ -60,8 +61,10 @@ describe('collection indexes', () => {
     });
 
     context('creating indexes', () => {
-        it('creates regular index', () => {
-            const index = {
+        it('creates a regular index', () => {
+            const name = 'zip';
+            const expected = ['BTREE', 'YES', null];
+            const definition = {
                 fields: [{
                     field: '$.zip',
                     type: 'TEXT(10)',
@@ -69,8 +72,10 @@ describe('collection indexes', () => {
                 }]
             };
 
-            return collection.createIndex('zip', index)
-                .then(actual => expect(actual).to.be.true);
+            return collection.createIndex(name, definition)
+                .then(actual => expect(actual).to.be.true)
+                .then(() => util.getTableIndex(session, schema.getName(), collection.getName(), name))
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
 
         it('fails to create a duplicate index', () => {
@@ -93,7 +98,9 @@ describe('collection indexes', () => {
                 });
         });
 
-        it('creates spatial index', () => {
+        it('creates a spatial index', () => {
+            const name = 'coords';
+            const expected = ['SPATIAL', 'YES', null];
             const index = {
                 fields: [{
                     field: '$.coords',
@@ -105,7 +112,28 @@ describe('collection indexes', () => {
                 type: 'SPATIAL'
             };
 
-            return collection.createIndex('coords', index);
+            return collection.createIndex(name, index)
+                .then(actual => expect(actual).to.be.true)
+                .then(() => util.getTableIndex(session, schema.getName(), collection.getName(), name))
+                .then(actual => expect(actual).to.deep.equal(expected));
+        });
+
+        it('creates a multi-value index', () => {
+            const field = '$.tags';
+            const name = 'zip';
+            const expected = ['BTREE', 'YES', `cast(json_extract(\`doc\`,_utf8mb4\\'${field}\\') as char(50) array)`];
+            const definition = {
+                fields: [{
+                    field,
+                    type: 'CHAR(50)',
+                    array: true
+                }]
+            };
+
+            return collection.createIndex(name, definition)
+                .then(actual => expect(actual).to.be.true)
+                .then(() => util.getTableIndex(session, schema.getName(), collection.getName(), name))
+                .then(actual => expect(actual).to.deep.equal(expected));
         });
     });
 });

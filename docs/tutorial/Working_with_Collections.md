@@ -243,18 +243,18 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ## Collection indexes
 
-Collection indexes are ordinary MySQL indexes on virtual columns that extract data from JSON document.
-To create an Index, an index name and the index definition is required.
+Collection indexes are ordinary MySQL indexes on virtual columns that extract data from JSON document. To create an index, both the index name and the index definition are required.
 
-The Index Definition has the following properties:
+The index definition contains the following properties:
 ```text
-{string} [type] - index type name, INDEX (default) or SPATIAL.
-{array} fields - Array of Index Field objects. Each has the following properties:
-    {string} field - The Document path.
-    {string} type - see list of available types below.
-    {boolean} required - whether the generated column will be created as NOT NULL.
-    {number} [options] - describes how to handle GeoJSON documents that contain geometries with coordinate dimensions higher than 2.
-    {number} [srid] - unique value used to unambiguously identify projected, unprojected, and local spatial coordinate system definitions.
+{string} [type] - index type, INDEX (default) or SPATIAL
+{array} fields - the list of field definitions, each with the following properties:
+    {string} field - the path of the underlying document field
+    {string} type - the index type (see list of available types below)
+    {boolean} required - whether the generated column will be created as NOT NULL
+    {boolean} array - whether the underlying document field is an array, which requires a multi-value index
+    {number} [options] - describes how to handle GeoJSON documents that contain geometries with coordinate dimensions higher than 2
+    {number} [srid] - unique value used to unambiguously identify projected, unprojected, and local spatial coordinate system definitions
 ```
 
 You can create an index with one of the following types:
@@ -274,6 +274,7 @@ DATE
 TIME
 TIMESTAMP
 DATETIME
+CHAR[(length)]
 TEXT[(length)]
 GEOJSON (extra options: options, srid)
 ```
@@ -284,7 +285,9 @@ Additional details about spacial indexes can be found [here](https://dev.mysql.c
 
 Unique indexes are currently not supported by the xplugin, so, for now, you can only create non-unique indexes.
 
-If a collection is not empty, you can't create `SPACIAL` indexes for `GEOJSON` fields and you can't also create regular required (`NOT NULL`) indexes for `DATE` or `DATETIME` fields, due to some limitations of the xplugin.
+If a collection is not empty, you can't create `SPATIAL` indexes for `GEOJSON` fields and you can't also create regular required (`NOT NULL`) indexes for `DATE` or `DATETIME` fields, due to some limitations of the xplugin.
+
+Index defintions for document fields containing arrays should explicitely specify a multi-value option (`array: true`).
 
 ### Creating a regular index
 
@@ -300,6 +303,31 @@ mysqlx.getSession('mysqlx://root@localhost:33060')
                 field: '$.zip',
                 type: 'TEXT(10)',
                 required: false
+            }]
+        });
+    })
+    .then(status => {
+        console.log(status); // true
+    })
+    .catch(err => {
+        // the operation failed
+    });
+```
+
+### Creating a multi-value index
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://root@localhost:33060')
+    .then(session => {
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection.createIndex('tags', {
+            fields: [{
+                field: '$.tags',
+                type: 'CHAR(50)',
+                array: true
             }]
         });
     })
