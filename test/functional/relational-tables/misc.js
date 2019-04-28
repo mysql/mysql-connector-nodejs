@@ -539,43 +539,6 @@ describe('relational miscellaneous tests', () => {
             });
         });
 
-        context('collation and charset names', () => {
-            beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (a_char CHAR(3) CHARACTER SET latin1 COLLATE latin1_german1_ci)`)
-                    .execute();
-            });
-
-            beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ('foo')`)
-                    .execute();
-            });
-
-            it('attaches the correct names of the character set and collation', () => {
-                let metadata = [];
-
-                return session.sql(`SELECT * FROM ${schema.getName()}.test`)
-                    .execute(() => {}, meta => {
-                        metadata = metadata.concat(meta);
-                    })
-                    .then(() => {
-                        expect(metadata[0].getCollationName()).to.match(/^utf8mb4.+$/);
-                        expect(metadata[0].getCharacterSetName()).to.equal('utf8mb4');
-                    });
-            });
-
-            it('returns undefined for non-textual fields', () => {
-                let metadata = [];
-
-                return session.sql(`SELECT 1`)
-                    .execute(() => {}, meta => {
-                        metadata = metadata.concat(meta);
-                    })
-                    .then(() => {
-                        expect(metadata[0].getCollationName()).to.equal(undefined);
-                    });
-            });
-        });
-
         context('padded values', () => {
             beforeEach('create table', () => {
                 return session.sql(`CREATE TABLE ${schema.getName()}.test (rchar CHAR(5), vchar VARCHAR(5))`)
