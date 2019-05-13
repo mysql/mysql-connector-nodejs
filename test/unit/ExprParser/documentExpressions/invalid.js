@@ -43,5 +43,12 @@ describe('ExprParser', () => {
             expect(() => Parser.parse("doc->'$.foo'")).to.throw();
             expect(() => Parser.parse("foo.bar->'$.foo'")).to.throw();
         });
+
+        it('fails when "not" identifiers are used alongisde operators with the same optional prefix', () => {
+            expect(() => Parser.parse('not in [1, 2, 3]')).to.throw();
+            expect(() => Parser.parse('not not in [1, 2, 3]'));
+            expect(() => Parser.parse("not like '%foo'")).to.throw();
+            return expect(() => Parser.parse("not not like '%foo'")).to.throw();
+        });
     });
 });

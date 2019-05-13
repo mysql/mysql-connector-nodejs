@@ -115,6 +115,20 @@ describe('ExprParser', () => {
 
                 expect(params[0].getLiteral().getVUnsignedInt()).to.equal(1000);
                 expect(params[1].getLiteral().getVUnsignedInt()).to.equal(1010);
+
+                input = 'not = foo';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.OPERATOR);
+                expect(expr.output.getOperator().getName()).to.equal('==');
+
+                params = expr.output.getOperator().getParamList();
+                expect(params).to.have.lengthOf(2);
+                params.forEach(param => expect(param.getType()).to.equal(Expr.Type.IDENT));
+
+                expect(params[0].getIdentifier().getName()).to.equal('not');
+                expect(params[1].getIdentifier().getName()).to.equal('foo');
             });
 
             it('parses valid JSON syntax', () => {
