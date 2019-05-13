@@ -129,6 +129,23 @@ describe('ExprParser', () => {
 
                 expect(params[0].getIdentifier().getName()).to.equal('not');
                 expect(params[1].getIdentifier().getName()).to.equal('foo');
+
+                input = '8 DIV 4';
+                expr = Parser.parse(input, options);
+                expect(expr.input).to.equal(input);
+
+                expect(expr.output.getType()).to.equal(Expr.Type.OPERATOR);
+                expect(expr.output.getOperator().getName()).to.equal('div');
+
+                params = expr.output.getOperator().getParamList();
+                expect(params).to.have.lengthOf(2);
+                params.forEach(param => {
+                    expect(param.getType()).to.equal(Expr.Type.LITERAL);
+                    expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
+                });
+
+                expect(params[0].getLiteral().getVUnsignedInt()).to.equal(8);
+                expect(params[1].getLiteral().getVUnsignedInt()).to.equal(4);
             });
 
             it('parses valid JSON syntax', () => {
