@@ -431,6 +431,38 @@ describe('Collection', () => {
             return instance.dropIndex('index')
                 .then(actual => expect(actual).to.be.true);
         });
+
+        it('silently succeeds if the index does not exist', () => {
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection('bar', schema, 'qux');
+
+            const error = new Error();
+            error.info = { code: 1091 };
+
+            td.when(getName()).thenReturn('baz');
+            td.when(execute()).thenReject(error);
+            td.when(sqlExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.dropIndex('index')
+                .then(actual => expect(actual).to.be.false);
+        });
+
+        it('fails with any unexpected error returned by the server', () => {
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection('bar', schema, 'qux');
+
+            const error = new Error('foobar');
+
+            td.when(getName()).thenReturn('baz');
+            td.when(execute()).thenReject(error);
+            td.when(sqlExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.dropIndex('index')
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal(error.message));
+        });
     });
 
     context('createIndex()', () => {

@@ -41,13 +41,9 @@ describe('collection indexes', () => {
     });
 
     context('dropping indexes', () => {
-        it('fails to drop a non-existent index', () => {
+        it('does not fail to drop a non-existent index', () => {
             return collection.dropIndex('foo')
-                .then(() => expect.fail())
-                .catch(err => {
-                    expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1091);
-                });
+                .then(result => expect(result).to.be.false);
         });
 
         it('drops a valid index', () => {
@@ -58,7 +54,8 @@ describe('collection indexes', () => {
                         type: 'TINYINT'
                     }]
                 })
-                .then(() => collection.dropIndex('age'));
+                .then(() => collection.dropIndex('age'))
+                .then(result => expect(result).to.be.true);
         });
     });
 
