@@ -258,7 +258,7 @@ describe('finding documents in collections', () => {
         });
     });
 
-    context('BUG#29766014 document temporal value lookup', () => {
+    context('BUG#29766014', () => {
         const now = new Date();
 
         beforeEach('add fixtures', () => {
@@ -274,6 +274,25 @@ describe('finding documents in collections', () => {
 
             return collection.find('updatedAt = :date')
                 .bind('date', now)
+                .execute(doc => actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('BUG#29807792', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ name: 'foo', age: 42 })
+                .add({ name: 'bar', age: 23 })
+                .execute();
+        });
+
+        it('correctly encodes cast types', () => {
+            const expected = [{ name: 'foo' }];
+            const actual = [];
+
+            return collection.find("CAST('42' AS UNSIGNED INTEGER) = age")
+                .fields('name')
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
