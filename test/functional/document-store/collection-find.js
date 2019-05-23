@@ -257,4 +257,25 @@ describe('finding documents in collections', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('BUG#29766014 document temporal value lookup', () => {
+        const now = new Date();
+
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', name: 'foo', updatedAt: now })
+                .add({ _id: '2', name: 'bar' })
+                .execute();
+        });
+
+        it('does not fail when a placeholder is assigned a JavaScript Date instance', () => {
+            const expected = [{ _id: '1', name: 'foo', updatedAt: now.toJSON() }];
+            const actual = [];
+
+            return collection.find('updatedAt = :date')
+                .bind('date', now)
+                .execute(doc => actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });

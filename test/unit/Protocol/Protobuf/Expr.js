@@ -87,18 +87,40 @@ describe('Protobuf', () => {
                 expect(literal.getType()).to.equal(Type.LITERAL);
             });
 
-            it('encodes a JavaScript Date object', () => {
+            it('encodes a JavaScript Date instance', () => {
                 const now = new Date();
-                const obj = Expr.createExpr({ foo: now });
+                const expr = Expr.createExpr(now, { parse: false });
 
-                expect(obj.getType()).to.equal(Type.OBJECT);
-
-                const fields = obj.getObject().getFldList();
-                expect(fields).to.have.length(1);
-                expect(fields[0].getValue().getType()).to.equal(Type.LITERAL);
-                expect(fields[0].getValue().getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
+                expect(expr.getType()).to.equal(Type.LITERAL);
+                expect(expr.getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 // eslint-disable-next-line node/no-deprecated-api
-                return expect(new Buffer(fields[0].getValue().getLiteral().getVString().getValue()).toString()).to.equal(now.toJSON());
+                expect(new Buffer(expr.getLiteral().getVString().getValue()).toString()).to.equal(now.toJSON());
+            });
+
+            it('encodes a JavaScript Buffer', () => {
+                // eslint-disable-next-line node/no-deprecated-api
+                const data = new Buffer('foo');
+                const expr = Expr.createExpr(data, { parse: false });
+
+                expect(expr.getType()).to.equal(Type.LITERAL);
+                expect(expr.getLiteral().getType()).to.equal(Scalar.Type.V_OCTETS);
+                // eslint-disable-next-line node/no-deprecated-api
+                expect(new Buffer(expr.getLiteral().getVOctets().getValue()).toString()).to.equal('foo');
+            });
+
+            it('encodes a JavaScript null', () => {
+                const expr = Expr.createExpr(null, { parse: false });
+
+                expect(expr.getType()).to.equal(Type.LITERAL);
+                expect(expr.getLiteral().getType()).to.equal(Scalar.Type.V_NULL);
+            });
+
+            it('encodes a JavaScript false', () => {
+                const expr = Expr.createExpr(false, { parse: false });
+
+                expect(expr.getType()).to.equal(Type.LITERAL);
+                expect(expr.getLiteral().getType()).to.equal(Scalar.Type.V_BOOL);
+                expect(expr.getLiteral().getVBool()).to.equal(false);
             });
         });
     });

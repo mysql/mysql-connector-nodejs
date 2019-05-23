@@ -10,38 +10,7 @@ const expect = require('chai').expect;
 
 describe('Protobuf', () => {
     context('Datatypes', () => {
-        context('decodeScalar()', () => {
-            it('returns a Node.js buffer for binary data', () => {
-                const octets = new Scalar.Octets();
-                octets.setContentType(ContentType.GEOMETRY);
-                /* eslint-disable node/no-deprecated-api */
-                const data = new Buffer('foo');
-                /* eslint-enable node/no-deprecated-api */
-                octets.setValue(new Uint8Array(data));
-
-                const scalar = new Scalar();
-                scalar.setType(Scalar.Type.V_OCTETS);
-                scalar.setVOctets(octets);
-
-                expect(Datatypes.extractScalar(scalar)).to.deep.equal(data);
-            });
-
-            it('returns a JavaScript string for textual data', () => {
-                const octets = new Scalar.Octets();
-                octets.setContentType(ContentType.JSON);
-                /* eslint-disable node/no-deprecated-api */
-                octets.setValue(new Uint8Array(new Buffer('foo')));
-                /* eslint-enable node/no-deprecated-api */
-
-                const scalar = new Scalar();
-                scalar.setType(Scalar.Type.V_OCTETS);
-                scalar.setVOctets(octets);
-
-                expect(Datatypes.extractScalar(scalar)).to.equal('foo');
-            });
-        });
-
-        context('encodeScalar()', () => {
+        context('createScalar()', () => {
             it('returns a Mysqlx.Datatypes.Scalar.Type.V_NULL for `null`', () => {
                 expect(Datatypes.createScalar(null).getType()).to.equal(Scalar.Type.V_NULL);
             });
@@ -49,9 +18,28 @@ describe('Protobuf', () => {
             it('returns a Mysqlx.Datatypes.Scalar.Type.V_NULL for `undefined`', () => {
                 expect(Datatypes.createScalar().getType()).to.equal(Scalar.Type.V_NULL);
             });
+
+            it('returns a Mysqlx.Datatypes.Scalar.Type.V_STRING for Date', () => {
+                const now = new Date();
+                const scalar = Datatypes.createScalar(now);
+
+                expect(scalar.getType()).to.equal(Scalar.Type.V_STRING);
+                // eslint-disable-next-line node/no-deprecated-api
+                expect(new Buffer(scalar.getVString().getValue()).toString()).to.equal(now.toJSON());
+            });
+
+            it('returns a Mysqlx.Datatypes.Scalar.Type.V_OCTETS for Buffer', () => {
+                // eslint-disable-next-line node/no-deprecated-api
+                const bin = new Buffer('foo');
+                const scalar = Datatypes.createScalar(bin);
+
+                expect(scalar.getType()).to.equal(Scalar.Type.V_OCTETS);
+                // eslint-disable-next-line node/no-deprecated-api
+                expect(new Buffer(scalar.getVOctets().getValue()).toString()).to.equal('foo');
+            });
         });
 
-        context('encodeAny()', () => {
+        context('createAny()', () => {
             it('returns a Mysqlx.Datatypes.Any object for valid literals', () => {
                 let any = Datatypes.createAny('foo');
 
@@ -132,7 +120,7 @@ describe('Protobuf', () => {
             });
         });
 
-        context('encodeArray()', () => {
+        context('createArray()', () => {
             it('returns a Mysqlx.Datatypes.Array object for arrays', () => {
                 const array = Datatypes.createArray([1, { foo: ['bar'] }]);
                 let values = array.getValueList();
@@ -172,7 +160,7 @@ describe('Protobuf', () => {
             });
         });
 
-        context('encodeObject()', () => {
+        context('createObject()', () => {
             it('returns a Mysqlx.Datatypes.Object object for objects', () => {
                 const obj = Datatypes.createObject({
                     root: 'foo',
@@ -219,6 +207,37 @@ describe('Protobuf', () => {
                 expect(() => Datatypes.createObject([])).to.throw(exception);
                 expect(() => Datatypes.createObject(['foo'])).to.throw(exception);
                 expect(() => Datatypes.createObject(() => {})).to.throw(exception);
+            });
+        });
+
+        context('extractScalar()', () => {
+            it('returns a Node.js buffer for binary data', () => {
+                const octets = new Scalar.Octets();
+                octets.setContentType(ContentType.GEOMETRY);
+                /* eslint-disable node/no-deprecated-api */
+                const data = new Buffer('foo');
+                /* eslint-enable node/no-deprecated-api */
+                octets.setValue(new Uint8Array(data));
+
+                const scalar = new Scalar();
+                scalar.setType(Scalar.Type.V_OCTETS);
+                scalar.setVOctets(octets);
+
+                expect(Datatypes.extractScalar(scalar)).to.deep.equal(data);
+            });
+
+            it('returns a JavaScript string for textual data', () => {
+                const octets = new Scalar.Octets();
+                octets.setContentType(ContentType.JSON);
+                /* eslint-disable node/no-deprecated-api */
+                octets.setValue(new Uint8Array(new Buffer('foo')));
+                /* eslint-enable node/no-deprecated-api */
+
+                const scalar = new Scalar();
+                scalar.setType(Scalar.Type.V_OCTETS);
+                scalar.setVOctets(octets);
+
+                expect(Datatypes.extractScalar(scalar)).to.equal('foo');
             });
         });
     });
