@@ -17,6 +17,7 @@
     }
   ],
   "license": "GPL-2.0",
+  "main": "index.js",
   "files": [
     "CHANGES.txt",
     "CONTRIBUTING.md",
