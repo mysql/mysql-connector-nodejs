@@ -43,6 +43,12 @@
     "url": "http://bugs.mysql.com"
   },
   "scripts": {
+    "coverage": "nyc npm run test",
+    "coverage:compatibility": "nyc npm run test:compatibility",
+    "coverage:functional": "nyc npm run test:functional",
+    "coverage:latest": "nyc npm run test:latest",
+    "coverage:summary": "nyc report --reporter=text-summary",
+    "coverage:unit": "nyc npm run test:unit",
     "posttest": "docker-compose down --volumes",
     "prepack": "node bin/prepack.js",
     "pretest": "docker-compose up -d && sleep 30",
@@ -62,6 +68,20 @@
   "devDependencies": {
     "chai": "4.2.0",
     "mocha": "5.2.0",
+    "nyc": "11.9.0",
     "testdouble": "3.7.0"
+  },
+  "nyc": {
+    "branches": 75,
+    "check-coverage": true,
+    "exclude": [
+      "lib/ExprParser/lib/stubs",
+      "lib/Protocol/Protobuf/Stubs",
+      "test"
+    ],
+    "functions": 75,
+    "lines": 75,
+    "reporter": ["text", "html"],
+    "statements": 75
   }
 }

@@ -1,6 +1,8 @@
+.nyc_output
 coverage
 doc
-node_modules
-test-reports.xml
 docs/INFO_BIN
 docs/INFO_SRC
+node_modules
+npm-debug.log
+test-reports.xml

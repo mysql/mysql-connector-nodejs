@@ -86,9 +86,30 @@ $ npm t
 $ npm test
 ```
 
-### Code Coverage and Convention
+### Test Coverage
 
-Currently, the project is still lacking a formal process for checking test coverage and for applying any standard code convention or checking for possible existing violations of that convention. This might change in the future since there are some informal rules that are currently being followed, so any changes introduced should be accompanied by a proper set of tests that cover 100% of the code paths affected by those changes and at the same should try to follow the existing code style.
+When submitting a patch that introduces changes to the source code, you need to make sure that those changes are be accompanied by a proper set of tests that cover 100% of the affected code paths. This is easily auditable by generating proper test coverage HTML and stdout reports using the following command:
+
+```sh
+$ npm run coverage
+```
+
+Just like the regular test script counterparts, you can generate code coverage reports for individual test suites, groups of test suites or the entire set of test suites.
+
+```sh
+$ npm run coverage:unit
+$ npm run coverage:functional
+$ npm run coverage:compatibility
+$ npm run coverage:latest
+```
+
+As a formal rule, a patch should not lead to a decrease of the overall code coverage below 75%. The scripts will result in an error if that happens. The unwritten rule says that the patch should not lead to any decrease at all of the overall code coverage.
+
+Besides looking at the content generated via the standard output of your command line, you can also check the report available at `coverage/index.html` using a web browser.
+
+### Code Style and Convention
+
+Currently, the project is still lacking a formal process for applying any standard code convention or checking for possible existing violations of that convention. This might change in the future since there are some informal rules that are currently being followed, so any changes introduced should try to follow the existing code style.
 
 The project maintainers reserve the right, of course, to further extend or amend any change in order to enforce those informal rules.
 
