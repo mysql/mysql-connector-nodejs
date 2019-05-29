@@ -109,9 +109,19 @@ Besides looking at the content generated via the standard output of your command
 
 ### Code Style and Convention
 
-Currently, the project is still lacking a formal process for applying any standard code convention or checking for possible existing violations of that convention. This might change in the future since there are some informal rules that are currently being followed, so any changes introduced should try to follow the existing code style.
+Any change to the project's source code must also follow the standard set of code style/convention rules enforced by the existing tooling infrastructure. So, before submitting a patch, you can check if it violates any of those rules using the following:
 
-The project maintainers reserve the right, of course, to further extend or amend any change in order to enforce those informal rules.
+```sh
+$ npm run linter:checks
+```
+
+Some categories of problems can easily be addressed and automatically fixed by running:
+
+```sh
+$ npm run linter:fixes
+```
+
+The project maintainers reserve the right, of course, to further extend or amend any change in order to enforce additional informal rules.
 
 ## Getting Help
 
