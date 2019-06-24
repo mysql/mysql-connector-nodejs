@@ -285,44 +285,30 @@ describe('Collection', () => {
     });
 
     context('getOne()', () => {
-        let collectionFind, execute;
+        let bind, collectionFind, execute;
 
         beforeEach('create fakes', () => {
+            bind = td.function();
             collectionFind = td.function();
             execute = td.function();
 
             td.replace('../../../lib/DevAPI/CollectionFind', collectionFind);
-            collection = require('../../../lib/DevAPI/Collection');
         });
 
         it('returns the document instance if it exists', () => {
             const collectionName = 'foobar';
             const documentId = 'foo';
-            const criteria = `_id = "${documentId}"`;
+            const criteria = `_id = :id`;
             const expected = { _id: documentId, name: 'bar' };
             const schema = 'baz';
             const session = 'qux';
-            const instance = collection(session, schema, collectionName);
 
             td.when(execute(td.callback(expected))).thenResolve();
-            td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ execute });
+            td.when(bind('id', documentId)).thenReturn({ execute });
+            td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ bind });
 
-            return instance.getOne(documentId)
-                .then(actual => expect(actual).to.deep.equal(expected));
-        });
-
-        it('escapes the id value', () => {
-            const collectionName = 'foobar';
-            // eslint-disable-next-line no-useless-escape
-            const documentId = 'fo\"o';
-            const criteria = `_id = "fo\\"o"`;
-            const expected = { _id: documentId, name: 'bar' };
-            const schema = 'baz';
-            const session = 'qux';
+            collection = require('../../../lib/DevAPI/Collection');
             const instance = collection(session, schema, collectionName);
-
-            td.when(execute(td.callback(expected))).thenResolve();
-            td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ execute });
 
             return instance.getOne(documentId)
                 .then(actual => expect(actual).to.deep.equal(expected));
@@ -331,13 +317,16 @@ describe('Collection', () => {
         it('returns `null` if the document does not exist', () => {
             const collectionName = 'foobar';
             const documentId = 'foo';
-            const criteria = `_id = "${documentId}"`;
+            const criteria = `_id = :id`;
             const schema = 'baz';
             const session = 'qux';
-            const instance = collection(session, schema, collectionName);
 
             td.when(execute(td.matchers.isA(Function))).thenResolve();
-            td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ execute });
+            td.when(bind('id', documentId)).thenReturn({ execute });
+            td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ bind });
+
+            collection = require('../../../lib/DevAPI/Collection');
+            const instance = collection(session, schema, collectionName);
 
             return instance.getOne(documentId)
                 .then(actual => expect(actual).to.be.null);

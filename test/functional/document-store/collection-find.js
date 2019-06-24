@@ -177,22 +177,46 @@ describe('finding documents in collections', () => {
         beforeEach('add fixtures', () => {
             return collection
                 .add({ _id: '1', name: 'foo' })
-                .add({ _id: '2', name: 'bar' })
+                .add({ _id: 2, name: 'bar' })
                 .execute();
         });
 
-        it('returns an existing document with the given id', () => {
-            const expected = { _id: '1', name: 'foo' };
+        context('when a document with a given id exists', () => {
+            it('returns the document if _id is a String', () => {
+                const expected = { _id: '1', name: 'foo' };
 
-            return collection
-                .getOne('1')
-                .then(doc => expect(doc).to.deep.equal(expected));
+                return collection.getOne('1')
+                    .then(doc => expect(doc).to.deep.equal(expected));
+            });
+
+            it('returns the document if _id is not a String', () => {
+                const expected = { _id: 2, name: 'bar' };
+
+                return collection.getOne(2)
+                    .then(doc => expect(doc).to.deep.equal(expected));
+            });
         });
 
-        it('returns null if a document with the given id does not exist', () => {
-            return collection
-                .getOne('3')
-                .then(doc => expect(doc).to.be.null);
+        context('when a document with a given id does not exist', () => {
+            it('returns null if the given id is a non-empty String', () => {
+                return collection.getOne('3')
+                    .then(doc => expect(doc).to.be.null);
+            });
+
+            it('returns null if a document id is an empty String', () => {
+                return collection.getOne('')
+                    .then(doc => expect(doc).to.be.null);
+            });
+
+            it('returns null if a document id is null', () => {
+                return collection.getOne(null)
+                    .then(doc => expect(doc).to.be.null);
+            });
+
+            it('returns null if a document id is not defined', () => {
+                return collection.getOne()
+                    .then(doc => expect(doc).to.be.null);
+            });
         });
     });
 
