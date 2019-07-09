@@ -308,6 +308,31 @@ describe('relational miscellaneous tests', () => {
                 });
             });
 
+            context('BUG#30030159', () => {
+                beforeEach('create table', () => {
+                    return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                            a_char CHAR(4),
+                            a_binary BINARY(4))`)
+                        .execute();
+                });
+
+                beforeEach('add fixtures', () => {
+                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ("0", "0")`)
+                        .execute();
+                });
+
+                it('decodes numeric values for columns of fixed-length datatypes that require padding', () => {
+                    // BINARY length = byte size
+                    // CHAR length = byte size * 4 (to accommodate UTF8)
+                    const expected = [['0               ', '0\0\0\0']];
+                    const actual = [];
+
+                    return schema.getTable('test').select()
+                        .execute(row => actual.push(row))
+                        .then(() => expect(actual).to.deep.equal(expected));
+                });
+            });
+
             context('ENUM columns', () => {
                 beforeEach('create table', () => {
                     return session.sql(`CREATE TABLE ${schema.getName()}.test (a_enum ENUM('foo', 'bar', 'baz'))`)
