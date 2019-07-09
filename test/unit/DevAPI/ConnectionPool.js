@@ -76,7 +76,7 @@ describe('DevAPI ConnectionPool', () => {
         });
 
         it('waits for an idle connection before timing out', () => {
-            const active = [{ _isValid: true, _isOpen: true, reset }, {}];
+            const active = [{ _isValid: true, _isOpen: true, reset, _properties: {} }, {}];
             const pool = connectionPool({ active, queueTimeout: 0, maxSize: 2 });
 
             td.when(reset()).thenResolve('foo');
@@ -165,15 +165,14 @@ describe('DevAPI ConnectionPool', () => {
 
         context('pooling connections', () => {
             it('returns an idle pooled connection if pooling is enabled', () => {
-                const session = {};
+                const session = { foo: 'bar' };
                 const pool = connectionPool({ active: [{}, {}], enabled: true, idle: [session] });
                 const release = td.replace(pool, 'release');
 
+                td.when(release(session)).thenResolve('baz');
+
                 return pool.pick().close()
-                    .then(() => {
-                        expect(td.explain(release).callCount).to.equal(1);
-                        expect(td.explain(release).calls[0].args[0]).to.equal(session);
-                    });
+                    .then(res => expect(res).to.equal('baz'));
             });
         });
     });

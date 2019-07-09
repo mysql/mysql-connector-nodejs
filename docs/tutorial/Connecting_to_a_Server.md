@@ -411,3 +411,68 @@ mysqlx.getSession('{ "user": "root", "connectionAttributes": null }')
 
 mysqlx.getSession({ user: 'root', connectionAttributes: undefined })
 ```
+
+## Resolving SRV records for a given host
+
+If you are using a DNS server or any kind or service discovery utility that supports mapping [SRV records](https://tools.ietf.org/html/rfc2782), you can create a connection to that host using the `mysqlx+srv` scheme/extension and Connector/Node.js will automatically resolve the available server addresses described by those SRV records.
+
+For instance, with a DNS server at the `foo.abc.com` endpoint, with the following service mapping:
+
+```txt
+Record                    TTL   Class    Priority Weight Port  Target
+_mysqlx._tcp.foo.abc.com. 86400 IN SRV   0        5      33060 foo1.abc.com
+_mysqlx._tcp.foo.abc.com. 86400 IN SRV   0        10     33060 foo2.abc.com
+_mysqlx._tcp.foo.abc.com. 86400 IN SRV   10       5      33060 foo3.abc.com
+_mysqlx._tcp.foo.abc.com. 86400 IN SRV   20       5      33060 foo4.abc.com
+```
+
+the client will connect to the best target server, given its priority and weight.
+
+```js
+mysqlx.getSession('mysqlx+srv://root@_mysqlx._tcp.foo.abc.com')
+    .then(session => {
+        console.log(session.inspect().host); // foo2.abc.com
+    });
+
+mysqlx.getSession({ host: '_mysqlx._tcp.foo.abc.com', resolveSrv: true, user: 'root' })
+    .then(session => {
+        console.log(session.inspect().host); // foo2.abc.com
+    });
+```
+
+If the highest-priority target server is not available, the most suitable alternative will be picked:
+
+```js
+// foo2.abc.com is down
+
+mysqlx.getSession('mysqlx+srv://root@_mysqlx._tcp.foo.abc.com')
+    .then(session => {
+        console.log(session.inspect().host); // foo1.abc.com
+    });
+
+mysqlx.getSession({ host: '_mysqlx._tcp.foo.abc.com', resolveSrv: true, user: 'root' })
+    .then(session => {
+        console.log(session.inspect().host); // foo1.abc.com
+    });
+```
+
+The behavior should apply to pooling connections as well, using the `mysqlx.getClient()` interface. A relevant scenario in a pooling setup is when a connection is released back to the pool, and the initial target host becomes unavailable either because it is down or it has been removed from the SRV record list. In that case, subsequent calls to `getSession()` should yield a connection to the next available host, according to the same rules established by priority and weight.
+
+```js
+const client = mysqlx.getClient('mysqlx+srv://root@_mysqlx._tcp.foo.abc.com');
+
+client.getSession()
+    .then(session => {
+        console.log(session.inspect().host); // foo2.abc.com
+        return session.close();
+    })
+    .then(() => {
+        // In the meantime "foo2.abc.com" became unavailable
+        return client.getSession();
+    })
+    .then(session => {
+        console.log(session.inspect().host); // foo1.abc.com
+    });
+```
+
+Note: attemping to create connections with UNIX sockets, server ports or multiple hostnames whilst enabling SRV resolution will result in an error.

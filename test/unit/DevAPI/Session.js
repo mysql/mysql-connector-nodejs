@@ -49,6 +49,31 @@ describe('Session', () => {
         it('throws an error if the port is not in the appropriate range', () => {
             [-1, 65537].forEach(port => expect(() => new Session({ port })).to.throw('Port must be between 0 and 65536'));
         });
+
+        context('enable SRV resolution', () => {
+            // TODO(Rui): this kind of property inspection should not happen, but the test is useful while the the code isn't refactored
+            it('assigns the requested host for SRV resolution', () => {
+                const session1 = new Session({ host: 'foo' });
+                const session2 = new Session({ endpoints: [{ host: 'bar' }] });
+
+                expect(session1._requestedHost).to.equal('foo');
+                expect(session2._requestedHost).to.equal('bar');
+            });
+
+            it('throws an error for connections over UNIX sockets', () => {
+                expect(() => new Session({ resolveSrv: true, socket: '/path/to/unix/socket.sock' })).to.throw('Using Unix domain sockets with DNS SRV lookup is not allowed.');
+                expect(() => new Session({ endpoints: [{ socket: '/path/to/unix/socket.sock' }], resolveSrv: true })).to.throw('Using Unix domain sockets with DNS SRV lookup is not allowed.');
+            });
+
+            it('throws an error if a port is specified', () => {
+                expect(() => new Session({ port: 33061, resolveSrv: true })).to.throw('Specifying a port number with DNS SRV lookup is not allowed.');
+                expect(() => new Session({ endpoints: [{ port: 33061 }], resolveSrv: true })).to.throw('Specifying a port number with DNS SRV lookup is not allowed.');
+            });
+
+            it('throws an error when multiple hostnames are specified', () => {
+                expect(() => new Session({ endpoints: [{ host: 'foo' }, { host: 'bar' }], resolveSrv: true })).to.throw('Specifying multiple hostnames with DNS SRV lookup is not allowed.');
+            });
+        });
     });
 
     context('getSchema()', () => {

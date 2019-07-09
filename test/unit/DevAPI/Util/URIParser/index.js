@@ -19,6 +19,7 @@ describe('parseUri', () => {
                     port: 3357,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -42,6 +43,7 @@ describe('parseUri', () => {
                     port: 3357,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -65,6 +67,7 @@ describe('parseUri', () => {
                     port: 3357,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -88,6 +91,7 @@ describe('parseUri', () => {
                     port: 3357,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -111,6 +115,7 @@ describe('parseUri', () => {
                     port: undefined,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -134,6 +139,7 @@ describe('parseUri', () => {
                     port: undefined,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -157,6 +163,7 @@ describe('parseUri', () => {
                     port: undefined,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -180,6 +187,7 @@ describe('parseUri', () => {
                     port: 3357,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -203,6 +211,7 @@ describe('parseUri', () => {
                     port: 3357,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: 'schema',
                 ssl: true,
                 sslOptions: {
@@ -226,6 +235,7 @@ describe('parseUri', () => {
                     port: 'foobar',
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -254,6 +264,7 @@ describe('parseUri', () => {
                         port: 3357,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: 'schema',
                     ssl: true,
                     sslOptions: {
@@ -285,6 +296,7 @@ describe('parseUri', () => {
                         port: 3357,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: 'schema',
                     ssl: true,
                     sslOptions: {
@@ -329,6 +341,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -352,6 +365,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: false,
                     sslOptions: {
@@ -375,6 +389,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -398,6 +413,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -421,6 +437,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -444,6 +461,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -469,6 +487,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: '/path/to/socket'
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -492,6 +511,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: '/path/to/socket'
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -517,6 +537,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -542,6 +563,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -556,6 +578,16 @@ describe('parseUri', () => {
 
         it('throws an error if the host is not valid', () => {
             expect(() => parseUri('mysql#x')).to.throw(Error, 'Invalid URI');
+        });
+
+        context('SRV resolution', () => {
+            it('parses the scheme extension that enables SRV resolution', () => {
+                expect(parseUri('mysqlx+srv://user:password@host:33060')).to.deep.include({ resolveSrv: true });
+            });
+
+            it('fails if an unknown scheme extension is provided', () => {
+                expect(() => parseUri('mysqlx+foo://user:password@host:33060')).to.throw('Scheme mysqlx+foo is not valid.');
+            });
         });
     });
 
@@ -572,6 +604,7 @@ describe('parseUri', () => {
                     port: 3357,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -595,6 +628,7 @@ describe('parseUri', () => {
                     port: 3357,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -618,6 +652,7 @@ describe('parseUri', () => {
                     port: undefined,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -641,6 +676,7 @@ describe('parseUri', () => {
                     port: undefined,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -664,6 +700,7 @@ describe('parseUri', () => {
                     port: undefined,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -687,6 +724,7 @@ describe('parseUri', () => {
                     port: undefined,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -710,6 +748,7 @@ describe('parseUri', () => {
                     port: undefined,
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -733,6 +772,7 @@ describe('parseUri', () => {
                     port: 'foobar',
                     socket: undefined
                 }],
+                resolveSrv: false,
                 schema: undefined,
                 ssl: true,
                 sslOptions: {
@@ -765,6 +805,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: 'schema',
                     ssl: true,
                     sslOptions: {
@@ -796,6 +837,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: 'schema',
                     ssl: true,
                     sslOptions: {
@@ -841,6 +883,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -864,6 +907,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: false,
                     sslOptions: {
@@ -887,6 +931,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -910,6 +955,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -933,6 +979,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -956,6 +1003,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -981,6 +1029,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: './path/to/socket'
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -1004,6 +1053,7 @@ describe('parseUri', () => {
                         port: undefined,
                         socket: './path/to/socket'
                     }],
+                    resolveSrv: false,
                     schema: 'schema',
                     ssl: true,
                     sslOptions: {
@@ -1029,6 +1079,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {
@@ -1054,6 +1105,7 @@ describe('parseUri', () => {
                         port: 33060,
                         socket: undefined
                     }],
+                    resolveSrv: false,
                     schema: undefined,
                     ssl: true,
                     sslOptions: {

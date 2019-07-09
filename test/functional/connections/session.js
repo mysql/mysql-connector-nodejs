@@ -89,6 +89,36 @@ describe('X plugin session', () => {
                         expect(err.info.code).to.equal(1049);
                     });
             });
+
+            context('enable SRV resolution', () => {
+                it('fails when a unix socket is used', function () {
+                    if (!config.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    const invalidConfig = Object.assign({}, config, { port: undefined, resolveSrv: true });
+
+                    return mysqlx.getSession(invalidConfig)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('Using Unix domain sockets with DNS SRV lookup is not allowed.'));
+                });
+
+                it('fails when a port is specified', () => {
+                    const invalidConfig = Object.assign({}, config, { resolveSrv: true, socket: undefined });
+
+                    return mysqlx.getSession(invalidConfig)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('Specifying a port number with DNS SRV lookup is not allowed.'));
+                });
+
+                it('fails when the "resolveSrv" property is not boolean', () => {
+                    const invalidConfig = Object.assign({}, config, { port: undefined, resolveSrv: 'true', socket: undefined });
+
+                    return mysqlx.getSession(invalidConfig)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('SRV resolution can only be toggled using a boolean value (true or false).'));
+                });
+            });
         });
 
         context('using a RFC-3986 URI', () => {
@@ -221,6 +251,48 @@ describe('X plugin session', () => {
 
                         return session.close();
                     });
+            });
+
+            context('enable SRV resolution', () => {
+                it('fails when a unix socket is used', function () {
+                    if (!config.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    const uri = `mysqlx+srv://${config.dbUser}:${config.dbPassword}@(${config.socket})`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('Using Unix domain sockets with DNS SRV lookup is not allowed.'));
+                });
+
+                it('fails when a port is specified', () => {
+                    const uri = `mysqlx+srv://${config.dbUser}:${config.dbPassword}@${config.host}:${config.port}`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('Specifying a port number with DNS SRV lookup is not allowed.'));
+                });
+
+                it('fails when multiple endpoints with implicit priority are specified', () => {
+                    const failoverConfig = Object.assign({}, config);
+                    const hosts = [`${failoverConfig.host}:${failoverConfig.port + 1000}`, `${failoverConfig.host}:${failoverConfig.port}`];
+                    const uri = `mysqlx+srv://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('Specifying multiple hostnames with DNS SRV lookup is not allowed.'));
+                });
+
+                it('fails when multiple endpoints with explicit priority are specified', () => {
+                    const failoverConfig = Object.assign({}, config);
+                    const hosts = [`(address=${failoverConfig.host}:${failoverConfig.port}, priority=99), (address=${failoverConfig.host}:${failoverConfig.port}, priority=100)`];
+                    const uri = `mysqlx+srv://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => expect.fail())
+                        .catch(err => expect(err.message).to.equal('Specifying multiple hostnames with DNS SRV lookup is not allowed.'));
+                });
             });
         });
 
