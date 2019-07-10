@@ -3,8 +3,10 @@
 /* eslint-env node, mocha */
 
 const Any = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Any;
+const ArrayStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Array;
 const ContentType = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_resultset_pb').ContentType_BYTES;
 const Datatypes = require('../../../../lib/Protocol/Protobuf/Adapters/Datatypes');
+const ObjectStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Object;
 const Scalar = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
 const expect = require('chai').expect;
 
@@ -207,6 +209,84 @@ describe('Protobuf', () => {
                 expect(() => Datatypes.createObject([])).to.throw(exception);
                 expect(() => Datatypes.createObject(['foo'])).to.throw(exception);
                 expect(() => Datatypes.createObject(() => {})).to.throw(exception);
+            });
+        });
+
+        context('extractAny()', () => {
+            it('fails with an unknown datatype', () => {
+                const wrap = new Any();
+                wrap.setType(0);
+
+                expect(() => Datatypes.extractAny(wrap)).to.throw('Invalid datatype for Mysqlx.Datatypes.Any.');
+            });
+
+            it('extracts a JavaScript primitive type from a Mysqlx.Datatypes.Any', () => {
+                const expected = 'foo';
+
+                const foo = new Scalar.String();
+                foo.setValue('foo');
+
+                const fooWrap = new Scalar();
+                fooWrap.setType(Scalar.Type.V_STRING);
+                fooWrap.setVString(foo);
+
+                const wrap = new Any();
+                wrap.setType(Any.Type.SCALAR);
+                wrap.setScalar(fooWrap);
+
+                expect(Datatypes.extractAny(wrap)).to.equal(expected);
+            });
+
+            it('extracts a JavaScript Array from a Mysqlx.Datatypes.Any', () => {
+                const expected = ['foo'];
+
+                const foo = new Scalar.String();
+                foo.setValue('foo');
+
+                const fooWrap = new Scalar();
+                fooWrap.setType(Scalar.Type.V_STRING);
+                fooWrap.setVString(foo);
+
+                const value = new Any();
+                value.setType(Any.Type.SCALAR);
+                value.setScalar(fooWrap);
+
+                const array = new ArrayStub();
+                array.addValue(value);
+
+                const wrap = new Any();
+                wrap.setType(Any.Type.ARRAY);
+                wrap.setArray(array);
+
+                expect(Datatypes.extractAny(wrap)).to.deep.equal(expected);
+            });
+
+            it('extracts a JavaScript Object from a Mysqlx.Datatypes.Any', () => {
+                const expected = { foo: 'bar' };
+
+                const bar = new Scalar.String();
+                bar.setValue('bar');
+
+                const barWrap = new Scalar();
+                barWrap.setType(Scalar.Type.V_STRING);
+                barWrap.setVString(bar);
+
+                const value = new Any();
+                value.setType(Any.Type.SCALAR);
+                value.setScalar(barWrap);
+
+                const field = new ObjectStub.ObjectField();
+                field.setKey('foo');
+                field.setValue(value);
+
+                const obj = new ObjectStub();
+                obj.addFld(field);
+
+                const wrap = new Any();
+                wrap.setType(Any.Type.OBJECT);
+                wrap.setObj(obj);
+
+                expect(Datatypes.extractAny(wrap)).to.deep.equal(expected);
             });
         });
 
