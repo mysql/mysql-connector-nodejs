@@ -53,7 +53,8 @@ describe('prepared statements for TableUpdate', () => {
     });
 
     it('does not create a prepared statement when the operation is executed once', () => {
-        const expected = [['2', 'bar'], ['3', 'baz'], ['4', 'qux']];
+        // eslint-disable-next-line node/no-deprecated-api
+        const expected = [[new Buffer('2'), 'bar'], [new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
         const actual = [];
 
         return table.delete().where('_id = :id')
@@ -66,7 +67,8 @@ describe('prepared statements for TableUpdate', () => {
     });
 
     it('creates a prepared statement on subsequent calls if the query boundaries do not change', () => {
-        const expected = [['3', 'baz'], ['4', 'qux']];
+        // eslint-disable-next-line node/no-deprecated-api
+        const expected = [[new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
         const actual = [];
 
         const op = table.delete().where('_id = :id').bind('id', '1');
@@ -81,7 +83,8 @@ describe('prepared statements for TableUpdate', () => {
     });
 
     it('deallocates a prepared statement on subsequent calls if the query boundaries change', () => {
-        const expected = [['4', 'qux']];
+        // eslint-disable-next-line node/no-deprecated-api
+        const expected = [[new Buffer('4'), 'qux']];
         const actual = [];
 
         const op = table.delete().where('_id = :id').bind('id', '1');
@@ -96,7 +99,8 @@ describe('prepared statements for TableUpdate', () => {
     });
 
     it('resets the statement id when the session is closed', () => {
-        const expected = [['3', 'baz'], ['4', 'qux']];
+        // eslint-disable-next-line node/no-deprecated-api
+        const expected = [[new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
         const actual = [];
 
         const op = table.delete().where('_id = :id').bind('id', '1');
@@ -144,7 +148,8 @@ describe('prepared statements for TableUpdate', () => {
         });
 
         it('neither fails nor prepares any statement', () => {
-            const expected = [['3', 'baz'], ['4', 'qux']];
+            // eslint-disable-next-line node/no-deprecated-api
+            const expected = [[new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
             const actual = [];
 
             const op = table.delete().where('_id = :id').bind('id', '1');

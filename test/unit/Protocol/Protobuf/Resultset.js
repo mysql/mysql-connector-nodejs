@@ -160,6 +160,51 @@ describe('Protobuf', () => {
             it('decodes binary data values into Node.js buffers', () => {
                 // eslint-disable-next-line node/no-deprecated-api
                 const binary = new Buffer('foo\0');
+                // binary charset and collation
+                const collation = 63;
+
+                let metadata = [{ type: ColumnMetaData.FieldType.BYTES, collation }];
+
+                let row = new Row();
+                row.addField(new Uint8Array(binary));
+
+                // eslint-disable-next-line node/no-deprecated-api
+                let data = new Buffer(row.serializeBinary());
+                expect(Resultset.decodeRow(data, { metadata })).to.deep.equal([binary.slice(0, -1)]);
+
+                metadata[0] = Object.assign({}, metadata[0], { length: 5, flags: 0 }); // without right-padding
+
+                row.clearFieldList();
+                row.addField(new Uint8Array(binary));
+
+                // eslint-disable-next-line node/no-deprecated-api
+                data = new Buffer(row.serializeBinary());
+                expect(Resultset.decodeRow(data, { metadata })).to.deep.equal([binary.slice(0, -1)]);
+
+                metadata[0] = Object.assign({}, metadata[0], { length: 2, flags: 1 }); // with right-padding but invalid length
+
+                row.clearFieldList();
+                row.addField(new Uint8Array(binary));
+
+                // eslint-disable-next-line node/no-deprecated-api
+                data = new Buffer(row.serializeBinary());
+                // remove the additional `0x00` bytes
+                expect(Resultset.decodeRow(data, { metadata })).to.deep.equal([binary.slice(0, -1)]);
+
+                metadata[0] = Object.assign({}, metadata[0], { length: 5, flags: 1 }); // with right-padding
+
+                row.clearFieldList();
+                row.addField(new Uint8Array(binary));
+
+                // eslint-disable-next-line node/no-deprecated-api
+                data = new Buffer(row.serializeBinary());
+                // remove the additional `0x00` bytes
+                expect(Resultset.decodeRow(data, { metadata })[0].slice(0, -2)).to.deep.equal(binary.slice(0, -1));
+            });
+
+            it('decodes GEOMETRY data values into Node.js buffers', () => {
+                // eslint-disable-next-line node/no-deprecated-api
+                const binary = new Buffer('foo\0');
                 let metadata = [{ type: ColumnMetaData.FieldType.BYTES, contentType: ContentType.GEOMETRY }];
 
                 let row = new Row();

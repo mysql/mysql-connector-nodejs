@@ -44,6 +44,13 @@ describe('collection miscellaneous tests', () => {
             .then(result => expect(result).to.be.true);
     });
 
+    it('checks if a collection does not exist in the database', () => {
+        var collection = schema.getCollection('foobar');
+
+        return collection.existsInDatabase()
+            .then(result => expect(result).to.be.false);
+    });
+
     it('creates a collection with the given name', () => {
         return schema.createCollection('foobar')
             .then(collection => expect(collection.getName()).to.equal('foobar'));

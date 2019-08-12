@@ -86,4 +86,23 @@ describe('raw SQL', () => {
             });
         });
     });
+
+    context('BUG#30162858', () => {
+        it('maps a MySQL BLOB to a Node.js Buffer', () => {
+            // eslint-disable-next-line node/no-deprecated-api
+            const bin = new Buffer('foo');
+            const expected = [[bin]];
+            const actual = [];
+
+            return mysqlx.getSession(config)
+                .then(session => {
+                    return session.sql('CREATE TABLE test (bin BLOB)')
+                        .execute()
+                        .then(() => session.sql(`INSERT INTO test (bin) VALUES (x'${bin.toString('hex')}')`).execute())
+                        .then(() => session.sql('SELECT * FROM test').execute(row => actual.push(row)))
+                        .then(() => expect(actual).to.deep.equal(expected))
+                        .then(() => session.close());
+                });
+        });
+    });
 });

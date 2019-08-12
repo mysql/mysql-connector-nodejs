@@ -247,7 +247,8 @@ describe('relational miscellaneous tests', () => {
                 });
 
                 it('decodes values correctly', () => {
-                    const expected = [['foo', 'bar', 'baz', 'qux']];
+                    // eslint-disable-next-line node/no-deprecated-api
+                    const expected = [[new Buffer('foo'), new Buffer('bar'), new Buffer('baz'), new Buffer('qux')]];
                     const actual = [];
 
                     return schema.getTable('test').select()
@@ -281,25 +282,47 @@ describe('relational miscellaneous tests', () => {
                 });
             });
 
-            context('variable fixed size CHAR/BINARY columns', () => {
+            context('variable and fixed size BINARY columns', () => {
                 beforeEach('create table', () => {
                     return session.sql(`CREATE TABLE ${schema.getName()}.test (
-                            a_varchar VARCHAR(5),
                             a_varbinary VARBINARY(5),
-                            a_char CHAR(3),
                             a_binary BINARY(5))`)
                         .execute();
                 });
 
                 beforeEach('add fixtures', () => {
-                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ("foo", "bar", "baz", "qux")`)
+                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ("foo", "bar")`)
                         .execute();
                 });
 
                 it('decodes values correctly', () => {
                     // BINARY length = byte size
+                    // eslint-disable-next-line node/no-deprecated-api
+                    const expected = [[new Buffer('foo'), new Buffer('bar\0\0')]];
+                    const actual = [];
+
+                    return schema.getTable('test').select()
+                        .execute(row => row && row.length && actual.push(row))
+                        .then(() => expect(actual).to.deep.equal(expected));
+                });
+            });
+
+            context('variable and fixed size CHAR columns', () => {
+                beforeEach('create table', () => {
+                    return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                            a_varchar VARCHAR(5),
+                            a_char CHAR(5))`)
+                        .execute();
+                });
+
+                beforeEach('add fixtures', () => {
+                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ("foo", "bar")`)
+                        .execute();
+                });
+
+                it('decodes values correctly', () => {
                     // CHAR length = byte size * 4 (to accommodate UTF8)
-                    const expected = [['foo', 'bar', 'baz         ', 'qux\0\0']];
+                    const expected = [['foo', 'bar                 ']];
                     const actual = [];
 
                     return schema.getTable('test').select()
@@ -324,7 +347,8 @@ describe('relational miscellaneous tests', () => {
                 it('decodes numeric values for columns of fixed-length datatypes that require padding', () => {
                     // BINARY length = byte size
                     // CHAR length = byte size * 4 (to accommodate UTF8)
-                    const expected = [['0               ', '0\0\0\0']];
+                    // eslint-disable-next-line node/no-deprecated-api
+                    const expected = [['0               ', new Buffer('0\0\0\0')]];
                     const actual = [];
 
                     return schema.getTable('test').select()
@@ -375,7 +399,7 @@ describe('relational miscellaneous tests', () => {
             });
         });
 
-        context('values encoded as TIME', () => {
+        context.skip('values encoded as TIME', () => {
             beforeEach('create table', () => {
                 return session.sql(`CREATE TABLE ${schema.getName()}.test (a_time TIME)`)
                     .execute();

@@ -53,7 +53,8 @@ describe('prepared statements for TableSelect', () => {
     });
 
     it('does not create a prepared statement when the operation is executed once', () => {
-        const expected = [['1', 'foo']];
+        // eslint-disable-next-line node/no-deprecated-api
+        const expected = [[new Buffer('1'), 'foo']];
         const actual = [];
 
         return table.select()
@@ -66,7 +67,8 @@ describe('prepared statements for TableSelect', () => {
     });
 
     it('creates a prepared statement on subsequent calls if the query boundaries do not change', () => {
-        const expected = [['2', 'bar']];
+        // eslint-disable-next-line node/no-deprecated-api
+        const expected = [[new Buffer('2'), 'bar']];
         const actual = [];
 
         const op = table.select().where('name = :name').bind('name', 'foo');
@@ -106,7 +108,8 @@ describe('prepared statements for TableSelect', () => {
     });
 
     it('re-uses ids from previous prepared statements that have been deallocated', () => {
-        const expected = [['4', 'qux']];
+        // eslint-disable-next-line node/no-deprecated-api
+        const expected = [[new Buffer('4'), 'qux']];
         const actual = [];
 
         const op = table.select().where('name = :name').bind('name', 'foo');
@@ -126,7 +129,8 @@ describe('prepared statements for TableSelect', () => {
     });
 
     it('re-reprepares a statement using an implicit offset placeholder if a limit is introduced', () => {
-        const expected = [['1', 'foo']];
+        // eslint-disable-next-line node/no-deprecated-api
+        const expected = [[new Buffer('1'), 'foo']];
         const actual = [];
 
         const op = table.select().orderBy('_id');
@@ -143,7 +147,8 @@ describe('prepared statements for TableSelect', () => {
     });
 
     it('does not deallocate a statement when the offset is introduced later', () => {
-        const expected = [['1', 'foo'], ['2', 'bar']];
+        // eslint-disable-next-line node/no-deprecated-api
+        const expected = [[new Buffer('1'), 'foo'], [new Buffer('2'), 'bar']];
         const actual = [];
 
         const op = table.select().orderBy('_id');
@@ -172,7 +177,8 @@ describe('prepared statements for TableSelect', () => {
         });
 
         it('neither fails nor prepares any statement', () => {
-            const expected = [['1', 'foo'], ['2', 'bar']];
+            // eslint-disable-next-line node/no-deprecated-api
+            const expected = [[new Buffer('1'), 'foo'], [new Buffer('2'), 'bar']];
             const actual = [];
 
             const op = table.select().where('_id = :id').bind('id', '1');

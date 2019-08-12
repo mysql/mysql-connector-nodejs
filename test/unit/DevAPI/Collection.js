@@ -53,7 +53,7 @@ describe('Collection', () => {
     });
 
     context('existsInDatabase()', () => {
-        it('returns true if exists in database', () => {
+        it('returns true if it exists in database', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = collection('foo', schema, 'baz');
@@ -64,19 +64,6 @@ describe('Collection', () => {
 
             return instance.existsInDatabase()
                 .then(actual => expect(actual).to.be.true);
-        });
-
-        it('returns false if it does not exist in database', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = collection('foo', schema, 'baz');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback([]))).thenResolve();
-            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
-
-            return instance.existsInDatabase()
-                .then(actual => expect(actual).to.be.false);
         });
     });
 
