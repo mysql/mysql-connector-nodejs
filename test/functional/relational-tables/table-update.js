@@ -141,4 +141,31 @@ describe('updating data in a table', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('BUG#30163003', () => {
+        beforeEach('add BLOB column', () => {
+            return session.sql('ALTER TABLE test ADD COLUMN (bin BLOB)')
+                .execute();
+        });
+
+        it('updates a MySQL BLOB using a Node.js Buffer', () => {
+            // eslint-disable-next-line node/no-deprecated-api
+            const data = new Buffer('quux');
+            const expected = [[data]];
+            const actual = [];
+
+            return table.update()
+                .where('name = :name')
+                .bind('name', 'foo')
+                .set('bin', data)
+                .execute()
+                .then(() => {
+                    return table.select('bin')
+                        .where('name = :name')
+                        .bind('name', 'foo')
+                        .execute(row => actual.push(row));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });

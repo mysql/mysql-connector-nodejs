@@ -389,4 +389,27 @@ describe('raw SQL', () => {
             });
         });
     });
+
+    context('BUG#30163003', () => {
+        it('maps a Node.js Buffer to a MySQL BLOB', () => {
+            /* eslint-disable node/no-deprecated-api */
+            const bin1 = new Buffer('foo');
+            const bin2 = new Buffer('bar');
+            /* eslint-enable node/no-deprecated-api */
+
+            const expected = [[bin2]];
+            const actual = [];
+
+            return mysqlx.getSession(config)
+                .then(session => {
+                    return session.sql('CREATE TABLE test (bin BLOB)')
+                        .execute()
+                        .then(() => session.sql(`INSERT INTO test (bin) VALUES (x'${bin1.toString('hex')}')`).execute())
+                        .then(() => session.sql('UPDATE test SET bin = ?').bind(bin2).execute())
+                        .then(() => session.sql('SELECT * FROM test').execute(row => actual.push(row)))
+                        .then(() => expect(actual).to.deep.equal(expected))
+                        .then(() => session.close());
+                });
+        });
+    });
 });

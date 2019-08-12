@@ -80,6 +80,10 @@ describe('Protobuf', () => {
                 expect(any.getType()).to.equal(Any.Type.SCALAR);
                 expect(any.getScalar().getType()).to.equal(Scalar.Type.V_NULL);
 
+                any = Datatypes.createAny(undefined);
+                expect(any.getType()).to.equal(Any.Type.SCALAR);
+                expect(any.getScalar().getType()).to.equal(Scalar.Type.V_NULL);
+
                 const literal = new Scalar();
                 literal.setType(Scalar.Type.V_BOOL);
                 literal.setVBool(true);
