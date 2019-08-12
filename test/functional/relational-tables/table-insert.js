@@ -151,4 +151,26 @@ describe('inserting data into a table', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('BUG#30158425', () => {
+        beforeEach('add BLOB column', () => {
+            return session.sql('ALTER TABLE test ADD COLUMN (bin BLOB)')
+                .execute();
+        });
+
+        it('saves a Node.js Buffer as a MySQL BLOB', () => {
+            // eslint-disable-next-line node/no-deprecated-api
+            const data = new Buffer('foo');
+            const expected = [[data]];
+            const actual = [];
+
+            return table.insert('bin')
+                .values(data)
+                .execute()
+                .then(() => {
+                    return table.select('bin').execute(row => actual.push(row));
+                })
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
 });
