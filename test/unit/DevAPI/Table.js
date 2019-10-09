@@ -3,6 +3,7 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
+const statement = require('../../../lib/DevAPI/Statement');
 const td = require('testdouble');
 
 describe('Table', () => {
@@ -11,6 +12,7 @@ describe('Table', () => {
     beforeEach('create fakes', () => {
         execute = td.function();
         sqlExecute = td.function();
+        sqlExecute.Namespace = statement.Type;
 
         td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
         table = require('../../../lib/DevAPI/Table');
@@ -44,29 +46,47 @@ describe('Table', () => {
     });
 
     context('existsInDatabase()', () => {
+        let fetchAll, getName;
+
+        beforeEach('create fakes', () => {
+            fetchAll = td.function();
+            getName = td.function();
+        });
+
         it('returns true if the table exists in database', () => {
-            const getName = td.function();
             const schema = { getName };
             const instance = table('foo', schema, 'baz');
-            const query = 'SELECT COUNT(*) cnt FROM information_schema.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
 
             td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback(['bar']))).thenResolve();
-            td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
+            td.when(fetchAll()).thenReturn([['baz', 'TABLE']]);
+            td.when(execute()).thenResolve({ fetchAll });
+            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return instance.existsInDatabase()
                 .then(actual => expect(actual).to.be.true);
         });
 
-        it('returns false if the table does not exist in database', () => {
-            const getName = td.function();
+        it('returns false if a collection with the same name exists in the database', () => {
             const schema = { getName };
             const instance = table('foo', schema, 'baz');
-            const query = 'SELECT COUNT(*) cnt FROM information_schema.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
 
             td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback([]))).thenResolve();
-            td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
+            td.when(fetchAll()).thenReturn([['baz', 'COLLECTION']]);
+            td.when(execute()).thenResolve({ fetchAll });
+            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.existsInDatabase()
+                .then(actual => expect(actual).to.be.false);
+        });
+
+        it('returns false if the table does not exist in database', () => {
+            const schema = { getName };
+            const instance = table('foo', schema, 'baz');
+
+            td.when(getName()).thenReturn('bar');
+            td.when(fetchAll()).thenReturn([]);
+            td.when(execute()).thenResolve({ fetchAll });
+            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return instance.existsInDatabase()
                 .then(actual => expect(actual).to.be.false);

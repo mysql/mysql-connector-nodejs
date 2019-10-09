@@ -97,4 +97,18 @@ describe('collection miscellaneous tests', () => {
                 .catch(err => expect(err.message).to.equal(`Collection '${schema.getName()}.noop' doesn't exist`));
         });
     });
+
+    context('collections in the schema', () => {
+        it('checks if a collection exists in the database', () => {
+            return schema.createCollection('foo')
+                .then(() => schema.getCollection('foo').existsInDatabase())
+                .then(exists => expect(exists).to.be.true);
+        });
+
+        it('distinguishes tables from collections', () => {
+            return schema.createCollection('foo')
+                .then(() => schema.getTable('foo').existsInDatabase())
+                .then(exists => expect(exists).to.be.false);
+        });
+    });
 });

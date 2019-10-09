@@ -23,10 +23,17 @@ describe('Schema', () => {
     });
 
     context('existsInDatabase()', () => {
+        let fetchAll;
+
+        beforeEach('create fakes', () => {
+            fetchAll = td.function();
+        });
+
         it('returns true if the schema exists in database', () => {
             const instance = schema('foo', 'bar');
 
-            td.when(execute(td.callback(['bar']))).thenResolve();
+            td.when(fetchAll()).thenReturn(['bar']);
+            td.when(execute()).thenResolve({ fetchAll });
             td.when(sqlExecute('foo', 'SHOW DATABASES LIKE ?', ['bar'])).thenReturn({ execute });
 
             return instance.existsInDatabase()
@@ -36,7 +43,8 @@ describe('Schema', () => {
         it('returns false if the schema does not exist in database', () => {
             const instance = schema('foo', 'bar');
 
-            td.when(execute(td.callback([]))).thenResolve();
+            td.when(fetchAll()).thenReturn([]);
+            td.when(execute()).thenResolve({ fetchAll });
             td.when(sqlExecute('foo', 'SHOW DATABASES LIKE ?', ['bar'])).thenReturn({ execute });
 
             return instance.existsInDatabase()

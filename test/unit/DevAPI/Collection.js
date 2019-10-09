@@ -53,17 +53,50 @@ describe('Collection', () => {
     });
 
     context('existsInDatabase()', () => {
-        it('returns true if it exists in database', () => {
-            const getName = td.function();
+        let getName, fetchAll;
+
+        beforeEach('create fakes', () => {
+            getName = td.function();
+            fetchAll = td.function();
+        });
+
+        it('returns true if the collection exists in the database', () => {
             const schema = { getName };
             const instance = collection('foo', schema, 'baz');
 
             td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback(['baz']))).thenResolve();
-            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', filter: 'baz' }], 'mysqlx')).thenReturn({ execute });
+            td.when(fetchAll()).thenReturn([['baz', 'COLLECTION']]);
+            td.when(execute()).thenResolve({ fetchAll });
+            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return instance.existsInDatabase()
                 .then(actual => expect(actual).to.be.true);
+        });
+
+        it('returns false if a regular table with the same name exists in the database', () => {
+            const schema = { getName };
+            const instance = collection('foo', schema, 'baz');
+
+            td.when(getName()).thenReturn('bar');
+            td.when(fetchAll()).thenReturn([['baz', 'TABLE']]);
+            td.when(execute()).thenResolve({ fetchAll });
+            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.existsInDatabase()
+                .then(actual => expect(actual).to.be.false);
+        });
+
+        it('returns false if the collection does not exist in the database', () => {
+            const schema = { getName };
+            const instance = collection('foo', schema, 'baz');
+
+            td.when(getName()).thenReturn('bar');
+            td.when(fetchAll()).thenReturn([]);
+            td.when(execute()).thenResolve({ fetchAll });
+            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.existsInDatabase()
+                .then(actual => expect(actual).to.be.false);
         });
     });
 

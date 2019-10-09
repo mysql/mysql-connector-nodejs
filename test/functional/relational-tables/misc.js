@@ -646,4 +646,26 @@ describe('relational miscellaneous tests', () => {
                 .catch(err => expect(err.message).to.equal(`Table '${schema.getName()}.noop' doesn't exist`));
         });
     });
+
+    context('tables in the schema', () => {
+        let schema;
+
+        beforeEach('set schema', () => {
+            schema = session.getDefaultSchema();
+        });
+
+        it('checks if a table exists in the database', () => {
+            return session.sql('CREATE TABLE foo (name VARCHAR(3))')
+                .execute()
+                .then(() => schema.getTable('foo').existsInDatabase())
+                .then(exists => expect(exists).to.be.true);
+        });
+
+        it('distinguishes tables from collections', () => {
+            return session.sql('CREATE TABLE foo (name VARCHAR(3))')
+                .execute()
+                .then(() => schema.getCollection('foo').existsInDatabase())
+                .then(exists => expect(exists).to.be.false);
+        });
+    });
 });
