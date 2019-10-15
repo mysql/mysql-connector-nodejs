@@ -73,6 +73,14 @@ describe('deleting data from a table', () => {
                 .then(() => table.select().execute(row => actual.push(row)))
                 .then(() => expect(actual).to.be.empty);
         });
+
+        it('fails when no filtering criteria is provided with `where()`', () => {
+            return table.delete()
+                .where()
+                .execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
+        });
     });
 
     context('with filtering condition', () => {

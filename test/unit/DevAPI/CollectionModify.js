@@ -104,7 +104,7 @@ describe('CollectionModify', () => {
 
             return query.execute()
                 .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('A valid condition needs to be provided with `modify()`'));
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with modify().'));
         });
 
         it('fails if a condition query is empty', () => {
@@ -112,7 +112,7 @@ describe('CollectionModify', () => {
 
             return query.execute()
                 .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('A valid condition needs to be provided with `modify()`'));
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with modify().'));
         });
 
         it('fails if the condition is not valid', () => {
@@ -120,7 +120,7 @@ describe('CollectionModify', () => {
 
             return query.execute()
                 .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('A valid condition needs to be provided with `modify()`'));
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with modify().'));
         });
 
         it('wraps the operation in a preparable instance', () => {

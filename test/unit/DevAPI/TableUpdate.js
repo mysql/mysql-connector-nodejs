@@ -21,20 +21,31 @@ describe('TableUpdate', () => {
     });
 
     context('execute()', () => {
-        it('fails if a condition query is not provided', () => {
+        it('fails if a filtering criteria expression is not provided', () => {
             return tableUpdate().execute()
                 .then(() => expect.fail())
                 .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
         });
 
-        it('fails if a condition query is empty', () => {
+        it('fails if the filtering criteria expression is empty', () => {
             return tableUpdate(null, null, null, '').execute()
                 .then(() => expect.fail())
                 .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
         });
 
-        it('fails if a condition query is not valid', () => {
+        it('fails if the filtering criteria expression is not valid', () => {
             tableUpdate(null, null, null, ' ').execute()
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
+        });
+
+        it('fails if the filtering criteria expression is undefined', () => {
+            const session = 'foo';
+            const forceRestart = td.function();
+
+            td.when(preparing({ session })).thenReturn({ forceRestart });
+
+            return tableUpdate(session).where().execute()
                 .then(() => expect.fail())
                 .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
         });

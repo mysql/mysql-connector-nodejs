@@ -76,6 +76,15 @@ describe('updating data in a table', () => {
             .then(() => expect(actual).to.deep.equal(expected));
     });
 
+    it('fails to update any row if no filtering criteria is provided with `where()`', () => {
+        return table.update()
+            .where()
+            .set('name', 'foo')
+            .execute()
+            .then(() => expect.fail())
+            .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
+    });
+
     it('updates a given number of rows', () => {
         const expected = [['bar', 23], ['baz', 42], ['qux', 42]];
         const actual = [];

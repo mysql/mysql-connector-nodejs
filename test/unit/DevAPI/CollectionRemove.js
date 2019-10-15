@@ -25,7 +25,7 @@ describe('CollectionRemove', () => {
 
             return query.execute()
                 .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('A valid condition needs to be provided with `remove()`'));
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with remove().'));
         });
 
         it('fails if a condition query is empty', () => {
@@ -33,7 +33,7 @@ describe('CollectionRemove', () => {
 
             return query.execute()
                 .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('A valid condition needs to be provided with `remove()`'));
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with remove().'));
         });
 
         it('fails if the condition is not valid', () => {
@@ -41,7 +41,7 @@ describe('CollectionRemove', () => {
 
             return query.execute()
                 .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('A valid condition needs to be provided with `remove()`'));
+                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with remove().'));
         });
 
         it('wraps the operation in a preparable instance', () => {
