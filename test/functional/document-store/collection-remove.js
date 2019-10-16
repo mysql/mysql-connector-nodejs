@@ -259,4 +259,30 @@ describe('removing documents from a collection', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('BUG#30401962 affected items', () => {
+        beforeEach('add fixtures', () => {
+            return collection.add({ name: 'foo' }, { name: 'bar' }, { name: 'baz' })
+                .execute();
+        });
+
+        context('without limit', () => {
+            it('returns the number of documents that have been removed from the collection', () => {
+                return collection.remove('true')
+                    .execute()
+                    .then(res => expect(res.getAffectedItemsCount()).to.equal(3));
+            });
+        });
+
+        context('with limit', () => {
+            it('returns the number of documents that have been removed from the collection', () => {
+                const limit = 2;
+
+                return collection.remove('true')
+                    .limit(limit)
+                    .execute()
+                    .then(res => expect(res.getAffectedItemsCount()).to.equal(limit));
+            });
+        });
+    });
 });

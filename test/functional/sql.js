@@ -412,4 +412,85 @@ describe('raw SQL', () => {
                 });
         });
     });
+
+    context('BUG#30401962 affected items', () => {
+        let session;
+
+        beforeEach('create session in the default database', () => {
+            return mysqlx.getSession(config)
+                .then(s => {
+                    session = s;
+                });
+        });
+
+        beforeEach('create table', () => {
+            return session.sql('CREATE TABLE test (name VARCHAR(4))')
+                .execute();
+        });
+
+        afterEach('close session', () => {
+            return session.close();
+        });
+
+        context('INSERT', () => {
+            it('returns the number of rows that have been inserted into the table', () => {
+                return session.sql("INSERT INTO test VALUES ('foo'), ('bar'), ('baz')")
+                    .execute()
+                    .then(res => expect(res.getAffectedItemsCount()).to.equal(3));
+            });
+        });
+
+        context('UPDATE', () => {
+            beforeEach('add fixtures', () => {
+                return session.sql("INSERT INTO test VALUES ('foo'), ('bar'), ('baz')")
+                    .execute();
+            });
+
+            context('without limit', () => {
+                it('returns the number of documents that have been updated in the table', () => {
+                    return session.sql('UPDATE test SET name = ?')
+                        .bind('quux')
+                        .execute()
+                        .then(res => expect(res.getAffectedItemsCount()).to.equal(3));
+                });
+            });
+
+            context('with limit', () => {
+                it('returns the number of documents that have been updated in the table', () => {
+                    const limit = 2;
+
+                    return session.sql('UPDATE test SET name = ? LIMIT ?')
+                        .bind(['quux', limit])
+                        .execute()
+                        .then(res => expect(res.getAffectedItemsCount()).to.equal(limit));
+                });
+            });
+        });
+
+        context('DELETE', () => {
+            beforeEach('add fixtures', () => {
+                return session.sql("INSERT INTO test VALUES ('foo'), ('bar'), ('baz')")
+                    .execute();
+            });
+
+            context('without limit', () => {
+                it('returns the number of documents that have been updated in the table', () => {
+                    return session.sql('DELETE FROM test')
+                        .execute()
+                        .then(res => expect(res.getAffectedItemsCount()).to.equal(3));
+                });
+            });
+
+            context('with limit', () => {
+                it('returns the number of documents that have been updated in the table', () => {
+                    const limit = 2;
+
+                    return session.sql('DELETE FROM test LIMIT ?')
+                        .bind(limit)
+                        .execute()
+                        .then(res => expect(res.getAffectedItemsCount()).to.equal(limit));
+                });
+            });
+        });
+    });
 });

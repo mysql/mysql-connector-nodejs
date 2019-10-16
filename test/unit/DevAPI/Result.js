@@ -8,15 +8,7 @@ const result = require('../../../lib/DevAPI/Result');
 describe('Result', () => {
     context('getAffectedItemsCount()', () => {
         it('returns the same result as getAffectedRowsCount()', () => {
-            const res = result({ rowsAffected: 3 });
-
-            expect(res.getAffectedItemsCount()).to.equal(res.getAffectedRowsCount());
-        });
-    });
-
-    context('getAffectedRowsCount()', () => {
-        it('returns the number of rows affected by an operation', () => {
-            expect(result({ rowsAffected: 3 }).getAffectedRowsCount()).to.equal(3);
+            expect(result({ rowsAffected: 3 }).getAffectedItemsCount()).to.equal(3);
         });
     });
 

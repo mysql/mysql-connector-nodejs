@@ -214,4 +214,15 @@ describe('adding documents to a collection', () => {
                 });
         });
     });
+
+    context('BUG#30401962 affected items', () => {
+        it('returns the number of documents that have been added to a collection', () => {
+            const documents = [{ name: 'foo' }, { name: 'bar' }, { name: 'baz' }];
+            const expected = documents.length;
+
+            return collection.add(documents)
+                .execute()
+                .then(res => expect(res.getAffectedItemsCount()).to.equal(expected));
+        });
+    });
 });

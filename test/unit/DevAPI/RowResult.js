@@ -62,6 +62,12 @@ describe('RowResult', () => {
         });
     });
 
+    context('getAffectedItemsCount()', () => {
+        it('returns the same result as getAffectedRowsCount()', () => {
+            expect(rowResult({ rowsAffected: 3 }).getAffectedItemsCount()).to.equal(3);
+        });
+    });
+
     context('getColumns()', () => {
         it('returns the metadata for each item in the result-set wrapped as a Column instance', () => {
             const res = rowResult({ metadata: [[{ name: 'foo' }, { name: 'bar' }]] });

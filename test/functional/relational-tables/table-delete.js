@@ -177,4 +177,27 @@ describe('deleting data from a table', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('BUG#30401962 affected items', () => {
+        context('without limit', () => {
+            it('returns the number of rows that have been deleted from the table', () => {
+                return table.delete()
+                    .where('true')
+                    .execute()
+                    .then(res => expect(res.getAffectedItemsCount()).to.equal(3));
+            });
+        });
+
+        context('with limit', () => {
+            it('returns the number of rows that have been deleted from the table', () => {
+                const limit = 2;
+
+                return table.delete()
+                    .where('true')
+                    .limit(limit)
+                    .execute()
+                    .then(res => expect(res.getAffectedItemsCount()).to.equal(limit));
+            });
+        });
+    });
 });

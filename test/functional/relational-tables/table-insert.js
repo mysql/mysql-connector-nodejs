@@ -173,4 +173,15 @@ describe('inserting data into a table', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('BUG#30401962 affected items', () => {
+        it('returns the number of rows that have been inserted into the table', () => {
+            return table.insert('name', 'age')
+                .values('foo', 23)
+                .values('bar', 42)
+                .values('baz', 50)
+                .execute()
+                .then(res => expect(res.getAffectedItemsCount()).to.equal(3));
+        });
+    });
 });

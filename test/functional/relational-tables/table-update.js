@@ -177,4 +177,29 @@ describe('updating data in a table', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
     });
+
+    context('BUG#30401962 affected items', () => {
+        context('without limit', () => {
+            it('returns the number of documents that have been updated in the table', () => {
+                return table.update()
+                    .where('true')
+                    .set('name', 'quux')
+                    .execute()
+                    .then(res => expect(res.getAffectedItemsCount()).to.equal(3));
+            });
+        });
+
+        context('with limit', () => {
+            it('returns the number of documents that have been updated in the table', () => {
+                const limit = 2;
+
+                return table.update()
+                    .where('true')
+                    .set('name', 'quux')
+                    .limit(limit)
+                    .execute()
+                    .then(res => expect(res.getAffectedItemsCount()).to.equal(limit));
+            });
+        });
+    });
 });

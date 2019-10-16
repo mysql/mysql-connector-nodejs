@@ -417,4 +417,32 @@ describe('modifying documents in a collection', () => {
                 });
         });
     });
+
+    context('BUG#30401962 affected items', () => {
+        beforeEach('add fixtures', () => {
+            return collection.add({ name: 'foo' }, { name: 'bar' }, { name: 'baz' })
+                .execute();
+        });
+
+        context('without limit', () => {
+            it('returns the number of documents that have been updated in the collection', () => {
+                return collection.modify('true')
+                    .set('name', 'quux')
+                    .execute()
+                    .then(res => expect(res.getAffectedItemsCount()).to.equal(3));
+            });
+        });
+
+        context('with limit', () => {
+            it('returns the number of documents that have been updated in the collection', () => {
+                const limit = 2;
+
+                return collection.modify('true')
+                    .set('name', 'quux')
+                    .limit(limit)
+                    .execute()
+                    .then(res => expect(res.getAffectedItemsCount()).to.equal(limit));
+            });
+        });
+    });
 });
