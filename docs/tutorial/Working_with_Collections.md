@@ -87,6 +87,41 @@ mysqlx.getSession('mysqlx://localhost:33060')
     .then(collection => {
         // the following will work fine
         return collection.add({ name: 1 }).execute();
+```
+
+To enable a JSON schema on an existing collection (or to update it if it already exists), you can use `modifyCollection()`.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+const validation = { schema: { type: 'object', properties: { name: { type: 'string' } } }, level: mysqlx.Schema.ValidationLevel.STRICT };
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(sesion => {
+        return session.getSchema('mySchema').modifyCollection('myCollection', { validation })
+    });
+```
+
+Disabling the JSON schema on an existing collection can be done by setting the `level` property to `'OFF'` under the `validation` options object.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+const validation = { level: mysqlx.Schema.ValidationLevel.OFF }
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(sesion => {
+        return session.getSchema('mySchema').modifyCollection('myCollection', { validation })
+    });
+```
+
+Re-enabling the JSON schema can be some by setting the `level` property back to `'STRICT'`.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+const validation = { level: mysqlx.Schema.ValidationLevel.STRICT }
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(sesion => {
+        return session.getSchema('mySchema').modifyCollection('myCollection', { validation })
     });
 ```
 

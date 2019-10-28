@@ -217,4 +217,174 @@ describe('schema validation', () => {
                 });
         });
     });
+
+    context('modifying the collection schema', () => {
+        it('fails with an empty option block', () => {
+            return schema.modifyCollection('test', {})
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5020);
+                });
+        });
+
+        it('fails with unknown protocol options', () => {
+            return schema.modifyCollection('test', { foo: 'bar' })
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5021);
+                });
+        });
+
+        it('fails with missing validation options', () => {
+            return schema.modifyCollection('test', { validation: {} })
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5020);
+                });
+        });
+
+        it('fails with invalid validation type', () => {
+            return schema.modifyCollection('test', { validation: null })
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5016);
+                });
+        });
+
+        it('fails with unknown validation options', () => {
+            return schema.modifyCollection('test', { validation: { foo: 'bar' } })
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5021);
+                });
+        });
+
+        it('fails with an invalid json schema', () => {
+            const options = { validation: { schema: 'foo' } };
+
+            return schema.modifyCollection('test', options)
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5182);
+                });
+        });
+
+        it('fails with an invalid json schema property', () => {
+            const options = { validation: { schema: { type: 'foo' } } };
+
+            return schema.modifyCollection('test', options)
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5182);
+                });
+        });
+
+        it('fails with an invalid value of "level"', () => {
+            const jsonSchema = { type: 'object', properties: { name: { type: 'string' } } };
+            const options = { validation: { schema: jsonSchema, level: 'foo' } };
+
+            return schema.modifyCollection('test', options)
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5017);
+                });
+        });
+
+        it('fails with additional unknown properties', () => {
+            const jsonSchema = { type: 'object', properties: { name: { type: 'string' } } };
+            const options = { validation: { schema: jsonSchema, foo: 'bar' } };
+
+            return schema.modifyCollection('test', options)
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5021);
+                });
+        });
+
+        it('fails if a collection does not exist', () => {
+            const options = { validation: { level: mysqlx.Schema.ValidationLevel.STRICT } };
+
+            return schema.modifyCollection('test', options)
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(1146);
+                });
+        });
+
+        it('updates the schema of an existing collection', () => {
+            const jsonSchema = { type: 'object', properties: { name: { type: 'string' } } };
+            const options = { validation: { schema: jsonSchema, level: mysqlx.Schema.ValidationLevel.STRICT } };
+
+            return schema.createCollection('test')
+                .then(() => schema.modifyCollection('test', options))
+                .then(collection => collection.add({ name: 1 }).execute())
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5180);
+                });
+        });
+
+        it('explicitely disables the schema of an existing collection', () => {
+            const jsonSchema = { type: 'object', properties: { name: { type: 'string' } } };
+            const options = { validation: { schema: jsonSchema, level: mysqlx.Schema.ValidationLevel.STRICT } };
+
+            return schema.createCollection('test', options)
+                .then(() => schema.modifyCollection('test', { validation: { level: mysqlx.Schema.ValidationLevel.OFF } }))
+                .then(collection => collection.add({ name: 1 }).execute());
+        });
+
+        it('postpones enabling the schema validation', () => {
+            const jsonSchema = { type: 'object', properties: { name: { type: 'string' } } };
+            const options = { validation: { schema: jsonSchema, level: mysqlx.Schema.ValidationLevel.OFF } };
+
+            return schema.createCollection('test', options)
+                .then(() => schema.modifyCollection('test', { validation: { level: mysqlx.Schema.ValidationLevel.STRICT } }))
+                .then(collection => collection.add({ name: 1 }).execute())
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5180);
+                });
+        });
+
+        it('allows to enforce a schema with previously enabled validation', () => {
+            const jsonSchema = { type: 'object', properties: { name: { type: 'string' } } };
+            const options = { validation: { level: mysqlx.Schema.ValidationLevel.STRICT } };
+
+            return schema.createCollection('test', options)
+                .then(() => schema.modifyCollection('test', { validation: { schema: jsonSchema } }))
+                .then(collection => collection.add({ name: 1 }).execute())
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5180);
+                });
+        });
+
+        it('enforces a schema for subsequent document updates', () => {
+            const jsonSchema = { type: 'object', properties: { name: { type: 'string' } } };
+            const options = { validation: { schema: jsonSchema, level: mysqlx.Schema.ValidationLevel.STRICT } };
+
+            return schema.createCollection('test')
+                .then(collection => collection.add({ name: 'foo' }).execute())
+                .then(res => expect(res.getAffectedItemsCount()).to.equal(1))
+                .then(() => schema.modifyCollection('test', options))
+                .then(() => schema.getCollection('test').modify('name = :name').bind('name', 'foo').set('name', 1).execute())
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5180);
+                });
+        });
+    });
 });

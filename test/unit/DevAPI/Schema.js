@@ -303,4 +303,45 @@ describe('Schema', () => {
             expect(instance.inspect()).to.deep.equal(expected);
         });
     });
+
+    context('modifyCollection()', () => {
+        it('fails if the server returns an error', () => {
+            const instance = schema('foo', 'bar');
+            const error = new Error('foobar');
+
+            td.when(execute()).thenReject(error);
+            td.when(sqlExecute('foo', 'modify_collection_options', [{ schema: 'bar', name: 'baz', options: { qux: 'quux' } }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.modifyCollection('baz', { qux: 'quux' })
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
+
+        it('returns the corresponding collection instance if the operation suceeds', () => {
+            const instance = schema('foo', 'bar');
+
+            td.when(execute()).thenResolve();
+            td.when(sqlExecute('foo', 'modify_collection_options', [{ schema: 'bar', name: 'baz', options: { qux: 'quux' } }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.modifyCollection('baz', { qux: 'quux' })
+                .then(collection => {
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(collection.getName).to.be.a('function');
+                    expect(collection.getName()).to.equal('baz');
+                });
+        });
+
+        it('fails with a custom message if the server does not support schema validation', () => {
+            const instance = schema('foo', 'bar');
+            const error = new Error();
+            error.info = { code: 5157 };
+
+            td.when(execute()).thenReject(error);
+            td.when(sqlExecute('foo', 'modify_collection_options', [{ schema: 'bar', name: 'baz', options: { qux: 'quux' } }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.modifyCollection('baz', { qux: 'quux' })
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Your MySQL server does not support the requested operation. Please update to MySQL 8.0.19 or a later version.'));
+        });
+    });
 });

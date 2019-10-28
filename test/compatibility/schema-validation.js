@@ -51,4 +51,13 @@ describe('schema validation behavior on older servers', () => {
         return schema.createCollection('test')
             .then(() => schema.createCollection('test', options));
     });
+
+    it('fails to modify a collection with a valid JSON schema', () => {
+        const jsonSchema = { type: 'object', properties: { name: { type: 'string' } } };
+        const options = { validation: { schema: jsonSchema, level: mysqlx.Schema.ValidationLevel.STRICT } };
+
+        return schema.modifyCollection('test', options)
+            .then(() => expect.fail())
+            .catch(err => expect(err.message).to.equal('Your MySQL server does not support the requested operation. Please update to MySQL 8.0.19 or a later version.'));
+    });
 });
