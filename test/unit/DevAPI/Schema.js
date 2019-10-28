@@ -22,6 +22,13 @@ describe('Schema', () => {
         td.reset();
     });
 
+    context('enums', () => {
+        it('includes the set of schema validation levels', () => {
+            expect(schema.ValidationLevel.OFF).to.equal('off');
+            expect(schema.ValidationLevel.STRICT).to.equal('strict');
+        });
+    });
+
     context('existsInDatabase()', () => {
         let fetchAll;
 
@@ -78,71 +85,139 @@ describe('Schema', () => {
     });
 
     context('createCollection', () => {
-        context('when the collection already exists (error code 1050)', () => {
-            it('returns the existing collection if the option to re-use is enabled', () => {
-                const instance = schema('foo', 'bar');
-                const expected = instance.getCollection('baz').inspect();
-                const error = new Error();
-                error.info = { code: 1050 };
+        it('returns the instance of a new collection if it did not exist', () => {
+            const instance = schema('foo', 'bar');
+            const expected = instance.getCollection('baz').inspect();
 
-                td.when(execute()).thenReject(error);
-                td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
+            td.when(execute()).thenResolve();
+            td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-                return instance.createCollection('baz', { ReuseExistingObject: true })
-                    .then(actual => expect(actual.inspect()).deep.equal(expected));
-            });
-
-            it('fails if the option to re-use is disabled', () => {
-                const instance = schema('foo', 'bar');
-                const error = new Error();
-                error.info = { code: 1050 };
-
-                td.when(execute()).thenReject(error);
-                td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
-
-                return instance.createCollection('baz')
-                    .then(() => expect.fail())
-                    .catch(err => expect(err).to.deep.equal(error));
-            });
+            return instance.createCollection('baz')
+                .then(actual => expect(actual.inspect()).to.deep.equal(expected));
         });
 
-        context('when the collection does not exist', () => {
-            it('returns a newly created collection', () => {
-                const instance = schema('foo', 'bar');
-                const expected = instance.getCollection('baz').inspect();
+        it('fails if the collection already exists', () => {
+            const instance = schema('foo', 'bar');
+            const error = new Error();
+            error.info = { code: 1050 };
 
-                td.when(execute()).thenResolve();
-                td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
+            td.when(execute()).thenReject(error);
+            td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-                return instance.createCollection('baz')
-                    .then(actual => expect(actual.inspect()).to.deep.equal(expected));
-            });
+            return instance.createCollection('baz')
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
 
-            it('fails if some unexpected error is thrown', () => {
-                const instance = schema('foo', 'bar');
-                const error = new Error();
-                error.info = {};
+        it('returns the instance of a new collection if the option to re-use is enabled', () => {
+            const instance = schema('foo', 'bar');
+            const expected = instance.getCollection('baz').inspect();
 
-                td.when(execute()).thenReject(error);
-                td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
+            td.when(execute()).thenResolve();
+            td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
-                return instance.createCollection('baz')
-                    .then(() => expect.fail())
-                    .catch(err => expect(err).to.deep.equal(error));
-            });
+            return instance.createCollection('baz', { reuseExisting: true })
+                .then(actual => {
+                    expect(actual.inspect()).deep.equal(expected);
+                });
+        });
 
-            it('fails if some unexpected error is thrown even if the option to re-use is enabled', () => {
-                const instance = schema('foo', 'bar');
-                const error = new Error();
-                error.info = {};
+        it('returns the instance of a new collection if the option to re-use is enabled alongside additional options', () => {
+            const instance = schema('foo', 'bar');
+            const options = { reuse_existing: true, validation: true };
+            const expected = instance.getCollection('baz').inspect();
 
-                td.when(execute()).thenReject(error);
-                td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
+            td.when(execute()).thenResolve();
+            td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz', options }], 'mysqlx')).thenReturn({ execute });
 
-                return instance.createCollection('baz', { ReuseExistingObject: true })
-                    .then(() => expect.fail())
-                    .catch(err => expect(err).to.deep.equal(error));
-            });
+            return instance.createCollection('baz', { reuseExisting: true, validation: true })
+                .then(actual => {
+                    expect(actual.inspect()).deep.equal(expected);
+                });
+        });
+
+        it('deprecates the "ReuseExistingObject" option', () => {
+            const deprecated = td.function();
+            td.replace('../../../lib/DevAPI/Util/deprecated', deprecated);
+            schema = require('../../../lib/DevAPI/Schema');
+
+            const instance = schema('foo', 'bar');
+
+            td.when(execute()).thenResolve();
+            td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.createCollection('baz', { ReuseExistingObject: true })
+                .then(() => {
+                    expect(td.explain(deprecated).callCount).to.equal(1);
+                });
+        });
+
+        it('fails if some unexpected error is thrown', () => {
+            const instance = schema('foo', 'bar');
+            const error = new Error();
+            error.info = {};
+
+            td.when(execute()).thenReject(error);
+            td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.createCollection('baz')
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
+
+        it('fails if some unexpected error is thrown even if the option to re-use is enabled', () => {
+            const instance = schema('foo', 'bar');
+            const error = new Error();
+            error.info = {};
+
+            td.when(execute()).thenReject(error);
+            td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.createCollection('baz', { reuseExisting: true })
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
+
+        it('fails if some unexpected error is thrown even if the option to re-use is enabled alongside additional options', () => {
+            const instance = schema('foo', 'bar');
+            const options = { reuse_existing: true, validation: true };
+            const error = new Error();
+            error.info = {};
+
+            td.when(execute()).thenReject(error);
+            td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz', options }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.createCollection('baz', { reuseExisting: true, validation: true })
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
+
+        it('fails with a custom message if the server does not support schema validation', () => {
+            const instance = schema('foo', 'bar');
+            const options = { reuse_existing: false, validation: true };
+            const error = new Error();
+            error.info = { code: 5015 };
+
+            td.when(execute()).thenReject(error);
+            td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz', options }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.createCollection('baz', { validation: true })
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Your MySQL server does not support the requested operation. Please update to MySQL 8.0.19 or a later version.'));
+        });
+
+        it('fails with a custom message if the server does not support schema validation if the option to re-use is enabled', () => {
+            const instance = schema('foo', 'bar');
+            const options = { reuse_existing: true, validation: true };
+            const error = new Error();
+            error.info = { code: 5015 };
+
+            td.when(execute()).thenReject(error);
+            td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz', options }], 'mysqlx')).thenReturn({ execute });
+
+            return instance.createCollection('baz', { reuseExisting: true, validation: true })
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('Your MySQL server does not support the requested operation. Please update to MySQL 8.0.19 or a later version.'));
         });
     });
 

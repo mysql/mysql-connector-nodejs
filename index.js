@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -39,6 +39,7 @@ const parseUri = require('./lib/DevAPI/Util/URIParser');
 const plainAuth = require('./lib/Authentication/PlainAuth');
 const query = require('./lib/DevAPI/Query');
 const sha256MemoryAuth = require('./lib/Authentication/SHA256MemoryAuth');
+const schema = require('./lib/DevAPI/Schema');
 
 /**
  * @module mysqlx
@@ -143,6 +144,14 @@ exports.expr = function (expr, options) {
 };
 
 /**
+ * Retrieve the connector version number (from package.json).
+ * @return {String}
+ */
+exports.getVersion = function () {
+    return require('./package').version;
+};
+
+/**
  * Database entity types.
  * @type {DataModel}
  * @const
@@ -164,9 +173,13 @@ exports.Mode = query.Type;
 exports.LockContention = locking.LockContention;
 
 /**
- * Retrieve the connector version number (from package.json).
- * @return {String}
+ * Schema validation.
+ * @type {ValidationLevel}
+ * @const
+ * @example
+ * mysqlx.Schema.ValidationLevel.OFF
+ * mysqlx.Schema.ValidationLevel.STRICT
  */
-exports.getVersion = function () {
-    return require('./package').version;
+exports.Schema = {
+    ValidationLevel: schema.ValidationLevel
 };

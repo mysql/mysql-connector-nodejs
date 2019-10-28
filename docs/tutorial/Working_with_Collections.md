@@ -11,10 +11,10 @@ const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session.getSchema('mySchema').createCollection('myCollection')
-            .then(collection => {
-                // Use the Collection instance.
-            });
+        return session.getSchema('mySchema').createCollection('myCollection');
+    })
+    .then(collection => {
+        // Use the Collection instance.
     })
     .catch(err => {
         // Something went wrong.
@@ -22,6 +22,73 @@ mysqlx.getSession('mysqlx://localhost:33060')
 ```
 
 As you can see the `createColletion` function returns a Promise which resolves to a {@link Collection} object on success.
+
+If a given collection already exists in the database, the `createCollection` call will fail unless you enable the `reuseExisting` property in an additional options object such as the following:
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(sesion => {
+        return session.getSchema('mySchema').createCollection('myCollection', { reuseExisting: true })
+    });
+```
+
+You can also use this options object to, for instance, create a server-side document validation schema. For that, you can include a `schema` property matching a valid [JSON schema](https://json-schema.org/) definition within an outer `validation` object. You should also include the `level` property to effectively enable (`'STRICT'`) or disable (`'OFF'`) it.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+const validation = { schema: { type: 'object', properties: { name: { type: 'string' } } }, level: mysqlx.Schema.ValidationLevel.STRICT };
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(sesion => {
+        return session.getSchema('mySchema').createCollection('myCollection', { validation })
+    });
+```
+
+When trying to insert a document that violates the schema definition for the collection, an error is thrown:
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060/mySchema')
+    .then(sesion => {
+        return session.getDefaultSchema().getCollection('myCollection').add({ name: 1 }).execute();
+    })
+    .catch(err => {
+        console.log(err.message); // Document is not valid according to the schema assigned to collection. The JSON document location '#/name' failed requirement 'type' at JSON Schema location '#/properties/name'.
+    });
+```
+
+The schema is created but not enabled when the `level` property is absent or set to `'OFF'`, and any document will end up being inserted in that case.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+const validation = { schema: { type: 'object', properties: { name: { type: 'string' } } } };
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(sesion => {
+        return session.getSchema('mySchema').createCollection('myCollection', { validation })
+    })
+    .then(collection => {
+        // the following will work fine
+        return collection.add({ name: 1 }).execute();
+    });
+```
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+const validation = { schema: { type: 'object', properties: { name: { type: 'string' } } }, level: mysqlx.Schema.ValidationLevel.OFF };
+
+mysqlx.getSession('mysqlx://localhost:33060')
+    .then(sesion => {
+        return session.getSchema('mySchema').createCollection('myCollection', { validation })
+    })
+    .then(collection => {
+        // the following will work fine
+        return collection.add({ name: 1 }).execute();
+    });
+```
 
 ## Listing all the existing collections
 
