@@ -118,22 +118,79 @@ mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1,TLSv1.1]')
     });
 ```
 
+### TLS Ciphersuites
+
+Connector/Node.js passes the following default ciphersuite list to the OpenSSL package that is statically linked with the available Node.js engine:
+
+```
+TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+TLS_AES_128_GCM_SHA256
+TLS_AES_256_GCM_SHA384
+TLS_CHACHA20_POLY1305_SHA256
+TLS_AES_128_CCM_SHA256
+TLS_AES_128_CCM_8_SHA256
+TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+TLS_DHE_DSS_WITH_AES_128_GCM_SHA256
+TLS_DHE_DSS_WITH_AES_256_GCM_SHA384
+TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
+TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
+TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+TLS_DH_DSS_WITH_AES_128_GCM_SHA256
+TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
+TLS_DH_DSS_WITH_AES_256_GCM_SHA384
+TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384
+TLS_DH_RSA_WITH_AES_128_GCM_SHA256
+TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
+TLS_DH_RSA_WITH_AES_256_GCM_SHA384
+TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
+TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+TLS_RSA_WITH_AES_256_CBC_SHA
+```
+
+The last three ciphersuites from the list are deprecated, and exist only to provide compatibility with older MySQL server versions based on WolfSSL/YaSSL.
+
+Applications are allowed to override this list by providing their own set of ciphersuites, using the respective IANA name, like the following:
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost?ssl-ciphersuites=[TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256]')
+    .then(session => {
+        console.log(session.inspect()); // { host: 'foobar', ssl: true }
+    });
+
+const options = { host: 'localhost', tls: { ciphersuites: ['TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_DHE_RSA_WITH_AES_128_CBC_SHA256'], enabled: true } };
+
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect()); // { host: 'localhost', ssl: true }
+    });
+```
+
+Applications are free to use older TLSv1 and TLSv1.1 compatible ciphersuites (like it is depicted in the above example) but these are not recommended.
+
+Non-TLS ciphersuites, including the `MD5`, `SSLv3` and other older sets are not supported and will be ignored if the application wants to use them. If none of the ciphers provided by the application is actually supported by the client, an error will be thrown.
+
 ### Certificate authority validation
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx.getSession('mysqlx://foobar?ssl-ca=(/path/to/ca.pem)&ssl-crl=(/path/to/crl.pem)')
+mysqlx.getSession('mysqlx://localhost?ssl-ca=(/path/to/ca.pem)&ssl-crl=(/path/to/crl.pem)')
     .then(session => {
-        console.log(session.inspect()); // { host: 'foobar', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', ssl: true }
     });
 
 
-const options = { host: 'foobar', tls: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem', enabled: true } };
+const options = { host: 'localhost', tls: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem', enabled: true } };
 
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect()); // { host: 'foobar', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', ssl: true }
     });
 ```
 

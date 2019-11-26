@@ -50,6 +50,14 @@ describe('parseSecurityOptions', () => {
         expect(parseSecurityOptions('?tls-versions=foo')).to.deep.equal({ enabled: true, versions: 'foo' });
     });
 
+    it('parses a list of TLS ciphersuites', () => {
+        expect(parseSecurityOptions('?tls-ciphersuites=[foo,bar,baz]')).to.deep.equal({ enabled: true, ciphersuites: ['foo', 'bar', 'baz'] });
+    });
+
+    it('parses other values for TLS ciphersuites', () => {
+        expect(parseSecurityOptions('?tls-ciphersuites=foo')).to.deep.equal({ enabled: true, ciphersuites: 'foo' });
+    });
+
     it('throws an error for duplicate options', () => {
         const error = 'The connection string cannot contain duplicate query parameters.';
 
@@ -57,6 +65,7 @@ describe('parseSecurityOptions', () => {
         expect(() => parseSecurityOptions('?ssl-ca=foo&ssl-ca=bar')).to.throw(error);
         expect(() => parseSecurityOptions('?ssl-crl=foo&ssl-crl=bar')).to.throw(error);
         expect(() => parseSecurityOptions('?tls-versions=[foo,bar]&tls-versions=[baz]')).to.throw(error);
+        expect(() => parseSecurityOptions('?tls-ciphersuites=[foo,bar]&tls-ciphersuites=[baz]')).to.throw(error);
     });
 
     it('ignores case of "ssl-mode" key and value', () => {
@@ -73,6 +82,12 @@ describe('parseSecurityOptions', () => {
         expect(parseSecurityOptions('?tLS-veRsionS=[foo,bar]')).to.deep.equal({ enabled: true, versions: ['foo', 'bar'] });
         expect(parseSecurityOptions('?TLS-VERSIONS=[bar,baz]')).to.deep.equal({ enabled: true, versions: ['bar', 'baz'] });
         expect(parseSecurityOptions('?tls-versions=[baz,qux]')).to.deep.equal({ enabled: true, versions: ['baz', 'qux'] });
+    });
+
+    it('ignores case of "tls-ciphersuites" key', () => {
+        expect(parseSecurityOptions('?tLS-cIpHeRsUiTeS=[foo,bar]')).to.deep.equal({ enabled: true, ciphersuites: ['foo', 'bar'] });
+        expect(parseSecurityOptions('?TLS-CIPHERSUITES=[bar,baz]')).to.deep.equal({ enabled: true, ciphersuites: ['bar', 'baz'] });
+        expect(parseSecurityOptions('?tls-ciphersuites=[baz,qux]')).to.deep.equal({ enabled: true, ciphersuites: ['baz', 'qux'] });
     });
 
     it('does not ignore case of security options except `ssl-mode`', () => {

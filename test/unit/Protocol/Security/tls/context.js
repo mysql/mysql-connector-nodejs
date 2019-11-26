@@ -7,9 +7,10 @@ const td = require('testdouble');
 const tls = require('tls');
 
 describe('TLS context builder', () => {
-    let fs, subject, util;
+    let ciphers, fs, subject, util;
 
     beforeEach('create fakes', () => {
+        ciphers = td.replace('../../../../../lib/Protocol/Security/tls/ciphers');
         fs = td.replace('../../../../../lib/Adapters/fs');
         util = td.replace('../../../../../lib/Protocol/Security/tls/util');
 
@@ -265,6 +266,43 @@ describe('TLS context builder', () => {
             return subject.addSecureProtocol([])
                 .then(() => expect.fail())
                 .catch(err => expect(err.message).to.equal(error));
+        });
+    });
+
+    context('addCiphers()', () => {
+        it('returns a valid context with the default OpenSSL ciphersuite list string if no ciphersuite has been provided', () => {
+            const ciphersuites = ['foo', 'bar'];
+
+            td.when(ciphers.defaults()).thenReturn(ciphersuites);
+
+            return subject.addCiphers()
+                .then(openssl => expect(openssl).to.deep.equal({ ciphers: ciphersuites.join(':') }));
+        });
+
+        it('returns a valid context with an OpenSSL ciphersuite list string matching the valid ciphers that have been provided', () => {
+            const ciphersuites = ['foo', 'bar', 'baz'];
+            const overlapping = ciphersuites.slice(0, 2);
+
+            td.when(ciphers.overlaps(ciphersuites)).thenReturn(overlapping);
+
+            return subject.addCiphers(ciphersuites)
+                .then(openssl => expect(openssl).to.deep.equal({ ciphers: overlapping.join(':') }));
+        });
+
+        it('fails if the provided ciphersuite list is empty', () => {
+            return subject.addCiphers([])
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('No valid ciphersuite found in the provided list.'));
+        });
+
+        it('fails if there no ciphersuite in the list overlaps with any mandatory, approved or deprecated ciphers', () => {
+            const ciphersuites = ['foo', 'bar'];
+
+            td.when(ciphers.overlaps(ciphersuites)).thenReturn([]);
+
+            return subject.addCiphers(ciphersuites)
+                .then(() => expect.fail())
+                .catch(err => expect(err.message).to.equal('No valid ciphersuite found in the provided list.'));
         });
     });
 });

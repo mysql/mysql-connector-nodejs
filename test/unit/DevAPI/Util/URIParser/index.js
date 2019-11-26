@@ -467,6 +467,29 @@ describe('parseUri', () => {
 
                 expect(parseUri('mysqlx://user:password@hostname:33060?tls-versions=[TLSv1.2,TLSv1.3]')).to.deep.equal(expected);
             });
+
+            it('parses a list of TLS ciphersuites', () => {
+                const expected = {
+                    auth: '',
+                    dbUser: 'user',
+                    dbPassword: 'password',
+                    connectTimeout: '10000',
+                    connectionAttributes: {},
+                    endpoints: [{
+                        host: 'hostname',
+                        port: 33060,
+                        socket: undefined
+                    }],
+                    resolveSrv: false,
+                    schema: undefined,
+                    tls: {
+                        enabled: true,
+                        ciphersuites: ['foo', 'bar']
+                    }
+                };
+
+                expect(parseUri('mysqlx://user:password@hostname:33060?tls-ciphersuites=[foo,bar]')).to.deep.equal(expected);
+            });
         });
 
         context('local sockets', () => {
