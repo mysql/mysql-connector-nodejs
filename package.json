@@ -56,6 +56,7 @@
     "pretest": "docker-compose --file test/setup.yml --project-name=nodejsmysqlxtest up -d && sleep 30",
     "test": "mocha",
     "test:compatibility": "npm run pretest && mocha --exclude=test/functional/**/*.js --exclude=test/unit/**/*.js && npm run posttest",
+    "test:hookless": "mocha",
     "test:functional": "mocha --exclude=test/compatibility/**/*.js --exclude=test/unit/**/*.js",
     "test:latest": "mocha --exclude=test/compatibility/**/*.js",
     "test:unit": "mocha --exclude=test/compatibility/**/*.js --exclude=test/functional/**/*.js"
@@ -73,7 +74,8 @@
     "nyc": "11.9.0",
     "snazzy": "7.1.1",
     "standardx": "2.1.0",
-    "testdouble": "3.7.0"
+    "testdouble": "3.7.0",
+    "timekeeper": "2.2.0"
   },
   "nyc": {
     "branches": 75,

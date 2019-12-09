@@ -5,12 +5,10 @@ Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI:
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root:passwd@localhost:33060/mySchema')
+mysqlx.getSession('mysqlx://root:passwd@localhost:33060/mySchema')
     .then(session => {
-        console.log(session.inspect());
-        // { user: 'root', host: 'localhost', port: 33060 }
-    })
+        console.log(session.inspect()); // { user: 'root', host: 'localhost', port: 33060 }
+    });
 ```
 
 Using a "unified" connection string, which is basically a reduced version of the RFC 3986 URI (without the _scheme_):
@@ -18,12 +16,10 @@ Using a "unified" connection string, which is basically a reduced version of the
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('root:passwd@localhost:33060/mySchema')
+mysqlx.getSession('root:passwd@localhost:33060/mySchema')
     .then(session => {
-        console.log(session.inspect());
-        // { user: 'root', host: 'localhost', port: 33060 }
-    })
+        console.log(session.inspect()); // { user: 'root', host: 'localhost', port: 33060 }
+    });
 ```
 
 Using a session configuration object:
@@ -39,12 +35,10 @@ const config = {
     schema: 'mySchema'
 };
 
-mysqlx
-    .getSession(config)
+mysqlx.getSession(config)
     .then(session => {
-        console.log(session.inspect());
-        // { user: 'root', host: 'localhost', port: 33060 }
-    })
+        console.log(session.inspect()); // { user: 'root', host: 'localhost', port: 33060 }
+    });
 ```
 
 If the server is running in the same machine as the client, and is bound to a local UNIX socket (no support for windows pipes yet), the previous examples work, with some small notation differences.
@@ -54,12 +48,10 @@ Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI with a pct-
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
+mysqlx.getSession('mysqlx://root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
     .then(session => {
-        console.log(session.inspect());
-        // { user: 'root', socket: '/path/to/socket' }
-    })
+        console.log(session.inspect()); // { user: 'root', socket: '/path/to/socket' }
+    });
 ```
 
 Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI with an unencoded socket path:
@@ -67,12 +59,10 @@ Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI with an une
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root:passwd@(/path/to/socket)/mySchema')
+mysqlx.getSession('mysqlx://root:passwd@(/path/to/socket)/mySchema')
     .then(session => {
-        console.log(session.inspect());
-        // { user: 'root', socket: '/path/to/socket' }
-    })
+        console.log(session.inspect()); // { user: 'root', socket: '/path/to/socket' }
+    });
 ```
 
 Using a "unified" connection string with a pct-encoded socket path:
@@ -80,12 +70,10 @@ Using a "unified" connection string with a pct-encoded socket path:
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
+mysqlx.getSession('root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
     .then(session => {
-        console.log(session.inspect());
-        // { user: 'root', socket: '/path/to/socket' }
-    })
+        console.log(session.inspect()); // { user: 'root', socket: '/path/to/socket' }
+    });
 ```
 
 Using a "unified" connection string with an unencoded socket path:
@@ -93,12 +81,10 @@ Using a "unified" connection string with an unencoded socket path:
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('root:passwd@(/path/to/socket)/mySchema')
+mysqlx.getSession('root:passwd@(/path/to/socket)/mySchema')
     .then(session => {
-        console.log(session.inspect());
-        // { user: 'root', socket: '/path/to/socket' }
-    })
+        console.log(session.inspect()); // { user: 'root', socket: '/path/to/socket' }
+    });
 ```
 
 Using a session configuration object:
@@ -113,31 +99,67 @@ const config = {
     schema: 'mySchema'
 };
 
-mysqlx
-    .getSession(config)
+mysqlx.getSession(config)
     .then(session => {
-        console.log(session.inspect());
-        // { user: 'root', socket: '/path/to/socket' }
-    })
+        console.log(session.inspect()); // { user: 'root', socket: '/path/to/socket' }
+    });
 ```
 
-### Failover
+### Multi-host and failover
 
-You can provide multiple MySQL router or server addresses (host and port) when creating a session. This allows the connector to perform automatic failover selection when the hosts are not available. The selection is made based on the priority assigned to each address, either implicitely (position in the list), or explicitely (using a special format depicted above).
+You can provide multiple MySQL router or server endpoints (host and/or port or unix sockets) when creating a session. This allows the connector to perform automatic failover selection when the endpoints are not available. The selection is made based on the priority specified for each endpoint or randomly if the priority is not speficied.
 
-Explicit priorities should start at `0` (lowest priority) and finish at `100` (highest priority). When two addresses share the same priority, the first one from the list will be selected.
+Explicit priorities should start at `0` (lowest priority) and finish at `100` (highest priority). When two endpoints share the same priority, one of them will be picked randomly.
 
-Setting-up failover servers with implicit priority:
+> **WARNING**
+>
+> In previous versions of Connector/Node.js, endpoints would be assigned an implicit descending priority according to their position on the list. This is no longer the case.
+
+When, setting up multihost failover endpoints without priority, any of the available endpoints can be picked:
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root:passwd@[localhost:33060, 127.0.0.1:33060]')
+const uri = 'mysqlx://root:passwd@[127.0.0.1:33060, 127.0.0.1:33061, 127.0.0.1:33062]';
+// or
+const options = {
+    endpoints: [{
+        host: '127.0.0.1',
+        port: 33060
+    }, {
+        host: '127.0.0.1',
+        port: 33061
+    }, {
+        host: '127.0.0.1',
+        port: 33062
+    }],
+    user: 'root',
+    password: 'passwd'
+};
+
+// if neither 33060 nor 33061 are available
+mysqlx.getSession(uri)
     .then(session => {
-        // the `host` and `port` properties will match the first available server endpoint
-        console.log(session.inspect());
+        console.log(session.inspect().port); // 33062
     });
+
+// if neither 33060 nor 33062 are available
+mysqlx.getSession(uri)
+    .then(session => {
+        console.log(session.inspect().port); // 33061
+    });
+
+// if neither 33061 nor 33062 are available
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().port); // 33061
+    });
+
+// if only 33060 is not available, any of the other two can be picked
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().port); // 33061 or 33062
+    })
 ```
 
 Setting-up failover servers with explicit priority:
@@ -145,11 +167,73 @@ Setting-up failover servers with explicit priority:
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root:passwd@[(address=127.0.0.1:33060, priority=99), (address=localhost:33060, priority=100)]')
+const uri = 'mysqlx://root:passwd@[(address=127.0.0.1:33060,priority=99),(address=127.0.0.1:33061,priority=100)]';
+// or
+const options = {
+    endpoints: [{
+        host: '127.0.0.1',
+        port: 33060,
+        priority: 99
+    }, {
+        host: '127.0.0.1',
+        port: 33061,
+        priority: 100
+    }]
+};
+
+// if both endpoints are available
+mysqlx.getSession(uri)
     .then(session => {
-        // the `host` and `port` properties will match the first available server endpoint
-        console.log(session.inspect());
+        console.log(session.inspect().port); // 33061
+    });
+
+// if 33061 is not available
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().port); // 33060
+    });
+```
+
+Mixing endpoints with and without priority is not possible with a connection string. It is possible to do it using a configuration object but it is not avised. In case it happens, endpoints without priority will be randomly picked only and if only there are no endpoints with a specific priority which are available at the moment.
+
+```js
+const mysqxl = require('@mysql/xdevapi');
+const options = {
+    endpoints: [{
+        host: '127.0.0.1',
+        port: 33060
+    }, {
+        host: '127.0.0.1',
+        port: 33061,
+        priority: 90
+    }, {
+        host: '127.0.0.1',
+        port: 33062
+    }, {
+        host: '127.0.0.1',
+        port: 33063,
+        priority: 100
+    }],
+    user: 'root',
+    password: 'passwd',
+};
+
+// if all endpoints are available
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().port); // 33063
+    });
+
+// if 33063 is not available
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().port) // 33061
+    });
+
+// if neither 33063 nor 33061 are available any of the either two can be picked
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect().port) // 33060 or 33062
     });
 ```
 
@@ -162,8 +246,7 @@ In a single-host scenario, when a connection is not established in the defined i
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root:passwd@localhost:33060?connect-timeout=5000')
+mysqlx.getSession('mysqlx://root:passwd@localhost:33060?connect-timeout=5000')
     .catch(err => {
         // connection could not be established after 5 seconds
         console.log(err.message); // Connection attempt to the server was aborted. Timeout of 5000 ms was exceeded.
@@ -175,8 +258,7 @@ As usual you can also set a custom value using a plain JavaScript object, whose 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession({ user: 'root', password: 'passwd', connectTimeout: 8000 })
+mysqlx.getSession({ user: 'root', password: 'passwd', connectTimeout: 8000 })
     .catch(err => {
         // connection could not be established after 8 seconds
         console.log(err.message); // Connection attempt to the server was aborted. Timeout of 8000 ms was exceeded.
@@ -188,8 +270,7 @@ In a multi-host scenario, the error message will be a bit different:
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root:passwd@[localhost:33060, 127.0.0.1:33060]?connect-timeout=5000')
+mysqlx.getSession('mysqlx://root:passwd@[localhost:33060, 127.0.0.1:33060]?connect-timeout=5000')
     .catch(err => {
         // connection could not be established after 10 seconds (5 seconds for each server)
         console.log(err.message); // All server connection attempts were aborted. Timeout of 5000 ms was exceeded for each selected server.
@@ -201,8 +282,7 @@ To explicitly disable the timeout, you can use `connect-timeout=0`.
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx
-    .getSession('mysqlx://root:passwd@127.0.0.1:33060?connect-timeout=0')
+mysqlx.getSession('mysqlx://root:passwd@127.0.0.1:33060?connect-timeout=0')
     .catch(err => {
         // should not reach this point for any timeout-related reason
     });

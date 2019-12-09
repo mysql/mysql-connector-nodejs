@@ -62,3 +62,18 @@ services:
         extends:
             service: mysql
         image: mysql/mysql-server:8.0.18
+
+    multihost-primary:
+        command: --mysqlx-port=33069 --port=3315
+        extends:
+            service: mysql
+
+    multihost-secondary1:
+        command: --mysqlx-port=33070 --port=3316
+        extends:
+            service: mysql
+
+    multihost-secondary2:
+        command: --mysqlx-port=33071 --port=3317
+        extends:
+            service: mysql

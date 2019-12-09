@@ -6,6 +6,7 @@ const Client = require('../../../lib/Protocol/Client');
 const PassThrough = require('stream').PassThrough;
 const expect = require('chai').expect;
 const td = require('testdouble');
+const tk = require('timekeeper');
 
 describe('Session', () => {
     let Session, connect, execute, sqlExecute;
@@ -184,6 +185,7 @@ describe('Session', () => {
                 session._client._stream = { end };
 
                 setTimeout(() => socket.emit('error', new Error()));
+                setTimeout(() => socket.emit('close', true));
 
                 return session.connect()
                     .then(() => expect.fail())
@@ -323,18 +325,15 @@ describe('Session', () => {
                 });
 
                 it('failovers to the next available address if the connection fails', () => {
-                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const endpoints = [{ host: 'foo', port: 1, priority: 100 }, { host: 'bar', port: 2, priority: 99 }];
                     const properties = { dbPassword: 'qux', endpoints, ssl: false, user: 'baz', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { host: 'bar', port: 2, user: 'baz' };
 
-                    const error = new Error();
-                    error.code = 'ENOTFOUND';
-
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     setTimeout(() => {
-                        socket.emit('error', error);
+                        socket.emit('close', true);
                         setTimeout(() => socket.emit('connect'));
                     });
 
@@ -347,50 +346,31 @@ describe('Session', () => {
                     const properties = { endpoints };
                     const session = new Session(properties);
 
-                    const error = new Error('foo');
-                    error.code = 'ENOTFOUND';
-
                     setTimeout(() => {
-                        socket.emit('error', error);
-                        setTimeout(() => socket.emit('error', error));
+                        socket.emit('close', true);
+                        setTimeout(() => socket.emit('close', true));
                     });
 
                     return session.connect()
                         .then(() => expect.fail())
                         .catch(err => {
-                            expect(err.message).to.equal('All server connection attempts have failed. (last: foo)');
+                            expect(err.message).to.equal('Unable to connect to any of the target hosts.');
                             expect(err.errno).to.equal(4001);
                         });
                 });
 
-                it('fails if an unexpected error is thrown', () => {
-                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
-                    const properties = { endpoints };
-                    const session = new Session(properties);
-                    const error = new Error('foobar');
-
-                    setTimeout(() => socket.emit('error', error));
-
-                    return session.connect()
-                        .then(() => expect.fail())
-                        .catch(err => expect(err).to.deep.equal(error));
-                });
-
-                it('resets the connection availability constraints when all routers are unavailable', () => {
-                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                it('resets the connection availability constraints when all endpoints are unavailable', () => {
+                    const endpoints = [{ host: 'foo', port: 1, priority: 100 }, { host: 'bar', port: 2, priority: 99 }];
                     const properties = { dbPassword: 'qux', endpoints, ssl: false, user: 'baz', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { host: 'foo', port: 1, user: 'baz' };
 
-                    const error = new Error('foo');
-                    error.code = 'ENOTFOUND';
-
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     setTimeout(() => {
-                        socket.emit('error', error);
+                        socket.emit('close', true);
                         setTimeout(() => {
-                            socket.emit('error', error);
+                            socket.emit('close', true);
                             setTimeout(() => socket.emit('connect'));
                         });
                     });
@@ -398,27 +378,28 @@ describe('Session', () => {
                     return session.connect()
                         .then(() => expect.fail())
                         .catch(err => {
-                            expect(err.message).to.equal('All server connection attempts have failed. (last: foo)');
+                            expect(err.message).to.equal('Unable to connect to any of the target hosts.');
+
+                            // ensure there is enough time for the host to become available once again (MULTIHOST_RETRY)
+                            tk.travel(new Date(Date.now() + 20000));
 
                             return session.connect()
-                                .then(session => expect(session.inspect()).to.deep.include(expected));
+                                .then(session => expect(session.inspect()).to.deep.include(expected))
+                                .then(() => tk.reset());
                         });
                 });
 
                 it('selects the default authentication mechanism for secure connections', () => {
-                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const endpoints = [{ host: 'foo', port: 1, priority: 100 }, { host: 'bar', port: 2, priority: 99 }];
                     const properties = { dbPassword: 'qux', endpoints, ssl: true, user: 'baz', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { auth: 'PLAIN', host: 'bar', port: 2, ssl: true, user: 'baz' };
-
-                    const error = new Error();
-                    error.code = 'ENOTFOUND';
 
                     td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
 
                     setTimeout(() => {
-                        socket.emit('error', error);
+                        socket.emit('close', true);
                         setTimeout(() => socket.emit('connect'));
                     });
 
@@ -427,19 +408,16 @@ describe('Session', () => {
                 });
 
                 it('selects the default authentication mechanism for insecure connections', () => {
-                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const endpoints = [{ host: 'foo', port: 1, priority: 100 }, { host: 'bar', port: 2, priority: 99 }];
                     const properties = { dbPassword: 'qux', endpoints, ssl: false, user: 'baz', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { auth: 'MYSQL41', host: 'bar', port: 2, ssl: false, user: 'baz' };
-
-                    const error = new Error();
-                    error.code = 'ENOTFOUND';
 
                     td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
 
                     setTimeout(() => {
-                        socket.emit('error', error);
+                        socket.emit('close', true);
                         setTimeout(() => socket.emit('connect'));
                     });
 
@@ -448,19 +426,16 @@ describe('Session', () => {
                 });
 
                 it('overrides the default authentication mechanism with the one provided by the user', () => {
-                    const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
+                    const endpoints = [{ host: 'foo', port: 1, priority: 100 }, { host: 'bar', port: 2, priority: 99 }];
                     const properties = { auth: 'MYSQL41', dbPassword: 'qux', endpoints, ssl: true, user: 'baz', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { auth: 'MYSQL41', host: 'bar', port: 2, ssl: true, user: 'baz' };
-
-                    const error = new Error();
-                    error.code = 'ENOTFOUND';
 
                     td.when(enableTLS({ enabled: true })).thenResolve();
                     td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
 
                     setTimeout(() => {
-                        socket.emit('error', error);
+                        socket.emit('close', true);
                         setTimeout(() => socket.emit('connect'));
                     });
 

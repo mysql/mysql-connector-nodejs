@@ -262,16 +262,19 @@ describe('parseUri', () => {
                     connectTimeout: '10000',
                     connectionAttributes: {},
                     endpoints: [{
-                        host: '::1',
-                        port: undefined,
-                        socket: undefined
-                    }, {
                         host: '127.0.0.1',
                         port: undefined,
+                        priority: 99,
                         socket: undefined
                     }, {
                         host: 'localhost',
                         port: 3357,
+                        priority: 0,
+                        socket: undefined
+                    }, {
+                        host: '::1',
+                        port: undefined,
+                        priority: 100,
                         socket: undefined
                     }],
                     resolveSrv: false,
@@ -817,16 +820,19 @@ describe('parseUri', () => {
                     connectTimeout: '10000',
                     connectionAttributes: {},
                     endpoints: [{
-                        host: 'localhost',
-                        port: 3357,
-                        socket: undefined
-                    }, {
                         host: '127.0.0.1',
                         port: 3357,
+                        priority: 98,
+                        socket: undefined
+                    }, {
+                        host: 'localhost',
+                        port: 3357,
+                        priority: 100,
                         socket: undefined
                     }, {
                         host: '::1',
                         port: undefined,
+                        priority: 97,
                         socket: undefined
                     }],
                     resolveSrv: false,

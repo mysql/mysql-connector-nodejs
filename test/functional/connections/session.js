@@ -168,9 +168,23 @@ describe('X plugin session', () => {
                     });
             });
 
-            it('connects to the server if an address is not reachable but there is a failover available', () => {
+            it('connects to the server if the first address in a random list is not reachable but there is a failover available', () => {
                 const failoverConfig = Object.assign({}, config);
                 const hosts = [`${failoverConfig.host}:${failoverConfig.port + 1000}`, `${failoverConfig.host}:${failoverConfig.port}`];
+                const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
+
+                return mysqlx.getSession(uri)
+                    .then(session => {
+                        expect(session.inspect().host).to.deep.equal(failoverConfig.host);
+                        expect(session.inspect().port).to.deep.equal(failoverConfig.port);
+
+                        return session.close();
+                    });
+            });
+
+            it('connects to the server if the first address in a random list is reachable', () => {
+                const failoverConfig = Object.assign({}, config);
+                const hosts = [`${failoverConfig.host}:${failoverConfig.port}`, `${failoverConfig.host}:${failoverConfig.port + 1000}`];
                 const uri = `mysqlx://${failoverConfig.dbUser}:${failoverConfig.dbPassword}@[${hosts.join(', ')}]`;
 
                 return mysqlx.getSession(uri)
