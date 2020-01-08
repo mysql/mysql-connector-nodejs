@@ -454,7 +454,7 @@ describe('relational miscellaneous tests', () => {
             });
 
             it('decodes values correctly', () => {
-                const expected = [[new Date('2018-02-18'), new Date('2018-02-18T12:33:17'), 1518957197000]];
+                const expected = [[new Date('2018-02-18Z'), new Date('2018-02-18T12:33:17Z'), 1518957197000]];
                 const actual = [];
 
                 return schema.getTable('test').select()
