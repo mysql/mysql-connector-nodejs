@@ -85,7 +85,7 @@ describe('collation and charset names', () => {
     context('with a non utf8mb4 collation', () => {
         const customCollation = 'latin1_german1_ci';
         const customCharset = 'latin1';
-        const strictCollation = 'utf8mb4_general_ci';
+        const strictCollation = 'utf8mb4_0900_ai_ci';
 
         context('from the server', () => {
             let session;
@@ -155,7 +155,7 @@ describe('collation and charset names', () => {
                     .then(s => { session = s; });
             });
 
-            beforeEach('create schem with collation', () => {
+            beforeEach('create schema with collation', () => {
                 return session.sql(`CREATE DATABASE ${config.schema} CHARACTER SET ${customCharset} COLLATE ${customCollation}`)
                     .execute();
             });
@@ -357,7 +357,7 @@ describe('collation and charset names', () => {
                     .then(s => { session = s; });
             });
 
-            beforeEach('create schem with collation', () => {
+            beforeEach('create schema with collation', () => {
                 return session.sql(`CREATE DATABASE ${config.schema} CHARACTER SET ${defaultCharset} COLLATE ${customCollation}`)
                     .execute();
             });
