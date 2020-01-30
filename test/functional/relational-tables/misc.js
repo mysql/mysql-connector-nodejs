@@ -399,15 +399,14 @@ describe('relational miscellaneous tests', () => {
             });
         });
 
-        context.skip('values encoded as TIME', () => {
+        context('values encoded as TIME', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (a_time TIME)`)
+                return session.sql(`CREATE TABLE ${schema.getName()}.test (a_time TIME(6))`)
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                // TODO(Rui): currently, the xplugin does not seem to return trailing fractional seconds.
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ('11 12:13:14'),  ('-12:13:14'), ('12:13:14'),
+                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ('11 12:13:14'),  ('-12:13:14'), ('12:13:14.123456'),
                         ('21 22:03'), ('-22:03'), ('22:03'), ('1 02'), ('-02'), ('02'), ('101112'), ('-101112'), (101112), (-101112), (8), (-8)`)
                     .execute();
             });
@@ -416,7 +415,7 @@ describe('relational miscellaneous tests', () => {
                 const expected = [
                     ['+276:13:14.000000'],
                     ['-12:13:14.000000'],
-                    ['+12:13:14.000000'],
+                    ['+12:13:14.123456'],
                     ['+526:03:00.000000'],
                     ['-22:03:00.000000'],
                     ['+22:03:00.000000'],
@@ -448,7 +447,6 @@ describe('relational miscellaneous tests', () => {
             });
 
             beforeEach('add fixtures', () => {
-                // TODO(Rui): currently, the xplugin does not seem to return trailing fractional seconds.
                 return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ('2018-02-18', '2018-02-18 12:33:17', '2018-02-18 12:33:17.123456')`)
                     .execute();
             });
