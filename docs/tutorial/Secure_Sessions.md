@@ -158,7 +158,7 @@ Applications are allowed to override this list by providing their own set of cip
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-mysqlx.getSession('mysqlx://localhost?ssl-ciphersuites=[TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256]')
+mysqlx.getSession('mysqlx://localhost?tls-ciphersuites=[TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256]')
     .then(session => {
         console.log(session.inspect()); // { host: 'foobar', ssl: true }
     });
