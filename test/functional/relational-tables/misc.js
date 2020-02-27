@@ -141,9 +141,7 @@ describe('relational miscellaneous tests', () => {
             });
 
             it('decodes values correctly', () => {
-                // Even the "stringified" value is not lossless.
-                // https://github.com/google/protobuf/blob/9021f623e1420f513268a01a5ad43a23618a84ba/js/binary/decoder.js#L745
-                const expected = [[-128, 127, -32768, 32767, -8388608, 8388607, -2147483648, 2147483647, '-9223372036854776000', '9223372036854776000']];
+                const expected = [[-128, 127, -32768, 32767, -8388608, 8388607, -2147483648, 2147483647, '-9223372036854775808', '9223372036854775807']];
                 const actual = [];
 
                 return schema.getTable('test').select()

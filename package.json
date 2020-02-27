@@ -63,7 +63,7 @@
     "test:unit": "npm run mocha -- --exclude=test/compatibility/**/*.js --exclude=test/functional/**/*.js"
   },
   "dependencies": {
-    "google-protobuf": "3.4.0",
+    "google-protobuf": "3.11.4",
     "parsimmon": "1.6.2"
   },
   "engines": {
