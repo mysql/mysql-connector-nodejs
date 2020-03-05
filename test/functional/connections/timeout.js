@@ -80,7 +80,10 @@ describe('connect timeout', () => {
 
                 return new Promise((resolve, reject) => {
                     fakeServer2 = net.createServer();
-                    fakeServer2.on('connection', socket => socket.pause());
+                    fakeServer2.on('connection', socket => {
+                        fakeServer1.on('close', () => socket.destroy());
+                        socket.pause();
+                    });
                     fakeServer2.on('error', reject);
                     fakeServer2.listen(port2, resolve);
                 });
