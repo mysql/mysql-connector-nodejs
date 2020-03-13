@@ -388,6 +388,38 @@ describe('raw SQL', () => {
                     });
             });
         });
+
+        context('BUG#31037211', () => {
+            beforeEach('create procedure', () => {
+                return session.sql(`
+                        CREATE PROCEDURE multi() BEGIN
+                            SELECT 'foo';
+                            SELECT 'bar' WHERE 1 = 0;
+                            SELECT 'baz';
+                        END`)
+                    .execute();
+            });
+
+            afterEach('drop procedure', () => {
+                return session.sql(`DROP PROCEDURE multi`);
+            });
+
+            it('correctly consumes empty result sets', () => {
+                return session.sql(`CALL multi()`)
+                    .execute()
+                    .then(result => {
+                        expect(result.fetchOne()).to.deep.equal(['foo']);
+
+                        expect(result.nextResult()).to.equal(true);
+                        expect(result.fetchOne()).to.not.exist;
+
+                        expect(result.nextResult()).to.equal(true);
+                        expect(result.fetchOne()).to.deep.equal(['baz']);
+
+                        expect(result.nextResult()).to.equal(false);
+                    });
+            });
+        });
     });
 
     context('BUG#30163003', () => {

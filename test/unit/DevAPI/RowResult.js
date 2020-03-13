@@ -106,8 +106,13 @@ describe('RowResult', () => {
             /* eslint-disable no-unused-expressions */
             expect(rowResult().nextResult()).to.be.false;
             expect(rowResult({ results: undefined }).nextResult()).to.be.false;
+            expect(rowResult({ results: [] }).nextResult()).to.be.false;
             /* eslint-enable no-unused-expressions */
-            return expect(rowResult({ results: [] }).nextResult()).to.be.false;
+            return expect(rowResult({ results: [['foo']] }).nextResult()).to.be.false;
+        });
+
+        it('returns true if the subsequent result set is empty', () => {
+            return expect(rowResult({ results: [['foo'], []] }).nextResult()).to.be.true;
         });
 
         it('moves the cursor to the next available result-set', () => {
