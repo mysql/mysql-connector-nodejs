@@ -337,7 +337,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ### Cursors
 
-Up until now, we've been using the `fetchAll()` method to retrieve the entire result-set originated by each `find()` query. This method pulls the data from memory and flushing it subsequently. There are, however, two alternive APIs for consuming result-set entries individually using a cursor. One API uses a regular pull-based cursor via an additional `fetchOne()` method available in the {@link Result} instance. The other is a pull-based API where you can provide a callback function when calling the `execute()` method, which totally disables buffering at the connector-level and leaves that responsability to the application.
+Up until now, we've been using the `fetchAll()` method to retrieve the entire result set originated by each `find()` query. This method pulls the data from memory and flushing it subsequently. There are, however, two alternive APIs for consuming result set entries individually using a cursor. One API uses a regular pull-based cursor via an additional `fetchOne()` method available in the {@link Result} instance. The other is a pull-based API where you can provide a callback function when calling the `execute()` method, which totally disables buffering at the connector-level and leaves that responsability to the application.
 
 **Pull-based approach**
 

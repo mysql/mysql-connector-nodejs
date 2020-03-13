@@ -191,7 +191,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ### Cursors
 
-Similarly to the document-based API, iterating over result-sets originating from regular relational tables can be done either with `fetchAll()` (as depicted up until now) and with the pull-based `fetchOne()` cursor or the push-based API using callbacks. The only difference in the later is the fact that you can provide an additional callback function to handle column metadata.
+Similarly to the document-based API, iterating over result sets originating from regular relational tables can be done either with `fetchAll()` (as depicted up until now) and with the pull-based `fetchOne()` cursor or the push-based API using callbacks. The only difference in the later is the fact that you can provide an additional callback function to handle column metadata.
 
 **Pull-based approach**
 
@@ -230,7 +230,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-### Iterating over multiple result-sets
+### Iterating over multiple result sets
 
 ```js
 const mysqlx = require('@mysql/xdevapi');

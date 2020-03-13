@@ -106,7 +106,7 @@ describe('raw SQL', () => {
         });
     });
 
-    context('result-set API', () => {
+    context('result set API', () => {
         let session;
 
         beforeEach('create session', () => {
@@ -121,13 +121,13 @@ describe('raw SQL', () => {
         });
 
         context('operation outcomes', () => {
-            it('checks if the result-set contains additional data', () => {
+            it('checks if the result set contains additional data', () => {
                 return session.sql(`SELECT 1 AS s1_m1, 2.2 AS s1_m2`)
                     .execute()
                     .then(result => expect(result.hasData()).to.equal(true));
             });
 
-            it('checks if the result-set does not contain additional data', () => {
+            it('checks if the result set does not contain additional data', () => {
                 return session.sql('CREATE TABLE test (name VARCHAR(4))')
                     .execute()
                     .then(() => {
@@ -138,8 +138,8 @@ describe('raw SQL', () => {
             });
         });
 
-        context('single result-sets', () => {
-            it('retrieves the first record in the result-set', () => {
+        context('single result sets', () => {
+            it('retrieves the first record in the result set', () => {
                 return session.sql(`SELECT 1 AS s1_m1, 2.2 AS s1_m2`)
                     .execute()
                     .then(result => {
@@ -150,7 +150,7 @@ describe('raw SQL', () => {
                     });
             });
 
-            it('retrieves each record in the result-set', () => {
+            it('retrieves each record in the result set', () => {
                 return session.sql(`SELECT 'foo' AS s1_m1, 'bar' AS s1_m2`)
                     .execute()
                     .then(result => {
@@ -160,7 +160,7 @@ describe('raw SQL', () => {
                     });
             });
 
-            it('retrieves all the records at once in the result-set', () => {
+            it('retrieves all the records at once in the result set', () => {
                 return session.sql(`SELECT 1 AS s1_m1, 2.2 AS s1_m2`)
                     .execute()
                     .then(result => {
@@ -183,7 +183,7 @@ describe('raw SQL', () => {
             });
         });
 
-        context('multiple result-sets', () => {
+        context('multiple result sets', () => {
             beforeEach('create table', () => {
                 return session.sql('CREATE TABLE test (name VARCHAR(4), status ENUM("pending", "active", "blocked") NOT NULL)')
                     .execute();
@@ -208,7 +208,7 @@ describe('raw SQL', () => {
                 return session.sql(`DROP PROCEDURE multi`);
             });
 
-            it('retrieves the first record in the result-set', () => {
+            it('retrieves the first record in the result set', () => {
                 return session.sql(`CALL multi()`)
                     .execute()
                     .then(result => {
@@ -219,7 +219,7 @@ describe('raw SQL', () => {
                     });
             });
 
-            it('retrieves each item in the result-sets', () => {
+            it('retrieves each item in the result sets', () => {
                 return session.sql(`CALL multi()`)
                     .execute()
                     .then(result => {
@@ -236,7 +236,7 @@ describe('raw SQL', () => {
                     });
             });
 
-            it('retrieves all the items in the result-sets', () => {
+            it('retrieves all the items in the result sets', () => {
                 return session.sql(`CALL multi()`)
                     .execute()
                     .then(result => {
@@ -257,7 +257,7 @@ describe('raw SQL', () => {
                     });
             });
 
-            it('retrieves an array of result-sets', () => {
+            it('retrieves an array of result sets', () => {
                 return session.sql(`CALL multi()`)
                     .execute()
                     .then(result => {
@@ -295,7 +295,7 @@ describe('raw SQL', () => {
                     });
             });
 
-            it('returns undefined when consuming an item from a result-set that was already entirely consumed', () => {
+            it('returns undefined when consuming an item from a result set that was already entirely consumed', () => {
                 return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
@@ -305,7 +305,7 @@ describe('raw SQL', () => {
                     });
             });
 
-            it('returns an empty array when consuming a result-set that was already consumed', () => {
+            it('returns an empty array when consuming a result set that was already consumed', () => {
                 return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
@@ -314,7 +314,7 @@ describe('raw SQL', () => {
                     });
             });
 
-            it('does not implicitely move the cursor to the next result-set when one is consumed', () => {
+            it('does not implicitely move the cursor to the next result set when one is consumed', () => {
                 return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
@@ -327,7 +327,7 @@ describe('raw SQL', () => {
                     });
             });
 
-            it('moves the cursor explicitely to the next result-set', () => {
+            it('moves the cursor explicitely to the next result set', () => {
                 return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
@@ -339,7 +339,7 @@ describe('raw SQL', () => {
                     });
             });
 
-            it('keeps the metadata for each result-set being consumed', () => {
+            it('keeps the metadata for each result set being consumed', () => {
                 return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
@@ -411,6 +411,7 @@ describe('raw SQL', () => {
                         expect(result.fetchOne()).to.deep.equal(['foo']);
 
                         expect(result.nextResult()).to.equal(true);
+                        // eslint-disable-next-line no-unused-expressions
                         expect(result.fetchOne()).to.not.exist;
 
                         expect(result.nextResult()).to.equal(true);

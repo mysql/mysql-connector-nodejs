@@ -7,14 +7,14 @@ const docResult = require('../../../lib/DevAPI/DocResult');
 
 describe('DocResult', () => {
     context('fetchAll()', () => {
-        it('returns an empty array when there are no items in the result-set', () => {
+        it('returns an empty array when there are no items in the result set', () => {
             expect(docResult().fetchAll()).to.deep.equal([]);
             expect(docResult({ results: undefined }).fetchAll()).to.deep.equal([]);
             expect(docResult({ results: [] }).fetchAll()).to.deep.equal([]);
             expect(docResult({ results: [[]] }).fetchAll()).to.deep.equal([]);
         });
 
-        it('returns an array containing all items in the result-set', () => {
+        it('returns an array containing all items in the result set', () => {
             const expected = [{ name: 'foo' }, { name: 'bar' }];
 
             expect(docResult({ results: [[[expected[0]], [expected[1]]]] }).fetchAll()).to.deep.equal(expected);
@@ -22,7 +22,7 @@ describe('DocResult', () => {
     });
 
     context('fetchOne()', () => {
-        it('returns undefined when there are no items in the result-set', () => {
+        it('returns undefined when there are no items in the result set', () => {
             /* eslint-disable no-unused-expressions */
             expect(docResult().fetchOne()).to.not.exist;
             expect(docResult({ results: undefined }).fetchOne()).to.not.exist;
@@ -31,7 +31,7 @@ describe('DocResult', () => {
             return expect(docResult({ results: [[]] }).fetchOne()).to.not.exist;
         });
 
-        it('returns the next available item in the result-set', () => {
+        it('returns the next available item in the result set', () => {
             expect(docResult({ results: [[[{ name: 'foo' }]]] }).fetchOne()).to.deep.equal({ name: 'foo' });
         });
     });

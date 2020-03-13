@@ -7,7 +7,7 @@ const rowResult = require('../../../lib/DevAPI/RowResult');
 
 describe('RowResult', () => {
     context('fetchAll()', () => {
-        it('returns an empty array when there are no items in the result-set', () => {
+        it('returns an empty array when there are no items in the result set', () => {
             expect(rowResult().fetchAll()).to.deep.equal([]);
             expect(rowResult({ results: undefined }).fetchAll()).to.deep.equal([]);
             expect(rowResult({ results: [] }).fetchAll()).to.deep.equal([]);
@@ -16,7 +16,7 @@ describe('RowResult', () => {
             expect(rowResult({ results: [[null]] }).fetchAll()).to.deep.equal([]);
         });
 
-        it('returns an array containing the data counterpart of each item in the result-set', () => {
+        it('returns an array containing the data counterpart of each item in the result set', () => {
             const expected = ['foo', 'bar'];
 
             expect(rowResult({ results: [[expected[0], expected[1]]] }).fetchAll()).to.deep.equal(expected);
@@ -31,7 +31,7 @@ describe('RowResult', () => {
     });
 
     context('fetchOne()', () => {
-        it('returns undefined when there are no items in the result-set', () => {
+        it('returns undefined when there are no items in the result set', () => {
             /* eslint-disable no-unused-expressions */
             expect(rowResult().fetchOne()).to.not.exist;
             expect(rowResult({ results: undefined }).fetchOne()).to.not.exist;
@@ -42,18 +42,18 @@ describe('RowResult', () => {
             return expect(rowResult({ results: [[null]] }).fetchOne()).to.not.exist;
         });
 
-        it('returns the next available item in the result-set', () => {
+        it('returns the next available item in the result set', () => {
             expect(rowResult({ results: [['foo']] }).fetchOne()).to.equal('foo');
         });
 
-        it('deallocates the memory when a result-set item has been consumed', () => {
+        it('deallocates the memory when a result set item has been consumed', () => {
             const res = rowResult({ results: [[{ data: 'foo' }, { data: 'bar' }]] });
 
             res.fetchOne();
             expect(res.getResults()).to.deep.equal([[null, { data: 'bar' }]]);
         });
 
-        it('deallocates the memory when the entire result-set has been consumed', () => {
+        it('deallocates the memory when the entire result set has been consumed', () => {
             const res = rowResult({ results: [[{ data: 'foo' }]] });
 
             res.fetchOne();
@@ -68,7 +68,7 @@ describe('RowResult', () => {
     });
 
     context('getColumns()', () => {
-        it('returns the metadata for each item in the result-set wrapped as a Column instance', () => {
+        it('returns the metadata for each item in the result set wrapped as a Column instance', () => {
             const res = rowResult({ metadata: [[{ name: 'foo' }, { name: 'bar' }]] });
             const columns = res.getColumns();
 
@@ -79,7 +79,7 @@ describe('RowResult', () => {
             expect(columns[1].getColumnLabel()).to.equal('bar');
         });
 
-        it('returns an empty list if there is no metadata available in the result-set', () => {
+        it('returns an empty list if there is no metadata available in the result set', () => {
             expect(rowResult({ results: undefined }).getColumns()).to.deep.equal([]);
             expect(rowResult({ results: [] }).getColumns()).to.deep.equal([]);
         });
@@ -102,7 +102,7 @@ describe('RowResult', () => {
     });
 
     context('nextResult()', () => {
-        it('returns false if there are no other result-sets available', () => {
+        it('returns false if there are no other result sets available', () => {
             /* eslint-disable no-unused-expressions */
             expect(rowResult().nextResult()).to.be.false;
             expect(rowResult({ results: undefined }).nextResult()).to.be.false;
@@ -115,7 +115,7 @@ describe('RowResult', () => {
             return expect(rowResult({ results: [['foo'], []] }).nextResult()).to.be.true;
         });
 
-        it('moves the cursor to the next available result-set', () => {
+        it('moves the cursor to the next available result set', () => {
             const res = rowResult({ results: [['foo'], ['bar']] });
 
             // eslint-disable-next-line no-unused-expressions
