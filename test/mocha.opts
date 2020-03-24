@@ -1,4 +1,0 @@
--R spec
---recursive
---check-leaks
---timeout=5000

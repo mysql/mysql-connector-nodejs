@@ -51,15 +51,16 @@
     "coverage:unit": "nyc npm run test:unit",
     "linter:checks": "standardx --verbose | snazzy",
     "linter:fixes": "standardx --fix",
+    "mocha": "mocha --reporter spec --timeout 5000 --recursive",
     "posttest": "docker-compose --file test/setup.yml --project-name=nodejsmysqlxtest down --volumes",
     "prepack": "node bin/prepack.js",
     "pretest": "docker-compose --file test/setup.yml --project-name=nodejsmysqlxtest up -d && sleep 30",
-    "test": "mocha",
-    "test:compatibility": "npm run pretest && mocha --exclude=test/functional/**/*.js --exclude=test/unit/**/*.js && npm run posttest",
-    "test:hookless": "mocha",
-    "test:functional": "mocha --exclude=test/compatibility/**/*.js --exclude=test/unit/**/*.js",
-    "test:latest": "mocha --exclude=test/compatibility/**/*.js",
-    "test:unit": "mocha --exclude=test/compatibility/**/*.js --exclude=test/functional/**/*.js"
+    "test": "npm run mocha",
+    "test:compatibility": "npm run pretest && npm run mocha -- --exclude=test/functional/**/*.js --exclude=test/unit/**/*.js && npm run posttest",
+    "test:hookless": "npm run mocha",
+    "test:functional": "npm run mocha -- --exclude=test/compatibility/**/*.js --exclude=test/unit/**/*.js",
+    "test:latest": "npm run mocha -- --exclude=test/compatibility/**/*.js",
+    "test:unit": "npm run mocha -- --exclude=test/compatibility/**/*.js --exclude=test/functional/**/*.js"
   },
   "dependencies": {
     "google-protobuf": "3.4.0",
