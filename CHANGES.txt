@@ -8,6 +8,18 @@ Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.21
+=======
+
+- Add support for JSON schema validation when inserting documents in collections
+- Fix MySQL BIGINT downstream decoding issues
+- Remove duplicated protobuf stubs
+- Fix issues with dangling resources on test runs
+- Fix issues with tests using the MySQL TIME data type
+- Fix documentation issues regarding the TLS ciphersuite options 
+- Remove functional tests covering the deprecated sha256_password authentication plugin
+- Replace deprecated mocha.opts file with mocha command line options
+
 v8.0.20
 =======
 
