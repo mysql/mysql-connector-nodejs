@@ -2,7 +2,6 @@
 
 /* eslint-env node, mocha */
 
-const Column = require('../../../lib/DevAPI/Column');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -45,25 +44,29 @@ describe('SqlExecute', () => {
 
         it('calls a metadata handler provided as an `execute` argument', () => {
             const query = sqlExecute({ _client: { sqlStmtExecute } });
-            const meta = ['foo'];
+            const meta = [{ name: 'foo' }];
 
-            td.when(sqlStmtExecute(td.matchers.anything(), td.matchers.anything(), td.callback([meta]))).thenResolve();
+            td.when(sqlStmtExecute(td.matchers.anything(), td.matchers.anything(), td.callback(meta))).thenResolve();
 
-            return query.execute(td.function(), actual => expect(actual).to.deep.equal([new Column(meta)]));
+            return query.execute(td.function(), actual => {
+                expect(actual).to.have.lengthOf(1);
+                expect(actual[0].getColumnLabel()).to.equal('foo');
+            });
         });
 
         it('calls a handlers provided as an `execute` object argument', () => {
             const query = sqlExecute({ _client: { sqlStmtExecute } });
-            const meta = ['bar'];
+            const meta = [{ name: 'bar' }];
 
-            td.when(sqlStmtExecute(td.matchers.anything(), td.callback('foo'), td.callback([meta]))).thenResolve();
+            td.when(sqlStmtExecute(td.matchers.anything(), td.callback('foo'), td.callback(meta))).thenResolve();
 
             return query.execute({
                 row (actual) {
                     expect(actual).to.equal('foo');
                 },
                 meta (actual) {
-                    expect(actual).to.deep.equal([new Column(meta)]);
+                    expect(actual).to.have.lengthOf(1);
+                    expect(actual[0].getColumnLabel()).to.equal('bar');
                 }
             });
         });

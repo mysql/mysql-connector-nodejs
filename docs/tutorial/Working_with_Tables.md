@@ -329,3 +329,50 @@ Additionally, except for `JSON` fields, you should also account for the followin
 
 - `Boolean` values (`true` and `false`) will be coerced into any kind of [numeric](https://dev.mysql.com/doc/refman/8.0/en/numeric-types.html) type
 - `null` or `undefined` will be coerced into the MySQL [`NULL`](https://dev.mysql.com/doc/refman/8.0/en/working-with-null.html) value
+
+### Types as column metadata
+
+One of the dimensions provided as part of the column metadata is its type. However, most of the times this type is not a direct match of the SQL data type. This happens not only because MySQL itself extends the set of types defined by the SQL standard but also because not all queries happen over a table with a defined schema. For instance:
+
+```js
+session.select('SELECT 1 + 2.0')
+    .execute()
+    .then(res => {
+        const columns = res.getColumns();
+
+        console.log(columns[0].getType()); // 'DECIMAL'
+    });
+```
+
+This query results in one of the values being coerced and the protocol will encode the result set field using the coerced type as inferred by the server. The list of field types is somewhat limited but the protocol encodes additional metadata that allows to extract more details about each column type. The following table depicts the mapping between SQL data types, X Protocol field types and X DevAPI column types.
+
+| SQL Data Type                     | X Protocol Field Type | X DevAPI Column Type  |
+|-----------------------------------|-----------------------|-----------------------|
+| `BIT`                             | `BIT`                 | `BIT`                 |
+| `TINYINT`                         | `SINT`                | `TINYINT`             |
+| `TINYINT UNSIGNED`                | `UINT`                | `UNSIGNED TINYINT`    |
+| `SMALLINT`                        | `SINT`                | `SMALLINT`            |
+| `SMALLINT UNSIGNED`               | `UINT`                | `UNSIGNED SMALLINT`   |
+| `MEDIUMINT`                       | `SINT`                | `MEDIUMINT`           |
+| `MEDIUMINT UNSIGNED`              | `UINT`                | `UNSIGNED MEDIUMINT`  |
+| `INT`                             | `SINT`                | `INT`                 |
+| `INT UNSIGNED`                    | `UINT`                | `UNSIGNED INT`        |
+| `BIGINT`                          | `SINT`                | `BIGINT`              |
+| `BIGINT UNSIGNED`                 | `UINT`                | `UNSIGNED BIGINT`     |
+| `FLOAT`                           | `FLOAT`               | `FLOAT`               |
+| `FLOAT UNSIGNED`                  | `FLOAT`               | `UNSIGNED FLOAT`      |
+| `DECIMAL`                         | `DECIMAL`             | `DECIMAL`             |
+| `DECIMAL UNSIGNED`                | `DECIMAL`             | `UNSIGNED DECIMAL`    |
+| `DOUBLE`                          | `DOUBLE`              | `DOUBLE`              |
+| `DOUBLE UNSIGNED`                 | `DOUBLE`              | `UNSIGNED DOUBLE`     |
+| `JSON`                            | `BYTES`               | `JSON`                |
+| `CHAR`, `VARCHAR`, ...            | `BYTES`               | `STRING`              |
+| `BLOB`, `BINARY`, `GEOMETRY`, ... | `BYTES`               | `BYTES`               |
+| `TIME`                            | `TIME`                | `TIME`                |
+| `DATE`                            | `DATETIME`            | `DATE`                |
+| `DATETIME`                        | `DATETIME`            | `DATETIME`            |
+| `TIMESTAMP`                       | `DATETIME`            | `TIMESTAMP`           |
+| `SET`                             | `SET`                 | `SET`                 |
+| `ENUM`                            | `ENUM`                | `ENUM`                |
+
+In a nutshell, every other type not listed maps, in X DevAPI, to `STRING` in case the column `charset` is not `binary`, otherwise it maps to `BYTES`.

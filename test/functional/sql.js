@@ -493,4 +493,540 @@ describe('raw SQL', () => {
             });
         });
     });
+
+    context('BUG#30922711 column types', () => {
+        let session;
+
+        beforeEach('create session', () => {
+            return mysqlx.getSession(config)
+                .then(s => {
+                    session = s;
+                });
+        });
+
+        afterEach('close session', () => {
+            return session.close();
+        });
+
+        context('BIT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value BIT)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (b'1')`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('BIT'));
+            });
+        });
+
+        context('TINYINT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value1 TINYINT, value2 TINYINT SIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (-1, 1)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => {
+                        const columns = res.getColumns();
+
+                        expect(columns[0].getType()).to.equal('TINYINT');
+                        expect(columns[1].getType()).to.equal('TINYINT');
+                    });
+            });
+        });
+
+        context('UNSIGNED TINYINT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value TINYINT UNSIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (1)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED TINYINT'));
+            });
+        });
+
+        context('SMALLINT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value1 SMALLINT, value2 SMALLINT SIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (-1, 1)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => {
+                        const columns = res.getColumns();
+
+                        expect(columns[0].getType()).to.equal('SMALLINT');
+                        expect(columns[1].getType()).to.equal('SMALLINT');
+                    });
+            });
+        });
+
+        context('UNSIGNED SMALLINT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value SMALLINT UNSIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (1)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED SMALLINT'));
+            });
+        });
+
+        context('MEDIUMINT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value1 MEDIUMINT, value2 MEDIUMINT SIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (-1, 1)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => {
+                        const columns = res.getColumns();
+
+                        expect(columns[0].getType()).to.equal('MEDIUMINT');
+                        expect(columns[1].getType()).to.equal('MEDIUMINT');
+                    });
+            });
+        });
+
+        context('UNSIGNED MEDIUMINT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value MEDIUMINT UNSIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (1)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED MEDIUMINT'));
+            });
+        });
+
+        context('INT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value1 INT, value2 INT SIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (-1, 1)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => {
+                        const columns = res.getColumns();
+
+                        expect(columns[0].getType()).to.equal('INT');
+                        expect(columns[1].getType()).to.equal('INT');
+                    });
+            });
+        });
+
+        context('UNSIGNED INT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value INT UNSIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (1)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED INT'));
+            });
+        });
+
+        context('BIGINT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value1 BIGINT, value2 BIGINT SIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (-1, 1)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => {
+                        const columns = res.getColumns();
+
+                        expect(columns[0].getType()).to.equal('BIGINT');
+                        expect(columns[1].getType()).to.equal('BIGINT');
+                    });
+            });
+        });
+
+        context('UNSIGNED BIGINT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value BIGINT UNSIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (1)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED BIGINT'));
+            });
+        });
+
+        context('FLOAT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value FLOAT)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (1.23)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('FLOAT'));
+            });
+        });
+
+        context('UNSIGNED FLOAT', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value FLOAT UNSIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (1.23)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED FLOAT'));
+            });
+        });
+
+        context('DECIMAL', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value DECIMAL(5,2))`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (5.67)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('DECIMAL'));
+            });
+        });
+
+        context('UNSIGNED DECIMAL', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value DECIMAL(5,2) UNSIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (5.67)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED DECIMAL'));
+            });
+        });
+
+        context('DOUBLE', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value DOUBLE)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (1.23)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('DOUBLE'));
+            });
+        });
+
+        context('UNSIGNED DOUBLE', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value DOUBLE UNSIGNED)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (1.23)`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED DOUBLE'));
+            });
+        });
+
+        context('JSON', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value JSON)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES ('{"foo":"bar"}')`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('JSON'));
+            });
+        });
+
+        context('STRING', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (vc CHAR(3), vv VARCHAR(3))`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES ('foo', 'foo')`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => {
+                        const columns = res.getColumns();
+
+                        expect(columns[0].getType()).to.equal('STRING');
+                        expect(columns[1].getType()).to.equal('STRING');
+                    });
+            });
+        });
+
+        context('BYTES', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (vb BINARY(3), vv VARBINARY(3))`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES ('foo', 'foo')`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => {
+                        const columns = res.getColumns();
+
+                        expect(columns[0].getType()).to.equal('BYTES');
+                        expect(columns[1].getType()).to.equal('BYTES');
+                    });
+            });
+        });
+
+        context('TIME', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value TIME)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES ('23:45')`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('TIME'));
+            });
+        });
+
+        context('DATE', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value DATE)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES ('2020-03-30')`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('DATE'));
+            });
+        });
+
+        context('DATETIME', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value DATETIME)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES ('2020-03-30 18:33:38')`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('DATETIME'));
+            });
+        });
+
+        context('TIMESTAMP', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value TIMESTAMP)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES ('2020-03-30 18:33:38.123456')`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('TIMESTAMP'));
+            });
+        });
+
+        context('SET', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value SET('foo', 'bar'))`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES ('foo')`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('SET'));
+            });
+        });
+
+        context('ENUM', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value ENUM('foo', 'bar'))`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES ('foo')`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('ENUM'));
+            });
+        });
+
+        context('GEOMETRY', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE test (value GEOMETRY)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO test VALUES (ST_GeomFromText('POINT(1 1)'))`)
+                    .execute();
+            });
+
+            it('returns the correct name of the column data type', () => {
+                return session.sql(`SELECT * FROM test`)
+                    .execute()
+                    .then(res => expect(res.getColumns()[0].getType()).to.equal('GEOMETRY'));
+            });
+        });
+    });
 });

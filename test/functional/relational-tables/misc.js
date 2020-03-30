@@ -2,7 +2,6 @@
 
 /* eslint-env node, mocha */
 
-const Column = require('../../../lib/DevAPI/Column');
 const config = require('../../properties');
 const expect = require('chai').expect;
 const fixtures = require('../../fixtures');
@@ -53,8 +52,8 @@ describe('relational miscellaneous tests', () => {
                 .then(() => {
                     expect(actual).to.have.all.keys('meta', 'row');
                     expect(actual.meta).to.have.lengthOf(1);
-                    expect(actual.meta[0]).to.be.an.instanceOf(Column);
-                    expect(actual.meta[0].getType()).to.equal(1);
+                    expect(actual.meta[0]).to.contain.keys('getType', 'getColumnLabel', 'getColumnName', 'getTableLabel', 'getTableName', 'getSchemaName', 'getLength');
+                    expect(actual.meta[0].getType()).to.equal('TINYINT');
                     expect(actual.meta[0].getColumnLabel()).to.equal('1');
                     expect(actual.meta[0].getColumnName()).to.equal('1');
                     expect(actual.meta[0].getTableLabel()).to.equal('');
@@ -79,8 +78,8 @@ describe('relational miscellaneous tests', () => {
                 .then(() => {
                     expect(actual).to.have.all.keys('meta', 'row');
                     expect(actual.meta).to.have.lengthOf(1);
-                    expect(actual.meta[0]).to.be.an.instanceOf(Column);
-                    expect(actual.meta[0].getType()).to.equal(1);
+                    expect(actual.meta[0]).to.contain.keys('getType', 'getColumnLabel', 'getColumnName', 'getTableLabel', 'getTableName', 'getSchemaName', 'getLength');
+                    expect(actual.meta[0].getType()).to.equal('TINYINT');
                     expect(actual.meta[0].getColumnLabel()).to.equal('1');
                     expect(actual.meta[0].getColumnName()).to.equal('1');
                     expect(actual.meta[0].getTableLabel()).to.equal('');

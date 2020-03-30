@@ -2,12 +2,11 @@
 
 /* eslint-env node, mocha */
 
-const Column = require('../../../lib/DevAPI/Column');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
 describe('TableSelect', () => {
-    let tableSelect, preparing;
+    let preparing, tableSelect;
 
     beforeEach('create fakes', () => {
         preparing = td.function();
@@ -21,13 +20,13 @@ describe('TableSelect', () => {
     });
 
     context('execute()', () => {
-        let execute, metaCB;
+        let columnWrapper, execute;
 
         beforeEach('create fakes', () => {
             execute = td.function();
-            metaCB = td.function();
+            columnWrapper = td.function();
 
-            td.replace('../../../lib/DevAPI/Column', { metaCB });
+            td.replace('../../../lib/DevAPI/Util/columnWrapper', columnWrapper);
             tableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
@@ -57,10 +56,10 @@ describe('TableSelect', () => {
 
         it('wraps an operation with both a data and metadata cursors in a preparable instance', () => {
             const session = 'foo';
-            const expected = new Column({ name: 'qux' });
+            const expected = { name: 'qux' };
             const state = { metadata: [[expected]] };
 
-            td.when(metaCB('bar')).thenReturn('baz');
+            td.when(columnWrapper('bar')).thenReturn('baz');
             td.when(execute(td.matchers.isA(Function), 'foo', 'baz')).thenResolve(state);
             td.when(preparing({ session })).thenReturn({ execute });
 

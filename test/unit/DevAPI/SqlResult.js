@@ -4,7 +4,6 @@
 
 const expect = require('chai').expect;
 const sqlResult = require('../../../lib/DevAPI/SqlResult');
-const Column = require('../../../lib/DevAPI/Column');
 
 describe('SqlResult', () => {
     context('fetchAll()', () => {
@@ -55,7 +54,10 @@ describe('SqlResult', () => {
             const columns = res.getColumns();
 
             expect(columns).to.have.lengthOf(2);
-            columns.forEach(column => expect(column).to.be.an.instanceOf(Column));
+            expect(columns[0]).to.contain.keys('getColumnLabel');
+            expect(columns[0].getColumnLabel()).to.equal('foo');
+            expect(columns[1]).to.contain.keys('getColumnLabel');
+            expect(columns[1].getColumnLabel()).to.equal('bar');
         });
     });
 
