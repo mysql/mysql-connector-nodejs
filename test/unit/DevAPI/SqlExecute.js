@@ -21,6 +21,15 @@ describe('SqlExecute', () => {
     });
 
     context('execute()', () => {
+        let deprecated;
+
+        beforeEach('create fakes', () => {
+            deprecated = td.function();
+
+            td.replace('../../../lib/DevAPI/Util/deprecated', deprecated);
+            sqlExecute = require('../../../lib/DevAPI/SqlExecute');
+        });
+
         it('executes the context statement', () => {
             const expected = { done: true };
             const state = { ok: true };
@@ -54,6 +63,7 @@ describe('SqlExecute', () => {
             });
         });
 
+        // Deprecated since release 8.0.22
         it('calls a handlers provided as an `execute` object argument', () => {
             const query = sqlExecute({ _client: { sqlStmtExecute } });
             const meta = [{ name: 'bar' }];
@@ -68,6 +78,8 @@ describe('SqlExecute', () => {
                     expect(actual).to.have.lengthOf(1);
                     expect(actual[0].getColumnLabel()).to.equal('bar');
                 }
+            }).then(() => {
+                expect(td.explain(deprecated).callCount).to.equal(1);
             });
         });
 
