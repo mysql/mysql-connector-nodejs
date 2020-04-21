@@ -123,10 +123,10 @@ describe('TLS context builder', () => {
         });
     });
 
-    context('addSecureProtocol', () => {
+    context('addSecureProtocol()', () => {
         it('returns a partial security context with the specific TLS protocol version to use on older Node.js versions', function () {
-            // runs on Node.js <= 12.0.0
-            if (tls.DEFAULT_MAX_VERSION === 'TLSv1.3') {
+            // runs on Node.js <= 10.6.0
+            if (tls.DEFAULT_MAX_VERSION) {
                 return this.skip();
             }
 
@@ -172,7 +172,66 @@ describe('TLS context builder', () => {
                 .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('returns a partial security context with the TLS protocol version range to use on newer Node.js versions', function () {
+        it('returns a partial security context with the TLS protocol version range to use on newer Node.js versions without support for TLSv1.3', function () {
+            // runs on Node.js >= 10.16.0 and < 12.0.0
+            if (tls.DEFAULT_MAX_VERSION !== 'TLSv1.2') {
+                return this.skip();
+            }
+
+            const inputs = [
+                ['TLSv1'],
+                ['TLSv1.1'],
+                ['TLSv1.2'],
+                ['TLSv1', 'TLSv1.1'],
+                ['TLSv1.1', 'TLSv1'],
+                ['TLSv1.1', 'TLSv1.2'],
+                ['TLSv1.2', 'TLSv1.1'],
+                ['TLSv1', 'TLSv1.2'],
+                ['TLSv1.2', 'TLSv1'],
+                ['TLSv1', 'TLSv1.1', 'TLSv1.2'],
+                ['TLSv1.2', 'TLSv1', 'TLSv1.1']
+            ];
+
+            const expected = [{
+                minVersion: 'TLSv1',
+                maxVersion: 'TLSv1'
+            }, {
+                minVersion: 'TLSv1.1',
+                maxVersion: 'TLSv1.1'
+            }, {
+                minVersion: 'TLSv1.2',
+                maxVersion: 'TLSv1.2'
+            }, {
+                minVersion: 'TLSv1',
+                maxVersion: 'TLSv1.1'
+            }, {
+                minVersion: 'TLSv1',
+                maxVersion: 'TLSv1.1'
+            }, {
+                minVersion: 'TLSv1.1',
+                maxVersion: 'TLSv1.2'
+            }, {
+                minVersion: 'TLSv1.1',
+                maxVersion: 'TLSv1.2'
+            }, {
+                minVersion: 'TLSv1',
+                maxVersion: 'TLSv1.2'
+            }, {
+                minVersion: 'TLSv1',
+                maxVersion: 'TLSv1.2'
+            }, {
+                minVersion: 'TLSv1',
+                maxVersion: 'TLSv1.2'
+            }, {
+                minVersion: 'TLSv1',
+                maxVersion: 'TLSv1.2'
+            }];
+
+            return Promise.all(inputs.map(input => subject.addSecureProtocol(input)))
+                .then(actual => expect(actual).to.deep.equal(expected));
+        });
+
+        it('returns a partial security context with the TLS protocol version range to use on Node.js versions with support for TLSv1.3', function () {
             // runs on Node.js <= 12.0.0
             if (tls.DEFAULT_MAX_VERSION !== 'TLSv1.3') {
                 return this.skip();
