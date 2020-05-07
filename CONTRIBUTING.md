@@ -33,11 +33,10 @@ The following tips provide all the technical directions you should follow when w
 
 ### Executing the Test Suite
 
-The test suite is composed of three different categories of automated tests:
+The test suite is composed of two different categories of automated tests:
 
 * Unit tests
 * Functional tests
-* Compatibility tests
 
 Each test suite can be executed individually or the entire set can be executed altogether. Unit tests can be executed standalone without any external dependencies by running the following command:
 
@@ -45,45 +44,60 @@ Each test suite can be executed individually or the entire set can be executed a
 $ npm run test:unit
 ```
 
-The functional test suite requires a running MySQL server instance (the latest version available) using the X Plugin. By default, if the server is initialized using `--initialize-insecure`, all that is needed to execute the tests is the following command:
+The functional test suite is by itself composed of two additional groups of tests. A default set of tests that requires a running MySQL server instance (the latest version available) using the X Plugin, and an extended set of tests that uses Docker containers.
+
+By omission, the default functional test suite assumes there is a server running on the same host (`localhost`) at the default X Plugin's 33060 port, and that a `root` user account without a password exists in that server. This is basically what happens if you initialize the server using the following sequence of commands:
 
 ```sh
-$ npm run test:functional
+$ mysqld --initialize-insecure
+$ mysqld
 ```
 
-If the server is initialized using custom configuration details, those can be provided to the test runner using the following environment variables:
+Running the test suite can be done like the following:
 
-* `NODE_TEST_MYSQL_HOST` (`localhost` by default)
-* `NODE_TEST_MYSQL_PASSWORD` (empty by default)
-* `NODE_TEST_MYSQL_PORT` (`33060` by default)
-* `NODE_TEST_MYSQL_SOCKET` (`${os.tmpdir()}/mysqlx.sock` by default)
-* `NODE_TEST_MYSQL_SCHEMA` (`nodejsmysqlxtest` by default)
+```sh
+$ npm run test:functional:default
+```
+
+If the server is not running on the same machine, is available only via a local UNIX socket, or if it is initialized using other custom configuration details, those can be provided to the test runner using the following environment variables:
+
+* `MYSQLX_HOST` (`'localhost'` by default)
+* `MYSQLX_PASSWORD` (empty by default)
+* `MYSQLX_PORT` (`33060` by default)
+* `MYSQLX_SOCKET` (`undefined` by default)
+* `MYSQLX_DEFAULT_SCHEMA` (`'nodejsmysqlxtest'` by default)
 
 For example:
 
 ```sh
-$ NODE_TEST_MYSQL_USER=foo NODE_TEST_MYSQL_USER=bar NODE_TEST_MYSQL_PORT=33061 npm run test:functional
+$ MYSQLX_USER=foo MYSQLX_PASSWORD=bar MYSQLX_SOCKET=/tmp/mysqlx.sock npm run test:functional:default
 ```
 
-The two test suites can be executed together using the following command:
-
-```sh
-$ npm run test:latest
-```
-
-Additionally, there is a test suite which is meant to test compatibility of certain features using older or specific MySQL server versions. This test suite requires [`docker`](https://docs.docker.com/install/) and [`docker-compose`](https://docs.docker.com/compose/install/) to setup those server instances in the test environment.
-
-After the additional external components are installed, the test suite can be executed via the following command:
-
-```sh
-$ npm run test:compatibility
-```
-
-The same applies when executing the entire set of test suites, which can be done using one of the following commands and any of the environment commands mentioned above:
+The unit test suite and the default functional test suite encompass the basic set of tests that should be able to run regardless of the environment and platform. So, the default `npm test` script only runs tests from those two test suites. This means the following commands are exactly the same:
 
 ```sh
 $ npm t
 $ npm test
+$ npm run test
+$ npm run test:unit && npm run test:functional:default
+```
+
+The extended set of functional tests requires [Docker](https://docs.docker.com/install/) with [`docker-compose`](https://docs.docker.com/compose/install/). In a nutshell, it creates a sandbox container for running the tests using a base Node.js image (on [Oracle Linux](https://hub.docker.com/_/oraclelinux)) and uses a cluster of [MySQL](https://hub.docker.com/r/mysql/mysql-server) server instances (with different versions and configurations) running on other different containers, as defined by `docker-compose.yml`. This kind of setup allows to test compatilibily with older servers and orchestrate both servers and client based on a common set of dependencies and shared environment.
+
+If you have Docker installed on your machine, you don't need any additional dependency, neither a MySQL server instance nor a local Node.js installation to run the full test suite. Though running it requires the containers to be boostraped before, which can be done by executing the following command in the project root directory:
+
+```sh
+$ docker-compose up -d --build
+```
+
+Besises the extended test suite itself, you can run the default test suite, the entire functional test suite, the unit test suite or all the available tests:
+
+```sh
+$ docker-compose run sandbox npm run test:functional:extended
+$ docker-compose run sandbox npm run test:functional:default
+$ docker-compose run sandbox npm run test:functional
+$ docker-compose run sandbox npm run test:unit
+$ docker-compose run sandbox npm run test:all
 ```
 
 ### Test Coverage
@@ -98,9 +112,13 @@ Just like the regular test script counterparts, you can generate code coverage r
 
 ```sh
 $ npm run coverage:unit
-$ npm run coverage:functional
-$ npm run coverage:compatibility
-$ npm run coverage:latest
+$ npm run coverage:functional:default
+$ docker-compose run sandbox npm run coverage:unit
+$ docker-compose run sandbox npm run coverage:functional:default
+$ docker-compose run sandbox npm run coverage
+$ docker-compose run sandbox npm run coverage:functional:extended
+$ docker-compose run sandbox npm run coverage:functional
+$ docker-compose run sandbox npm run coverage:all
 ```
 
 As a formal rule, a patch should not lead to a decrease of the overall code coverage below 75%. The scripts will result in an error if that happens. The unwritten rule says that the patch should not lead to any decrease at all of the overall code coverage.

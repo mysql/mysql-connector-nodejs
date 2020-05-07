@@ -10,6 +10,10 @@ describe('parseFlexibleParamList', () => {
         expect(parseFlexibleParamList(['foo', 42])).to.deep.equal(['foo', 42]);
     });
 
+    it('returns an empty list if no argumentd are provided', () => {
+        return expect(parseFlexibleParamList()).to.be.an('array').and.be.empty;
+    });
+
     it('flattens an array of expression arrays', () => {
         expect(parseFlexibleParamList([['foo', 'bar'], [42, 'qux']])).to.deep.equal(['foo', 'bar', 42, 'qux']);
     });

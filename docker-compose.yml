@@ -1,0 +1,168 @@
+# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2.0, as
+# published by the Free Software Foundation.
+#
+# This program is also distributed with certain software (including
+# but not limited to OpenSSL) that is licensed under separate terms,
+# as designated in a particular file or component or in included license
+# documentation.  The authors of MySQL hereby grant you an
+# additional permission to link the program and your derivative works
+# with the separately licensed software that they have included with
+# MySQL.
+#
+# Without limiting anything contained in the foregoing, this file,
+# which is part of MySQL Connector/Node.js, is also subject to the
+# Universal FOSS Exception, version 1.0, a copy of which can be found at
+# http://oss.oracle.com/licenses/universal-foss-exception.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License, version 2.0, for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+
+version: '2.1'
+
+services:
+    # create a container to run Node.js scripts
+    sandbox:
+        build:
+            args:
+                # us a different npm registry if needed
+                NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org/}
+            context: .
+        depends_on:
+            - mysql
+            - mysql-with-key-and-cert
+            - mysql-with-ssl-disabled
+            - mysql-with-latest-tls-versions
+            - mysql-with-oldest-tls-versions
+            - mysql-single-x-plugin-connection
+            - mysql-single-connection
+            - mysql-5.7
+            - mysql-5.7-with-sha256-password-authentication-plugin
+            - mysql-8.0.3
+            - mysql-8.0.3-with-sha256-password-authentication-plugin
+            - mysql-8.0.15-with-sha256-password-authentication-plugin
+            - mysql-primary
+            - mysql-secondary1
+            - mysql-secondary2
+        environment:
+            # by omission, the tests should use the MySQL server instance with the default configuration
+            MYSQLX_HOST: 'mysql'
+            # the MySQL server instance with the default configuration creates a X Plugin Unix socket in a shared volume (see below)
+            MYSQLX_SOCKET: '/${SANDBOX_CONTAINER_WORKDIR:-mysql-connector-nodejs}/test/fixtures/tmp/mysql.sock'
+            # define hosts that need to checked by the "bin/wait-for.js" script
+            WAIT_FOR: 'mysql, mysql-with-key-and-cert, mysql-with-ssl-disabled, mysql-with-latest-tls-versions, mysql-with-oldest-tls-versions, mysql-single-x-plugin-connection, mysql-single-connection, mysql-5.7, mysql-5.7-with-sha256-password-authentication-plugin, mysql-8.0.3, mysql-8.0.3-with-sha256-password-authentication-plugin, mysql-8.0.15-with-sha256-password-authentication-plugin, mysql-primary, mysql-secondary1, mysql-secondary2'
+        # fixed name for each sandbox build
+        image: ${SANDBOX_CONTAINER_NAME:-mysql-connector-nodejs-sandbox:latest}
+        volumes:
+            # use the shared volume containing the X Plugin Unix socket files of all the available MySQL server instances
+            - tmp:/${SANDBOX_CONTAINER_WORKDIR:-mysql-connector-nodejs}/test/fixtures/tmp
+            # bind mount the default Docker deamon socket (available on Linux and through Hyper-V on Windows or xhyve on macOS) for container orchestration using the Docker API
+            - ${DOCKER_DEAMON_SOCKET:-/var/run/docker.sock}:/tmp/docker.sock:ro
+            # bind mount (and create if it does not exist) a host directory where the coverage reports can be generated and shared when "nyc" runs in the sandbox container
+            - ./coverage:/${SANDBOX_CONTAINER_WORKDIR:-mysql-connector-nodejs}/coverage
+
+    # create a container based on the latest MySQL image
+    mysql:
+        command: --mysqlx-socket=/tmp/mysql.sock
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+            MYSQL_ROOT_HOST: '%'
+        image: mysql/mysql-server:${MYSQL_VERSION:-8.0.21}
+        volumes:
+            # use a shared volume where a MySQL server instance can create an X Plugin Unix socket if needed
+            - tmp:/tmp
+
+    # use a SSL certificate for encrypted connections
+    mysql-with-key-and-cert:
+        command: --ssl-key=/ssl/key.pem --ssl-cert=/ssl/cert.pem
+        extends:
+            service: mysql
+        volumes:
+            - ./test/fixtures/ssl/server:/ssl:ro
+
+    # disable encrypted connections
+    mysql-with-ssl-disabled:
+        command: --ssl=OFF
+        extends:
+            service: mysql
+
+    # restrict TLS to the most secure versions available
+    mysql-with-latest-tls-versions:
+        command: --tls-version=TLSv1.1,TLSv1.2
+        extends:
+            service: mysql
+
+    # restrict TLS to the least secure versions available
+    mysql-with-oldest-tls-versions:
+        command: --tls-version=TLSv1,TLSv1.1
+        extends:
+            service: mysql
+
+    # prevent more than one X Plugin connection
+    mysql-single-x-plugin-connection:
+        command: --mysqlx-max-connections=1
+        extends:
+            service: mysql
+
+    # prevent more than one global MySQL server connection
+    mysql-single-connection:
+        command: --max-connections=1
+        extends:
+            service: mysql
+
+    mysql-5.7:
+        command: --plugin-load=mysqlx=mysqlx.so --mysqlx-socket=/tmp/mysql-5.7.sock
+        extends:
+            service: mysql
+        image: mysql/mysql-server:5.7
+
+    mysql-5.7-with-sha256-password-authentication-plugin:
+        command: --plugin-load=mysqlx=mysqlx.so --default-authentication-plugin=sha256_password --mysqlx-socket=/tmp/mysql-5.7-with-sha256-password-authentication-plugin.sock
+        extends:
+            service: mysql
+        image: mysql/mysql-server:5.7
+
+    # last MySQL version with mysql_native_password as the default authentication plugin
+    mysql-8.0.3:
+        command: --plugin-load=mysqlx=mysqlx.so --mysqlx-socket=/tmp/mysql-8.0.3.sock
+        extends:
+            service: mysql
+        image: mysql/mysql-server:8.0.3
+
+    mysql-8.0.3-with-sha256-password-authentication-plugin:
+        command: --plugin-load=mysqlx=mysqlx.so --default-authentication-plugin=sha256_password --mysqlx-socket=/tmp/mysql-8.0.3-with-sha256-password-authentication-plugin.sock
+        extends:
+            service: mysql
+        image: mysql/mysql-server:8.0.3
+
+    # last MySQL version where sha256_password is not deprecated
+    mysql-8.0.15-with-sha256-password-authentication-plugin:
+        command: --default-authentication-plugin=sha256_password --mysqlx-socket=/tmp/mysql-8.0.15-with-sha256-password-authentication-plugin.sock
+        extends:
+            service: mysql
+        image: mysql/mysql-server:8.0.15
+
+    # some mysql server instances to orchestrate
+    mysql-primary:
+        extends:
+            service: mysql
+
+    mysql-secondary1:
+        extends:
+            service: mysql
+
+    mysql-secondary2:
+        extends:
+            service: mysql
+
+volumes:
+    # temporary shared volume between containers
+    tmp:

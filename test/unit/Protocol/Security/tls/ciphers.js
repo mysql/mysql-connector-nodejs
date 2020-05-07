@@ -54,6 +54,11 @@ describe('Ciphers', () => {
 
             expect(ciphers.overlaps(input)).to.deep.equal(expected);
         });
+
+        it('returns an empty list when no cipher is provided', () => {
+            // eslint-disable-next-line no-unused-expressions
+            expect(ciphers.overlaps()).to.be.an('array').and.be.empty;
+        });
     });
 
     context('defaults()', () => {

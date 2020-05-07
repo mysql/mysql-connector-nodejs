@@ -51,4 +51,12 @@ describe('DocResult', () => {
             expect(docResult({ warnings }).getWarningsCount()).to.deep.equal(3);
         });
     });
+
+    context('toArray()', () => {
+        it('returns the raw list of result set items', () => {
+            // eslint-disable-next-line no-unused-expressions
+            expect(docResult({ results: [] }).toArray()).to.be.an('array').and.be.empty;
+            expect(docResult({ results: [[[{ name: 'foo' }]]] }).toArray()).to.deep.equal([{ name: 'foo' }]);
+        });
+    });
 });

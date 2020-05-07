@@ -59,6 +59,10 @@ describe('srv', () => {
             }, {
                 name: 'qux',
                 priority: 1,
+                weight: 12
+            }, {
+                name: 'quux',
+                priority: 1,
                 weight: 20
             }];
 
@@ -66,11 +70,12 @@ describe('srv', () => {
 
             return srv.getSortedAddressList('foobar')
                 .then(result => {
-                    expect(result).to.have.a.lengthOf(4);
+                    expect(result).to.have.a.lengthOf(5);
                     expect(result[0].name).to.equal('bar');
                     expect(result[1].name).to.equal('foo');
-                    expect(result[2].name).to.equal('qux');
+                    expect(result[2].name).to.equal('quux');
                     expect(result[3].name).to.equal('baz');
+                    expect(result[4].name).to.equal('qux');
                 });
         });
 

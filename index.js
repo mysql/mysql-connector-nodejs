@@ -96,7 +96,7 @@ function parseConnectionSpec (input, options) {
  * @returns {Promise.<Session>}
  */
 exports.getSession = function (connection) {
-    connection = connection || {};
+    connection = typeof connection === 'undefined' ? {} : connection;
 
     try {
         connection = parseConnectionSpec(connection);

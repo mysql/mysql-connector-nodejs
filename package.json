@@ -44,23 +44,23 @@
   },
   "scripts": {
     "coverage": "nyc npm run test",
-    "coverage:compatibility": "nyc npm run test:compatibility",
+    "coverage:all": "nyc npm run test:all",
     "coverage:functional": "nyc npm run test:functional",
-    "coverage:latest": "nyc npm run test:latest",
+    "coverage:functional:default": "nyc npm run test:functional:default",
+    "coverage:functional:extended": "nyc npm run test:functional:extended",
     "coverage:summary": "nyc report --reporter=text-summary",
     "coverage:unit": "nyc npm run test:unit",
     "linter:checks": "standardx --verbose | snazzy",
     "linter:fixes": "standardx --fix",
     "mocha": "mocha --reporter spec --timeout 5000 --recursive",
-    "posttest": "docker-compose --file test/setup.yml --project-name=nodejsmysqlxtest down --volumes",
     "prepack": "node bin/prepack.js",
-    "pretest": "docker-compose --file test/setup.yml --project-name=nodejsmysqlxtest up -d && sleep 30",
-    "test": "npm run mocha",
-    "test:compatibility": "npm run pretest && npm run mocha -- --exclude=test/functional/**/*.js --exclude=test/unit/**/*.js && npm run posttest",
-    "test:hookless": "npm run mocha",
-    "test:functional": "npm run mocha -- --exclude=test/compatibility/**/*.js --exclude=test/unit/**/*.js",
-    "test:latest": "npm run mocha -- --exclude=test/compatibility/**/*.js",
-    "test:unit": "npm run mocha -- --exclude=test/compatibility/**/*.js --exclude=test/functional/**/*.js"
+    "pretest": "node bin/wait-for.js",
+    "test": "npm run mocha test/unit test/functional/default",
+    "test:all": "npm run pretest && npm run mocha test/unit test/functional",
+    "test:functional": "npm run pretest && npm run mocha test/functional",
+    "test:functional:default": "npm run pretest && npm run mocha test/functional/default",
+    "test:functional:extended": "npm run pretest && npm run mocha test/functional/extended",
+    "test:unit": "npm run mocha test/unit"
   },
   "dependencies": {
     "google-protobuf": "3.11.4",
@@ -82,6 +82,7 @@
     "branches": 75,
     "check-coverage": true,
     "exclude": [
+      "bin",
       "lib/ExprParser/lib/stubs",
       "lib/Protocol/Protobuf/Stubs",
       "test"
