@@ -63,12 +63,6 @@ describe('TableDelete', () => {
         });
     });
 
-    context('getClassName()', () => {
-        it('returns the correct class name (to avoid duck typing)', () => {
-            expect(tableDelete().getClassName()).to.equal('TableDelete');
-        });
-    });
-
     context('limit()', () => {
         let forceReprepare;
 

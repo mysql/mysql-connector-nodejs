@@ -7,17 +7,11 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 
 describe('CollectionAdd', () => {
-    context('getClassName()', () => {
-        it('returns the correct class name (to avoid duck typing)', () => {
-            expect(collectionAdd().getClassName()).to.equal('CollectionAdd');
-        });
-    });
-
     context('add()', () => {
         it('is fluent', () => {
-            const query = collectionAdd().add({ foo: 'bar' });
+            const query = collectionAdd().add({});
 
-            expect(query.add).to.be.a('function');
+            expect(query.add({})).to.deep.equal(query);
         });
 
         it('includes the documents provided as an array', () => {

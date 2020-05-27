@@ -58,12 +58,6 @@ describe('CollectionRemove', () => {
         });
     });
 
-    context('getClassName()', () => {
-        it('returns the correct class name (to avoid duck typing)', () => {
-            expect(collectionRemove().getClassName()).to.equal('CollectionRemove');
-        });
-    });
-
     context('limit()', () => {
         let forceReprepare;
 

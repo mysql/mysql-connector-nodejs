@@ -124,11 +124,31 @@ describe('Table', () => {
     });
 
     context('select()', () => {
-        it('returns an instance of the proper class', () => {
-            const session = { _statements: [] };
-            const instance = table(session).select();
+        it('returns an instance of TableSelect', () => {
+            const query = table().select();
 
-            expect(instance.getClassName()).to.equal('TableSelect');
+            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-table-crud-functions.html
+            expect(query.where).to.be.a('function');
+            expect(query.groupBy).to.be.a('function');
+            expect(query.having).to.be.a('function');
+            expect(query.orderBy).to.be.a('function');
+            expect(query.limit).to.be.a('function');
+            expect(query.offset).to.be.a('function');
+            expect(query.lockExclusive).to.be.a('function');
+            expect(query.lockShared).to.be.a('function');
+            expect(query.bind).to.be.a('function');
+            expect(query.execute).to.be.a('function');
+
+            /* eslint-disable no-unused-expressions */
+
+            // is not a TableInsert
+            expect(query.insert).to.not.exist;
+            expect(query.values).to.not.exist;
+
+            // is not a TableUpdate
+            expect(query.set).to.not.exist;
+
+            /* eslint-disable no-unused-expressions */
         });
 
         it('sets the projection parameters provided as an array', () => {
@@ -149,10 +169,30 @@ describe('Table', () => {
     });
 
     context('insert()', () => {
-        it('returns an instance of the proper class', () => {
-            const instance = table().insert([]);
+        it('returns an instance of TableInsert', () => {
+            const query = table().insert([]);
 
-            expect(instance.getClassName()).to.equal('TableInsert');
+            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-table-crud-functions.html
+            expect(query.values).to.be.a('function');
+            expect(query.execute).to.be.a('function');
+
+            /* eslint-disable no-unused-expressions */
+
+            // is not a TableSelect or a TableDelete
+            expect(query.where).to.not.exist;
+            expect(query.orderBy).to.not.exist;
+            expect(query.limit).to.not.exist;
+            expect(query.bind).to.not.exist;
+            expect(query.groupBy).to.not.exist;
+            expect(query.having).to.not.exist;
+            expect(query.offset).to.not.exist;
+            expect(query.lockExclusive).to.not.exist;
+            expect(query.lockShared).to.not.exist;
+
+            // is not a TableUpdate
+            expect(query.set).to.not.exist;
+
+            /* eslint-disable no-unused-expressions */
         });
 
         it('sets column names provided as an array', () => {
@@ -228,26 +268,62 @@ describe('Table', () => {
     });
 
     context('delete()', () => {
-        it('returns an operation instance for a valid condition query', () => {
-            const session = 'foo';
-            const schema = 'bar';
-            const name = 'baz';
-            const query = 'true';
-            const instance = (table(session, schema, name)).delete(query);
+        it('returns an instance of TableDelete', () => {
+            const query = table().delete();
 
-            expect(instance.getClassName()).to.equal('TableDelete');
+            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-table-crud-functions.html
+            expect(query.where).to.be.a('function');
+            expect(query.orderBy).to.be.a('function');
+            expect(query.limit).to.be.a('function');
+            expect(query.bind).to.be.a('function');
+            expect(query.execute).to.be.a('function');
+
+            /* eslint-disable no-unused-expressions */
+
+            // is not a TableSelect or a TableDelete
+            expect(query.groupBy).to.not.exist;
+            expect(query.having).to.not.exist;
+            expect(query.offset).to.not.exist;
+            expect(query.lockExclusive).to.not.exist;
+            expect(query.lockShared).to.not.exist;
+
+            // is not a TableInsert
+            expect(query.insert).to.not.exist;
+            expect(query.values).to.not.exist;
+
+            // is not a TableUpdate
+            expect(query.set).to.not.exist;
+
+            /* eslint-disable no-unused-expressions */
         });
     });
 
     context('update()', () => {
-        it('returns an operation instance for a valid condition query', () => {
-            const session = 'foo';
-            const schema = 'bar';
-            const name = 'baz';
-            const query = 'true';
-            const instance = (table(session, schema, name)).update(query);
+        it('returns an instance of TableUpdate', () => {
+            const query = table().update();
 
-            expect(instance.getClassName()).to.equal('TableUpdate');
+            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-table-crud-functions.html
+            expect(query.set).to.be.a('function');
+            expect(query.where).to.be.a('function');
+            expect(query.orderBy).to.be.a('function');
+            expect(query.limit).to.be.a('function');
+            expect(query.bind).to.be.a('function');
+            expect(query.execute).to.be.a('function');
+
+            /* eslint-disable no-unused-expressions */
+
+            // is not a TableSelect
+            expect(query.groupBy).to.not.exist;
+            expect(query.having).to.not.exist;
+            expect(query.offset).to.not.exist;
+            expect(query.lockExclusive).to.not.exist;
+            expect(query.lockShared).to.not.exist;
+
+            // is not a TableInsert
+            expect(query.insert).to.not.exist;
+            expect(query.values).to.not.exist;
+
+            /* eslint-disable no-unused-expressions */
         });
     });
 

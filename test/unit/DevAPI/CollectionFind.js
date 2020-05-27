@@ -91,12 +91,6 @@ describe('CollectionFind', () => {
         });
     });
 
-    context('getClassName()', () => {
-        it('returns the correct class name (to avoid duck typing)', () => {
-            return expect(collectionFind().getClassName()).to.equal('CollectionFind');
-        });
-    });
-
     context('groupBy()', () => {
         let forceRestart;
 

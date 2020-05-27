@@ -64,12 +64,6 @@ describe('TableUpdate', () => {
         });
     });
 
-    context('getClassName()', () => {
-        it('returns the correct class name (to avoid duck typing)', () => {
-            expect(tableUpdate().getClassName()).to.equal('TableUpdate');
-        });
-    });
-
     context('limit()', () => {
         let forceReprepare;
 

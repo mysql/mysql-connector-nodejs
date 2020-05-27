@@ -12,12 +12,6 @@ describe('TableInsert', () => {
         tableInsert = require('../../../lib/DevAPI/TableInsert');
     });
 
-    context('getClassName()', () => {
-        it('returns the correct class name (to avoid duck typing)', () => {
-            expect(tableInsert().getClassName()).to.equal('TableInsert');
-        });
-    });
-
     context('execute()', () => {
         let crudInsert, fakeResult;
 

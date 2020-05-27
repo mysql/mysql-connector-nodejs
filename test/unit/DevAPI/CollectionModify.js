@@ -137,12 +137,6 @@ describe('CollectionModify', () => {
         });
     });
 
-    context('getClassName()', () => {
-        it('returns the correct class name (to avoid duck typing)', () => {
-            return expect(collectionModify().getClassName()).to.equal('CollectionModify');
-        });
-    });
-
     context('limit()', () => {
         let forceReprepare;
 

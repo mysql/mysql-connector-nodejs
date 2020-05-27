@@ -82,16 +82,14 @@ describe('Session', () => {
     });
 
     context('getSchema()', () => {
-        it('returns a Schema instance', () => {
+        it('returns an instance of Schema using the given name', () => {
             const schema = (new Session({})).getSchema('foobar');
 
-            expect(schema.getClassName()).to.equal('Schema');
-        });
-
-        it('returns a schema with the given name', () => {
-            const schema = (new Session({})).getSchema('foobar');
-
-            expect(schema.getName()).to.equal('foobar');
+            expect(schema.getCollection).to.be.a('function');
+            expect(schema.getCollections).to.be.a('function');
+            expect(schema.getTable).to.be.a('function');
+            expect(schema.getTables).to.be.a('function');
+            return expect(schema.getName()).to.equal('foobar');
         });
     });
 
@@ -490,11 +488,14 @@ describe('Session', () => {
         });
 
         context('getDefaultSchema()', () => {
-            it('returns the default schema bound to the session', () => {
+            it('returns the default Schema instance bound to the session', () => {
                 const session = new Session({ schema: 'foo' });
                 const schema = session.getDefaultSchema();
 
-                expect(schema.getClassName()).to.equal('Schema');
+                expect(schema.getCollection).to.be.a('function');
+                expect(schema.getCollections).to.be.a('function');
+                expect(schema.getTable).to.be.a('function');
+                expect(schema.getTables).to.be.a('function');
                 return expect(schema.getName()).to.equal('foo');
             });
         });

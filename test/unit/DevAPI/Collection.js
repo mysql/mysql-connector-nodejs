@@ -159,11 +159,71 @@ describe('Collection', () => {
         });
     });
 
-    context('add()', () => {
-        it('returns an instance of the proper class', () => {
-            const instance = collection().add({});
+    context('find()', () => {
+        it('returns an instance of CollectionFind', () => {
+            const query = collection().find();
 
-            expect(instance.getClassName()).to.equal('CollectionAdd');
+            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-collection-crud-functions.html
+            expect(query.fields).to.be.a('function');
+            expect(query.groupBy).to.be.a('function');
+            expect(query.having).to.be.a('function');
+            expect(query.sort).be.a('function');
+            expect(query.limit).be.a('function');
+            expect(query.offset).to.be.a('function');
+            expect(query.lockExclusive).to.be.a('function');
+            expect(query.lockShared).to.be.a('function');
+            expect(query.bind).be.a('function');
+            expect(query.execute).to.be.a('function');
+
+            /* eslint-disable no-unused-expressions */
+
+            // is not a CollectionAdd
+            expect(query.add).to.not.exist;
+
+            // is not a CollectionModify
+            expect(query.set).to.not.exist;
+            expect(query.arrayInsert).to.not.exist;
+            expect(query.arrayAppend).to.not.exist;
+            expect(query.unset).to.not.exist;
+            // TODO(Rui): arrayDelete() is deprecated
+            expect(query.arrayDelete).to.not.exist;
+            expect(query.patch).to.not.exist;
+
+            /* eslint-disable no-unused-expressions */
+        });
+    });
+
+    context('add()', () => {
+        it('returns an instance of CollectionAdd', () => {
+            const query = collection().add();
+
+            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-collection-crud-functions.html
+            expect(query.add).to.be.a('function');
+            expect(query.execute).to.be.a('function');
+
+            /* eslint-disable no-unused-expressions */
+
+            // is not a CollectionFind or CollectionRemove
+            expect(query.fields).to.not.exist;
+            expect(query.groupBy).to.not.exist;
+            expect(query.having).to.not.exist;
+            expect(query.sort).to.not.exist;
+            expect(query.limit).to.not.exist;
+            expect(query.offset).to.not.exist;
+            expect(query.lockExclusive).to.not.exist;
+            expect(query.lockShared).to.not.exist;
+            expect(query.bind).to.not.exist;
+
+            // is not a CollectionModify
+            expect(query.set).to.not.exist;
+            expect(query.arrayInsert).to.not.exist;
+            expect(query.arrayAppend).to.not.exist;
+            expect(query.unset).to.not.exist;
+            // TODO(Rui): arrayDelete() is deprecated
+            expect(query.arrayDelete).to.not.exist;
+            expect(query.patch).to.not.exist;
+
+            /* eslint-disable no-unused-expressions */
         });
 
         it('acknowledges documents provided as an array', () => {
@@ -182,14 +242,72 @@ describe('Collection', () => {
     });
 
     context('modify()', () => {
-        it('returns an operation instance for a valid condition query', () => {
-            const session = 'foo';
-            const schema = 'bar';
-            const name = 'baz';
-            const query = 'true';
-            const instance = collection(session, schema, name).modify(query);
+        it('returns an instance of CollectionModify', () => {
+            const query = collection().modify();
 
-            expect(instance.getClassName()).to.equal('CollectionModify');
+            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-collection-crud-functions.html
+            expect(query.set).to.be.a('function');
+            expect(query.arrayInsert).to.be.a('function');
+            expect(query.arrayAppend).to.be.a('function');
+            expect(query.unset).to.be.a('function');
+            // TODO(Rui): arrayDelete() is deprecated
+            expect(query.arrayDelete).to.be.a('function');
+            expect(query.patch).to.be.a('function');
+            expect(query.sort).to.be.a('function');
+            expect(query.limit).to.be.a('function');
+            expect(query.bind).to.be.a('function');
+            expect(query.execute).to.be.a('function');
+
+            /* eslint-disable no-unused-expressions */
+
+            // is not a CollectionFind or CollectionRemove
+            expect(query.fields).to.not.exist;
+            expect(query.groupBy).to.not.exist;
+            expect(query.having).to.not.exist;
+            expect(query.offset).to.not.exist;
+            expect(query.lockExclusive).to.not.exist;
+            expect(query.lockShared).to.not.exist;
+
+            // is not a CollectionAdd
+            expect(query.add).to.not.exist;
+
+            /* eslint-disable no-unused-expressions */
+        });
+    });
+
+    context('remove()', () => {
+        it('returns an instance of CollectionRemove', () => {
+            const query = collection().remove();
+
+            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-collection-crud-functions.html
+            expect(query.sort).be.a('function');
+            expect(query.limit).be.a('function');
+            expect(query.bind).be.a('function');
+            expect(query.execute).to.be.a('function');
+
+            /* eslint-disable no-unused-expressions */
+
+            // is not a CollectionFind
+            expect(query.fields).to.not.exist;
+            expect(query.groupBy).to.not.exist;
+            expect(query.having).to.not.exist;
+            expect(query.offset).to.not.exist;
+            expect(query.lockExclusive).to.not.exist;
+            expect(query.lockShared).to.not.exist;
+
+            // is not a CollectionAdd
+            expect(query.add).to.not.exist;
+
+            // is not a CollectionModify
+            expect(query.set).to.not.exist;
+            expect(query.arrayInsert).to.not.exist;
+            expect(query.arrayAppend).to.not.exist;
+            expect(query.unset).to.not.exist;
+            // TODO(Rui): arrayDelete() is deprecated
+            expect(query.arrayDelete).to.not.exist;
+            expect(query.patch).to.not.exist;
+
+            /* eslint-disable no-unused-expressions */
         });
     });
 

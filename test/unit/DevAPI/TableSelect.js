@@ -72,12 +72,6 @@ describe('TableSelect', () => {
         });
     });
 
-    context('getClassName()', () => {
-        it('returns the correct class name (to avoid duck typing)', () => {
-            expect(tableSelect().getClassName()).to.equal('TableSelect');
-        });
-    });
-
     context('groupBy()', () => {
         let forceRestart;
 
