@@ -88,15 +88,6 @@ describe('TableUpdate', () => {
 
             return expect(query.limit).to.be.a('function');
         });
-
-        it('does not set a default offset implicitely', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
-
-            const query = tableUpdate(session).limit(1);
-
-            return expect(query.getOffset()).to.not.exist;
-        });
     });
 
     context('orderBy()', () => {
