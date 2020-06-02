@@ -3,10 +3,24 @@ MySQL Connector/Node.JS 8.0 - Release Notes & Changes
 =====================================================
 
 MySQL Connector/Node.JS
-Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2020, Oracle and/or its affiliates.
 
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
+
+v8.0.22
+=======
+
+- Re-structure the functional test suite
+- Fix behavior of "RowResult.nextResult()" for empty result sets
+- Deprecate "dbUser" and "dbPassword" properties
+- Remove "offset()" APIs using unsupported server features
+- Fix issues causing warnings about circular dependencies
+- Add support for lazy decoding of binary row fields and column metadata
+- Improve memory usage for serializing/deserializing binary content
+- Add support for return proper type names on "Column.getType()"
+- Fix decoding of single-character SET values in result sets
+- Fix decoding of non-BIGINT values stored in BIGINT columns
 
 v8.0.21
 =======
@@ -16,7 +30,7 @@ v8.0.21
 - Remove duplicated protobuf stubs
 - Fix issues with dangling resources on test runs
 - Fix issues with tests using the MySQL TIME data type
-- Fix documentation issues regarding the TLS ciphersuite options 
+- Fix documentation issues regarding the TLS ciphersuite options
 - Remove functional tests covering the deprecated sha256_password authentication plugin
 - Replace deprecated mocha.opts file with mocha command line options
 
