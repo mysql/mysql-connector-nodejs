@@ -1,6 +1,6 @@
 You can establish a connection with a MySQL server by creating a `Session` through the `getSession()` method available in the main module API. The session will be established via the [X Plugin](https://dev.mysql.com/doc/refman/8.0/en/x-plugin.html) which, by default, listens on TCP port `33060`. Also, by default, X Protocol sessions are established using TLS and the `PLAIN` authentication method (more details available [here]{@tutorial Secure_Sessions}). You can resort to any of the following flavours to create a new session.
 
-Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI:
+Using a URI:
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
@@ -11,7 +11,7 @@ mysqlx.getSession('mysqlx://root:passwd@localhost:33060/mySchema')
     });
 ```
 
-Using a "unified" connection string, which is basically a reduced version of the RFC 3986 URI (without the _scheme_):
+Using a "unified" connection string, which is basically a reduced version of the URI format (without the _scheme_):
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
@@ -43,7 +43,7 @@ mysqlx.getSession(config)
 
 If the server is running in the same machine as the client, and is bound to a local UNIX socket (no support for windows pipes yet), the previous examples work, with some small notation differences.
 
-Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI with a pct-encoded socket path:
+Using a URI with a pct-encoded socket path:
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
@@ -54,7 +54,7 @@ mysqlx.getSession('mysqlx://root:passwd@%2Fpath%2Fto%2Fsocket/mySchema')
     });
 ```
 
-Using a standard [RFC 3986](https://tools.ietf.org/html/rfc3986) URI with an unencoded socket path:
+Using a URI with an unencoded socket path:
 
 ```js
 const mysqlx = require('@mysql/xdevapi');

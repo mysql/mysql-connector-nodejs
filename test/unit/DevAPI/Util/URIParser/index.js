@@ -6,7 +6,7 @@ const expect = require('chai').expect;
 const parseUri = require('../../../../../lib/DevAPI/Util/URIParser');
 
 describe('parseUri', () => {
-    context('for RFC-3986 URIs', () => {
+    context('for URI-like connection strings', () => {
         it('parses an URI with a hostname', () => {
             const expected = {
                 auth: '',
