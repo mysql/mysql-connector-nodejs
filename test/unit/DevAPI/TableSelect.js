@@ -20,11 +20,12 @@ describe('TableSelect', () => {
     });
 
     context('execute()', () => {
-        let columnWrapper, execute;
+        let columnWrapper, execute, getAlias;
 
         beforeEach('create fakes', () => {
-            execute = td.function();
             columnWrapper = td.function();
+            execute = td.function();
+            getAlias = td.function();
 
             td.replace('../../../lib/DevAPI/Util/columnWrapper', columnWrapper);
             tableSelect = require('../../../lib/DevAPI/TableSelect');
@@ -56,9 +57,10 @@ describe('TableSelect', () => {
 
         it('wraps an operation with both a data and metadata cursors in a preparable instance', () => {
             const session = 'foo';
-            const expected = { name: 'qux' };
+            const expected = { getAlias };
             const state = { metadata: [[expected]] };
 
+            td.when(getAlias()).thenReturn('qux');
             td.when(columnWrapper('bar')).thenReturn('baz');
             td.when(execute(td.matchers.isA(Function), 'foo', 'baz')).thenResolve(state);
             td.when(preparing({ session })).thenReturn({ execute });

@@ -55,7 +55,7 @@ describe('relational miscellaneous tests', () => {
                     expect(actual.meta[0]).to.contain.keys('getType', 'getColumnLabel', 'getColumnName', 'getTableLabel', 'getTableName', 'getSchemaName', 'getLength');
                     expect(actual.meta[0].getType()).to.equal('TINYINT');
                     expect(actual.meta[0].getColumnLabel()).to.equal('1');
-                    expect(actual.meta[0].getColumnName()).to.equal('1');
+                    expect(actual.meta[0].getColumnName()).to.equal('');
                     expect(actual.meta[0].getTableLabel()).to.equal('');
                     expect(actual.meta[0].getTableName()).to.equal('');
                     expect(actual.meta[0].getSchemaName()).to.equal('');
@@ -81,7 +81,7 @@ describe('relational miscellaneous tests', () => {
                     expect(actual.meta[0]).to.contain.keys('getType', 'getColumnLabel', 'getColumnName', 'getTableLabel', 'getTableName', 'getSchemaName', 'getLength');
                     expect(actual.meta[0].getType()).to.equal('TINYINT');
                     expect(actual.meta[0].getColumnLabel()).to.equal('1');
-                    expect(actual.meta[0].getColumnName()).to.equal('1');
+                    expect(actual.meta[0].getColumnName()).to.equal('');
                     expect(actual.meta[0].getTableLabel()).to.equal('');
                     expect(actual.meta[0].getTableName()).to.equal('');
                     expect(actual.meta[0].getSchemaName()).to.equal('');

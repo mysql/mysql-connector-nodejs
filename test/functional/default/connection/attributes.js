@@ -5,7 +5,7 @@
 const config = require('../../../config');
 const expect = require('chai').expect;
 const mysqlx = require('../../../../');
-const systemAttributes = require('../../../../lib/Protocol/Util/systemAttributes');
+const tools = require('../../../../lib/Protocol/Util');
 
 describe('connection attributes', () => {
     const baseConfig = { schema: 'performance_schema' };
@@ -46,7 +46,7 @@ describe('connection attributes', () => {
 
     it('sets the correct values for the default static client-defined attributes', () => {
         const attributesConfig = Object.assign({}, config, baseConfig);
-        const expected = systemAttributes;
+        const expected = tools.getSystemAttributes();
 
         return mysqlx.getSession(attributesConfig)
             .then(session => {

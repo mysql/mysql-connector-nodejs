@@ -4,6 +4,7 @@
 
 const expect = require('chai').expect;
 const sqlResult = require('../../../lib/DevAPI/SqlResult');
+const td = require('testdouble');
 
 describe('SqlResult', () => {
     context('fetchAll()', () => {
@@ -49,9 +50,22 @@ describe('SqlResult', () => {
     });
 
     context('getColumns()', () => {
+        let getAlias;
+
+        beforeEach('create fakes', () => {
+            getAlias = td.function();
+        });
+
+        afterEach('reset fakes', () => {
+            td.reset();
+        });
+
         it('returns the metadata for each item in the result set wrapped as a Column instance', () => {
-            const res = sqlResult({ metadata: [[{ name: 'foo' }, { name: 'bar' }]] });
+            const res = sqlResult({ metadata: [[{ getAlias }, { getAlias }]] });
             const columns = res.getColumns();
+
+            td.when(getAlias()).thenReturn('bar');
+            td.when(getAlias(), { times: 1 }).thenReturn('foo');
 
             expect(columns).to.have.lengthOf(2);
             expect(columns[0]).to.contain.keys('getColumnLabel');

@@ -6,7 +6,7 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 
 describe('system attributes', () => {
-    let os, systemAttributes;
+    let os, getSystemAttributes;
 
     beforeEach('create fakes', () => {
         os = td.replace('os');
@@ -28,9 +28,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'i386',
                     _os: 'FreeBSD-11.02'
                 });
@@ -43,9 +43,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'x86_64',
                     _os: 'FreeBSD-11.02'
                 });
@@ -58,9 +58,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'ARM',
                     _os: 'FreeBSD-11.02'
                 });
@@ -80,9 +80,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'i386',
                     _os: 'Linux-4.15.0'
                 });
@@ -95,9 +95,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'x86_64',
                     _os: 'Linux-4.15.0'
                 });
@@ -110,9 +110,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'ARM',
                     _os: 'Linux-4.15.0'
                 });
@@ -132,9 +132,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'i386',
                     _os: 'macOS-10.14'
                 });
@@ -147,9 +147,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'x86_64',
                     _os: 'macOS-10.14'
                 });
@@ -162,9 +162,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'ARM',
                     _os: 'macOS-10.14'
                 });
@@ -184,9 +184,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'i386',
                     _os: 'Solaris-11.4'
                 });
@@ -199,9 +199,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'x86_64',
                     _os: 'Solaris-11.4'
                 });
@@ -214,9 +214,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'ARM',
                     _os: 'Solaris-11.4'
                 });
@@ -236,9 +236,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'i386',
                     _os: 'Windows-10.0.16299'
                 });
@@ -251,9 +251,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'x86_64',
                     _os: 'Windows-10.0.16299'
                 });
@@ -266,9 +266,9 @@ describe('system attributes', () => {
             });
 
             it('uses the system attribute naming convention', () => {
-                systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+                getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-                expect(systemAttributes()).to.deep.include({
+                expect(getSystemAttributes()).to.deep.include({
                     _platform: 'ARM',
                     _os: 'Windows-10.0.16299'
                 });
@@ -284,9 +284,9 @@ describe('system attributes', () => {
         });
 
         it('uses the system attribute naming convention', () => {
-            systemAttributes = require('../../lib/Protocol/Util/systemAttributes');
+            getSystemAttributes = require('../../../lib/Protocol/Util/getSystemAttributes');
 
-            expect(systemAttributes()).to.deep.include({
+            expect(getSystemAttributes()).to.deep.include({
                 _platform: 'baz',
                 _os: 'foo-bar'
             });

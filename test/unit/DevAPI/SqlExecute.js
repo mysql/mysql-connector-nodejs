@@ -21,10 +21,11 @@ describe('SqlExecute', () => {
     });
 
     context('execute()', () => {
-        let deprecated;
+        let deprecated, getAlias;
 
         beforeEach('create fakes', () => {
             deprecated = td.function();
+            getAlias = td.function();
 
             td.replace('../../../lib/DevAPI/Util/deprecated', deprecated);
             sqlExecute = require('../../../lib/DevAPI/SqlExecute');
@@ -53,8 +54,9 @@ describe('SqlExecute', () => {
 
         it('calls a metadata handler provided as an `execute` argument', () => {
             const query = sqlExecute({ _client: { sqlStmtExecute } });
-            const meta = [{ name: 'foo' }];
+            const meta = [{ getAlias }];
 
+            td.when(getAlias()).thenReturn('foo');
             td.when(sqlStmtExecute(td.matchers.anything(), td.matchers.anything(), td.callback(meta))).thenResolve();
 
             return query.execute(td.function(), actual => {
@@ -66,8 +68,9 @@ describe('SqlExecute', () => {
         // Deprecated since release 8.0.22
         it('calls a handlers provided as an `execute` object argument', () => {
             const query = sqlExecute({ _client: { sqlStmtExecute } });
-            const meta = [{ name: 'bar' }];
+            const meta = [{ getAlias }];
 
+            td.when(getAlias()).thenReturn('bar');
             td.when(sqlStmtExecute(td.matchers.anything(), td.callback('foo'), td.callback(meta))).thenResolve();
 
             return query.execute({
