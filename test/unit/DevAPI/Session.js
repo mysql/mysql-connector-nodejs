@@ -4,7 +4,11 @@
 
 const Client = require('../../../lib/Protocol/Client');
 const PassThrough = require('stream').PassThrough;
+const authenticationManager = require('../../../lib/Authentication/AuthenticationManager');
 const expect = require('chai').expect;
+const mysql41Auth = require('../../../lib/Authentication/MySQL41Auth');
+const plainAuth = require('../../../lib/Authentication/PlainAuth');
+const sha256MemoryAuth = require('../../../lib/Authentication/SHA256MemoryAuth');
 const td = require('testdouble');
 const tk = require('timekeeper');
 
@@ -116,6 +120,11 @@ describe('Session', () => {
             beforeEach(() => {
                 socket = new PassThrough();
                 socket.setTimeout = td.function();
+
+                // load all the available authentication plugins
+                authenticationManager.registerPlugin(plainAuth);
+                authenticationManager.registerPlugin(mysql41Auth);
+                authenticationManager.registerPlugin(sha256MemoryAuth);
 
                 td.when(connect(), { ignoreExtraArgs: true }).thenReturn(socket);
             });
