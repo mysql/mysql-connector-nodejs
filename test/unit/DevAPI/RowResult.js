@@ -7,6 +7,16 @@ const rowResult = require('../../../lib/DevAPI/RowResult');
 const td = require('testdouble');
 
 describe('RowResult', () => {
+    let decode;
+
+    beforeEach('create fakes', () => {
+        decode = td.function();
+    });
+
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
     context('fetchAll()', () => {
         it('returns an empty array when there are no items in the result set', () => {
             expect(rowResult().fetchAll()).to.deep.equal([]);
@@ -18,16 +28,25 @@ describe('RowResult', () => {
         });
 
         it('returns an array containing the data counterpart of each item in the result set', () => {
-            const expected = ['foo', 'bar'];
+            const row = { decode };
+            const rows = ['foo', 'bar'];
 
-            expect(rowResult({ results: [[expected[0], expected[1]]] }).fetchAll()).to.deep.equal(expected);
+            td.when(decode()).thenReturn(rows[1]);
+            td.when(decode(), { times: 1 }).thenReturn(rows[0]);
+
+            expect(rowResult({ results: [[row, row]] }).fetchAll()).to.deep.equal(rows);
         });
 
         it('is aware that fetchOne() might have been used before', () => {
-            const expected = ['foo', 'bar'];
-            const results = [[null, null, expected[0], expected[1]]];
+            const row = { decode };
+            const rows = ['foo', 'bar'];
 
-            expect(rowResult({ results }).fetchAll()).to.deep.equal(expected);
+            td.when(decode()).thenReturn(rows[1]);
+            td.when(decode(), { times: 1 }).thenReturn(rows[0]);
+
+            const results = [[null, null, row, row]];
+
+            expect(rowResult({ results }).fetchAll()).to.deep.equal(rows);
         });
     });
 
@@ -44,21 +63,40 @@ describe('RowResult', () => {
         });
 
         it('returns the next available item in the result set', () => {
-            expect(rowResult({ results: [['foo']] }).fetchOne()).to.equal('foo');
+            const row = { decode };
+            const rows = [['foo']];
+
+            td.when(decode()).thenReturn(rows[0]);
+
+            expect(rowResult({ results: [[row]] }).fetchOne()).to.equal(rows[0]);
         });
 
         it('deallocates the memory when a result set item has been consumed', () => {
-            const res = rowResult({ results: [[{ data: 'foo' }, { data: 'bar' }]] });
+            const row = { decode };
+            const res = rowResult({ results: [[row, row]] });
+
+            td.when(decode()).thenReturn(['bar']);
+            td.when(decode(), { times: 1 }).thenReturn(['foo']);
 
             res.fetchOne();
-            expect(res.getResults()).to.deep.equal([[null, { data: 'bar' }]]);
+
+            const state = res.getResults();
+            expect(state).to.be.an('array').and.have.lengthOf(1);
+            expect(state[0]).to.be.an('array').and.have.lengthOf(2);
+            // eslint-disable-next-line no-unused-expressions
+            expect(state[0][0]).to.be.null;
+            expect(state[0][1]).to.equal(row);
         });
 
         it('deallocates the memory when the entire result set has been consumed', () => {
-            const res = rowResult({ results: [[{ data: 'foo' }]] });
+            const row = { decode };
+            const res = rowResult({ results: [[row]] });
 
             res.fetchOne();
-            expect(res.getResults()).to.deep.equal([null]);
+
+            const state = res.getResults();
+            expect(state).to.be.an('array').and.have.lengthOf(1);
+            return expect(state[0]).to.be.null;
         });
     });
 
@@ -116,6 +154,13 @@ describe('RowResult', () => {
     });
 
     context('nextResult()', () => {
+        let fstCallToDecode, sndCallToDecode;
+
+        beforeEach('create fakes', () => {
+            fstCallToDecode = td.function();
+            sndCallToDecode = td.function();
+        });
+
         it('returns false if there are no other result sets available', () => {
             /* eslint-disable no-unused-expressions */
             expect(rowResult().nextResult()).to.be.false;
@@ -130,11 +175,14 @@ describe('RowResult', () => {
         });
 
         it('moves the cursor to the next available result set', () => {
-            const res = rowResult({ results: [['foo'], ['bar']] });
+            const res = rowResult({ results: [[{ decode: fstCallToDecode }], [{ decode: sndCallToDecode }]] });
+
+            td.when(fstCallToDecode()).thenReturn(['foo']);
+            td.when(sndCallToDecode()).thenReturn(['bar']);
 
             // eslint-disable-next-line no-unused-expressions
             expect(res.nextResult()).to.be.true;
-            expect(res.fetchOne()).to.equal('bar');
+            expect(res.fetchOne()).to.deep.equal(['bar']);
         });
     });
 });

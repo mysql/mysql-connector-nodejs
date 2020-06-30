@@ -61,15 +61,6 @@ describe('ColumnMetadata', () => {
         });
     });
 
-    context('getContentType()', () => {
-        it('returns the value of the contentType protobuf message field', () => {
-            const proto = new Resultset.ColumnMetaData();
-            proto.setContentType(Resultset.ContentType_BYTES.JSON);
-
-            expect(columnMetadata(proto).getContentType()).to.equal(Resultset.ContentType_BYTES.JSON);
-        });
-    });
-
     context('getFractionalDigits()', () => {
         it('returns the value of the fractionalDigits protobuf message field', () => {
             const proto = new Resultset.ColumnMetaData();
@@ -283,15 +274,53 @@ describe('ColumnMetadata', () => {
         });
     });
 
-    context('isSigned()', () => {
-        it('checks if the value of the type protobuf message field matches the value used for signed integers', () => {
+    context('isBinary()', () => {
+        it('returns true if the column has a binary charset', () => {
             const proto = new Resultset.ColumnMetaData();
-            proto.setType(Resultset.ColumnMetaData.FieldType.SINT);
-            // eslint-disable-next-line no-unused-expressions
-            expect(columnMetadata(proto).isSigned()).to.be.true;
+            proto.setCollation(1);
 
-            proto.setType(Resultset.ColumnMetaData.FieldType.UINT);
-            return expect(columnMetadata(proto).isSigned()).to.be.false;
+            td.when(find(1)).thenReturn({ charset: 'binary' });
+
+            return expect(columnMetadata(proto).isBinary()).to.be.true;
+        });
+
+        it('returns true if the column has a GEOMETRY content type', () => {
+            const proto = new Resultset.ColumnMetaData();
+            proto.setContentType(Resultset.ContentType_BYTES.GEOMETRY);
+
+            return expect(columnMetadata(proto).isBinary()).to.be.true;
+        });
+
+        it('returns false if the column does not have a binary charset', () => {
+            const proto = new Resultset.ColumnMetaData();
+            proto.setCollation(1);
+
+            td.when(find(1)).thenReturn({ charset: 'utf8mb4' });
+
+            return expect(columnMetadata(proto).isBinary()).to.be.false;
+        });
+
+        it('returns false if the column does have a GEOMETRY content type', () => {
+            const proto = new Resultset.ColumnMetaData();
+            proto.setContentType(Resultset.ContentType_BYTES.JSON);
+
+            return expect(columnMetadata(proto).isBinary()).to.be.false;
+        });
+    });
+
+    context('isJSON()', () => {
+        it('returns true if the column has a JSON content type', () => {
+            const proto = new Resultset.ColumnMetaData();
+            proto.setContentType(Resultset.ContentType_BYTES.JSON);
+
+            return expect(columnMetadata(proto).isJSON()).to.be.true;
+        });
+
+        it('returns false if the column does not have a JSON content type', () => {
+            const proto = new Resultset.ColumnMetaData();
+            proto.setContentType(Resultset.ContentType_BYTES.XML);
+
+            return expect(columnMetadata(proto).isJSON()).to.be.false;
         });
     });
 
@@ -304,6 +333,18 @@ describe('ColumnMetadata', () => {
 
             proto.clearFlags();
             return expect(columnMetadata(proto).isFlagged()).to.be.false;
+        });
+    });
+
+    context('isSigned()', () => {
+        it('checks if the value of the type protobuf message field matches the value used for signed integers', () => {
+            const proto = new Resultset.ColumnMetaData();
+            proto.setType(Resultset.ColumnMetaData.FieldType.SINT);
+            // eslint-disable-next-line no-unused-expressions
+            expect(columnMetadata(proto).isSigned()).to.be.true;
+
+            proto.setType(Resultset.ColumnMetaData.FieldType.UINT);
+            return expect(columnMetadata(proto).isSigned()).to.be.false;
         });
     });
 });

@@ -5,6 +5,7 @@
 const StmtExecuteStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_sql_pb').StmtExecute;
 const expect = require('chai').expect;
 const td = require('testdouble');
+const tools = require('../../../../lib/Protocol/Util');
 
 describe('Protobuf', () => {
     context('Sql', () => {
@@ -68,13 +69,15 @@ describe('Protobuf', () => {
 
         context('decodeStmtExecuteOk()', () => {
             it('returns an object version of a Mysqlx.Sql.StmtExecuteOk message', () => {
-                const data = 'foo';
+                // eslint-disable-next-line node/no-deprecated-api
+                const data = new Buffer('foo');
+                const bytes = tools.createTypedArrayFromBuffer(data);
                 const deserializeBinary = td.function();
                 const toObject = td.function();
 
                 td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_sql_pb', { StmtExecuteOk: { deserializeBinary } });
                 td.when(toObject()).thenReturn('bar');
-                td.when(deserializeBinary(new Uint8Array(data))).thenReturn({ toObject });
+                td.when(deserializeBinary(bytes)).thenReturn({ toObject });
 
                 Sql = require('../../../../lib/Protocol/Protobuf/Adapters/Sql');
 
@@ -103,6 +106,9 @@ describe('Protobuf', () => {
 
         context('encodeStmtExecute()', () => {
             it('returns a Buffer-encoded version of a Mysqlx.Sql.StmtExecute object', () => {
+                // eslint-disable-next-line node/no-deprecated-api
+                const data = new Buffer('bar');
+                const bytes = tools.createTypedArrayFromBuffer(data);
                 const statement = 'foo';
                 const serializeBinary = td.function();
                 const toObject = td.function();
@@ -111,12 +117,11 @@ describe('Protobuf', () => {
                 const createStmtExecute = td.replace(Sql, 'createStmtExecute');
 
                 td.when(createStmtExecute(statement)).thenReturn({ serializeBinary, toObject });
-                td.when(serializeBinary()).thenReturn('bar');
+                td.when(serializeBinary()).thenReturn(bytes);
 
                 const stmtExecute = Sql.encodeStmtExecute(statement);
 
-                // eslint-disable-next-line node/no-deprecated-api
-                return expect(stmtExecute).to.deep.equal(new Buffer('bar'));
+                return expect(stmtExecute).to.deep.equal(data);
             });
         });
     });

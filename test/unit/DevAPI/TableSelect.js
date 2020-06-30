@@ -6,9 +6,10 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 
 describe('TableSelect', () => {
-    let preparing, tableSelect;
+    let decode, preparing, tableSelect;
 
     beforeEach('create fakes', () => {
+        decode = td.function();
         preparing = td.function();
 
         td.replace('../../../lib/DevAPI/Preparing', preparing);
@@ -33,9 +34,10 @@ describe('TableSelect', () => {
 
         it('wraps an operation without a cursor in a preparable instance', () => {
             const session = 'foo';
-            const expected = 'bar';
-            const state = { results: [[[expected]]] };
+            const row = { decode };
+            const state = { results: [[row]] };
 
+            td.when(decode()).thenReturn(['bar']);
             td.when(execute(td.matchers.isA(Function), undefined, undefined)).thenResolve(state);
             td.when(preparing({ session })).thenReturn({ execute });
 

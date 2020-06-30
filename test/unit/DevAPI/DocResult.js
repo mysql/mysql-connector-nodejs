@@ -4,8 +4,19 @@
 
 const expect = require('chai').expect;
 const docResult = require('../../../lib/DevAPI/DocResult');
+const td = require('testdouble');
 
 describe('DocResult', () => {
+    let decode;
+
+    beforeEach('create fakes', () => {
+        decode = td.function();
+    });
+
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
     context('fetchAll()', () => {
         it('returns an empty array when there are no items in the result set', () => {
             expect(docResult().fetchAll()).to.deep.equal([]);
@@ -15,9 +26,13 @@ describe('DocResult', () => {
         });
 
         it('returns an array containing all items in the result set', () => {
-            const expected = [{ name: 'foo' }, { name: 'bar' }];
+            const row = { decode };
+            const docs = [{ name: 'foo' }, { name: 'bar' }];
 
-            expect(docResult({ results: [[[expected[0]], [expected[1]]]] }).fetchAll()).to.deep.equal(expected);
+            td.when(decode()).thenReturn([docs[1]]);
+            td.when(decode(), { times: 1 }).thenReturn([docs[0]]);
+
+            expect(docResult({ results: [[row, row]] }).fetchAll()).to.deep.equal(docs);
         });
     });
 
@@ -32,7 +47,12 @@ describe('DocResult', () => {
         });
 
         it('returns the next available item in the result set', () => {
-            expect(docResult({ results: [[[{ name: 'foo' }]]] }).fetchOne()).to.deep.equal({ name: 'foo' });
+            const row = { decode };
+            const docs = [{ name: 'foo' }];
+
+            td.when(decode()).thenReturn(docs);
+
+            expect(docResult({ results: [[row]] }).fetchOne()).to.deep.equal(docs[0]);
         });
     });
 
@@ -54,9 +74,15 @@ describe('DocResult', () => {
 
     context('toArray()', () => {
         it('returns the raw list of result set items', () => {
+            const row = { decode };
+            const docs = [{ name: 'foo' }];
+
             // eslint-disable-next-line no-unused-expressions
             expect(docResult({ results: [] }).toArray()).to.be.an('array').and.be.empty;
-            expect(docResult({ results: [[[{ name: 'foo' }]]] }).toArray()).to.deep.equal([{ name: 'foo' }]);
+
+            td.when(decode()).thenReturn(docs);
+
+            expect(docResult({ results: [[row]] }).toArray()).to.deep.equal(docs);
         });
     });
 });

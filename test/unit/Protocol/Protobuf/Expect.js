@@ -7,85 +7,89 @@ const OpenStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_
 const CloseStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb').Close;
 const expect = require('chai').expect;
 const td = require('testdouble');
+const tools = require('../../../../lib/Protocol/Util');
 
-describe('Protobuf', () => {
-    context('Expect', () => {
-        let Expect;
+describe('Expect Protobuf Adapter', () => {
+    let Expect;
 
-        afterEach('reset fakes', () => {
-            td.reset();
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
+    context('createCondition()', () => {
+        let FakeConditionStub;
+
+        beforeEach('create fakes', () => {
+            FakeConditionStub = td.constructor(ConditionStub);
+
+            td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb', { Open: { Condition: FakeConditionStub } });
+            Expect = require('../../../../lib/Protocol/Protobuf/Adapters/Expect');
         });
 
-        context('createCondition()', () => {
-            let FakeConditionStub;
+        it('creates a valid Mysqlx.Expect.Open.Condition object type given an expecation object', () => {
+            const expectation = { key: 'foo', value: 'bar', operation: 'baz' };
 
-            beforeEach('create fakes', () => {
-                FakeConditionStub = td.constructor(ConditionStub);
+            const condition = Expect.createCondition(expectation);
 
-                td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb', { Open: { Condition: FakeConditionStub } });
-                Expect = require('../../../../lib/Protocol/Protobuf/Adapters/Expect');
-            });
+            expect(condition).to.be.an.instanceOf(FakeConditionStub);
+            expect(td.explain(FakeConditionStub.prototype.setConditionKey).callCount).to.equal(1);
+            expect(td.explain(FakeConditionStub.prototype.setConditionKey).calls[0].args[0]).to.equal('foo');
+            expect(td.explain(FakeConditionStub.prototype.setConditionValue).callCount).to.equal(1);
+            // eslint-disable-next-line node/no-deprecated-api
+            expect(td.explain(FakeConditionStub.prototype.setConditionValue).calls[0].args[0]).to.deep.equal(new Uint8Array(new Buffer('bar')));
+            expect(td.explain(FakeConditionStub.prototype.setOp).callCount).to.equal(1);
+            expect(td.explain(FakeConditionStub.prototype.setOp).calls[0].args[0]).to.equal('baz');
+        });
+    });
 
-            it('creates a valid Mysqlx.Expect.Open.Condition object type given an expecation object', () => {
-                const expectation = { key: 'foo', value: 'bar', operation: 'baz' };
+    context('encodeClose()', () => {
+        let FakeCloseStub, FakeConditionStub;
 
-                const condition = Expect.createCondition(expectation);
+        beforeEach('create fakes', () => {
+            FakeCloseStub = td.constructor(CloseStub);
+            FakeConditionStub = td.constructor(ConditionStub);
 
-                expect(condition).to.be.an.instanceOf(FakeConditionStub);
-                expect(td.explain(FakeConditionStub.prototype.setConditionKey).callCount).to.equal(1);
-                expect(td.explain(FakeConditionStub.prototype.setConditionKey).calls[0].args[0]).to.equal('foo');
-                expect(td.explain(FakeConditionStub.prototype.setConditionValue).callCount).to.equal(1);
-                // eslint-disable-next-line node/no-deprecated-api
-                expect(td.explain(FakeConditionStub.prototype.setConditionValue).calls[0].args[0]).to.deep.equal(new Uint8Array(new Buffer('bar')));
-                expect(td.explain(FakeConditionStub.prototype.setOp).callCount).to.equal(1);
-                expect(td.explain(FakeConditionStub.prototype.setOp).calls[0].args[0]).to.equal('baz');
-            });
+            td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb', { Close: FakeCloseStub, Open: { Condition: FakeConditionStub } });
+            Expect = require('../../../../lib/Protocol/Protobuf/Adapters/Expect');
         });
 
-        context('encodeClose()', () => {
-            let FakeCloseStub, FakeConditionStub;
+        it('returns a Buffer-encoded version of Mysqlx.Expect.Close object', () => {
+            // eslint-disable-next-line node/no-deprecated-api
+            const data = new Buffer('foo');
+            const bytes = tools.createTypedArrayFromBuffer(data);
 
-            beforeEach('create fakes', () => {
-                FakeCloseStub = td.constructor(CloseStub);
-                FakeConditionStub = td.constructor(ConditionStub);
+            td.when(FakeCloseStub.prototype.serializeBinary()).thenReturn(bytes);
 
-                td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb', { Close: FakeCloseStub, Open: { Condition: FakeConditionStub } });
-                Expect = require('../../../../lib/Protocol/Protobuf/Adapters/Expect');
-            });
+            return expect(Expect.encodeClose()).to.deep.equal(data);
+        });
+    });
 
-            it('returns a Buffer-encoded version of Mysqlx.Expect.Close object', () => {
-                td.when(FakeCloseStub.prototype.serializeBinary()).thenReturn('foo');
+    context('encodeOpen()', () => {
+        let FakeOpenStub, createCondition;
 
-                // eslint-disable-next-line node/no-deprecated-api
-                return expect(Expect.encodeClose()).to.deep.equal(new Buffer('foo'));
-            });
+        beforeEach('create fakes', () => {
+            FakeOpenStub = td.constructor(OpenStub);
+
+            td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb', { Open: FakeOpenStub });
+            Expect = require('../../../../lib/Protocol/Protobuf/Adapters/Expect');
+            createCondition = td.replace(Expect, 'createCondition');
         });
 
-        context('encodeOpen()', () => {
-            let FakeOpenStub, createCondition;
+        it('returns a Buffer-encoded version of a Mysqlx.Expect.Open object containing the entire list of expectations', () => {
+            // eslint-disable-next-line node/no-deprecated-api
+            const data = new Buffer('quux');
+            const bytes = tools.createTypedArrayFromBuffer(data);
+            const expectations = ['foo', 'bar'];
 
-            beforeEach('create fakes', () => {
-                FakeOpenStub = td.constructor(OpenStub);
+            td.when(createCondition('foo')).thenReturn('baz');
+            td.when(createCondition('bar')).thenReturn('qux');
+            td.when(FakeOpenStub.prototype.serializeBinary()).thenReturn(bytes);
 
-                td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_expect_pb', { Open: FakeOpenStub });
-                Expect = require('../../../../lib/Protocol/Protobuf/Adapters/Expect');
-                createCondition = td.replace(Expect, 'createCondition');
-            });
+            const open = Expect.encodeOpen(expectations);
 
-            it('returns a Buffer-encoded version of a Mysqlx.Expect.Open object containing the entire list of expectations', () => {
-                const expectations = ['foo', 'bar'];
-
-                td.when(createCondition('foo')).thenReturn('baz');
-                td.when(createCondition('bar')).thenReturn('qux');
-                td.when(FakeOpenStub.prototype.serializeBinary()).thenReturn('quux');
-
-                const open = Expect.encodeOpen(expectations);
-
-                // eslint-disable-next-line node/no-deprecated-api
-                expect(open).to.deep.equal(new Buffer('quux'));
-                expect(td.explain(FakeOpenStub.prototype.setCondList).callCount).to.equal(1);
-                return expect(td.explain(FakeOpenStub.prototype.setCondList).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
-            });
+            expect(open).to.deep.equal(data);
+            expect(td.explain(FakeOpenStub.prototype.setCondList).callCount).to.equal(1);
+            return expect(td.explain(FakeOpenStub.prototype.setCondList).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
         });
     });
 });

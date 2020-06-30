@@ -5,45 +5,50 @@
 const ResetStub = require('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_session_pb').Reset;
 const expect = require('chai').expect;
 const td = require('testdouble');
+const tools = require('../../../../lib/Protocol/Util');
 
-describe('Protobuf', () => {
-    context('Session', () => {
-        let Session;
+context('Session Protobuf Adapter', () => {
+    let Session;
 
-        afterEach('reset fakes', () => {
-            td.reset();
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
+    context('encodeReset()', () => {
+        let FakeResetStub;
+
+        beforeEach('create fakes', () => {
+            FakeResetStub = td.constructor(ResetStub);
+
+            td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_session_pb', { Reset: FakeResetStub });
+            Session = require('../../../../lib/Protocol/Protobuf/Adapters/Session');
         });
 
-        context('encodeReset()', () => {
-            let FakeResetStub;
+        it('require the session to be kept open by default (without need for re-authentication)', () => {
+            // eslint-disable-next-line node/no-deprecated-api
+            const data = new Buffer('bar');
+            const bytes = tools.createBufferFromTypedArray(data);
 
-            beforeEach('create fakes', () => {
-                FakeResetStub = td.constructor(ResetStub);
+            td.when(FakeResetStub.prototype.serializeBinary()).thenReturn(bytes);
 
-                td.replace('../../../../lib/Protocol/Protobuf/Stubs/mysqlx_session_pb', { Reset: FakeResetStub });
-                Session = require('../../../../lib/Protocol/Protobuf/Adapters/Session');
-            });
+            const reset = Session.encodeReset();
 
-            it('require the session to be kept open by default (without need for re-authentication)', () => {
-                td.when(FakeResetStub.prototype.serializeBinary()).thenReturn('bar');
+            expect(reset).to.deep.equal(data);
+            expect(td.explain(FakeResetStub.prototype.setKeepOpen).callCount).to.equal(1);
+            return expect(td.explain(FakeResetStub.prototype.setKeepOpen).calls[0].args[0]).to.equal(true);
+        });
 
-                const reset = Session.encodeReset();
+        it('allows to not require the session to be kept open', () => {
+            // eslint-disable-next-line node/no-deprecated-api
+            const data = new Buffer('bar');
+            const bytes = tools.createBufferFromTypedArray(data);
 
-                // eslint-disable-next-line node/no-deprecated-api
-                expect(reset).to.deep.equal(new Buffer('bar'));
-                expect(td.explain(FakeResetStub.prototype.setKeepOpen).callCount).to.equal(1);
-                return expect(td.explain(FakeResetStub.prototype.setKeepOpen).calls[0].args[0]).to.equal(true);
-            });
+            td.when(FakeResetStub.prototype.serializeBinary()).thenReturn(bytes);
 
-            it('allows to not require the session to be kept open', () => {
-                td.when(FakeResetStub.prototype.serializeBinary()).thenReturn('bar');
+            const reset = Session.encodeReset({ keepOpen: false });
 
-                const reset = Session.encodeReset({ keepOpen: false });
-
-                // eslint-disable-next-line node/no-deprecated-api
-                expect(reset).to.deep.equal(new Buffer('bar'));
-                return expect(td.explain(FakeResetStub.prototype.setKeepOpen).callCount).to.equal(0);
-            });
+            expect(reset).to.deep.equal(data);
+            return expect(td.explain(FakeResetStub.prototype.setKeepOpen).callCount).to.equal(0);
         });
     });
 });

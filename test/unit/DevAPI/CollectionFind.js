@@ -6,9 +6,10 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 
 describe('CollectionFind', () => {
-    let collectionFind, preparing;
+    let collectionFind, decode, preparing;
 
     beforeEach('create fakes', () => {
+        decode = td.function();
         preparing = td.function();
 
         td.replace('../../../lib/DevAPI/Preparing', preparing);
@@ -23,14 +24,15 @@ describe('CollectionFind', () => {
         it('wraps an operation without a cursor in a preparable instance', () => {
             const execute = td.function();
             const session = 'foo';
-            const expected = 'bar';
-            const state = { results: [[[expected]]] };
+            const row = { decode };
+            const state = { results: [[row]] };
 
+            td.when(decode()).thenReturn(['bar']);
             td.when(execute(td.matchers.isA(Function), undefined)).thenResolve(state);
             td.when(preparing({ session })).thenReturn({ execute });
 
             return collectionFind(session).execute()
-                .then(actual => expect(actual.fetchOne()).to.equal(expected));
+                .then(actual => expect(actual.fetchOne()).to.equal('bar'));
         });
 
         it('wraps an operation with a cursor in a preparable instance', () => {
