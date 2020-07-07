@@ -100,8 +100,7 @@ describe('single document upsert', () => {
                 });
         });
 
-        // TODO(Rui): this test is failing due to what seems to be a bug in xplugin.
-        it.skip('fails if the document does not exist and there is a duplicate unique key', () => {
+        it('fails if the document does not exist and there is a duplicate unique key', () => {
             return collection.addOrReplaceOne('3', { _id: '1', name: 'bar' })
                 .then(() => expect.fail())
                 .catch(err => {
