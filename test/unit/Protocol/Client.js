@@ -6,10 +6,10 @@ const Client = require('../../../lib/Protocol/Client');
 const ClientMessages = require('../../../lib/Protocol/Protobuf/Stubs/mysqlx_pb').ClientMessages;
 const EventEmitter = require('events');
 const Expect = require('../../../lib/Protocol/Protobuf/Adapters/Expect');
+const Mysqlx = require('../../../lib/Protocol/Protobuf/Adapters/Mysqlx');
 const OkHandler = require('../../../lib/Protocol/ResponseHandlers/OkHandler');
 const PassThrough = require('stream').PassThrough;
 const Scope = require('../../../lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Frame.Scope;
-const ServerMessages = require('../../../lib/Protocol/Protobuf/Stubs/mysqlx_pb').ServerMessages;
 const WorkQueue = require('../../../lib/WorkQueue');
 const expect = require('chai').expect;
 const td = require('testdouble');
@@ -712,7 +712,7 @@ describe('Client', () => {
             const client = new Client(socket);
             const decodeMessage = td.replace(client, 'decodeMessage');
 
-            const message = { id: ServerMessages.Type.NOTICE, payload: 'bar' };
+            const message = { id: Mysqlx.ServerMessages.NOTICE, payload: 'bar' };
             const notice = { scope: Scope.GLOBAL };
 
             td.replace(client, '_workQueue', { process });
