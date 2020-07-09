@@ -2,7 +2,6 @@
 
 /* eslint-env node, mocha */
 
-const Client = require('../../../lib/Protocol/Client');
 const PassThrough = require('stream').PassThrough;
 const authenticationManager = require('../../../lib/Authentication/AuthenticationManager');
 const expect = require('chai').expect;
@@ -12,24 +11,22 @@ const sha256MemoryAuth = require('../../../lib/Authentication/SHA256MemoryAuth')
 const td = require('testdouble');
 const tk = require('timekeeper');
 
+// Subjects under test with dependency replacements
+let Session = require('../../../lib/DevAPI/Session');
+
 describe('Session', () => {
-    let Session, connect, execute, sqlExecute;
-
-    beforeEach('create fakes', () => {
-        connect = td.function();
-        execute = td.function();
-        sqlExecute = td.function();
-
-        td.replace('net', { connect });
-        td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
-        Session = require('../../../lib/DevAPI/Session');
-    });
-
     afterEach('reset fakes', () => {
         td.reset();
     });
 
     context('constructor', () => {
+        let deprecated;
+
+        beforeEach('create fakes', () => {
+            deprecated = td.replace('../../../lib/DevAPI/Util/deprecated');
+            Session = require('../../../lib/DevAPI/Session');
+        });
+
         it('does not throw an error if the session configuration is not provided', () => {
             expect(() => new Session()).to.not.throw(Error);
         });
@@ -39,16 +36,21 @@ describe('Session', () => {
         });
 
         it('creates a session using sane defaults', () => {
-            expect((new Session()).inspect()).to.deep.equal({
+            // TODO(Rui): remove "dbUser" after deprecation period
+            const saneDefaults = {
                 auth: 'PLAIN',
                 dbUser: '',
                 host: 'localhost',
                 pooling: false,
                 port: 33060,
+                schema: undefined,
                 socket: undefined,
                 ssl: true,
                 user: ''
-            });
+            };
+
+            expect((new Session()).inspect()).to.deep.equal(saneDefaults);
+            expect((new Session(`mysqlx://localhost`)).inspect()).to.deep.equal(saneDefaults);
         });
 
         it('throws an error if the port is not in the appropriate range', () => {
@@ -79,6 +81,22 @@ describe('Session', () => {
                 expect(() => new Session({ endpoints: [{ host: 'foo' }, { host: 'bar' }], resolveSrv: true })).to.throw('Specifying multiple hostnames with DNS SRV lookup is not allowed.');
             });
         });
+
+        it('issues a deprecation warning for "dbPassword"', () => {
+            // eslint-disable-next-line no-new
+            new Session({ dbPassword: 'foo' });
+
+            expect(td.explain(deprecated).callCount).to.equal(1);
+            expect(td.explain(deprecated).calls[0].args[0]).to.equal('The "dbPassword" property is deprecated since 8.0.22 and will be removed in future versions. Use "password" instead.');
+        });
+
+        it('issues a deprecation warning for "dbUser"', () => {
+            // eslint-disable-next-line no-new
+            new Session({ dbUser: 'foo' });
+
+            expect(td.explain(deprecated).callCount).to.equal(1);
+            expect(td.explain(deprecated).calls[0].args[0]).to.equal('The "dbUser" property is deprecated since 8.0.22 and will be removed in future versions. Use "user" instead.');
+        });
     });
 
     context('getSchema()', () => {
@@ -93,40 +111,39 @@ describe('Session', () => {
         });
     });
 
+    context('getDefaultSchema()', () => {
+        it('returns the default Schema instance bound to the session', () => {
+            const session = new Session({ schema: 'foo' });
+            const schema = session.getDefaultSchema();
+
+            expect(schema.getCollection).to.be.a('function');
+            expect(schema.getCollections).to.be.a('function');
+            expect(schema.getTable).to.be.a('function');
+            expect(schema.getTables).to.be.a('function');
+            return expect(schema.getName()).to.equal('foo');
+        });
+    });
+
     context('server access methods', () => {
-        let authenticate, capabilitiesGet, clientProto;
+        let Client, net, socket;
 
-        beforeEach('create fakes', () => {
-            clientProto = Object.assign({}, Client.prototype);
-
-            authenticate = td.function();
-            capabilitiesGet = td.function();
-
-            Client.prototype.authenticate = authenticate;
-            Client.prototype.capabilitiesGet = capabilitiesGet;
-
-            td.when(authenticate(), { ignoreExtraArgs: true }).thenResolve();
+        beforeEach('load the available authentication plugins', () => {
+            authenticationManager.registerPlugin(plainAuth);
+            authenticationManager.registerPlugin(mysql41Auth);
+            authenticationManager.registerPlugin(sha256MemoryAuth);
         });
 
-        afterEach(() => {
-            Client.prototype = clientProto;
+        beforeEach('create fakes', () => {
+            Client = td.replace('../../../lib/Protocol/Client');
+            net = td.replace('net');
+
+            socket = new PassThrough();
+            td.replace(socket, 'setTimeout', td.function());
+
+            Session = require('../../../lib/DevAPI/Session');
         });
 
         context('connect()', () => {
-            let socket;
-
-            beforeEach(() => {
-                socket = new PassThrough();
-                socket.setTimeout = td.function();
-
-                // load all the available authentication plugins
-                authenticationManager.registerPlugin(plainAuth);
-                authenticationManager.registerPlugin(mysql41Auth);
-                authenticationManager.registerPlugin(sha256MemoryAuth);
-
-                td.when(connect(), { ignoreExtraArgs: true }).thenReturn(socket);
-            });
-
             it('fails if the connection timeout is not a non-negative integer value', () => {
                 const invalid = [-1, 2.2, 'foo', {}, [], () => {}];
                 const expected = invalid.map(() => 'The connection timeout value must be a positive integer (including 0).');
@@ -134,7 +151,7 @@ describe('Session', () => {
 
                 return Promise.all(
                     invalid.map(connectTimeout => {
-                        return (new Session({ connectTimeout, dbPassword: 'bar', ssl: false, user: 'foo' }))
+                        return (new Session({ connectTimeout, password: 'bar', ssl: false, user: 'foo' }))
                             .connect()
                             .catch(err => actual.push(err.message));
                     }))
@@ -145,9 +162,11 @@ describe('Session', () => {
 
             it('fails if the connection timeout is exceeded for a single host', () => {
                 const connectTimeout = 10;
-                const properties = { connectTimeout, dbPassword: 'bar', ssl: false, user: 'foo' };
+                const properties = { connectTimeout, password: 'bar', ssl: false, user: 'foo' };
                 const session = new Session(properties);
                 const error = `Connection attempt to the server was aborted. Timeout of ${connectTimeout} ms was exceeded.`;
+
+                td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
 
                 setTimeout(() => socket.emit('timeout'), 0);
 
@@ -158,9 +177,11 @@ describe('Session', () => {
 
             it('fails if the connection timeout is exceeded for a multiple hosts', () => {
                 const connectTimeout = 10;
-                const properties = { connectTimeout, dbPassword: 'bar', endpoints: [{ host: 'baz' }, { host: 'qux' }], user: 'foo' };
+                const properties = { connectTimeout, password: 'bar', endpoints: [{ host: 'baz' }, { host: 'qux' }], user: 'foo' };
                 const session = new Session(properties);
                 const error = `All server connection attempts were aborted. Timeout of ${connectTimeout} ms was exceeded for each selected server.`;
+
+                td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
 
                 setTimeout(() => {
                     socket.emit('timeout');
@@ -173,11 +194,13 @@ describe('Session', () => {
             });
 
             it('returns a clean object with the session properties', () => {
-                const properties = { auth: 'PLAIN', dbPassword: 'bar', ssl: false, user: 'foo', connectionAttributes: false };
+                const properties = { auth: 'PLAIN', password: 'bar', ssl: false, user: 'foo', connectionAttributes: false };
                 const session = new Session(properties);
                 const expected = { user: 'foo' };
 
-                td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                 setTimeout(() => socket.emit('connect'));
 
@@ -189,7 +212,8 @@ describe('Session', () => {
                 const session = new Session();
                 const end = td.function();
 
-                session._client._stream = { end };
+                td.replace(session, '_client', { _stream: { end } });
+                td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
 
                 setTimeout(() => socket.emit('error', new Error()));
                 setTimeout(() => socket.emit('close', true));
@@ -200,21 +224,15 @@ describe('Session', () => {
             });
 
             context('secure connection', () => {
-                let enableTLS;
-
-                beforeEach('create fakes', () => {
-                    enableTLS = td.function();
-
-                    Client.prototype.enableTLS = enableTLS;
-                });
-
                 it('is able to setup a SSL/TLS connection', () => {
-                    const properties = { dbPassword: 'bar', ssl: true, user: 'foo', connectionAttributes: false };
+                    const properties = { password: 'bar', ssl: true, user: 'foo', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] };
 
-                    td.when(enableTLS({ enabled: true })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve(expected);
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve(expected);
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -223,27 +241,30 @@ describe('Session', () => {
                 });
 
                 it('does not try to setup a SSL/TLS connection if no such intent is specified', () => {
-                    const properties = { dbPassword: 'bar', ssl: false, user: 'foo', connectionAttributes: false };
+                    const properties = { password: 'bar', ssl: false, user: 'foo', connectionAttributes: false };
                     const session = new Session(properties);
 
-                    td.when(enableTLS({ enabled: true })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => socket.emit('connect'));
 
                     return session.connect()
                         .then(() => {
-                            expect(td.explain(enableTLS).callCount).to.equal(0);
+                            expect(td.explain(Client.prototype.enableTLS).callCount).to.equal(0);
                             return expect(session._serverCapabilities.tls).to.be.undefined;
                         });
                 });
 
                 it('fails if an error is thrown in the SSL setup', () => {
-                    const properties = { dbPassword: 'bar', ssl: true, user: 'foo' };
+                    const properties = { password: 'bar', ssl: true, user: 'foo' };
                     const session = new Session(properties);
 
-                    td.when(enableTLS({ enabled: true })).thenReject(new Error());
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.enableTLS({ enabled: true })).thenReject(new Error());
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -253,11 +274,13 @@ describe('Session', () => {
                 });
 
                 it('enables TLS/SSL if the server supports it', () => {
-                    const properties = { user: 'foo', dbPassword: 'bar', connectionAttributes: false };
+                    const properties = { user: 'foo', password: 'bar', connectionAttributes: false };
                     const session = new Session(properties);
 
-                    td.when(enableTLS({ enabled: true })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -266,13 +289,15 @@ describe('Session', () => {
                 });
 
                 it('fails if the server does not support TLS/SSL', () => {
-                    const properties = { dbPassword: 'bar', user: 'foo' };
+                    const properties = { password: 'bar', user: 'foo' };
                     const session = new Session(properties);
                     const error = new Error();
                     error.info = { code: 5001 };
 
-                    td.when(enableTLS({ enabled: true })).thenReject(error);
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.enableTLS({ enabled: true })).thenReject(error);
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -282,11 +307,13 @@ describe('Session', () => {
                 });
 
                 it('selects the default authentication mechanism', () => {
-                    const properties = { dbPassword: 'bar', user: 'foo', connectionAttributes: false };
+                    const properties = { password: 'bar', user: 'foo', connectionAttributes: false };
                     const session = new Session(properties);
 
-                    td.when(enableTLS({ enabled: true })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -295,11 +322,13 @@ describe('Session', () => {
                 });
 
                 it('overrides the default authentication mechanism with the one provided by the user', () => {
-                    const properties = { auth: 'MYSQL41', dbPassword: 'bar', user: 'foo', connectionAttributes: false };
+                    const properties = { auth: 'MYSQL41', password: 'bar', user: 'foo', connectionAttributes: false };
                     const session = new Session(properties);
 
-                    td.when(enableTLS({ enabled: true })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -310,10 +339,12 @@ describe('Session', () => {
 
             context('insecure connections', () => {
                 it('selects the default authentication mechanism', () => {
-                    const properties = { dbPassword: 'bar', ssl: false, user: 'foo', connectionAttributes: false };
+                    const properties = { password: 'bar', ssl: false, user: 'foo', connectionAttributes: false };
                     const session = new Session(properties);
 
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -323,21 +354,15 @@ describe('Session', () => {
             });
 
             context('failover', () => {
-                let enableTLS;
-
-                beforeEach('create fakes', () => {
-                    enableTLS = td.function();
-
-                    Client.prototype.enableTLS = enableTLS;
-                });
-
                 it('failovers to the next available address if the connection fails', () => {
                     const endpoints = [{ host: 'foo', port: 1, priority: 100 }, { host: 'bar', port: 2, priority: 99 }];
-                    const properties = { dbPassword: 'qux', endpoints, ssl: false, user: 'baz', connectionAttributes: false };
+                    const properties = { password: 'qux', endpoints, ssl: false, user: 'baz', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { host: 'bar', port: 2, user: 'baz' };
 
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => {
                         socket.emit('close', true);
@@ -352,6 +377,8 @@ describe('Session', () => {
                     const endpoints = [{ host: 'foo', port: 1 }, { host: 'bar', port: 2 }];
                     const properties = { endpoints };
                     const session = new Session(properties);
+
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
 
                     setTimeout(() => {
                         socket.emit('close', true);
@@ -368,11 +395,13 @@ describe('Session', () => {
 
                 it('resets the connection availability constraints when all endpoints are unavailable', () => {
                     const endpoints = [{ host: 'foo', port: 1, priority: 100 }, { host: 'bar', port: 2, priority: 99 }];
-                    const properties = { dbPassword: 'qux', endpoints, ssl: false, user: 'baz', connectionAttributes: false };
+                    const properties = { password: 'qux', endpoints, ssl: false, user: 'baz', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { host: 'foo', port: 1, user: 'baz' };
 
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => {
                         socket.emit('close', true);
@@ -398,12 +427,14 @@ describe('Session', () => {
 
                 it('selects the default authentication mechanism for secure connections', () => {
                     const endpoints = [{ host: 'foo', port: 1, priority: 100 }, { host: 'bar', port: 2, priority: 99 }];
-                    const properties = { dbPassword: 'qux', endpoints, ssl: true, user: 'baz', connectionAttributes: false };
+                    const properties = { password: 'qux', endpoints, ssl: true, user: 'baz', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { auth: 'PLAIN', host: 'bar', port: 2, ssl: true, user: 'baz' };
 
-                    td.when(enableTLS({ enabled: true })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => {
                         socket.emit('close', true);
@@ -416,12 +447,14 @@ describe('Session', () => {
 
                 it('selects the default authentication mechanism for insecure connections', () => {
                     const endpoints = [{ host: 'foo', port: 1, priority: 100 }, { host: 'bar', port: 2, priority: 99 }];
-                    const properties = { dbPassword: 'qux', endpoints, ssl: false, user: 'baz', connectionAttributes: false };
+                    const properties = { password: 'qux', endpoints, ssl: false, user: 'baz', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { auth: 'MYSQL41', host: 'bar', port: 2, ssl: false, user: 'baz' };
 
-                    td.when(enableTLS({ enabled: true })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
 
                     setTimeout(() => {
                         socket.emit('close', true);
@@ -434,12 +467,13 @@ describe('Session', () => {
 
                 it('overrides the default authentication mechanism with the one provided by the user', () => {
                     const endpoints = [{ host: 'foo', port: 1, priority: 100 }, { host: 'bar', port: 2, priority: 99 }];
-                    const properties = { auth: 'MYSQL41', dbPassword: 'qux', endpoints, ssl: true, user: 'baz', connectionAttributes: false };
+                    const properties = { auth: 'MYSQL41', password: 'qux', endpoints, ssl: true, user: 'baz', connectionAttributes: false };
                     const session = new Session(properties);
                     const expected = { auth: 'MYSQL41', host: 'bar', port: 2, ssl: true, user: 'baz' };
 
-                    td.when(enableTLS({ enabled: true })).thenResolve();
-                    td.when(capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
+                    td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
+                    td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
 
                     setTimeout(() => {
                         socket.emit('close', true);
@@ -453,17 +487,24 @@ describe('Session', () => {
         });
 
         context('getSchemas()', () => {
+            let sqlExecute, execute;
+
+            beforeEach('create fakes', () => {
+                execute = td.function();
+                sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+                Session = require('../../../lib/DevAPI/Session');
+            });
+
             it('returns a list with the existing schemas', () => {
                 const session = new Session({});
+                const getSchema = td.replace(session, 'getSchema');
                 const name = 'foobar';
                 const schema = { name };
                 const expected = [schema];
 
-                session.getSchema = td.function();
-
                 td.when(execute(td.callback([name]))).thenResolve(expected);
                 td.when(sqlExecute(session, 'SHOW DATABASES')).thenReturn({ execute });
-                td.when(session.getSchema(name)).thenReturn(schema);
+                td.when(getSchema(name)).thenReturn(schema);
 
                 return session.getSchemas()
                     .then(actual => expect(actual).to.deep.equal(expected));
@@ -471,15 +512,14 @@ describe('Session', () => {
 
             it('fails if an expected error is thrown', () => {
                 const session = new Session({});
+                const getSchema = td.replace(session, 'getSchema');
                 const name = 'foobar';
                 const schema = { name };
                 const error = new Error('foobar');
 
-                session.getSchema = td.function();
-
                 td.when(execute(td.callback([name]))).thenReject(error);
                 td.when(sqlExecute(session, 'SHOW DATABASES')).thenReturn({ execute });
-                td.when(session.getSchema(name)).thenReturn(schema);
+                td.when(getSchema(name)).thenReturn(schema);
 
                 return session.getSchemas()
                     .then(() => expect.fail())
@@ -487,20 +527,15 @@ describe('Session', () => {
             });
         });
 
-        context('getDefaultSchema()', () => {
-            it('returns the default Schema instance bound to the session', () => {
-                const session = new Session({ schema: 'foo' });
-                const schema = session.getDefaultSchema();
-
-                expect(schema.getCollection).to.be.a('function');
-                expect(schema.getCollections).to.be.a('function');
-                expect(schema.getTable).to.be.a('function');
-                expect(schema.getTables).to.be.a('function');
-                return expect(schema.getName()).to.equal('foo');
-            });
-        });
-
         context('createSchema()', () => {
+            let sqlExecute, execute;
+
+            beforeEach('create fakes', () => {
+                execute = td.function();
+                sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+                Session = require('../../../lib/DevAPI/Session');
+            });
+
             it('creates and return a new schema', () => {
                 const session = new Session({});
                 const schema = 'foobar';
@@ -518,6 +553,14 @@ describe('Session', () => {
         });
 
         context('dropSchema()', () => {
+            let sqlExecute, execute;
+
+            beforeEach('create fakes', () => {
+                execute = td.function();
+                sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+                Session = require('../../../lib/DevAPI/Session');
+            });
+
             it('returns true if the schema was dropped', () => {
                 const session = new Session({});
 
@@ -554,6 +597,14 @@ describe('Session', () => {
         });
 
         context('setSavepoint()', () => {
+            let sqlExecute, execute;
+
+            beforeEach('create fakes', () => {
+                execute = td.function();
+                sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+                Session = require('../../../lib/DevAPI/Session');
+            });
+
             it('creates a savepoint with a generated name if no name is passed', () => {
                 const session = new Session({});
 
@@ -582,6 +633,14 @@ describe('Session', () => {
         });
 
         context('releaseSavepoint()', () => {
+            let sqlExecute, execute;
+
+            beforeEach('create fakes', () => {
+                execute = td.function();
+                sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+                Session = require('../../../lib/DevAPI/Session');
+            });
+
             it('releases the savepoint', () => {
                 const session = new Session({});
 
@@ -605,6 +664,14 @@ describe('Session', () => {
         });
 
         context('rollbackTo()', () => {
+            let sqlExecute, execute;
+
+            beforeEach('create fakes', () => {
+                execute = td.function();
+                sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+                Session = require('../../../lib/DevAPI/Session');
+            });
+
             it('rolbacks to the savepoint', () => {
                 const session = new Session({});
 
@@ -629,82 +696,93 @@ describe('Session', () => {
     });
 
     context('executeSql()', () => {
+        let sqlExecute;
+
+        beforeEach('create fakes', () => {
+            sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+            Session = require('../../../lib/DevAPI/Session');
+        });
+
         it('creates a sqlExecute query with a given statement', () => {
             const session = new Session({});
-
-            td.when(sqlExecute(session, 'foo')).thenReturn();
 
             session.executeSql('foo');
 
             expect(td.explain(sqlExecute).callCount).to.equal(1);
+            expect(td.explain(sqlExecute).calls[0].args[0]).to.deep.equal(session);
+            expect(td.explain(sqlExecute).calls[0].args[1]).to.deep.equal('foo');
         });
 
         it('creates a sqlExecute query with optional arguments', () => {
             const session = new Session({});
 
-            td.when(sqlExecute(session, 'foo', ['bar', 'baz'])).thenReturn();
-
             session.executeSql('foo', 'bar', 'baz');
 
             expect(td.explain(sqlExecute).callCount).to.equal(1);
+            expect(td.explain(sqlExecute).calls[0].args[0]).to.deep.equal(session);
+            expect(td.explain(sqlExecute).calls[0].args[1]).to.deep.equal('foo');
+            expect(td.explain(sqlExecute).calls[0].args[2]).to.deep.equal(['bar', 'baz']);
         });
 
         it('creates a sqlExecute query with optional arguments provided as an array', () => {
             const session = new Session({});
 
-            td.when(sqlExecute(session, 'foo', ['bar', 'baz'])).thenReturn();
-
             session.executeSql('foo', ['bar', 'baz']);
 
             expect(td.explain(sqlExecute).callCount).to.equal(1);
+            expect(td.explain(sqlExecute).calls[0].args[0]).to.deep.equal(session);
+            expect(td.explain(sqlExecute).calls[0].args[1]).to.deep.equal('foo');
+            expect(td.explain(sqlExecute).calls[0].args[2]).to.deep.equal(['bar', 'baz']);
         });
     });
 
     context('sql()', () => {
+        let sqlExecute;
+
+        beforeEach('create fakes', () => {
+            sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+            Session = require('../../../lib/DevAPI/Session');
+        });
+
         it('creates a sqlExecute query with a given statement', () => {
             const session = new Session({});
-
-            td.when(sqlExecute(session, 'foo')).thenReturn();
 
             session.sql('foo');
 
             expect(td.explain(sqlExecute).callCount).to.equal(1);
+            expect(td.explain(sqlExecute).calls[0].args[0]).to.deep.equal(session);
+            expect(td.explain(sqlExecute).calls[0].args[1]).to.deep.equal('foo');
         });
     });
 
     context('close()', () => {
-        let sessionClose;
-
-        beforeEach('create fakes', () => {
-            sessionClose = td.function();
-        });
-
         it('succeeds if the session is closed', () => {
             const session = new Session({});
-            session._client = { sessionClose };
+            const client = td.replace(session, '_client', { sessionClose: td.function() });
 
-            td.when(sessionClose()).thenResolve();
+            td.when(client.sessionClose()).thenResolve();
 
             return session.close();
         });
 
         it('succeeds if the session is not usable', () => {
             const session = new Session({});
-            session._client = { sessionClose };
+            const client = td.replace(session, '_client', { sessionClose: td.function() });
+
             session._isOpen = false;
 
             return session.close()
-                .then(() => expect(td.explain(sessionClose).callCount).to.equal(0));
+                .then(() => expect(td.explain(client.sessionClose).callCount).to.equal(0));
         });
 
         it('fails if there is an error while closing the session', () => {
             const session = new Session({});
-            session._client = { sessionClose };
-            session._isOpen = true;
-
+            const client = td.replace(session, '_client', { sessionClose: td.function() });
             const error = new Error('foobar');
 
-            td.when(sessionClose()).thenReject(error);
+            session._isOpen = true;
+
+            td.when(client.sessionClose()).thenReject(error);
 
             return session.close()
                 .then(() => expect.fail())
@@ -713,17 +791,11 @@ describe('Session', () => {
     });
 
     context('reset()', () => {
-        let sessionReset;
-
-        beforeEach('create fakes', () => {
-            sessionReset = td.function();
-        });
-
         it('succeeds if the session is reset', () => {
             const session = new Session({});
-            session._client = { sessionReset };
+            const client = td.replace(session, '_client', { sessionReset: td.function() });
 
-            td.when(sessionReset()).thenResolve();
+            td.when(client.sessionReset()).thenResolve();
 
             return session.reset()
                 .then(actual => expect(actual).to.deep.equal(session));
@@ -731,11 +803,10 @@ describe('Session', () => {
 
         it('fails if there is an error while resetting the session', () => {
             const session = new Session({});
-            session._client = { sessionReset };
-
+            const client = td.replace(session, '_client', { sessionReset: td.function() });
             const error = new Error('foobar');
 
-            td.when(sessionReset()).thenReject(error);
+            td.when(client.sessionReset()).thenReject(error);
 
             return session.reset()
                 .then(() => expect.fail())
@@ -745,38 +816,33 @@ describe('Session', () => {
 
     // TODO(Rui): should be the responsability of a connection management module
     context('disconnect()', () => {
-        let connectionClose;
-
-        beforeEach('create fakes', () => {
-            connectionClose = td.function();
-        });
-
         it('succeeds if the connection is closed', () => {
             const session = new Session({});
-            session._client = { connectionClose };
+            const client = td.replace(session, '_client', { connectionClose: td.function() });
 
-            td.when(connectionClose()).thenResolve();
+            td.when(client.connectionClose()).thenResolve();
 
             return session.disconnect();
         });
 
         it('succeeds if the connection is not usable', () => {
             const session = new Session({});
-            session._client = { connectionClose };
+            const client = td.replace(session, '_client', { connectionClose: td.function() });
+
             session._isOpen = false;
 
             return session.disconnect()
-                .then(() => expect(td.explain(connectionClose).callCount).to.equal(0));
+                .then(() => expect(td.explain(client.connectionClose).callCount).to.equal(0));
         });
 
         it('fails if there is an error while closing the connection', () => {
             const session = new Session({});
-            session._client = { connectionClose };
-            session._isOpen = true;
-
+            const client = td.replace(session, '_client', { connectionClose: td.function() });
             const error = new Error('foobar');
 
-            td.when(connectionClose()).thenReject(error);
+            session._isOpen = true;
+
+            td.when(client.connectionClose()).thenReject(error);
 
             return session.disconnect()
                 .then(() => expect.fail())

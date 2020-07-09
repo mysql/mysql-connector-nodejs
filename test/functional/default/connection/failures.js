@@ -11,6 +11,30 @@ const os = require('os');
 describe('connection failures', () => {
     const baseConfig = { schema: undefined };
 
+    context('while creating a session', () => {
+        // Although we can create a user without a name in the server via:
+        // CREATE USER ''@'%'
+        // It does not allow userless client connections
+        context('when a user is not provided', () => {
+            it('fails using a configuration object', () => {
+                const userlessConfig = Object.assign({}, config, baseConfig, { user: undefined });
+
+                return mysqlx.getSession(userlessConfig)
+                    .then(() => expect.fail())
+                    .catch(err => expect(err.message).to.match(/^Access denied for user ''/));
+            });
+
+            it('fails using a connection string', () => {
+                const userlessConfig = Object.assign({}, config, baseConfig, { user: undefined });
+                const uri = `mysqlx://${userlessConfig.host}`;
+
+                return mysqlx.getSession(uri)
+                    .then(() => expect.fail())
+                    .catch(err => expect(err.message).to.match(/^Access denied for user ''/));
+            });
+        });
+    });
+
     context('with an existing session', () => {
         const testTimeout = 1; // in seconds
         const originalTimeout = 28800; // in seconds
