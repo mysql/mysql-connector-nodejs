@@ -122,7 +122,6 @@ So, if a document with the given `_id` already exists in a collection, the behav
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     .then(session => {
@@ -135,19 +134,18 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
                 console.log(result.getAffectedItemsCount()); // 2
 
                 return collection.find()
-                    .execute(doc => docs.push(doc));
+                    .execute();
+            })
+            .then(result => {
+                console.log(result.fetchAll()); // [ { _id: '1', name: 'baz', age: 23 }, { _id: '2', name: 'bar' } ]
             });
     })
-    .then(() => {
-        console.log(docs); // [ { _id: '1', name: 'baz', age: 23 }, { _id: '2', name: 'bar' } ]
-    });
 ```
 
 If no such document exists, a new one will be created.
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     .then(session => {
@@ -158,11 +156,11 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
                 console.log(result.getAffectedItemsCount()); // 1
 
                 return collection.find()
-                    .execute(doc => docs.push(doc));
+                    .execute();
+            })
+            .then(result => {
+                console.log(result.fetchAll()); // [ { _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz', age: 23 } ]
             });
-    })
-    .then(() => {
-        console.log(docs); // [ { _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz', age: 23 } ]
     });
 ```
 
@@ -176,7 +174,6 @@ Existing documents will be updated with the given properties, provided that ther
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     .then(session => {
@@ -189,11 +186,11 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
                 console.log(result.getAffectedItemsCount()); // 2
 
                 return collection.find()
-                    .execute(doc => docs.push(doc));
+                    .execute();
+            })
+            .then(result => {
+                console.log(result.fetchAll()); // [ { _id: '1', name: 'baz' }, { _id: '2', name: 'bar' } ]
             });
-    })
-    .then(() => {
-        console.log(docs); // [ { _id: '1', name: 'baz' }, { _id: '2', name: 'bar' } ]
     });
 ```
 
@@ -214,11 +211,11 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
                 console.log(result.getAffectedItemsCount()); // 2
 
                 return collection.find()
-                    .execute(doc => docs.push(doc));
+                    .execute();
+            })
+            .then(result => {
+                console.log(result.fetchAll()); // [ { _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar' } ]
             });
-    })
-    .then(() => {
-        console.log(docs); // [ { _id: '1', name: 'foo', age: 23 }, { _id: '2', name: 'bar' } ]
     });
 ```
 
@@ -229,8 +226,7 @@ const mysqlx = require('@mysql/xdevapi')
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     .then(session => {
-         return session.getSchema('mySchema').getCollection('myCollection')
-            .addOrReplaceOne('1', { name: 'bar' });
+         return session.getSchema('mySchema').getCollection('myCollection').addOrReplaceOne('1', { name: 'bar' });
     })
     .catch(err => {
         console.log(err.message);
@@ -246,8 +242,7 @@ const mysqlx = require('@mysql/xdevapi')
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     .then(session => {
-        return session.getSchema('mySchema').getCollection('myCollection')
-            .getOne('1');
+        return session.getSchema('mySchema').getCollection('myCollection').getOne('1');
     })
     .then(doc => {
         console.log(doc); // { _id: '1', name: 'foo' }
@@ -259,8 +254,7 @@ const mysqlx = require('@mysql/xdevapi')
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     .then(session => {
-        return session.getSchema('mySchema').getCollection('myCollection')
-            .getOne('3');
+        return session.getSchema('mySchema').getCollection('myCollection').getOne('3');
     })
     .then(doc => {
         console.log(doc); // null
@@ -273,7 +267,6 @@ One can also remove a specific document from a collection given its `id` - `Coll
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     .then(session => {
@@ -284,17 +277,16 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
                 console.log(result.getAffectedItemsCount()); // 1
 
                 return collection.find()
-                    .execute(doc => docs.push(doc));
+                    .execute();
             })
-    })
-    .then(() => {
-        console.log(docs); // [ { _id: '2', name: 'bar' } ]
+            .then(result => {
+                console.log(result.fetchAll()); // [ { _id: '2', name: 'bar' } ]
+            });
     });
 ```
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     .then(session => {
@@ -305,10 +297,10 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
                 console.log(result.getAffectedItemsCount()); // 0
 
                 return collection.find()
-                    .execute(doc => docs.push(doc));
+                    .execute();
             })
     })
-    .then(() => {
-        console.log(docs); // [ { _id: '1', name: 'foo' }, { _id: '2', name: 'bar' } ]
+    .then(result => {
+        console.log(result.fetchAll()); // [ { _id: '1', name: 'foo' }, { _id: '2', name: 'bar' } ]
     });
 ```

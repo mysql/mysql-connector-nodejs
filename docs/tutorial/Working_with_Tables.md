@@ -95,10 +95,12 @@ mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
         const table = session.getSchema('testSchema').getTable('testTable');
 
-        return table.delete().where('name = "foo"')
+        return table.delete()
+            .where('name = "foo"')
             .execute()
             .then(() => {
-                return table.select().execute();
+                return table.select()
+                    .execute();
             });
     })
     .then(result => {
@@ -115,10 +117,12 @@ mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
         const table = session.getSchema('testSchema').getTable('testTable');
 
-        return table.delete().where('name = "foo"')
+        return table.delete()
+            .where('name = "foo"')
             .execute()
             .then(() => {
-                return table.select().execute();
+                return table.select()
+                    .execute();
             });
     })
     .then(result => {
@@ -136,10 +140,12 @@ mysqlx.getSession('mysqlx://localhost:33060')
         const table = session.getSchema('testSchema').getTable('testTable');
 
         // The expression should evaluate to `true`.
-        return table.delete().where('true')
+        return table.delete()
+            .where('true')
             .execute()
             .then(() => {
-                return table.select().execute();
+                return table.select()
+                    .execute();
             });
     })
     .then(result => {
@@ -157,10 +163,14 @@ mysqlx.getSession('mysqlx://localhost:33060')
         const table = session.getSchema('testSchema').getTable('testTable');
 
         // The criteria is defined through the expression.
-        return table.update().where('name = "bar"').set('age', 50)
+        return table.update()
+            .where('name = "bar"')
+            .set('age', 50)
             .execute()
             .then(() => {
-                return table.select().orderBy('name ASC').execute();
+                return table.select()
+                    .orderBy('name ASC')
+                    .execute();
             });
     })
     .then(result => {
@@ -202,7 +212,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
         const table = session.getSchema('testSchema').getTable('testTable');
 
-        return table.select().orderBy('age ASC').execute();
+        return table.select()
+            .orderBy('age ASC')
+            .execute();
     })
     .then(result => {
         console.log(result.fetchOne()); // [ 'qux', 23 ]
@@ -221,7 +233,8 @@ mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
         const table = session.getSchema('testSchema').getTable('testTable');
 
-        return table.select().orderBy('age ASC')
+        return table.select()
+            .orderBy('age ASC')
             .execute(row => data.push(row), meta => metadata.push(meta));
     })
     .then(() => {
@@ -235,26 +248,28 @@ mysqlx.getSession('mysqlx://localhost:33060')
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
+const procedure = `CREATE PROCEDURE proc() BEGIN
+    SELECT name, age FROM testSchema.testTable;
+    SELECT name, age from testSchema.testTable;
+END`;
+
 mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
-        return session.sql(`
-            CREATE PROCEDURE proc() BEGIN
-                SELECT name, age FROM testSchema.testTable;
-                SELECT name, age from testSchema.testTable;
-            END`)
-        .execute()
-        .then(() => {
-            return session.sql(`CALL proc()`).execute()
-        })
-        .then(result => {
-            let item = result.fetchAll();
-            console.log(item); // [['qux', 23]]
+        return session.sql(procedure)
+            .execute()
+            .then(() => {
+                return session.sql(`CALL proc()`)
+                    .execute()
+            })
+            .then(result => {
+                let item = result.fetchAll();
+                console.log(item); // [['qux', 23]]
 
-            result.nextResult();
+                result.nextResult();
 
-            item = result.fetchOne();
-            console.log(item); // ['qux', 50]
-        });
+                item = result.fetchOne();
+                console.log(item); // ['qux', 50]
+            });
     });
 ```
 
@@ -267,7 +282,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     .then(session => {
         const table = session.getSchema('testSchema').getTable('testTable');
 
-        return table.select().orderBy('age ASC').execute();
+        return table.select()
+            .orderBy('age ASC')
+            .execute();
     })
     .then(result => {
         const columns = result.getColumns();

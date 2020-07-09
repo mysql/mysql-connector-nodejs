@@ -202,7 +202,8 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .bind('name', 'foo')
             .execute()
             .then(() => {
-                return collection.find().execute();
+                return collection.find()
+                    .execute();
             })
             .then(result => {
                 console.log(result.fetchAll()); // [{ _id: 2, name: 'bar', meta: { nested: 'baz' } }]
@@ -224,7 +225,8 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .remove('true')
             .execute()
             .then(() => {
-                return collection.find().execute();
+                return collection.find()
+                    .execute();
             })
             .then(result => {
                 console.log(result.fetchAll()); // []
@@ -248,7 +250,8 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .set('name', 'baz')
             .execute()
             .then(() => {
-                return collection.find().execute();
+                return collection.find()
+                    .execute();
             })
             .then(result => {
                 console.log(result.fetchAll());
@@ -276,7 +279,8 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .set('meta.nested', 'quux')
             .execute()
             .then(() => {
-                return collection.find().execute();
+                return collection.find()
+                    .execute();
             })
             .then(result => {
                 console.log(result.fetchAll());
@@ -305,7 +309,8 @@ mysqlx.getSession('mysqlx://localhost:33060')
             .patch({ name: 'qux', meta: { nested: null, other: 'quux' } })
             .execute()
             .then(() => {
-                return collection.find().execute();
+                return collection.find()
+                    .execute();
             })
             .then(result => {
                 console.log(result.fetchAll());

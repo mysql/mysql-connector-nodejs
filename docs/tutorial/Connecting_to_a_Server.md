@@ -227,13 +227,13 @@ mysqlx.getSession(options)
 // if 33063 is not available
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect().port) // 33061
+        console.log(session.inspect().port); // 33061
     });
 
 // if neither 33063 nor 33061 are available any of the either two can be picked
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect().port) // 33060 or 33062
+        console.log(session.inspect().port); // 33060 or 33062
     });
 ```
 

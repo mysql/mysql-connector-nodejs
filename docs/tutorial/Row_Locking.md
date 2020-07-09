@@ -26,58 +26,37 @@ When two transactions are using exclusive locks, writes and updates from both of
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const result = [];
-const samplesA = [];
-const samplesB = [];
+const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
+const collectionB = sessionB.getSchema('testSchema').getCollection('testCollection');
 
-let sessionA, sessionB;
-
-const transactionA = mysqlx.getSession('mysqlx://user@localhost:33060/schema')
-    .then(session => {
-        sessionA = session;
-
-        return sessionA.startTransaction();
-    })
+const transactionA = sessionA.startTransaction()
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
+        return collectionA.find('_id = :id')
+            .bind('id', '1')
             .lockExclusive()
-            .execute(doc => samplesA.push(doc));
+            .execute();
     })
-    .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .modify('_id = "1"')
-            .set('a', samplesA[0].a + 1)
+    .then(result => {
+        return collectionA.modify('_id = :id')
+            .bind('id', '1')
+            .set('a', result.fetchOne().a + 1)
             .execute();
     })
     .then(() => {
         return sessionA.commit();
     });
 
-const transactionB = mysqlx.getSession('mysqlx://user@localhost:33060/schema')
-    .then(session => {
-        sessionB = session;
-
-        return sessionB.startTransaction();
-    })
+const transactionB = sessionB.startTransaction()
     .then(() => {
-        return sessionB
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
+        return collectionB.find('_id = :id')
+            .bind('id', '1')
             .lockExclusive()
-            .execute(doc => samplesB.push(doc));
+            .execute();
     })
-    .then(() => {
-        return sessionB
-            .getSchema(config.schema)
-            .getCollection('test')
-            .modify('_id = "1"')
-            .set('a', samplesB[0].a + 1)
+    .then(result => {
+        return collectionB.modify('_id = :id')
+            .bind('id', '1')
+            .set('a', result.fetchOne().a + 1)
             .set('b', 'foo')
             .execute();
     })
@@ -85,17 +64,14 @@ const transactionB = mysqlx.getSession('mysqlx://user@localhost:33060/schema')
         return sessionB.commit();
     });
 
-Promise
-    .all([transactionA, transactionB])
+Promise.all([transactionA, transactionB])
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
-            .execute(doc => result.push(doc));
+        return collectionA.find('_id = :id')
+            .bind('id', '1')
+            .execute();
     })
-    .then(() => {
-        console.log(result); // [{ _id: '1', a: 3, b: 'foo' }]
+    .then(result => {
+        console.log(result.fetchAll()); // [{ _id: '1', a: 3, b: 'foo' }]
     });
 ```
 
@@ -106,74 +82,51 @@ When two transactions are bound to the same shared lock, writes and updates from
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const result = [];
-const samplesA = [];
-const samplesB = [];
+const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
+const collectionB = sessionB.getSchema('testSchema').getCollection('testCollection');
 
-let sessionA, sessionB;
-
-mysqlx.getSession('mysqlx://user@localhost:33060/schema')
-    .then(session => {
-        sessionA = session;
-
-        return sessionA.startTransaction();
-    })
+sessionA.startTransaction()
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
+        return collectionA.find('_id = :id')
+            .bind('id', '1')
             .lockShared()
-            .execute(doc => samplesA.push(doc));
+            .execute()
+            .then(result => {
+                return collectionA.modify('_id = :id')
+                    .bind('id', '1')
+                    .set('a', result.fetchOne().a + 1)
+                    .execute();
+            })
+            .then(() => {
+                return sessionA.commit();
+            });
     })
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .modify('_id = "1"')
-            .set('a', samplesA[0].a + 1)
+        return sessionB.startTransaction()
+            .then(() => {
+                return collectionB.find('_id = :id')
+                    .bind('id', '1')
+                    .lockShared()
+                    .execute();
+            })
+            .then(result => {
+                return collectionB.modify('_id = :id')
+                    .bind('id', '1')
+                    .set('a', result.fetchOne().a + 1)
+                    .set('b', 'foo')
+                    .execute();
+            })
+            .then(() => {
+                return sessionB.commit();
+            });
+    })
+    .then(() => {
+        return collectionA.find('_id = :id')
+            .bind('id', '1')
             .execute();
     })
-    .then(() => {
-        return sessionA.commit();
-    })
-    .then(() => {
-        return mysqlx.getSesssion('mysqlx://user@localhost:33060/schema');
-    })
-    .then(session => {
-        sessionB = session;
-
-        return sessionB.startTransaction();
-    })
-    .then(() => {
-        return sessionB
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
-            .lockShared()
-            .execute(doc => samplesB.push(doc));
-    })
-    .then(() => {
-        return sessionB
-            .getSchema(config.schema)
-            .getCollection('test')
-            .modify('_id = "1"')
-            .set('a', samplesB[0].a + 1)
-            .set('b', 'foo')
-            .execute();
-    })
-    .then(() => {
-        return sessionB.commit();
-    })
-    .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
-            .execute(doc => result.push(doc));
-    })
-    .then(() => {
-        console.log(result); // [{ _id: '1', a: 3, b: 'foo' }]
+    .then(result => {
+        console.log(result.fetchAll()); // [{ _id: '1', a: 3, b: 'foo' }]
     });
 ```
 
@@ -185,51 +138,30 @@ When two transactions are bound to the same shared lock, if one of the transacti
 const mysqlx = require('@mysql/xdevapi');
 const pTimeout = require('p-timeout');
 
-const result = [];
+const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
+const collectionB = sessionB.getSchema('testSchema').getCollection('testCollection');
+const docs = [];
 
-let sessionA, sessionB;
-
-mysqlx.getSesssion('mysqlx://user@localhost:33060/schema')
-    .then(session => {
-        sessionA = session;
-
-        return sessionA.startTransaction();
-    })
+sessionA.startTransaction()
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
+        return collectionA.find('_id = :id')
+            .bind('id', '1')
             .lockShared()
-            .execute();
+            .execute()
+            .then(() => {
+                return collectionA.modify('_id = :id')
+                    .bind('id', '1')
+                    .set('a', 2)
+                    .set('b', 'foo')
+                    .execute();
+            });
     })
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .modify('_id = "1"')
-            .set('a', 2)
-            .set('b', 'foo')
-            .execute();
-    })
-    .then(() => {
-        return mysqlx.getSesssion('mysqlx://user@localhost:33060/schema');
-    })
-    .then(session => {
-        sessionB = session;
-
-        return sessionB.startTransaction();
-    })
-    .then(() => {
-        const read = sessionB
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
-            .lockShared()
-            .execute(doc => result.push(doc));
-
-        // The read will block until the active transaction gets committed.
-        return pTimeout(read, 2000);
+        return sessionB.startTransaction()
+            .then(() => {
+                // The read will block until the active transaction gets committed.
+                return pTimeout(collectionB.find('_id = :id').bind('id', '1').lockShared().execute(doc => docs.push(doc)), 2000);
+            });
     })
     .catch(err => {
         if (err.name !== 'TimeoutError') {
@@ -242,7 +174,7 @@ mysqlx.getSesssion('mysqlx://user@localhost:33060/schema')
         return sessionB.commit();
     })
     .then(() => {
-        console.log(result); // [{ _id: '1', a: 2, b: 'foo' }]
+        console.log(docs); // [{ _id: '1', a: 2, b: 'foo' }]
     });
 ```
 
@@ -253,46 +185,25 @@ When two transactions are not bound to any kind of lock, if both write/update a 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const result = [];
+const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
+const collectionB = sessionB.getSchema('testSchema').getCollection('testCollection');
+const docs = [];
 
-let sessionA, sessionB;
-
-mysqlx.getSesssion('mysqlx://user@localhost:33060/schema')
-    .then(session => {
-        sessionA = session;
-
-        return sessionA.startTransaction();
-    })
+sessionA.startTransaction()
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
-            .execute();
-    })
-    .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .modify('_id = "1"')
+        return collectionA.modify('_id = :id')
+            .bind('id', '1')
             .set('a', 2)
             .set('b', 'foo')
             .execute();
     })
     .then(() => {
-        return mysqlx.getSesssion('mysqlx://user@localhost:33060/schema');
-    })
-    .then(session => {
-        sessionB = session;
-
-        return sessionB.startTransaction();
-    })
-    .then(() => {
-        return sessionB
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
-            .execute(doc => result.push(doc));
+        return sessionB.startTransaction()
+            .then(() => {
+                return collectionB.find('_id = :id')
+                    .bind('id', '1')
+                    .execute(doc => docs.push(doc));
+            })
     })
     .then(() => {
         return sessionA.commit();
@@ -301,7 +212,7 @@ mysqlx.getSesssion('mysqlx://user@localhost:33060/schema')
         return sessionB.commit();
     })
     .then(() => {
-        console.log(result); // [{ _id: '1', a: 2, b: 'foo' }]
+        console.log(docs); // [{ _id: '1', a: 2, b: 'foo' }]
     });
 ```
 
@@ -312,53 +223,29 @@ When two transactions are bound to the same shared lock, if one of the transacti
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let sessionA, sessionB;
+const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
+const collectionB = sessionB.getSchema('testSchema').getCollection('testCollection');
 
-mysqlx.getSesssion('mysqlx://user@localhost:33060/schema')
-    .then(session => {
-        sessionA = session;
-
-        return sessionA.startTransaction();
-    })
+sessionA.startTransaction()
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
+        return collectionA.find('_id = :id')
+            .bind('id', '1')
             .lockShared()
             .execute();
     })
     .then(() => {
-        return mysqlx.getSesssion('mysqlx://user@localhost:33060/schema');
-    })
-    .then(session => {
-        sessionB = session;
-
-        return sessionB.startTransaction();
-    })
-    .then(() => {
-        return sessionB
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
-            .lockShared()
-            .execute();
+        return sessionB.startTransaction()
+            .then(() => {
+                return collectionB.find('_id = :id')
+                    .bind('id', '1')
+                    .lockShared()
+                    .execute();
+            });
     })
     .then(() => {
         return Promise.all([
-            sessionA
-                .getSchema(config.schema)
-                .getCollection('test')
-                .modify('_id = "1"')
-                .set('a', 2)
-                .execute(),
-            sessionB
-                .getSchema(config.schema)
-                .getCollection('test')
-                .modify('_id = "1"')
-                .set('a', 3)
-                .set('b', 'foo')
-                .execute()
+            collectionA.modify('_id = :id').bind('id', '1').set('a', 2).execute(),
+            collectionB.modify('_id = :id').bind('id', '1').set('a', 3).set('b', 'foo').execute()
         ]);
     })
     .catch(err => {
@@ -375,38 +262,31 @@ The default behavior of row locks can be overridden using the `NOWAIT` and `SKIP
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const result = [];
+const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
+const collectionB = sessionB.getSchema('testSchema').getCollection('testCollection');
 
-let sessionA, sessionB;
-
-const sut = sessionA.startTransaction()
+sessionA.startTransaction()
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
+        return collectionA.find('_id = :id')
+            .bind('id', '1')
             .lockShared()
-            .execute();
+            .execute()
+            .then(() => {
+                return collectionA.modify('_id = :id')
+                    .bind('id', '1')
+                    .set('a', 2)
+                    .set('b', 'foo')
+                    .execute();
+            });
     })
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .modify('_id = "1"')
-            .set('a', 2)
-            .set('b', 'foo')
-            .execute();
-    })
-    .then(() => {
-        return sessionB.startTransaction();
-    })
-    .then(() => {
-        return sessionB
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
-            .lockShared(mysqlx.LockContention.NOWAIT)
-            .execute(doc => result.push(doc));
+        return sessionB.startTransaction()
+            .then(() => {
+                return collectionB.find('_id = :id')
+                    .bind('id', '1')
+                    .lockShared(mysqlx.LockContention.NOWAIT)
+                    .execute();
+            });
     })
     .catch(err => {
         console.log(err.message); // 'Statement aborted because lock(s) could not be acquired immediately and NOWAIT is set.'
@@ -418,40 +298,33 @@ const sut = sessionA.startTransaction()
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-const result = [];
+const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
+const collectionB = sessionB.getSchema('testSchema').getCollection('testCollection');
 
-let sessionA, sessionB;
-
-const sut = sessionA.startTransaction()
+sessionA.startTransaction()
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
+        return collectionA.find('_id = :id')
+            .bind('id', '1')
             .lockShared()
-            .execute();
+            .execute()
+            .then(() => {
+                return collectionA.modify('_id = :id')
+                    .bind('id', '1')
+                    .set('a', 2)
+                    .set('b', 'foo')
+                    .execute();
+            });
     })
     .then(() => {
-        return sessionA
-            .getSchema(config.schema)
-            .getCollection('test')
-            .modify('_id = "1"')
-            .set('a', 2)
-            .set('b', 'foo')
-            .execute();
+        return sessionB.startTransaction()
+            .then(() => {
+                return collectionB.find('_id = :id')
+                    .bind('id', '1')
+                    .lockShared(mysqlx.LockContention.NOWAIT)
+                    .execute();
+            });
     })
-    .then(() => {
-        return sessionB.startTransaction();
-    })
-    .then(() => {
-        return sessionB
-            .getSchema(config.schema)
-            .getCollection('test')
-            .find('_id = "1"')
-            .lockShared(mysqlx.LockContention.NOWAIT)
-            .execute(doc => result.push(doc));
-    })
-    .then(() => {
-        console.log(result); // []
+    .then(result => {
+        console.log(result.fetchAll()); // []
     });
 ```

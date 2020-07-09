@@ -7,8 +7,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(session => {
-        return session
-            .startTransaction()
+        return session.startTransaction()
             .then(() => {
                 return session
                     .getSchema('testSchema')
@@ -42,20 +41,16 @@ connector-nodejs-097D39590784A43511E7B89CD9FB1810
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let session;
-
 mysqlx.getSession('mysqlx://root@localhost:33060')
-    .then(s => {
-        session = s;
+    .then(session => {
         return session.startTransaction();
-    })
-    .then(() => {
-        return session.setSavepoint('sp');
-    })
-    .then(savepoint => {
-        console.log(savepoint); // sp
+            .then(() => {
+                return session.setSavepoint('sp');
+            })
+            .then(savepoint => {
+                console.log(savepoint); // sp
+            });
     });
-
 ```
 
 Note: A defined identifier is taken literally. Empty strings are not allowed even though they are allowed by the server.
@@ -65,20 +60,16 @@ Note: A defined identifier is taken literally. Empty strings are not allowed eve
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let session;
-
 mysqlx.getSession('mysqlx://root@localhost:33060')
-    .then(s => {
-        session = s;
+    .then(session => {
         return session.startTransaction();
-    })
-    .then(() => {
-        return session.setSavepoint();
-    })
-    .then(savepoint => {
-        console.log(savepoint); // connector-nodejs-097D39590784A43511E7B89CD9FB1810
+            .then(() => {
+                return session.setSavepoint();
+            })
+            .then(savepoint => {
+                console.log(savepoint); // connector-nodejs-097D39590784A43511E7B89CD9FB1810
+            });
     });
-
 ```
 
 ### Rolling back to an existing savepoint
@@ -90,50 +81,37 @@ If the savepoint name is not valid or the savepoint does not exist, the promise 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let session;
-let docs = [];
-
 mysqlx.getSession('mysqlx://root@localhost:33060')
-    .then(s => {
-        session = s;
-        return session.startTransaction();
-    })
-    .then(() => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .add({ _id: '2', name: 'bar' })
-            .execute();
-    })
-    .then(() => {
-        return session.setSavepoint();
-    })
-    .then(savepoint => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .add({ _id: '3', name: 'baz' })
-            .execute()
-            .then(() => savepoint)
-    })
-    .then(savepoint => {
-        return session.rollbackTo(savepoint);
-    })
-    .then(() => {
-        return session.commit();
-    })
-    .then(() => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .find()
-            .execute(doc => doc && docs.push(doc));
-    })
-    .then(() => {
-        console.log(docs); // [{ _id: '2', name: 'bar' }]
+    .then(session => {
+        const collection = session.getSchema('testSchema').getCollection('testCollection');
+
+        return session.startTransaction()
+            .then(() => {
+                return collection.add({ _id: '2', name: 'bar' })
+                    .execute();
+            })
+            .then(() => {
+                return session.setSavepoint();
+            })
+            .then(savepoint => {
+                return collection.add({ _id: '3', name: 'baz' })
+                    .execute()
+                    .then(() => {
+                        return session.rollbackTo(savepoint);
+                    });
+            })
+            .then(() => {
+                return session.commit();
+            })
+            .then(() => {
+                return collection.find()
+                    .execute();
+            })
+            .then(res => {
+                console.log(res.fetchAll()); // [{ _id: '2', name: 'bar' }]
+            });
     });
 ```
-
 
 ### Releasing an existing savepoint
 
@@ -144,82 +122,70 @@ If the savepoint name is not valid or the savepoint does not exist, the promise 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let session;
-
 mysqlx.getSession('mysqlx://root@localhost:33060')
-    .then(s => {
-        session = s;
-        return session.startTransaction();
-    })
-    .then(() => {
-        return session.setSavepoint('sp');
-    })
-    .then(() => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .add({ _id: '2', name: 'bar' })
-            .execute();
-    })
-    .then(() => {
-        return session.releaseSavepoint('sp');
-    })
+    .then(session => {
+        const collection = session.getSchema('testSchema').getCollection('testCollection');
+
+        return session.startTransaction()
+            .then(() => {
+                return session.setSavepoint('sp');
+            })
+            .then(() => {
+                return collection.add({ _id: '2', name: 'bar' })
+                    .execute();
+            })
+            .then(() => {
+                return session.releaseSavepoint('sp');
+            });
+    });
 ```
 
 ### Releasing a nonexisting named savepoint
 
-Attemping to release a nonexisting savepoint will result in a rejected Promise.
+Attemping to release a nonexisting savepoint will result in a rejected `Promise`.
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let session;
-
 mysqlx.getSession('mysqlx://root@localhost:33060')
-    .then(s => {
-        session = s;
-        return session.startTransaction();
+    .then(session => {
+        const collection = session.getSchema('testSchema').getCollection('testCollection');
+
+        return session.startTransaction()
+            .then(() => {
+                return collection.add({ _id: '2', name: 'bar' })
+                    .execute();
+            })
+            .then(() => {
+                return session.releaseSavepoint('sp');
+            });
     })
-    .then(() => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .add({ _id: '2', name: 'bar' })
-            .execute();
-    })
-    .then(() => {
-        return session.releaseSavepoint('sp');
-    })
-    .then(() => {
+    .catch(err => {
         console.log(err.message); // SAVEPOINT sp does not exist
     });
 ```
 
 ### Rolling back to a nonexisting named savepoint
 
-Similarly, attempting to rollback to a nonexisting savepoint will result in a rejected Promise.
+Similarly, attempting to rollback to a nonexisting savepoint will result in a rejected `Promise`.
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let session;
-
 mysqlx.getSession('mysqlx://root@localhost:33060')
-    .then(s => {
-        session = s;
-        return session.startTransaction();
+    .then(session => {
+        const collection = session.getSchema('testSchema').getCollection('testCollection');
+
+        return session.startTransaction()
+            .then(() => {
+                return collection.add({ _id: '2', name: 'bar' })
+                    .execute();
+            })
+            .then(() => {
+                return session.releaseSavepoint('sp');
+            });
     })
-    .then(() => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .add({ _id: '2', name: 'bar' })
-            .execute();
-    })
-    .then(() => {
-        return session.releaseSavepoint('sp')
-    })
-    .catch((err) => {
+    .catch(err => {
         console.log(err.message); // SAVEPOINT sp does not exist
     });
 ```
@@ -231,30 +197,26 @@ If the savepoint was released and a rollback is attempted to that savepoint, the
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let session;
-
 mysqlx.getSession('mysqlx://root@localhost:33060')
-    .then(s => {
-        session = s;
-        return session.startTransaction();
+    .then(session => {
+        const collection = session.getSchema('testSchema').getCollection('testCollection');
+
+        return session.startTransaction()
+            .then(() => {
+                return session.setSavepoint('sp');
+            })
+            .then(() => {
+                return collection.add({ _id: '2', name: 'bar' })
+                    .execute();
+            })
+            .then(() => {
+                return session.releaseSavepoint('sp');
+            })
+            .then(() => {
+                return session.rollbackTo('sp');
+            });
     })
-    .then(() => {
-        return session.setSavepoint('sp');
-    })
-    .then(() => {
-        return session
-            .getSchema('testSchema')
-            .getCollection('testCollection')
-            .add({ _id: '2', name: 'bar' })
-            .execute();
-    })
-    .then(() => {
-        return session.releaseSavepoint('sp')
-    })
-    .then(() => {
-        return session.rollbackTo('sp');
-    })
-    .catch((err) => {
+    .catch(err => {
         console.log(err.message); // SAVEPOINT sp does not exist
     });
 ```
@@ -268,10 +230,10 @@ const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://root@localhost:33060')
     .then(session => {
-        session.setSavepoint('fun');
+        return session.setSavepoint('fun');
     })
     .then(savepoint => {
-        session.releaseSavepoint('fun');
+        return session.releaseSavepoint('fun');
     })
     .catch(err => {
         console.log(err.message); // SAVEPOINT fun does not exist
@@ -287,23 +249,19 @@ An open transaction is automatically closed and committed on executing a DDL sta
 ```js
 const mysqlx = require('@mysql/xdevapi');
 
-let session;
-let savepoint;
-
 mysqlx.getSession('mysqlx://root@localhost:33060')
-    .then(s => {
-        session = s;
-        session.startTransaction();
-    })
-    .then(() => {
-        session.setSavepoint('fun');
-    })
-    .then(sp => {
-        savepoint = sp;
-        session.sql('CREATE TABLE schema.table').execute();
-    })
-    .then(() => {
-        session.releaseSavepoint(savepoint);
+    .then(session => {
+        return session.startTransaction()
+            .then(() => {
+                return session.setSavepoint('fun');
+            })
+            .then(savepoint => {
+                return session.sql('CREATE TABLE schema.table')
+                    .execute()
+                    .then(() => {
+                        return session.releaseSavepoint(savepoint);
+                    });
+            });
     })
     .catch(err => {
         console.log(err.message); // SAVEPOINT fun does not exist

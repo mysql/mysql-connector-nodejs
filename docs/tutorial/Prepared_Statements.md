@@ -26,7 +26,7 @@ stmt.bind('id', 1).execute()                    // executes a plain CRUD operati
     .then(() => stmt.fields('name').execute())  // deallocates the existing statement and executes a plain CRUD operation
     .then(() => stmt.bind('id', 4).execute())   // prepares a statement and executes it
     .then(() => stmt.offset(1).execute())       // executes the existing prepared statement
-    .then(() => stmt.sort('name').execute())    // deallocates the existing statement and executes a plain CRUD operation
+    .then(() => stmt.sort('name').execute());   // deallocates the existing statement and executes a plain CRUD operation
 ```
 
 ### Caveats
@@ -45,7 +45,7 @@ const stmt = collection.find()
 Promise.all([stmt.execute(), stmt.execute()])                                                 // executes a plain CRUD operation twice
     .then(() => Promise.all([stmt.execute(), stmt.execute()]))                                // prepares two statements and executes the latter twice
     .then(() => Promise.all([stmt.execute(), stmt.execute()]))                                // executes the last statement twice
-    .then(() => Promise.all([stmt.fields('foo').execute(), stmt.fields('bar').execute()]))    // deallocates only the last statement
+    .then(() => Promise.all([stmt.fields('foo').execute(), stmt.fields('bar').execute()]));   // deallocates only the last statement
 ```
 
 Additionally, running thenables that lead to using existing a prepared statement and at the same, running other that deallocates that same statement will also not work.
@@ -56,7 +56,7 @@ const stmt = collection.find()
 Promise.all([stmt.execute(), stmt.execute()])
     .then(() => Promise.all([stmt.execute(), stmt.execute()]))
     .then(() => Promise.all([stmt.execute(), stmt.execute()]))
-    .then(() => Promise.all([stmt.fields('foo').execute(), stmt.execute()])) // Server error on the 2nd call, since the state is still not up-to-date and the client will try to execute the prepared statement
+    .then(() => Promise.all([stmt.fields('foo').execute(), stmt.execute()])); // Server error on the 2nd call, since the state is still not up-to-date and the client will try to execute the prepared statement
 ```
 
 So, since the statement lifecycle enforces a natural order, the behavior is incompatible (or leads to a lot of inconsistencies) with `Promise.all()`. There is, however, a fair use of the API, which is when you are certain the statement was already prepared and you just want to execute it over and over.
@@ -67,6 +67,6 @@ const stmt = collection.find()
 stmt.execute()                                                  // executes a plain CRUD operation
     .then(() => stmt.execute())                                 // prepares a statement and executes it
     .then(() => Promise.all([stmt.execute(), stmt.execute()]))  // executes the prepared statement twice
-    .then(() => stmt.fields('foo').execute())                   // deallocates the existing statement and executes a plain CRUD operation
+    .then(() => stmt.fields('foo').execute()) ;                 // deallocates the existing statement and executes a plain CRUD operation
 ```
 
