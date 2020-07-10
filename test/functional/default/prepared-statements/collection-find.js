@@ -6,6 +6,7 @@ const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../..');
+const path = require('path');
 
 describe('prepared statements for CollectionFind', () => {
     let collection, schema, session;
@@ -212,6 +213,60 @@ describe('prepared statements for CollectionFind', () => {
                 .then(() => fixtures.getPreparedStatement(session, 1))
                 .then(statement => expect(statement).to.not.exist)
                 .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'prepared-find.js');
+        const fstRunBindings = { limit: 2, offset: 2 };
+        const sndRunBindings = { limit: 3, offset: 1 };
+
+        it('logs the message to create a prepared statement', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Prepare.Prepare', script, [schema.getName(), collection.getName(), JSON.stringify(fstRunBindings), JSON.stringify(sndRunBindings)])
+                .then(proc => {
+                    expect(proc.logs).to.be.an('array').and.have.lengthOf(1);
+                    expect(proc.logs[0]).to.contain.keys('stmt_id', 'stmt');
+                    expect(proc.logs[0].stmt_id).to.equal(1);
+                    expect(proc.logs[0].stmt).to.have.keys('type', 'find');
+                    expect(proc.logs[0].stmt.type).to.equal('FIND');
+                    expect(proc.logs[0].stmt.find).to.have.keys('collection', 'data_model', 'limit_expr');
+                    expect(proc.logs[0].stmt.find.limit_expr).to.have.keys('row_count', 'offset');
+                    expect(proc.logs[0].stmt.find.limit_expr.row_count).to.have.keys('type', 'position');
+                    expect(proc.logs[0].stmt.find.limit_expr.row_count.type).to.equal('PLACEHOLDER');
+                    expect(proc.logs[0].stmt.find.limit_expr.row_count.position).to.equal(0);
+                    expect(proc.logs[0].stmt.find.limit_expr.offset).to.have.keys('type', 'position');
+                    expect(proc.logs[0].stmt.find.limit_expr.offset.type).to.equal('PLACEHOLDER');
+                    expect(proc.logs[0].stmt.find.limit_expr.offset.position).to.equal(1);
+                });
+        });
+
+        it('logs the message to execute a prepared statement', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Prepare.Execute', script, [schema.getName(), collection.getName(), JSON.stringify(fstRunBindings), JSON.stringify(sndRunBindings)])
+                .then(proc => {
+                    expect(proc.logs).to.be.an('array').and.have.lengthOf(1);
+                    expect(proc.logs[0]).to.contain.keys('stmt_id', 'args');
+                    expect(proc.logs[0].stmt_id).to.equal(1);
+                    expect(proc.logs[0].args).to.be.an('array').and.have.lengthOf(2);
+
+                    const args = proc.logs[0].args;
+                    args.forEach(arg => {
+                        expect(arg).to.have.keys('type', 'scalar');
+                        expect(arg.type).to.equal('SCALAR');
+                        expect(arg.scalar).to.have.keys('type', 'v_unsigned_int');
+                        expect(arg.scalar.type).to.equal('V_UINT');
+                    });
+
+                    // should contain the values of the second run
+                    expect(args[0].scalar.v_unsigned_int).to.equal(3);
+                    expect(args[1].scalar.v_unsigned_int).to.equal(1);
+                });
+        });
+
+        it('does not log a message to deallocate a prepared statement', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Prepare.Deallocate', script, [schema.getName(), collection.getName(), JSON.stringify(fstRunBindings), JSON.stringify(sndRunBindings)])
+                .then(proc => {
+                    return expect(proc.logs).to.be.an('array').and.be.empty;
+                });
         });
     });
 });

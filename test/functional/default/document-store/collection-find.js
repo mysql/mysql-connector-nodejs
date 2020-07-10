@@ -6,6 +6,7 @@ const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../..');
+const path = require('path');
 
 describe('finding documents in collections', () => {
     let schema, session, collection;
@@ -195,6 +196,42 @@ describe('finding documents in collections', () => {
                 .sort('size ASC')
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('with aggregations', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ name: 'foo', age: 23, active: true })
+                .add({ name: 'bar', age: 42, active: false })
+                .add({ name: 'baz', age: 50, active: true })
+                .add({ name: 'qux', age: 35, active: false })
+                .execute();
+        });
+
+        it('includes all the aggregation results', () => {
+            const expected = [{ active: true, age: 36.5 }, { active: false, age: 38.5 }];
+
+            return collection.find()
+                .fields('active', 'avg(age) as age')
+                .groupBy('active')
+                .execute()
+                .then(res => {
+                    expect(res.fetchAll()).to.deep.equal(expected);
+                });
+        });
+
+        it('includes only the aggregation results that match a given criteria', () => {
+            const expected = [{ active: false, age: 38.5 }];
+
+            return collection.find()
+                .fields('active', 'avg(age) as age')
+                .groupBy('active')
+                .having('avg(age) > 37')
+                .execute()
+                .then(res => {
+                    expect(res.fetchAll()).to.deep.equal(expected);
+                });
         });
     });
 
@@ -423,6 +460,204 @@ describe('finding documents in collections', () => {
                 .fields('name')
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        beforeEach('populate collection', () => {
+            return collection.add({ name: 'foo', count: 2 })
+                .add({ name: 'bar', count: 5 })
+                .add({ name: 'foo', count: 10 })
+                .execute();
+        });
+
+        it('logs the basic operation parameters', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Find', script, [schema.getName(), collection.getName()])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudFind = proc.logs[0];
+                    expect(crudFind).to.contain.keys('collection', 'data_model');
+                    expect(crudFind.collection).to.contain.keys('name', 'schema');
+                    expect(crudFind.collection.name).to.equal(collection.getName());
+                    expect(crudFind.collection.schema).to.equal(schema.getName());
+                    expect(crudFind.data_model).to.equal('DOCUMENT');
+                });
+        });
+
+        it('logs the criteria statement data', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find-with-criteria.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Find', script, [schema.getName(), collection.getName(), 'name = :v', 'v', 'foo'])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudFind = proc.logs[0];
+                    expect(crudFind).to.contain.keys('criteria', 'args');
+                    expect(crudFind.criteria).to.contain.keys('type', 'operator');
+                    expect(crudFind.criteria.type).to.equal('OPERATOR');
+                    expect(crudFind.criteria.operator).to.contain.keys('name', 'param');
+                    expect(crudFind.criteria.operator.name).to.equal('==');
+                    expect(crudFind.criteria.operator.param).to.be.an('array').and.have.lengthOf(2);
+                    expect(crudFind.criteria.operator.param[0]).to.contain.keys('type', 'identifier');
+                    expect(crudFind.criteria.operator.param[0].type).to.equal('IDENT');
+                    expect(crudFind.criteria.operator.param[0].identifier).contain.keys('document_path');
+                    expect(crudFind.criteria.operator.param[0].identifier.document_path).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudFind.criteria.operator.param[0].identifier.document_path[0]).to.contain.keys('type', 'value');
+                    expect(crudFind.criteria.operator.param[0].identifier.document_path[0].type).to.equal('MEMBER');
+                    expect(crudFind.criteria.operator.param[0].identifier.document_path[0].value).to.equal('name');
+                    expect(crudFind.criteria.operator.param[1]).to.contain.keys('type', 'position');
+                    expect(crudFind.criteria.operator.param[1].type).to.equal('PLACEHOLDER');
+                    expect(crudFind.criteria.operator.param[1].position).to.equal(0);
+                    expect(crudFind.args).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudFind.args[0]).to.contain.keys('type', 'v_string');
+                    expect(crudFind.args[0].type).to.equal('V_STRING');
+                    expect(crudFind.args[0].v_string).to.contain.keys('value');
+                    expect(crudFind.args[0].v_string.value).to.equal('foo');
+                });
+        });
+
+        it('logs the projection statement data', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find-with-projection.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Find', script, [schema.getName(), collection.getName(), 'name AS col'])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudFind = proc.logs[0];
+                    expect(crudFind).to.contain.keys('projection');
+                    expect(crudFind.projection).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudFind.projection[0]).contain.keys('source', 'alias');
+                    expect(crudFind.projection[0].source).to.contain.keys('type', 'identifier');
+                    expect(crudFind.projection[0].source.type).to.equal('IDENT');
+                    expect(crudFind.projection[0].source.identifier.document_path).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudFind.projection[0].source.identifier.document_path[0]).to.contain.keys('type', 'value');
+                    expect(crudFind.projection[0].source.identifier.document_path[0].type).to.equal('MEMBER');
+                    expect(crudFind.projection[0].source.identifier.document_path[0].value).to.equal('name');
+                    expect(crudFind.projection[0].alias).to.equal('col');
+                });
+        });
+
+        it('logs the order statement data', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find-with-order.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Find', script, [schema.getName(), collection.getName(), 'count DESC'])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudFind = proc.logs[0];
+                    expect(crudFind).to.contain.keys('order');
+                    expect(crudFind.order).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudFind.order[0]).to.contain.keys('expr', 'direction');
+                    expect(crudFind.order[0].expr).to.contain.keys('type', 'identifier');
+                    expect(crudFind.order[0].expr.type).to.equal('IDENT');
+                    expect(crudFind.order[0].expr.identifier).to.contain.keys('document_path');
+                    expect(crudFind.order[0].expr.identifier.document_path).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudFind.order[0].expr.identifier.document_path[0]).to.contain.keys('type', 'value');
+                    expect(crudFind.order[0].expr.identifier.document_path[0].type).to.equal('MEMBER');
+                    expect(crudFind.order[0].expr.identifier.document_path[0].value).to.equal('count');
+                });
+        });
+
+        it('logs the grouping statement data', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find-with-grouping.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Find', script, [schema.getName(), collection.getName(), 'count'])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudFind = proc.logs[0];
+                    expect(crudFind).to.contain.keys('grouping');
+                    expect(crudFind.grouping).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudFind.grouping[0]).to.contain.keys('type', 'identifier');
+                    expect(crudFind.grouping[0].type).equal('IDENT');
+                    expect(crudFind.grouping[0].identifier).to.contain.keys('document_path');
+                    expect(crudFind.grouping[0].identifier.document_path).to.be.an('array');
+                    expect(crudFind.grouping[0].identifier.document_path[0]).to.contain.keys('type', 'value');
+                    expect(crudFind.grouping[0].identifier.document_path[0].type).to.equal('MEMBER');
+                    expect(crudFind.grouping[0].identifier.document_path[0].value).to.equal('count');
+                });
+        });
+
+        it('logs the grouping criteria statement data', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find-with-grouping-criteria.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Find', script, [schema.getName(), collection.getName(), 'SUM(count)', 'name', 'SUM(count) > 2'])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudFind = proc.logs[0];
+                    expect(crudFind).to.contain.keys('grouping_criteria');
+                    expect(crudFind.grouping_criteria).to.contain.keys('type', 'operator');
+                    expect(crudFind.grouping_criteria.type).equal('OPERATOR');
+                    expect(crudFind.grouping_criteria.operator).to.contain.keys('name', 'param');
+                    expect(crudFind.grouping_criteria.operator.name).to.equal('>');
+                    expect(crudFind.grouping_criteria.operator.param).to.be.an('array').and.have.lengthOf(2);
+                    expect(crudFind.grouping_criteria.operator.param[0]).to.contain.keys('type', 'function_call');
+                    expect(crudFind.grouping_criteria.operator.param[0].type).to.equal('FUNC_CALL');
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call).to.contain.keys('name', 'param');
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call.name).to.contain.keys('name');
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call.name.name).to.equal('SUM');
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call.param).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call.param[0]).to.contain.keys('type', 'identifier');
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call.param[0].type).to.equal('IDENT');
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call.param[0].identifier).to.contain.keys('document_path');
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call.param[0].identifier.document_path).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call.param[0].identifier.document_path[0]).to.contain.keys('type', 'value');
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call.param[0].identifier.document_path[0].type).to.equal('MEMBER');
+                    expect(crudFind.grouping_criteria.operator.param[0].function_call.param[0].identifier.document_path[0].value).to.equal('count');
+                    expect(crudFind.grouping_criteria.operator.param[1]).to.contain.keys('type', 'literal');
+                    expect(crudFind.grouping_criteria.operator.param[1].type).to.equal('LITERAL');
+                    expect(crudFind.grouping_criteria.operator.param[1].literal).to.contain.keys('type', 'v_unsigned_int');
+                    expect(crudFind.grouping_criteria.operator.param[1].literal.type).to.equal('V_UINT');
+                    expect(crudFind.grouping_criteria.operator.param[1].literal.v_unsigned_int).to.equal(2);
+                });
+        });
+
+        it('logs the correct locking parameters', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find-with-locking.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Find', script, [schema.getName(), collection.getName(), mysqlx.LockContention.NOWAIT])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudFind = proc.logs[0];
+                    expect(crudFind).to.contain.keys('locking', 'locking_options');
+                    expect(crudFind.locking).to.equal('EXCLUSIVE_LOCK');
+                    expect(crudFind.locking_options).to.equal('NOWAIT');
+                });
+        });
+
+        it('logs the correct limit parameters', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find-with-limit.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Find', script, [schema.getName(), collection.getName(), 1, 1])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudFind = proc.logs[0];
+                    expect(crudFind).to.contain.keys('limit');
+                    expect(crudFind.limit).to.contain.keys('row_count', 'offset');
+                    expect(crudFind.limit.row_count).to.equal(1);
+                    expect(crudFind.limit.offset).to.equal(1);
+                });
+        });
+
+        it('logs the result set row data sent by the server', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find-with-projection.js');
+
+            return fixtures.collectLogs('protocol:inbound:Mysqlx.Resultset.Row', script, [schema.getName(), collection.getName(), 'name'])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(3); // number of rows
+
+                    const rows = proc.logs;
+                    rows.forEach(row => expect(row).to.contain.keys('fields'));
+                    expect(rows[0].fields).to.deep.equal([{ name: 'foo' }]);
+                    expect(rows[1].fields).to.deep.equal([{ name: 'bar' }]);
+                    expect(rows[2].fields).to.deep.equal([{ name: 'foo' }]);
+                });
         });
     });
 });

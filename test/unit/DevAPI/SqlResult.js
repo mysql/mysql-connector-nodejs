@@ -7,10 +7,10 @@ const sqlResult = require('../../../lib/DevAPI/SqlResult');
 const td = require('testdouble');
 
 describe('SqlResult', () => {
-    let decode;
+    let toArray;
 
     beforeEach('create fakes', () => {
-        decode = td.function();
+        toArray = td.function();
     });
 
     afterEach('reset fakes', () => {
@@ -26,11 +26,11 @@ describe('SqlResult', () => {
         });
 
         it('returns an array containing the data counterpart of each item in the result set', () => {
-            const row = { decode };
+            const row = { toArray };
             const rows = ['foo', 'bar'];
 
-            td.when(decode()).thenReturn(rows[1]);
-            td.when(decode(), { times: 1 }).thenReturn(rows[0]);
+            td.when(toArray()).thenReturn(rows[1]);
+            td.when(toArray(), { times: 1 }).thenReturn(rows[0]);
 
             expect(sqlResult({ results: [[row, row]] }).fetchAll()).to.deep.equal(rows);
         });
@@ -47,10 +47,10 @@ describe('SqlResult', () => {
         });
 
         it('returns the next available item in the result set', () => {
-            const row = { decode };
+            const row = { toArray };
             const rows = [['foo']];
 
-            td.when(decode()).thenReturn(rows[0]);
+            td.when(toArray()).thenReturn(rows[0]);
 
             expect(sqlResult({ results: [[row]] }).fetchOne()).to.equal(rows[0]);
         });
@@ -123,11 +123,11 @@ describe('SqlResult', () => {
     });
 
     context('nextResult()', () => {
-        let fstCallToDecode, sndCallToDecode;
+        let fstCall, sndCall;
 
         beforeEach('create fakes', () => {
-            fstCallToDecode = td.function();
-            sndCallToDecode = td.function();
+            fstCall = td.function();
+            sndCall = td.function();
         });
 
         it('returns false if there are no other result sets available', () => {
@@ -139,10 +139,10 @@ describe('SqlResult', () => {
         });
 
         it('moves the cursor to the next available result set', () => {
-            const res = sqlResult({ results: [[{ decode: fstCallToDecode }], [{ decode: sndCallToDecode }]] });
+            const res = sqlResult({ results: [[{ toArray: fstCall }], [{ toArray: sndCall }]] });
 
-            td.when(fstCallToDecode()).thenReturn(['foo']);
-            td.when(sndCallToDecode()).thenReturn(['bar']);
+            td.when(fstCall()).thenReturn(['foo']);
+            td.when(sndCall()).thenReturn(['bar']);
 
             // eslint-disable-next-line no-unused-expressions
             expect(res.nextResult()).to.be.true;

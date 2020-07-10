@@ -3,14 +3,13 @@
 /* eslint-env node, mocha */
 
 const Client = require('../../../lib/Protocol/Client');
-const ClientMessages = require('../../../lib/Protocol/Protobuf/Stubs/mysqlx_pb').ClientMessages;
 const EventEmitter = require('events');
-const Expect = require('../../../lib/Protocol/Protobuf/Adapters/Expect');
-const Mysqlx = require('../../../lib/Protocol/Protobuf/Adapters/Mysqlx');
-const OkHandler = require('../../../lib/Protocol/ResponseHandlers/OkHandler');
+const OkHandler = require('../../../lib/Protocol/InboundHandlers/OkHandler');
+const MysqlxStub = require('../../../lib/Protocol/Stubs/mysqlx_pb');
 const PassThrough = require('stream').PassThrough;
-const Scope = require('../../../lib/Protocol/Protobuf/Stubs/mysqlx_notice_pb').Frame.Scope;
+const Scope = require('../../../lib/Protocol/Stubs/mysqlx_notice_pb').Frame.Scope;
 const WorkQueue = require('../../../lib/WorkQueue');
+const condition = require('../../../lib/Protocol/Wrappers/Messages/Expect/Condition');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -433,7 +432,7 @@ describe('Client', () => {
             FakeOkHandler = td.constructor(OkHandler);
             network = new PassThrough();
 
-            td.replace('../../../lib/Protocol/ResponseHandlers/OkHandler', FakeOkHandler);
+            td.replace('../../../lib/Protocol/InboundHandlers/OkHandler', FakeOkHandler);
         });
 
         afterEach('reset fakes', () => {
@@ -446,7 +445,7 @@ describe('Client', () => {
             beforeEach('create fakes', () => {
                 encodeReset = td.function();
 
-                td.replace('../../../lib/Protocol/Protobuf/Adapters/Session', { encodeReset });
+                td.replace('../../../lib/Protocol/OutboundHandlers/Session', { encodeReset });
 
                 FakeClient = require('../../../lib/Protocol/Client');
                 authenticate = td.replace(FakeClient.prototype, 'authenticate');
@@ -465,14 +464,14 @@ describe('Client', () => {
                     it('sets the expectations, resets the session keeping it open and updates the local state', () => {
                         const client = new FakeClient(network);
                         const expectations = [{
-                            condition: Expect.Open.Condition.ConditionOperation.EXPECT_OP_SET,
-                            key: Expect.Open.Condition.Key.EXPECT_FIELD_EXIST,
+                            condition: condition.ACTION.EXPECT_OP_SET,
+                            key: condition.TYPE.EXPECT_FIELD_EXIST,
                             value: '6.1'
                         }];
 
                         td.when(expectOpen(expectations)).thenResolve();
                         td.when(encodeReset({ keepOpen: true })).thenReturn('bar');
-                        td.when(encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                        td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
                         td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
                         td.when(expectClose()).thenResolve();
 
@@ -485,8 +484,8 @@ describe('Client', () => {
                     it('tries to set the server expectations, updates the local state, resets the session and re-authenticates', () => {
                         const client = new FakeClient(network);
                         const expectations = [{
-                            condition: Expect.Open.Condition.ConditionOperation.EXPECT_OP_SET,
-                            key: Expect.Open.Condition.Key.EXPECT_FIELD_EXIST,
+                            condition: condition.ACTION.EXPECT_OP_SET,
+                            key: condition.TYPE.EXPECT_FIELD_EXIST,
                             value: '6.1'
                         }];
                         const error = new Error();
@@ -497,7 +496,7 @@ describe('Client', () => {
 
                         td.when(expectOpen(expectations)).thenReject(error);
                         td.when(encodeReset({ keepOpen: false })).thenReturn('bar');
-                        td.when(encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                        td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
                         td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
                         td.when(authenticate('foo'), { ignoreExtraArgs: true }).thenResolve('qux');
 
@@ -575,7 +574,7 @@ describe('Client', () => {
                     td.replace(client, '_requiresAuthenticationAfterReset', 'NO');
 
                     td.when(encodeReset({ keepOpen: true })).thenReturn('bar');
-                    td.when(encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                    td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
                     td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve('qux');
 
                     return client.sessionReset()
@@ -590,7 +589,7 @@ describe('Client', () => {
                     td.replace(client, '_requiresAuthenticationAfterReset', 'YES');
 
                     td.when(encodeReset({ keepOpen: false })).thenReturn('bar');
-                    td.when(encodeMessage(ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                    td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
                     td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
                     td.when(authenticate('foo')).thenResolve('qux');
 
@@ -607,7 +606,7 @@ describe('Client', () => {
             beforeEach('create fakes', () => {
                 encodeClose = td.function();
 
-                td.replace('../../../lib/Protocol/Protobuf/Adapters/Session', { encodeClose });
+                td.replace('../../../lib/Protocol/OutboundHandlers/Session', { encodeClose });
 
                 FakeClient = require('../../../lib/Protocol/Client');
                 encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
@@ -617,7 +616,7 @@ describe('Client', () => {
                 const client = new FakeClient(network);
 
                 td.when(encodeClose()).thenReturn('foo');
-                td.when(encodeMessage(ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
+                td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
                 td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
 
                 return client.sessionClose()
@@ -640,7 +639,7 @@ describe('Client', () => {
                 const client = new FakeClient(network);
 
                 td.when(encodeClose()).thenReturn('foo');
-                td.when(encodeMessage(ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
+                td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
                 td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenReject(error);
 
                 return client.sessionClose()
@@ -656,7 +655,7 @@ describe('Client', () => {
             beforeEach('create fakes', () => {
                 encodeClose = td.function();
 
-                td.replace('../../../lib/Protocol/Protobuf/Adapters/Connection', { encodeClose });
+                td.replace('../../../lib/Protocol/OutboundHandlers/Connection', { encodeClose });
 
                 FakeClient = require('../../../lib/Protocol/Client');
                 encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
@@ -666,7 +665,7 @@ describe('Client', () => {
                 const client = new FakeClient(network);
 
                 td.when(encodeClose()).thenReturn('foo');
-                td.when(encodeMessage(ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
+                td.when(encodeMessage(MysqlxStub.ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
                 td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
 
                 return client.connectionClose()
@@ -689,7 +688,7 @@ describe('Client', () => {
                 const client = new FakeClient(network);
 
                 td.when(encodeClose()).thenReturn('foo');
-                td.when(encodeMessage(ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
+                td.when(encodeMessage(MysqlxStub.ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
                 td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenReject(error);
 
                 return client.connectionClose()
@@ -705,14 +704,14 @@ describe('Client', () => {
             const decodeFrame = td.function();
             const process = td.function();
 
-            td.replace('../../../lib/Protocol/Protobuf/Adapters/Notice', { decodeFrame });
+            td.replace('../../../lib/Protocol/OutboundHandlers/Notice', { decodeFrame });
             const Client = require('../../../lib/Protocol/Client');
 
             const socket = new PassThrough();
             const client = new Client(socket);
             const decodeMessage = td.replace(client, 'decodeMessage');
 
-            const message = { id: Mysqlx.ServerMessages.NOTICE, payload: 'bar' };
+            const message = { id: MysqlxStub.ServerMessages.Type.NOTICE, payload: 'bar' };
             const notice = { scope: Scope.GLOBAL };
 
             td.replace(client, '_workQueue', { process });

@@ -6,6 +6,7 @@ const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
+const path = require('path');
 
 describe('modifying documents in a collection', () => {
     let schema, session, collection;
@@ -443,6 +444,103 @@ describe('modifying documents in a collection', () => {
                     .execute()
                     .then(res => expect(res.getAffectedItemsCount()).to.equal(limit));
             });
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        beforeEach('populate table', () => {
+            return collection.add({ _id: '1', name: 'foo', count: 2 })
+                .execute();
+        });
+
+        it('logs the update operation data when replacing a document', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'replace.js');
+            const doc = { name: 'bar', count: -3 };
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Update', script, [schema.getName(), collection.getName(), JSON.stringify(doc)])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudUpdate = proc.logs[0];
+                    expect(crudUpdate).to.contain.keys('operation');
+                    expect(crudUpdate.operation).to.be.an('array').and.to.have.lengthOf(1);
+                    expect(crudUpdate.operation[0]).to.have.keys('source', 'operation', 'value');
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(crudUpdate.operation[0].source).to.be.an('object').and.be.empty; // source is required
+                    expect(crudUpdate.operation[0].operation).to.equal('ITEM_SET');
+                    expect(crudUpdate.operation[0].value).to.have.keys('type', 'object');
+                    expect(crudUpdate.operation[0].value.type).to.equal('OBJECT');
+                    expect(crudUpdate.operation[0].value.object).to.have.keys('fld');
+                    expect(crudUpdate.operation[0].value.object.fld).to.be.an('array').and.have.lengthOf(2);
+
+                    const fields = crudUpdate.operation[0].value.object.fld;
+                    fields.forEach(field => {
+                        expect(field).to.have.keys('key', 'value');
+                        expect(field.value).to.have.keys('type', 'literal');
+                        expect(field.value.type).to.equal('LITERAL');
+                    });
+
+                    expect(fields[0].key).to.equal('name');
+                    expect(fields[0].value.literal).to.have.keys('type', 'v_string');
+                    expect(fields[0].value.literal.type).to.equal('V_STRING');
+                    expect(fields[0].value.literal.v_string).to.have.keys('value');
+                    expect(fields[0].value.literal.v_string.value).to.equal('bar');
+
+                    expect(fields[1].key).to.equal('count');
+                    expect(fields[1].value.literal).to.have.keys('type', 'v_signed_int');
+                    expect(fields[1].value.literal.type).to.equal('V_SINT');
+                    expect(fields[1].value.literal.v_signed_int).to.equal(-3);
+                });
+        });
+
+        it('logs the update operation data when patching documents', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'patch.js');
+            const doc = { active: true };
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Update', script, [schema.getName(), collection.getName(), '_id = 1', JSON.stringify(doc)])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudUpdate = proc.logs[0];
+                    expect(crudUpdate).to.contain.keys('operation');
+                    expect(crudUpdate.operation).to.be.an('array').and.to.have.lengthOf(1);
+                    expect(crudUpdate.operation[0]).to.have.keys('source', 'operation', 'value');
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(crudUpdate.operation[0].source).to.be.an('object').and.be.empty; // source is required
+                    expect(crudUpdate.operation[0].operation).to.equal('MERGE_PATCH');
+                    expect(crudUpdate.operation[0].value).to.have.keys('type', 'object');
+                    expect(crudUpdate.operation[0].value.type).to.equal('OBJECT');
+                    expect(crudUpdate.operation[0].value.object).to.have.keys('fld');
+                    expect(crudUpdate.operation[0].value.object.fld).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudUpdate.operation[0].value.object.fld[0]).to.have.keys('key', 'value');
+                    expect(crudUpdate.operation[0].value.object.fld[0].key).to.equal('active');
+                    expect(crudUpdate.operation[0].value.object.fld[0].value).to.have.keys('type', 'literal');
+                    expect(crudUpdate.operation[0].value.object.fld[0].value.type).to.equal('LITERAL');
+                    expect(crudUpdate.operation[0].value.object.fld[0].value.literal).to.have.keys('type', 'v_bool');
+                    expect(crudUpdate.operation[0].value.object.fld[0].value.literal.type).to.equal('V_BOOL');
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(crudUpdate.operation[0].value.object.fld[0].value.literal.v_bool).to.be.true;
+                });
+        });
+
+        it('logs the update operation data when deleting properties', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'unset.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Update', script, [schema.getName(), collection.getName(), 'count'])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudUpdate = proc.logs[0];
+                    expect(crudUpdate).to.contain.keys('operation');
+                    expect(crudUpdate.operation).to.be.an('array').and.to.have.lengthOf(1);
+                    expect(crudUpdate.operation[0]).to.have.keys('source', 'operation');
+                    expect(crudUpdate.operation[0].source).to.have.keys('document_path');
+                    expect(crudUpdate.operation[0].source.document_path).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudUpdate.operation[0].source.document_path[0]).to.have.keys('type', 'value');
+                    expect(crudUpdate.operation[0].source.document_path[0].type).to.equal('MEMBER');
+                    expect(crudUpdate.operation[0].source.document_path[0].value).to.equal('count');
+                    expect(crudUpdate.operation[0].operation).to.equal('ITEM_REMOVE');
+                });
         });
     });
 });

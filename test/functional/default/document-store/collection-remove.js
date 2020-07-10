@@ -6,6 +6,7 @@ const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
+const path = require('path');
 
 describe('removing documents from a collection', () => {
     let schema, session, collection;
@@ -283,6 +284,82 @@ describe('removing documents from a collection', () => {
                     .execute()
                     .then(res => expect(res.getAffectedItemsCount()).to.equal(limit));
             });
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        beforeEach('populate collection', () => {
+            return collection.add({ name: 'foo', count: 2 })
+                .add({ name: 'bar', count: 5 })
+                .add({ name: 'foo', count: 10 })
+                .execute();
+        });
+
+        it('logs the basic operation parameters', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'remove.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Delete', script, [schema.getName(), collection.getName()])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudDelete = proc.logs[0];
+                    expect(crudDelete).to.contain.keys('collection', 'data_model');
+                    expect(crudDelete.collection).to.contain.keys('name', 'schema');
+                    expect(crudDelete.collection.name).to.equal(collection.getName());
+                    expect(crudDelete.collection.schema).to.equal(schema.getName());
+                    expect(crudDelete.data_model).to.equal('DOCUMENT');
+                });
+        });
+
+        it('logs the criteria statement data', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'remove-with-criteria.js');
+
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Delete', script, [schema.getName(), collection.getName(), 'count = 10'])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudDelete = proc.logs[0];
+                    expect(crudDelete).to.contain.keys('criteria');
+                    expect(crudDelete.criteria).to.contain.keys('type', 'operator');
+                    expect(crudDelete.criteria.type).to.equal('OPERATOR');
+                    expect(crudDelete.criteria.operator).to.contain.keys('name', 'param');
+                    expect(crudDelete.criteria.operator.name).to.equal('==');
+                    expect(crudDelete.criteria.operator.param).to.be.an('array').and.have.lengthOf(2);
+                    expect(crudDelete.criteria.operator.param[0]).to.contain.keys('type', 'identifier');
+                    expect(crudDelete.criteria.operator.param[0].type).to.equal('IDENT');
+                    expect(crudDelete.criteria.operator.param[0].identifier).contain.keys('document_path');
+                    expect(crudDelete.criteria.operator.param[0].identifier.document_path).to.be.an('array').and.have.lengthOf(1);
+                    expect(crudDelete.criteria.operator.param[0].identifier.document_path[0]).to.contain.keys('type', 'value');
+                    expect(crudDelete.criteria.operator.param[0].identifier.document_path[0].type).to.equal('MEMBER');
+                    expect(crudDelete.criteria.operator.param[0].identifier.document_path[0].value).to.equal('count');
+                    expect(crudDelete.criteria.operator.param[1]).to.contain.keys('type', 'literal');
+                    expect(crudDelete.criteria.operator.param[1].type).to.equal('LITERAL');
+                    expect(crudDelete.criteria.operator.param[1].literal).to.contain.keys('type', 'v_unsigned_int');
+                    expect(crudDelete.criteria.operator.param[1].literal.type).to.equal('V_UINT');
+                    expect(crudDelete.criteria.operator.param[1].literal.v_unsigned_int).to.equal(10);
+                });
+        });
+
+        it('logs the table changes metadata', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'remove.js');
+
+            return fixtures.collectLogs('protocol:inbound:Mysqlx.Notice.Frame', script, [schema.getName(), collection.getName()])
+                .then(proc => {
+                    // LOCAL notices are decoded twice (needs to be improved)
+                    // so there are no assurances about the correct length
+                    expect(proc.logs).to.have.length.above(0);
+
+                    const rowsAffectedNotice = proc.logs[proc.logs.length - 1];
+                    expect(rowsAffectedNotice).to.have.keys('type', 'scope', 'payload');
+                    expect(rowsAffectedNotice.type).to.equal('SESSION_STATE_CHANGED');
+                    expect(rowsAffectedNotice.scope).to.equal('LOCAL');
+                    expect(rowsAffectedNotice.payload).to.have.keys('param', 'value');
+                    expect(rowsAffectedNotice.payload.param).to.equal('ROWS_AFFECTED');
+                    expect(rowsAffectedNotice.payload.value).to.be.an('array').and.have.lengthOf(1);
+                    expect(rowsAffectedNotice.payload.value[0]).to.have.keys('type', 'v_unsigned_int');
+                    expect(rowsAffectedNotice.payload.value[0].type).to.equal('V_UINT');
+                    expect(rowsAffectedNotice.payload.value[0].v_unsigned_int).to.equal(3);
+                });
         });
     });
 });

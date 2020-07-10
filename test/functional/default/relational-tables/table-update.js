@@ -6,6 +6,7 @@ const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
+const path = require('path');
 
 describe('updating data in a table', () => {
     let session, schema, table;
@@ -112,16 +113,16 @@ describe('updating data in a table', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('updates values with undefined', () => {
-            const expected = [['bar', null], ['baz', null], ['foo', null]];
-            const actual = [];
-
+        it('BUG#31709879 fails to update values with `undefined`', () => {
             return table.update()
                 .where('true')
-                .set('age')
+                .set('age', undefined)
                 .execute()
-                .then(() => table.select().orderBy('name ASC').execute(row => actual.push(row)))
-                .then(() => expect(actual).to.deep.equal(expected));
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5152);
+                });
         });
     });
 
@@ -200,6 +201,72 @@ describe('updating data in a table', () => {
                     .execute()
                     .then(res => expect(res.getAffectedItemsCount()).to.equal(limit));
             });
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'relational-tables', 'update.js');
+
+        beforeEach('populate table', () => {
+            return table.insert(['name', 'age'])
+                .values(['foo', 42])
+                .values(['bar', 23])
+                .values(['baz', 42])
+                .execute();
+        });
+
+        it('logs the basic operation parameters', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Update', script, [schema.getName(), table.getName(), 'age', 42])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudUpdate = proc.logs[0];
+                    expect(crudUpdate).to.contain.keys('collection', 'data_model');
+                    expect(crudUpdate.collection).to.contain.keys('name', 'schema');
+                    expect(crudUpdate.collection.name).to.equal(table.getName());
+                    expect(crudUpdate.collection.schema).to.equal(schema.getName());
+                    expect(crudUpdate.data_model).to.equal('TABLE');
+                });
+        });
+
+        it('logs the update operation data', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Update', script, [schema.getName(), table.getName(), 'age', 42])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudUpdate = proc.logs[0];
+                    expect(crudUpdate).to.contain.keys('operation');
+                    expect(crudUpdate.operation).to.be.an('array').and.to.have.lengthOf(1);
+                    expect(crudUpdate.operation[0]).to.have.keys('source', 'operation', 'value');
+                    expect(crudUpdate.operation[0].source).to.have.keys('name');
+                    expect(crudUpdate.operation[0].source.name).to.equal('age');
+                    expect(crudUpdate.operation[0].operation).to.equal('SET');
+                    expect(crudUpdate.operation[0].value).to.have.keys('type', 'literal');
+                    expect(crudUpdate.operation[0].value.type).to.equal('LITERAL');
+                    expect(crudUpdate.operation[0].value.literal).to.have.keys('type', 'v_unsigned_int');
+                    expect(crudUpdate.operation[0].value.literal.type).to.equal('V_UINT');
+                    expect(crudUpdate.operation[0].value.literal.v_unsigned_int).to.equal(42);
+                });
+        });
+
+        it('logs the table changes metadata', () => {
+            return fixtures.collectLogs('protocol:inbound:Mysqlx.Notice.Frame', script, [schema.getName(), table.getName(), 'age', 42])
+                .then(proc => {
+                    // LOCAL notices are decoded twice (needs to be improved)
+                    // so there are no assurances about the correct length
+                    expect(proc.logs).to.have.length.above(0);
+
+                    const rowsAffectedNotice = proc.logs[proc.logs.length - 1];
+                    expect(rowsAffectedNotice).to.have.keys('type', 'scope', 'payload');
+                    expect(rowsAffectedNotice.type).to.equal('SESSION_STATE_CHANGED');
+                    expect(rowsAffectedNotice.scope).to.equal('LOCAL');
+                    expect(rowsAffectedNotice.payload).to.have.keys('param', 'value');
+                    expect(rowsAffectedNotice.payload.param).to.equal('ROWS_AFFECTED');
+                    expect(rowsAffectedNotice.payload.value).to.be.an('array').and.have.lengthOf(1);
+                    expect(rowsAffectedNotice.payload.value[0]).to.have.keys('type', 'v_unsigned_int');
+                    expect(rowsAffectedNotice.payload.value[0].type).to.equal('V_UINT');
+                    expect(rowsAffectedNotice.payload.value[0].v_unsigned_int).to.equal(2);
+                });
         });
     });
 });

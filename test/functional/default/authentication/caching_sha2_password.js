@@ -8,6 +8,7 @@ const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const os = require('os');
+const path = require('path');
 
 describe('caching_sha2_password authentication plugin', () => {
     const baseConfig = { schema: undefined };
@@ -222,6 +223,43 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                        });
+                });
+            });
+
+            context('when debug mode is enabled', () => {
+                const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'auth.js');
+                const debugConfig = { socket: undefined };
+
+                beforeEach('create user with caching_sha2_password plugin', () => {
+                    const authConfig = Object.assign({}, config, baseConfig, debugConfig);
+
+                    return fixtures.createUser(user, plugin, password, authConfig);
+                });
+
+                beforeEach('invalidate the server authentication cache', () => {
+                    const authConfig = Object.assign({}, config, baseConfig, debugConfig);
+
+                    return fixtures.resetAuthenticationCache(authConfig);
+                });
+
+                afterEach('delete user', () => {
+                    const authConfig = Object.assign({}, config, baseConfig, debugConfig);
+
+                    return fixtures.dropUser(user, authConfig);
+                });
+
+                it('logs the appropriate authentication mechanim and data', () => {
+                    const authConfig = Object.assign({}, config, baseConfig, debugConfig, { user, password });
+
+                    return fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateStart', script, [authConfig.user, authConfig.password], { config: authConfig })
+                        .then(proc => {
+                            expect(proc.logs).to.have.lengthOf(1);
+                            expect(proc.logs[0]).to.contain.keys('mech_name', 'auth_data');
+                            expect(proc.logs[0].mech_name).to.equal('PLAIN');
+                            expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
+                            // eslint-disable-next-line node/no-deprecated-api
+                            expect(new Buffer(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
                         });
                 });
             });
@@ -771,6 +809,43 @@ describe('caching_sha2_password authentication plugin', () => {
                     });
             });
         });
+
+        context('when debug mode is enabled', () => {
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'auth.js');
+            const debugConfig = { auth, socket: undefined };
+
+            beforeEach('create user with caching_sha2_password plugin', () => {
+                const authConfig = Object.assign({}, config, baseConfig, debugConfig);
+
+                return fixtures.createUser(user, plugin, password, authConfig);
+            });
+
+            beforeEach('invalidate the server authentication cache', () => {
+                const authConfig = Object.assign({}, config, baseConfig, debugConfig);
+
+                return fixtures.resetAuthenticationCache(authConfig);
+            });
+
+            afterEach('delete user', () => {
+                const authConfig = Object.assign({}, config, baseConfig, debugConfig);
+
+                return fixtures.dropUser(user, authConfig);
+            });
+
+            it('logs the appropriate authentication mechanim and data', () => {
+                const authConfig = Object.assign({}, config, baseConfig, debugConfig, { user, password });
+
+                return fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateStart', script, [authConfig.user, authConfig.password, authConfig.auth], { config: authConfig })
+                    .then(proc => {
+                        expect(proc.logs).to.have.lengthOf(1);
+                        expect(proc.logs[0]).to.contain.keys('mech_name', 'auth_data');
+                        expect(proc.logs[0].mech_name).to.equal(authConfig.auth);
+                        expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
+                        // eslint-disable-next-line node/no-deprecated-api
+                        expect(new Buffer(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
+                    });
+            });
+        });
     });
 
     context('connecting with the SHA256_MEMORY authentication mechanism', () => {
@@ -1103,6 +1178,60 @@ describe('caching_sha2_password authentication plugin', () => {
                         .then(session => {
                             expect(session.inspect().auth).to.equal(auth);
                             return session.close();
+                        });
+                });
+            });
+
+            context('when debug mode is enabled', () => {
+                const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'auth.js');
+                const debugConfig = { auth, socket: undefined };
+
+                beforeEach('create user with caching_sha2_password plugin', () => {
+                    const authConfig = Object.assign({}, config, baseConfig, debugConfig);
+
+                    return fixtures.createUser(user, plugin, password, authConfig);
+                });
+
+                beforeEach('invalidate the server authentication cache', () => {
+                    const authConfig = Object.assign({}, config, baseConfig, debugConfig);
+
+                    return fixtures.resetAuthenticationCache(authConfig);
+                });
+
+                beforeEach('save the password in the server authentication cache', () => {
+                    const authConfig = Object.assign({}, config, baseConfig, debugConfig, { user, password });
+
+                    return fixtures.savePasswordInAuthenticationCache(authConfig);
+                });
+
+                afterEach('delete user', () => {
+                    const authConfig = Object.assign({}, config, baseConfig, debugConfig);
+
+                    return fixtures.dropUser(user, authConfig);
+                });
+
+                it('logs the appropriate authentication mechanism', () => {
+                    const authConfig = Object.assign({}, config, baseConfig, debugConfig, { user, password });
+
+                    return fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateStart', script, [authConfig.user, authConfig.password, authConfig.auth], { config: authConfig })
+                        .then(proc => {
+                            expect(proc.logs).to.have.lengthOf(1);
+                            expect(proc.logs[0]).to.contain.keys('mech_name', 'auth_data');
+                            expect(proc.logs[0].mech_name).to.equal(debugConfig.auth);
+                            expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
+                        });
+                });
+
+                it('logs the appropriate authentication data', () => {
+                    const authConfig = Object.assign({}, config, baseConfig, debugConfig, { user, password });
+
+                    return fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateContinue', script, [authConfig.user, authConfig.password, authConfig.auth], { config: authConfig })
+                        .then(proc => {
+                            expect(proc.logs).to.have.lengthOf(1);
+                            expect(proc.logs[0]).to.contain.keys('auth_data');
+                            expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
+                            // eslint-disable-next-line node/no-deprecated-api
+                            expect(new Buffer(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
                         });
                 });
             });

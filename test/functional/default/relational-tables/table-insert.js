@@ -6,6 +6,7 @@ const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
+const path = require('path');
 
 describe('inserting data into a table', () => {
     let session, schema, table;
@@ -140,15 +141,15 @@ describe('inserting data into a table', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('inserts `undefined` values', () => {
-            const expected = [['foo', null]];
-            const actual = [];
-
+        it('BUG#31709879 fails to insert `undefined` values', () => {
             return table.insert('name', 'age')
                 .values('foo', undefined)
                 .execute()
-                .then(() => table.select().execute(row => actual.push(row)))
-                .then(() => expect(actual).to.deep.equal(expected));
+                .then(() => expect.fail())
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    expect(err.info.code).to.equal(5014);
+                });
         });
     });
 
@@ -182,6 +183,117 @@ describe('inserting data into a table', () => {
                 .values('baz', 50)
                 .execute()
                 .then(res => expect(res.getAffectedItemsCount()).to.equal(3));
+        });
+    });
+
+    context('BUG#31734504 floating point precision', () => {
+        beforeEach('create table', () => {
+            return session.sql(`CREATE TABLE double_precision (v_double DOUBLE)`)
+                .execute();
+        });
+
+        beforeEach('load table', () => {
+            table = schema.getTable('double_precision');
+        });
+
+        it('correctly stores values as DOUBLE to not lose precision', () => {
+            return table.insert('v_double')
+                .values(1.000001)
+                .execute()
+                .then(() => {
+                    return table.select()
+                        .execute();
+                })
+                .then(res => {
+                    expect(res.getColumns()[0].getType()).to.equal('DOUBLE');
+                    expect(res.fetchOne()).to.deep.equal([1.000001]);
+                });
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'relational-tables', 'insert.js');
+        const columns = ['name', 'age'];
+        const values = ['foo', 23];
+
+        it('logs the basic operation parameters', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Insert', script, [schema.getName(), table.getName(), JSON.stringify(columns), JSON.stringify(values)])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudAdd = proc.logs[0];
+                    expect(crudAdd).to.contain.keys('collection', 'data_model');
+                    expect(crudAdd.collection).to.contain.keys('name', 'schema');
+                    expect(crudAdd.collection.name).to.equal(table.getName());
+                    expect(crudAdd.collection.schema).to.equal(schema.getName());
+                    expect(crudAdd.data_model).to.equal('TABLE');
+                });
+        });
+
+        it('logs the column names', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Insert', script, [schema.getName(), table.getName(), JSON.stringify(columns), JSON.stringify(values)])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudAdd = proc.logs[0];
+                    expect(crudAdd).to.contain.keys('row');
+
+                    const projection = crudAdd.projection;
+                    expect(projection).to.be.an('array').and.have.lengthOf(columns.length);
+                    projection.forEach((column, index) => {
+                        expect(column).to.have.keys('name');
+                        expect(column.name).to.equal(columns[index]);
+                    });
+                });
+        });
+
+        it('logs the column values', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Insert', script, [schema.getName(), table.getName(), JSON.stringify(columns), JSON.stringify(values)])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudAdd = proc.logs[0];
+                    expect(crudAdd).to.contain.keys('row');
+
+                    const rows = crudAdd.row;
+                    expect(rows).to.be.an('array').and.have.lengthOf(1);
+
+                    rows.forEach(row => {
+                        expect(row).to.have.keys('field');
+                        expect(row.field).to.be.an('array').and.have.lengthOf(values.length);
+                        expect(row.field[0]).to.have.keys('type', 'literal');
+                        expect(row.field[0].type).to.equal('LITERAL');
+                    });
+
+                    expect(rows[0].field[0].literal).to.have.keys('type', 'v_string');
+                    expect(rows[0].field[0].literal.type).to.equal('V_STRING');
+                    expect(rows[0].field[0].literal.v_string).to.have.keys('value');
+                    expect(rows[0].field[0].literal.v_string.value).to.equal(values[0]);
+
+                    expect(rows[0].field[1].literal).to.have.keys('type', 'v_unsigned_int');
+                    expect(rows[0].field[1].literal.type).to.equal('V_UINT');
+                    expect(rows[0].field[1].literal.v_unsigned_int).to.equal(values[1]);
+                });
+        });
+
+        it('logs the table changes metadata', () => {
+            return fixtures.collectLogs('protocol:inbound:Mysqlx.Notice.Frame', script, [schema.getName(), table.getName(), JSON.stringify(columns), JSON.stringify(values)])
+                .then(proc => {
+                    // LOCAL notices are decoded twice (needs to be improved)
+                    // so there are no assurances about the correct length
+                    expect(proc.logs).to.have.length.above(0);
+
+                    const rowsAffectedNotice = proc.logs[proc.logs.length - 1];
+                    expect(rowsAffectedNotice).to.have.keys('type', 'scope', 'payload');
+                    expect(rowsAffectedNotice.type).to.equal('SESSION_STATE_CHANGED');
+                    expect(rowsAffectedNotice.scope).to.equal('LOCAL');
+                    expect(rowsAffectedNotice.payload).to.have.keys('param', 'value');
+                    expect(rowsAffectedNotice.payload.param).to.equal('ROWS_AFFECTED');
+                    expect(rowsAffectedNotice.payload.value).to.be.an('array').and.have.lengthOf(1);
+                    expect(rowsAffectedNotice.payload.value[0]).to.have.keys('type', 'v_unsigned_int');
+                    expect(rowsAffectedNotice.payload.value[0].type).to.equal('V_UINT');
+                    expect(rowsAffectedNotice.payload.value[0].v_unsigned_int).to.equal(1);
+                });
         });
     });
 });

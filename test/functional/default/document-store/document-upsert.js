@@ -6,6 +6,7 @@ const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
+const path = require('path');
 
 describe('single document upsert', () => {
     let schema, session, collection;
@@ -137,6 +138,22 @@ describe('single document upsert', () => {
                     return collection.find().execute(doc => actual.push(doc));
                 })
                 .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'upsert.js');
+        const doc = { name: 'foo' };
+
+        it('logs the upsert data', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Insert', script, [schema.getName(), collection.getName(), JSON.stringify(doc)])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudAdd = proc.logs[0];
+                    expect(crudAdd.row).to.have.lengthOf(1); // single document
+                    return expect(crudAdd.upsert).to.be.true;
+                });
         });
     });
 });

@@ -30,9 +30,9 @@
 
 'use strict';
 
-const Expr = require('./lib/Protocol/Protobuf/Adapters/Expr');
 const authenticationManager = require('./lib/Authentication/AuthenticationManager');
 const client = require('./lib/DevAPI/Client');
+const expr = require('./lib/Protocol/Wrappers/Messages/Expr/Expr');
 const locking = require('./lib/DevAPI/Locking');
 const mysql41Auth = require('./lib/Authentication/MySQL41Auth');
 const parseUri = require('./lib/DevAPI/Util/URIParser');
@@ -135,17 +135,17 @@ exports.getClient = function (connection, options) {
 
 /**
  * Parse an expression string into a Mysqlx.Expr.Expr.
- * @param {string} expr - expression string
+ * @param {string} value - expression string
  * @param {ParserOptions} options - additional options
  * @return {proto.Mysqlx.Expr.Expr} The protobuf object version.
  */
-exports.expr = function (expr, options) {
-    return Expr.createExpr(expr, options);
+exports.expr = function (value, options) {
+    return expr.create(value, Object.assign({}, options, { toParse: true })).valueOf();
 };
 
 /**
  * Retrieve the connector version number (from package.json).
- * @return {String}
+ * @return {string}
  */
 exports.getVersion = function () {
     return require('./package').version;

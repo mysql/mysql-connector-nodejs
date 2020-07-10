@@ -61,12 +61,5 @@ describe('TableInsert', () => {
 
             expect(query.getItems()).to.deep.equal([values]);
         });
-
-        it('throws error if the number of fields and rows do not match', () => {
-            const values = ['baz', 'qux'];
-            const query = tableInsert(null, null, null, ['foo']);
-
-            expect(() => query.values(values[0], values[1])).to.throw(Error);
-        });
     });
 });

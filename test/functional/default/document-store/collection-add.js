@@ -6,6 +6,7 @@ const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
+const path = require('path');
 
 describe('adding documents to a collection', () => {
     let schema, session, collection;
@@ -178,15 +179,13 @@ describe('adding documents to a collection', () => {
 
             let ids = [];
 
-            return collection
-                .add(documents)
+            return collection.add(documents)
                 .execute()
                 .then(result => {
                     ids = result.getGeneratedIds();
                 })
                 .then(() => {
-                    return collection
-                        .find()
+                    return collection.find()
                         .execute(doc => doc && actual.push(doc));
                 })
                 .then(() => {
@@ -223,6 +222,90 @@ describe('adding documents to a collection', () => {
             return collection.add(documents)
                 .execute()
                 .then(res => expect(res.getAffectedItemsCount()).to.equal(expected));
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'add.js');
+        const docs = [{ name: 'foo', count: 2 }, { name: 'bar', count: 5 }];
+
+        it('logs the basic operation parameters', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Insert', script, [schema.getName(), collection.getName(), JSON.stringify(docs)])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudAdd = proc.logs[0];
+                    expect(crudAdd).to.contain.keys('collection', 'data_model');
+                    expect(crudAdd.collection).to.contain.keys('name', 'schema');
+                    expect(crudAdd.collection.name).to.equal(collection.getName());
+                    expect(crudAdd.collection.schema).to.equal(schema.getName());
+                    expect(crudAdd.data_model).to.equal('DOCUMENT');
+                });
+        });
+
+        it('logs the row data', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Insert', script, [schema.getName(), collection.getName(), JSON.stringify(docs)])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const crudAdd = proc.logs[0];
+                    expect(crudAdd).to.contain.keys('row');
+                    expect(crudAdd.row).to.be.an('array').and.have.lengthOf(docs.length);
+
+                    const rows = crudAdd.row;
+                    rows.forEach(row => {
+                        expect(row).to.have.keys('field');
+                        expect(row.field).to.be.an('array').and.have.lengthOf(1); // each doc is kind-of-a colum
+                        expect(row.field[0]).to.have.keys('type', 'object');
+                        expect(row.field[0].type).to.equal('OBJECT');
+                        expect(row.field[0].object).to.have.keys('fld');
+                        expect(row.field[0].object.fld).to.be.an('array').and.have.lengthOf(2); // number of properties in each doc
+                    });
+
+                    const fields = rows[0].field[0].object.fld;
+                    fields.forEach(field => {
+                        expect(field).to.have.keys('key', 'value');
+                        expect(field.value).to.have.keys('type', 'literal');
+                        expect(field.value.type).to.equal('LITERAL');
+                    });
+
+                    expect(fields[0].key).to.equal('name');
+                    expect(fields[0].value.literal).to.have.keys('type', 'v_string');
+                    expect(fields[0].value.literal.type).to.equal('V_STRING');
+                    expect(fields[0].value.literal.v_string).to.have.keys('value');
+                    expect(fields[0].value.literal.v_string.value).to.equal('foo');
+
+                    expect(fields[1].key).to.equal('count');
+                    expect(fields[1].value.literal).to.have.keys('type', 'v_unsigned_int');
+                    expect(fields[1].value.literal.type).to.equal('V_UINT');
+                    expect(fields[1].value.literal.v_unsigned_int).to.equal(2);
+                });
+        });
+
+        it('logs the table changes metadata', () => {
+            return fixtures.collectLogs('protocol:inbound:Mysqlx.Notice.Frame', script, [schema.getName(), collection.getName(), JSON.stringify(docs)])
+                .then(proc => {
+                    // LOCAL notices are decoded twice (needs to be improved)
+                    // so there are no assurances about the correct length
+                    expect(proc.logs).to.have.length.above(0);
+
+                    const generatedIdsNotice = proc.logs[proc.logs.length - 1];
+                    expect(generatedIdsNotice).to.have.keys('type', 'scope', 'payload');
+                    expect(generatedIdsNotice.type).to.equal('SESSION_STATE_CHANGED');
+                    expect(generatedIdsNotice.scope).to.equal('LOCAL');
+                    expect(generatedIdsNotice.payload).to.have.keys('param', 'value');
+                    expect(generatedIdsNotice.payload.param).to.equal('GENERATED_DOCUMENT_IDS');
+                    expect(generatedIdsNotice.payload.value).to.be.an('array').and.have.lengthOf(2);
+
+                    const ids = generatedIdsNotice.payload.value;
+                    ids.forEach(id => {
+                        expect(id).to.have.keys('type', 'v_octets');
+                        expect(id.type).to.equal('V_OCTETS');
+                        expect(id.v_octets).to.have.keys('value');
+                        expect(id.v_octets.value).to.have.keys('type', 'data');
+                        expect(id.v_octets.value.type).to.equal('Buffer');
+                    });
+                });
         });
     });
 });

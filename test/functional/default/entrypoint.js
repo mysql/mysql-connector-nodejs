@@ -2,7 +2,7 @@
 
 /* eslint-env node, mocha */
 
-const Expr = require('../../../lib/Protocol/Protobuf/Stubs/mysqlx_expr_pb').Expr;
+const Expr = require('../../../lib/Protocol/Stubs/mysqlx_expr_pb').Expr;
 const config = require('../../config');
 const expect = require('chai').expect;
 const mysqlx = require('../../../');

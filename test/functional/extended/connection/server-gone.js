@@ -10,7 +10,7 @@ const mysqlx = require('../../../../');
 describe('handling disconnections originated by the server', () => {
     const baseConfig = { schema: undefined, socket: undefined };
 
-    const waitForEndpointToBecomeAvailable = 5000; // (ms)
+    const waitForEndpointToBecomeAvailable = 30000; // (ms)
     const waitForEndpointToBecomeUnvailable = 10000; // (ms)
 
     afterEach('reset services', function () {

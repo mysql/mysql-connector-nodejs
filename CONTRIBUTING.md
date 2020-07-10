@@ -115,6 +115,25 @@ $ npm run linter:fixes
 
 The project maintainers reserve the right, of course, to further extend or amend any change in order to enforce additional informal rules.
 
+### Debug Mode
+
+Running your app in debug mode using the `NODE_DEBUG` environment variable allows to log and inspect some low-level details of your app. Connector/Node.js provides support for this feature and uses it, in particular, for logging information about the protocol messages (inbound and outbound) that are effectively exchanged with the MySQL server.
+
+Messages sent by the client are available under the `protocol:outbound` scope, whereas messages sent by the server are available under the `protocol:inbound` scope.
+
+As an example, the following would write to `stderr` a textual protobuf representation of every `Mysqlx.Crud.Find` and `Mysqlx.Resultset.Row` messages.
+
+```sh
+$ NODE_DEBUG='protocol:outbound:Mysqlx.Crud.Find,protocol:inbound:Mysqlx.Resultset.Row' node app.js
+```
+
+Recent Node.js versions (`v10` and later) support the use of wildcard pattern matching via `NODE_DEBUG`, which means you can more easily do things such as:
+
+- filtering inbound messages only (`NODE_DEBUG='protocol:inbound:*'`)
+- filtering outbound messages only (`NODE_DEBUG='*:outbound:*'`)
+- filtering all protocol messages (`NODE_DEBUG='protocol:*'`)
+- show all logs (`NODE_DEBUG='*'`)
+
 ## Getting Help
 
 If you need help or just want to get in touch with us, please use the following resources:

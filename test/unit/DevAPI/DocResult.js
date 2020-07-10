@@ -7,10 +7,10 @@ const docResult = require('../../../lib/DevAPI/DocResult');
 const td = require('testdouble');
 
 describe('DocResult', () => {
-    let decode;
+    let toArray;
 
     beforeEach('create fakes', () => {
-        decode = td.function();
+        toArray = td.function();
     });
 
     afterEach('reset fakes', () => {
@@ -26,11 +26,11 @@ describe('DocResult', () => {
         });
 
         it('returns an array containing all items in the result set', () => {
-            const row = { decode };
+            const row = { toArray };
             const docs = [{ name: 'foo' }, { name: 'bar' }];
 
-            td.when(decode()).thenReturn([docs[1]]);
-            td.when(decode(), { times: 1 }).thenReturn([docs[0]]);
+            td.when(toArray()).thenReturn([docs[1]]);
+            td.when(toArray(), { times: 1 }).thenReturn([docs[0]]);
 
             expect(docResult({ results: [[row, row]] }).fetchAll()).to.deep.equal(docs);
         });
@@ -47,10 +47,10 @@ describe('DocResult', () => {
         });
 
         it('returns the next available item in the result set', () => {
-            const row = { decode };
+            const row = { toArray };
             const docs = [{ name: 'foo' }];
 
-            td.when(decode()).thenReturn(docs);
+            td.when(toArray()).thenReturn(docs);
 
             expect(docResult({ results: [[row]] }).fetchOne()).to.deep.equal(docs[0]);
         });
@@ -74,13 +74,13 @@ describe('DocResult', () => {
 
     context('toArray()', () => {
         it('returns the raw list of result set items', () => {
-            const row = { decode };
+            const row = { toArray };
             const docs = [{ name: 'foo' }];
 
             // eslint-disable-next-line no-unused-expressions
             expect(docResult({ results: [] }).toArray()).to.be.an('array').and.be.empty;
 
-            td.when(decode()).thenReturn(docs);
+            td.when(toArray()).thenReturn(docs);
 
             expect(docResult({ results: [[row]] }).toArray()).to.deep.equal(docs);
         });

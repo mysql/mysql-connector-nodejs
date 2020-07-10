@@ -6,6 +6,7 @@ const config = require('../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../fixtures');
 const mysqlx = require('../../../');
+const path = require('path');
 
 describe('session reset behavior with older servers', () => {
     // server container defined in docker.compose.yml
@@ -99,6 +100,55 @@ describe('session reset behavior with older servers', () => {
             return client.getSession()
                 .then(session => session.close())
                 .then(() => client.getSession());
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        // socket must be null in order to be correctly parsed after JSON.stringify()
+        const resetConfig = Object.assign({}, config, baseConfig, { socket: null });
+
+        context('with a standalone connection', () => {
+            it('logs the expectation pipeline closing', () => {
+                const script = path.join(__dirname, '..', '..', 'fixtures', 'scripts', 'connection', 'reset.js');
+
+                return fixtures.collectLogs('protocol:outbound:Mysqlx.Expect.Close', script, [JSON.stringify(resetConfig)])
+                    .then(proc => {
+                        return expect(proc.logs).to.be.an('array').and.be.empty;
+                    });
+            });
+
+            it('logs the session reset negotiation', () => {
+                const script = path.join(__dirname, '..', '..', 'fixtures', 'scripts', 'connection', 'reset.js');
+
+                return fixtures.collectLogs('protocol:outbound:Mysqlx.Session.Reset', script, [JSON.stringify(resetConfig)])
+                    .then(proc => {
+                        expect(proc.logs).to.be.an('array').and.have.lengthOf(1);
+                        expect(proc.logs[0]).to.have.keys('keep_open');
+                        return expect(proc.logs[0].keep_open).to.be.false;
+                    });
+            });
+        });
+
+        context('with a connection pool', () => {
+            it('logs the expectation pipeline closing', () => {
+                const script = path.join(__dirname, '..', '..', 'fixtures', 'scripts', 'connection', 'pool-reset.js');
+
+                return fixtures.collectLogs('protocol:outbound:Mysqlx.Expect.Close', script, [JSON.stringify(resetConfig)])
+                    .then(proc => {
+                        return expect(proc.logs).to.be.an('array').and.be.empty;
+                    });
+            });
+
+            it('logs the session reset negotiation', () => {
+                const script = path.join(__dirname, '..', '..', 'fixtures', 'scripts', 'connection', 'pool-reset.js');
+
+                return fixtures.collectLogs('protocol:outbound:Mysqlx.Session.Reset', script, [JSON.stringify(resetConfig)])
+                    .then(proc => {
+                        expect(proc.logs).to.be.an('array').and.have.lengthOf(1);
+                        expect(proc.logs[0]).to.have.keys('keep_open');
+                        return expect(proc.logs[0].keep_open).to.be.false;
+                    });
+            });
         });
     });
 });

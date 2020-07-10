@@ -160,18 +160,5 @@ describe('TableDelete', () => {
 
             expect(tableDelete(session).where(criteria).getCriteria()).to.equal(criteria);
         });
-
-        it('resets any existing query criteria expression', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
-
-            const stmt = tableDelete(session);
-            const setCriteriaExpr = td.replace(stmt, 'setCriteriaExpr');
-
-            stmt.where();
-
-            expect(td.explain(setCriteriaExpr).callCount).to.equal(1);
-            return expect(td.explain(setCriteriaExpr).calls[0].args).to.be.empty;
-        });
     });
 });

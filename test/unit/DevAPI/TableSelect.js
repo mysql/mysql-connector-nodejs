@@ -6,11 +6,11 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 
 describe('TableSelect', () => {
-    let decode, preparing, tableSelect;
+    let preparing, tableSelect, toArray;
 
     beforeEach('create fakes', () => {
-        decode = td.function();
         preparing = td.function();
+        toArray = td.function();
 
         td.replace('../../../lib/DevAPI/Preparing', preparing);
         tableSelect = require('../../../lib/DevAPI/TableSelect');
@@ -34,10 +34,10 @@ describe('TableSelect', () => {
 
         it('wraps an operation without a cursor in a preparable instance', () => {
             const session = 'foo';
-            const row = { decode };
+            const row = { toArray };
             const state = { results: [[row]] };
 
-            td.when(decode()).thenReturn(['bar']);
+            td.when(toArray()).thenReturn(['bar']);
             td.when(execute(td.matchers.isA(Function), undefined, undefined)).thenResolve(state);
             td.when(preparing({ session })).thenReturn({ execute });
 
@@ -277,19 +277,6 @@ describe('TableSelect', () => {
             td.when(preparing({ session })).thenReturn({ forceRestart });
 
             expect(tableSelect(session).where(criteria).getCriteria()).to.equal(criteria);
-        });
-
-        it('resets any existing query criteria expression', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
-
-            const stmt = tableSelect(session);
-            const setCriteriaExpr = td.replace(stmt, 'setCriteriaExpr');
-
-            stmt.where();
-
-            expect(td.explain(setCriteriaExpr).callCount).to.equal(1);
-            return expect(td.explain(setCriteriaExpr).calls[0].args).to.be.empty;
         });
     });
 });

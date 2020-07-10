@@ -3,7 +3,7 @@
 /* eslint-env node, mocha */
 
 const Parser = require('../../../lib/ExprParser');
-const Scalar = require('../../../lib/Protocol/Protobuf/Stubs/mysqlx_datatypes_pb').Scalar;
+const Scalar = require('../../../lib/Protocol/Stubs/mysqlx_datatypes_pb').Scalar;
 const expect = require('chai').expect;
 
 describe('ExprParser', () => {

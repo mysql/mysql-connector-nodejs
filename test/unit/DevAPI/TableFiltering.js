@@ -16,13 +16,5 @@ describe('TableFiltering', () => {
             expect(tableFiltering().where('').getCriteria()).to.be.empty;
             return expect(tableFiltering().where('foo').getCriteria()).to.equal('foo');
         });
-
-        it('clears the expression criteria cache', () => {
-            /* eslint-disable no-unused-expressions */
-            expect(tableFiltering().where().getCriteriaExpr()).to.not.exist;
-            expect(tableFiltering().where('').getCriteriaExpr()).to.not.exist;
-            /* eslint-enable no-unused-expressions */
-            return expect(tableFiltering().where('foo').getCriteriaExpr()).to.not.exist;
-        });
     });
 });

@@ -1,6 +1,7 @@
 'use strict';
 
 module.exports = {
+    collectLogs: require('./collectLogs'),
     createSession: require('./createSession'),
     createSchema: require('./createSchema'),
     createUser: require('./createUser'),

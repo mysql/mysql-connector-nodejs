@@ -6,6 +6,7 @@ const config = require('../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../fixtures');
 const mysqlx = require('../../../');
+const path = require('path');
 
 describe('raw SQL', () => {
     beforeEach('create default schema', () => {
@@ -989,6 +990,75 @@ describe('raw SQL', () => {
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('GEOMETRY'));
             });
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        const script = path.join(__dirname, '..', '..', 'fixtures', 'scripts', 'sql-statement.js');
+        const statement = `SELECT name AS col FROM ${config.schema}.test`;
+
+        let session;
+
+        beforeEach('create session', () => {
+            return mysqlx.getSession(config)
+                .then(s => {
+                    session = s;
+                });
+        });
+
+        beforeEach('create a table', () => {
+            return session.sql(`CREATE TABLE ${config.schema}.test (name VARCHAR(3))`)
+                .execute();
+        });
+
+        beforeEach('add table data', () => {
+            return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+                .execute();
+        });
+
+        afterEach('close session', () => {
+            return session.close();
+        });
+
+        it('logs the statement data sent to the server', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Sql.StmtExecute', script, [statement])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const stmtExecute = proc.logs[0];
+                    expect(stmtExecute).to.contain.keys('namespace', 'stmt', 'compact_metadata');
+                    expect(stmtExecute.namespace).to.equal('sql');
+                });
+        });
+
+        it('logs the result set column metadata sent by the server', () => {
+            return fixtures.collectLogs('protocol:inbound:Mysqlx.Resultset.ColumnMetaData', script, [statement])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+
+                    const columnMetadata = proc.logs[0];
+                    expect(columnMetadata).to.contain.keys('type', 'name', 'original_name', 'table', 'original_table', 'schema', 'catalog', 'collation', 'fractional_digits', 'length', 'flags');
+                    expect(columnMetadata.type).to.equal('BYTES');
+                    expect(columnMetadata.name).to.equal('col');
+                    expect(columnMetadata.original_name).to.equal('name');
+                    expect(columnMetadata.table).to.equal('test');
+                    expect(columnMetadata.original_table).to.equal('test');
+                    expect(columnMetadata.schema).to.equal(config.schema);
+                    expect(columnMetadata.catalog).to.equal('def'); // always "def"
+                    expect(columnMetadata.collation).to.equal(255); // always "255"
+                    expect(columnMetadata.fractional_digits).to.equal(0);
+                    expect(columnMetadata.length).to.equal(12);
+                    expect(columnMetadata.flags).to.equal(0);
+                });
+        });
+
+        it('logs the result set row data sent by the server', () => {
+            return fixtures.collectLogs('protocol:inbound:Mysqlx.Resultset.Row', script, [statement])
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+                    expect(proc.logs[0]).to.contain.keys('fields');
+                    expect(proc.logs[0].fields).to.deep.equal(['foo']);
+                });
         });
     });
 });

@@ -7,10 +7,10 @@ const rowResult = require('../../../lib/DevAPI/RowResult');
 const td = require('testdouble');
 
 describe('RowResult', () => {
-    let decode;
+    let toArray;
 
     beforeEach('create fakes', () => {
-        decode = td.function();
+        toArray = td.function();
     });
 
     afterEach('reset fakes', () => {
@@ -28,21 +28,21 @@ describe('RowResult', () => {
         });
 
         it('returns an array containing the data counterpart of each item in the result set', () => {
-            const row = { decode };
+            const row = { toArray };
             const rows = ['foo', 'bar'];
 
-            td.when(decode()).thenReturn(rows[1]);
-            td.when(decode(), { times: 1 }).thenReturn(rows[0]);
+            td.when(toArray()).thenReturn(rows[1]);
+            td.when(toArray(), { times: 1 }).thenReturn(rows[0]);
 
             expect(rowResult({ results: [[row, row]] }).fetchAll()).to.deep.equal(rows);
         });
 
         it('is aware that fetchOne() might have been used before', () => {
-            const row = { decode };
+            const row = { toArray };
             const rows = ['foo', 'bar'];
 
-            td.when(decode()).thenReturn(rows[1]);
-            td.when(decode(), { times: 1 }).thenReturn(rows[0]);
+            td.when(toArray()).thenReturn(rows[1]);
+            td.when(toArray(), { times: 1 }).thenReturn(rows[0]);
 
             const results = [[null, null, row, row]];
 
@@ -63,20 +63,20 @@ describe('RowResult', () => {
         });
 
         it('returns the next available item in the result set', () => {
-            const row = { decode };
+            const row = { toArray };
             const rows = [['foo']];
 
-            td.when(decode()).thenReturn(rows[0]);
+            td.when(toArray()).thenReturn(rows[0]);
 
             expect(rowResult({ results: [[row]] }).fetchOne()).to.equal(rows[0]);
         });
 
         it('deallocates the memory when a result set item has been consumed', () => {
-            const row = { decode };
+            const row = { toArray };
             const res = rowResult({ results: [[row, row]] });
 
-            td.when(decode()).thenReturn(['bar']);
-            td.when(decode(), { times: 1 }).thenReturn(['foo']);
+            td.when(toArray()).thenReturn(['bar']);
+            td.when(toArray(), { times: 1 }).thenReturn(['foo']);
 
             res.fetchOne();
 
@@ -89,7 +89,7 @@ describe('RowResult', () => {
         });
 
         it('deallocates the memory when the entire result set has been consumed', () => {
-            const row = { decode };
+            const row = { toArray };
             const res = rowResult({ results: [[row]] });
 
             res.fetchOne();
@@ -154,11 +154,11 @@ describe('RowResult', () => {
     });
 
     context('nextResult()', () => {
-        let fstCallToDecode, sndCallToDecode;
+        let fstCall, sndCall;
 
         beforeEach('create fakes', () => {
-            fstCallToDecode = td.function();
-            sndCallToDecode = td.function();
+            fstCall = td.function();
+            sndCall = td.function();
         });
 
         it('returns false if there are no other result sets available', () => {
@@ -175,10 +175,10 @@ describe('RowResult', () => {
         });
 
         it('moves the cursor to the next available result set', () => {
-            const res = rowResult({ results: [[{ decode: fstCallToDecode }], [{ decode: sndCallToDecode }]] });
+            const res = rowResult({ results: [[{ toArray: fstCall }], [{ toArray: sndCall }]] });
 
-            td.when(fstCallToDecode()).thenReturn(['foo']);
-            td.when(sndCallToDecode()).thenReturn(['bar']);
+            td.when(fstCall()).thenReturn(['foo']);
+            td.when(sndCall()).thenReturn(['bar']);
 
             // eslint-disable-next-line no-unused-expressions
             expect(res.nextResult()).to.be.true;

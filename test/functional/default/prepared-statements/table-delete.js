@@ -7,7 +7,7 @@ const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 
-describe('prepared statements for TableUpdate', () => {
+describe('prepared statements for TableDelete', () => {
     let schema, session, table;
 
     beforeEach('create default schema', () => {

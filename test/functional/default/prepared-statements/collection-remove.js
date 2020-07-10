@@ -6,6 +6,7 @@ const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
+const path = require('path');
 
 describe('prepared statements for CollectionRemove', () => {
     let collection, schema, session;
@@ -171,6 +172,57 @@ describe('prepared statements for CollectionRemove', () => {
                 .then(statement => expect(statement).to.not.exist)
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'reprepared-remove.js');
+        const criteria = 'name = :name';
+        const fstRunBindings = { name: 'foo' };
+        const sndRunBindings = { name: 'bar' };
+
+        it('logs the message to create a prepared statement', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Prepare.Prepare', script, [schema.getName(), collection.getName(), criteria, JSON.stringify(fstRunBindings), JSON.stringify(sndRunBindings)])
+                .then(proc => {
+                    expect(proc.logs).to.be.an('array').and.have.lengthOf(2); // the statement is re-prepared when a limit is introduced
+                    expect(proc.logs[0]).to.contain.keys('stmt_id', 'stmt');
+                    expect(proc.logs[0].stmt_id).to.equal(1);
+                    expect(proc.logs[0].stmt).to.have.keys('type', 'delete');
+                    expect(proc.logs[0].stmt.type).to.equal('DELETE');
+                    expect(proc.logs[0].stmt.delete).to.have.keys('collection', 'data_model', 'criteria');
+                    expect(proc.logs[0].stmt.delete.criteria).to.have.keys('type', 'operator');
+                    expect(proc.logs[0].stmt.delete.criteria.operator).to.have.keys('name', 'param');
+                    expect(proc.logs[0].stmt.delete.criteria.operator.param).to.be.an('array').and.have.lengthOf(2); // operands
+                    expect(proc.logs[0].stmt.delete.criteria.operator.param[0]).to.have.keys('type', 'identifier');
+                    expect(proc.logs[0].stmt.delete.criteria.operator.param[0].type).to.equal('IDENT');
+                    expect(proc.logs[0].stmt.delete.criteria.operator.param[1]).to.have.keys('type', 'position');
+                    expect(proc.logs[0].stmt.delete.criteria.operator.param[1].type).to.equal('PLACEHOLDER');
+                    expect(proc.logs[0].stmt.delete.criteria.operator.param[1].position).to.equal(0);
+                });
+        });
+
+        it('logs the message to execute a prepared statement', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Prepare.Execute', script, [schema.getName(), collection.getName(), criteria, JSON.stringify(fstRunBindings), JSON.stringify(sndRunBindings)])
+                .then(proc => {
+                    expect(proc.logs).to.be.an('array').and.have.lengthOf(2); // the statement is re-prepared and executed when a limit is introduced
+                    expect(proc.logs[0]).to.contain.keys('stmt_id', 'args');
+                    expect(proc.logs[0].args).to.be.an('array').and.have.lengthOf(1);
+                    expect(proc.logs[0].args[0]).to.have.keys('type', 'scalar');
+                    expect(proc.logs[0].args[0].type).to.equal('SCALAR');
+                    expect(proc.logs[0].args[0].scalar).to.have.keys('type', 'v_string');
+                    expect(proc.logs[0].args[0].scalar.type).to.equal('V_STRING');
+                    expect(proc.logs[0].args[0].scalar.v_string).to.have.keys('value');
+                    expect(proc.logs[0].args[0].scalar.v_string.value).to.equal('bar');
+                });
+        });
+
+        it('logs the message to deallocate the prepared statement', () => {
+            return fixtures.collectLogs('protocol:outbound:Mysqlx.Prepare.Deallocate', script, [schema.getName(), collection.getName(), criteria, JSON.stringify(fstRunBindings), JSON.stringify(sndRunBindings)])
+                .then(proc => {
+                    expect(proc.logs).to.be.an('array').and.have.lengthOf(1);
+                    expect(proc.logs[0]).to.have.keys('stmt_id');
+                    expect(proc.logs[0].stmt_id).to.equal(1);
+                });
         });
     });
 });
