@@ -26,7 +26,7 @@ describe('connection failures', () => {
 
             it('fails using a connection string', () => {
                 const userlessConfig = Object.assign({}, config, baseConfig, { user: undefined });
-                const uri = `mysqlx://${userlessConfig.host}`;
+                const uri = `mysqlx://${userlessConfig.host}:${userlessConfig.port}`;
 
                 return mysqlx.getSession(uri)
                     .then(() => expect.fail())
