@@ -503,6 +503,27 @@ describe('relational miscellaneous tests', () => {
             });
         });
 
+        context('BUG#31654667 single-character SET values', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE ${schema.getName()}.test (a_set SET('S', 'M', 'L'))`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ('S,M,L'), ('S,L'), ('L')`)
+                    .execute();
+            });
+
+            it('decodes values correctly', () => {
+                const expected = [[['S', 'M', 'L']], [['S', 'L']], [['L']]];
+                const actual = [];
+
+                return schema.getTable('test').select()
+                    .execute(row => row && row.length && actual.push(row))
+                    .then(() => expect(actual).to.deep.equal(expected));
+            });
+        });
+
         context('NULL values', () => {
             beforeEach('create table', () => {
                 return session.sql(`CREATE TABLE ${schema.getName()}.test (

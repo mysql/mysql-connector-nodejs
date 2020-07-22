@@ -503,6 +503,19 @@ describe('Row', () => {
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).decode()).to.deep.equal([['\0']]);
 
+            // BUG#31654667
+            // eslint-disable-next-line node/no-deprecated-api
+            const x = (new Buffer('x')).toString('hex');
+            // eslint-disable-next-line node/no-deprecated-api
+            const y = (new Buffer('y')).toString('hex');
+            // eslint-disable-next-line node/no-deprecated-api
+            setDefinition = new Buffer(`01${x}01${y}`, 'hex');
+
+            rowProto.clearFieldList();
+            rowProto.addField(tools.createTypedArrayFromBuffer(setDefinition));
+
+            expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).decode()).to.deep.equal([['x', 'y']]);
+
             // eslint-disable-next-line node/no-deprecated-api
             const foo = (new Buffer('foo')).toString('hex');
             // eslint-disable-next-line node/no-deprecated-api
