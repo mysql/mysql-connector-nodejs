@@ -149,6 +149,26 @@ describe('relational miscellaneous tests', () => {
             });
         });
 
+        context('BUG# non BIGINT values store in BIGINT columns', () => {
+            beforeEach('create table', () => {
+                return session.sql(`CREATE TABLE ${schema.getName()}.test (not_big_int BIGINT)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (4294967295)`)
+                    .execute();
+            });
+
+            it('decodes values correctly', () => {
+                const expected = [4294967295];
+
+                return schema.getTable('test').select()
+                    .execute()
+                    .then(res => expect(res.fetchOne()).to.deep.equal(expected));
+            });
+        });
+
         context('values encoded as UINT', () => {
             beforeEach('create table', () => {
                 return session.sql(`CREATE TABLE ${schema.getName()}.test (

@@ -66,19 +66,33 @@ describe('Row', () => {
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).decode()).to.deep.equal([-1]);
 
-            let overflow = Number.MAX_SAFE_INTEGER + 1;
+            writer.reset();
+            writer.writeSint64(1, Number.MAX_SAFE_INTEGER);
+            rowProto.clearFieldList();
+            rowProto.addField(writer.getResultBuffer().slice(1));
+
+            expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).decode()).to.deep.equal([Number.MAX_SAFE_INTEGER]);
 
             writer.reset();
-            writer.writeSint64(1, overflow);
+            writer.writeSint64(1, Number.MIN_SAFE_INTEGER);
+            rowProto.clearFieldList();
+            rowProto.addField(writer.getResultBuffer().slice(1));
+
+            expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).decode()).to.deep.equal([Number.MIN_SAFE_INTEGER]);
+
+            let overflow = '9007199254740992'; // Number.MAX_SAFE_INTEGER + 1
+
+            writer.reset();
+            writer.writeSint64String(1, overflow);
             rowProto.clearFieldList();
             rowProto.addField(writer.getResultBuffer().slice(1));
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).decode()).to.deep.equal([overflow.toString()]);
 
-            overflow = Number.MIN_SAFE_INTEGER - 1;
+            overflow = '-9007199254740992'; // Number.MIN_SAFE_INTEGER - 1
 
             writer.reset();
-            writer.writeSint64(1, overflow);
+            writer.writeSint64String(1, overflow);
             rowProto.clearFieldList();
             rowProto.addField(writer.getResultBuffer().slice(1));
 
