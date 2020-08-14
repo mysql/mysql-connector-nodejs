@@ -44,10 +44,7 @@
   },
   "scripts": {
     "coverage": "nyc npm run test",
-    "coverage:all": "nyc npm run test:all",
     "coverage:functional": "nyc npm run test:functional",
-    "coverage:functional:default": "nyc npm run test:functional:default",
-    "coverage:functional:extended": "nyc npm run test:functional:extended",
     "coverage:summary": "nyc report --reporter=text-summary",
     "coverage:unit": "nyc npm run test:unit",
     "linter:checks": "standardx --verbose | snazzy",
@@ -56,10 +53,7 @@
     "prepack": "node bin/prepack.js",
     "pretest": "node bin/wait-for.js",
     "test": "npm run mocha test/unit test/functional/default",
-    "test:all": "npm run pretest && npm run mocha test/unit test/functional",
-    "test:functional": "npm run pretest && npm run mocha test/functional",
-    "test:functional:default": "npm run pretest && npm run mocha test/functional/default",
-    "test:functional:extended": "npm run pretest && npm run mocha test/functional/extended",
+    "test:functional": "npm run pretest && npm run mocha test/functional/default",
     "test:unit": "npm run mocha test/unit"
   },
   "dependencies": {
