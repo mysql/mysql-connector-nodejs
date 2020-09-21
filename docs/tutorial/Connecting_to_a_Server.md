@@ -556,3 +556,111 @@ client.getSession()
 ```
 
 Note: attemping to create connections with UNIX sockets, server ports or multiple hostnames whilst enabling SRV resolution will result in an error.
+
+## Connections closed by the server
+
+A server connection can be closed due to multiple reasons, either because of an unexpected failure or simply because the server decided to close the connection given one of the following reasons:
+
+- the connection was inactive (one or both of `mysqlx_wait_timeout` and `mysqlx_read_timeout` were exceeded)
+- the connection was killed in a different session (using the `kill_client` Admin API command or an SQL `KILL` statement)
+- the server itself is shutting down
+
+In all of these scenarios, when the connection is closed, it can't be re-used by an existing session. However, in the first two scenarios, the server is probably still available, which means we can attempt to re-connect. This is also the case when there are other servers available in a multi-host setting.
+
+This introduces a custom connection pool behavior, where all connections that have been closed by the server are effectively released from the pool whenever a new connection tries to be acquired, regardless the value of `maxIdleTime` has been exceeded.
+
+So, for instance, when `mysqlx_wait_timeout` is set to 10 seconds:
+
+```js
+const waitTimeout = 10;
+const client = mysqlx.getClient({ host: 'foo.example.com' }, { pooling: { maxSize: 2 } });
+
+Promise.all([client.getSession(), client.getSession()])
+    .then(session => {
+        // wait for more than 10s, making the server connection idle
+        return new Promise(resolve => setTimeout(resolve, waitTimeout * 1000 + 1000));
+    })
+    .then(() => {
+        // by this point, the connections should have been released
+        return client.getSession();
+    })
+    .then(session => {
+        return session.sql('select 1')
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()); // [1]
+    });
+```
+
+When the connection is killed from a different session:
+
+```js
+const client = mysqlx.getClient({ host: 'foo.example.com' }, { pooling: { maxSize: 2 } });
+
+return Promise.all([client.getSession(), client.getSession()]
+    .then(sessions => {
+        return sessions[0].sql('select CONNECTION_ID()')
+            .execute()
+            .then(res => {
+                return sessions[1].sql('kill ?')
+                    .bind(res.fetchOne()[0])
+                    .execute();
+            });
+    })
+    .then(() => {
+        // by this point, one of the connections should have been released
+        return client.getSession();
+    })
+    .then(session => {
+        return session.sql('select 1')
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()); // [1]
+    })
+```
+
+When the server is shutting down and there are no other servers available:
+
+```js
+// we don't want to wait forever
+const queueTimeout = 1000;
+const client = mysqlx.getClient({ host: 'foo.example.com' }, { pooling: { maxSize: 2, queueTimeout } });
+
+// start by filling the pool
+Promise.all([client.getSession(), client.getSession()])
+    .then(() => {
+        // assuming the server is shutting down by this point
+        return new Promise(resolve => setTimeout(resolve, queueTimeout + 1000));
+    })
+    .then(() => {
+        // the value of `queueTimeout` has been exceeded by this point
+        // and both of the connections should have been released
+        return client.getSession();
+    })
+    .catch(err => {
+        console.log(err.message); // connect ECONNREFUSED foo.example.com:33060
+    });
+```
+
+When the server is shutting down but there are other servers available:
+
+```js
+const client = mysqlx.getClient({ endpoints: [{ host: 'foo.example.com', priority: 90 }, { host: 'bar.example.com', priority: 80 }] }, { pooling: { maxSize: 2 } });
+
+// start by filling the pool
+Promise.all([client.getSession(), client.getSession()]);
+    .then(session => {
+        // assuming the server at 'foo.example.com' is shutting down by this point,
+        // both connections should have been released
+        return client.getSession();
+    })
+    .then(session => {
+        return session.sql('select 1')
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()) // [1]
+    });
+```

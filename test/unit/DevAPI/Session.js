@@ -1,3 +1,33 @@
+/*
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License, version 2.0, as
+ * published by the Free Software Foundation.
+ *
+ * This program is also distributed with certain software (including
+ * but not limited to OpenSSL) that is licensed under separate terms,
+ * as designated in a particular file or component or in included license
+ * documentation.  The authors of MySQL hereby grant you an
+ * additional permission to link the program and your derivative works
+ * with the separately licensed software that they have included with
+ * MySQL.
+ *
+ * Without limiting anything contained in the foregoing, this file,
+ * which is part of MySQL Connector/Node.js, is also subject to the
+ * Universal FOSS Exception, version 1.0, a copy of which can be found at
+ * http://oss.oracle.com/licenses/universal-foss-exception.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License, version 2.0, for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+ */
+
 'use strict';
 
 /* eslint-env node, mocha */
@@ -200,12 +230,15 @@ describe('Session', () => {
 
                 td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                 td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
-                td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({ id: 'baz' });
 
                 setTimeout(() => socket.emit('connect'));
 
                 return session.connect()
-                    .then(session => expect(session.inspect()).to.deep.include(expected));
+                    .then(session => {
+                        expect(session._connectionId).to.equal('baz');
+                        expect(session.inspect()).to.deep.include(expected);
+                    });
             });
 
             it('closes the internal stream if there is an error', () => {
@@ -232,7 +265,7 @@ describe('Session', () => {
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
                     td.when(Client.prototype.capabilitiesGet()).thenResolve(expected);
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -246,7 +279,7 @@ describe('Session', () => {
 
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -264,7 +297,7 @@ describe('Session', () => {
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.enableTLS({ enabled: true })).thenReject(new Error());
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -280,7 +313,7 @@ describe('Session', () => {
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -297,7 +330,7 @@ describe('Session', () => {
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.enableTLS({ enabled: true })).thenReject(error);
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -313,7 +346,7 @@ describe('Session', () => {
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -328,7 +361,7 @@ describe('Session', () => {
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -344,7 +377,7 @@ describe('Session', () => {
 
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => socket.emit('connect'));
 
@@ -362,7 +395,7 @@ describe('Session', () => {
 
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => {
                         socket.emit('close', true);
@@ -401,7 +434,7 @@ describe('Session', () => {
 
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => {
                         socket.emit('close', true);
@@ -434,7 +467,7 @@ describe('Session', () => {
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => {
                         socket.emit('close', true);
@@ -454,7 +487,7 @@ describe('Session', () => {
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'] });
-                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve();
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => {
                         socket.emit('close', true);
@@ -474,6 +507,7 @@ describe('Session', () => {
                     td.when(net.connect(), { ignoreExtraArgs: true }).thenReturn(socket);
                     td.when(Client.prototype.enableTLS({ enabled: true })).thenResolve();
                     td.when(Client.prototype.capabilitiesGet()).thenResolve({ 'authentication.mechanisms': ['PLAIN', 'MYSQL41'], tls: true });
+                    td.when(Client.prototype.authenticate(), { ignoreExtraArgs: true }).thenResolve({});
 
                     setTimeout(() => {
                         socket.emit('close', true);

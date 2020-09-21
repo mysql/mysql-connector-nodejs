@@ -1,8 +1,39 @@
+/*
+ * Copyright (c) 2020, Oracle and/or its affiliates.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License, version 2.0, as
+ * published by the Free Software Foundation.
+ *
+ * This program is also distributed with certain software (including
+ * but not limited to OpenSSL) that is licensed under separate terms,
+ * as designated in a particular file or component or in included license
+ * documentation.  The authors of MySQL hereby grant you an
+ * additional permission to link the program and your derivative works
+ * with the separately licensed software that they have included with
+ * MySQL.
+ *
+ * Without limiting anything contained in the foregoing, this file,
+ * which is part of MySQL Connector/Node.js, is also subject to the
+ * Universal FOSS Exception, version 1.0, a copy of which can be found at
+ * http://oss.oracle.com/licenses/universal-foss-exception.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License, version 2.0, for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+ */
+
 'use strict';
 
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../../');
 
@@ -301,19 +332,26 @@ describe('connection pooling', () => {
         });
 
         context('and there are no idle connections', () => {
-            it('waits indefinitely for a valid connection with the default timeout', () => {
+            it('waits for a valid connection with the default timeout', () => {
                 const poolingConfig = Object.assign({}, config, baseConfig);
                 const client = mysqlx.getClient(poolingConfig, { pooling: { enabled: true, maxSize: 1 } });
 
                 return client.getSession()
-                    .then(() => {
+                    .then(session => {
                         return new Promise((resolve, reject) => {
-                            // wait for a few millis before passing
+                            // we want to release the existing connection after trying to acquire a new one
                             setTimeout(resolve, 1000);
-                            client.getSession().then(resolve).catch(reject);
-                        });
-                    })
-                    .then(() => client.close());
+                            return client.getSession()
+                                .then(() => {
+                                    // after the connection is eventually acquired, we can destroy the pool
+                                    return client.close()
+                                        .then(resolve);
+                                })
+                                .catch(reject);
+                        })
+                            // release the connection in order to be re-used by session in the queue
+                            .then(() => session.close());
+                    });
             });
 
             it('fails after the timeout is exceeded', () => {
@@ -341,7 +379,6 @@ describe('connection pooling', () => {
 
             const maxIdleTime = 1;
             const client = mysqlx.getClient(poolingConfig, { pooling: { maxIdleTime } });
-            const error = 'This session was closed. Use "mysqlx.getSession()" or "mysqlx.getClient()" to create a new one.';
 
             return client.getSession()
                 .then(session => {
@@ -352,7 +389,7 @@ describe('connection pooling', () => {
                         .then(() => session.getSchemas())
                         .then(() => expect.fail())
                         .catch(err => {
-                            expect(err.message).to.equal(error);
+                            expect(err.message).to.equal(errors.MESSAGES.ERR_CONNECTION_CLOSED);
                             return client.close();
                         });
                 });

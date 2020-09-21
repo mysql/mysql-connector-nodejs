@@ -10,6 +10,7 @@ const PassThrough = require('stream').PassThrough;
 const Scope = require('../../../lib/Protocol/Stubs/mysqlx_notice_pb').Frame.Scope;
 const WorkQueue = require('../../../lib/WorkQueue');
 const condition = require('../../../lib/Protocol/Wrappers/Messages/Expect/Condition');
+const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -92,7 +93,7 @@ describe('Client', () => {
 
             return client.enableTLS()
                 .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('The X Plugin version installed in the server does not support TLS. Check https://dev.mysql.com/doc/refman/8.0/en/x-plugin-ssl-connections.html for more details on how to enable secure connections.'));
+                .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_DISABLED_IN_SERVER));
         });
 
         it('fails if there is an unexpected error while setting the capabilities in the server', () => {
@@ -395,33 +396,6 @@ describe('Client', () => {
 
             expect(td.explain(fakeProcess).callCount).to.equal(7000);
             td.explain(fakeProcess).calls.forEach(call => expect(call.args).to.deep.equal([message1]));
-        });
-    });
-
-    // TODO(Rui): add tests when the remaining Client interface is refactored.
-    context('CRUD message encoding', () => {
-        context('crudInsert', () => {
-            it('sends an encoded message to the server');
-            it('fails if the message cannot be encoded');
-            it('fails if an unexpected error occurs');
-        });
-
-        context('crudFind()', () => {
-            it('sends an encoded message to the server');
-            it('fails if the message cannot be encoded');
-            it('fails if an unexpected error occurs');
-        });
-
-        context('crudDelete', () => {
-            it('sends an encoded message to the server');
-            it('fails if the message cannot be encoded');
-            it('fails if an unexpected error occurs');
-        });
-
-        context('crudUpdate', () => {
-            it('sends an encoded message to the server');
-            it('fails if the message cannot be encoded');
-            it('fails if an unexpected error occurs');
         });
     });
 
@@ -754,7 +728,7 @@ describe('Client', () => {
             // eslint-disable-next-line node/no-deprecated-api
             const classicServerGreeting = new Buffer('010000000a', 'hex');
 
-            expect(() => network.emit('data', classicServerGreeting)).to.throw(/^The server connection is not using the X Protocol/);
+            expect(() => network.emit('data', classicServerGreeting)).to.throw(errors.MESSAGES.ERR_WIRE_PROTOCOL_HEADER);
         });
     });
 });
