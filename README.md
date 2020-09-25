@@ -1,6 +1,6 @@
 # MySQL Connector/Node.js
 
-[![Languages](https://img.shields.io/github/languages/top/mysql/mysql-connector-nodejs.svg?style=flat)](https://github.com/mysql/mysql-connector-nodejs) [![License: GPLv2 with FOSS exception](https://img.shields.io/badge/license-GPLv2_with_FOSS_exception-c30014.svg?style=flat)](https://github.com/mysql/mysql-connector-nodejs/blob/master/LICENSE) [![npm](https://img.shields.io/npm/v/@mysql/xdevapi.svg?style=flat)](https://www.npmjs.com/package/@mysql/xdevapi)
+[![Languages](https://img.shields.io/github/languages/top/mysql/mysql-connector-nodejs.svg?style=flat)](https://github.com/mysql/mysql-connector-nodejs) [![License: GPLv2 with FOSS exception](https://img.shields.io/badge/license-GPLv2_with_FOSS_exception-c30014.svg?style=flat)](https://github.com/mysql/mysql-connector-nodejs/blob/trunk/LICENSE) [![npm](https://img.shields.io/npm/v/@mysql/xdevapi.svg?style=flat)](https://www.npmjs.com/package/@mysql/xdevapi)
 
 MySQL Connector/Node.js is a MySQL 8 driver for Node.js officially supported and maintained by Oracle. It contains an implementation of the [X DevAPI](https://dev.mysql.com/doc/x-devapi-userguide/en/), an Application Programming Interface for working with the [MySQL Document Store](https://dev.mysql.com/doc/refman/8.0/en/document-store.html) through CRUD-based, NoSQL operations.
 
@@ -8,7 +8,7 @@ For detailed information, please visit the official [MySQL Connector/Node.js doc
 
 ## Licensing
 
-Please refer to the [README.txt](https://github.com/mysql/mysql-connector-nodejs/blob/master/README.txt) and [LICENSE](https://github.com/mysql/mysql-connector-nodejs/blob/master/LICENSE) files, available in this repository, for further details.
+Please refer to the [README.txt](https://github.com/mysql/mysql-connector-nodejs/blob/trunk/README.txt) and [LICENSE](https://github.com/mysql/mysql-connector-nodejs/blob/trunk/LICENSE) files, available in this repository, for further details.
 
 ## Getting the Latest Release
 
@@ -38,7 +38,7 @@ The GitHub repository contains the MySQL Connector/Node.js source code as per th
 
 ## Contributing
 
-There are a few ways to contribute to the Connector/Node.js code. Please refer to the [contributing guidelines](https://github.com/mysql/mysql-connector-nodejs/blob/master/CONTRIBUTING.md) for additional information.
+There are a few ways to contribute to the Connector/Node.js code. Please refer to the [contributing guidelines](https://github.com/mysql/mysql-connector-nodejs/blob/trunk/CONTRIBUTING.md) for additional information.
 
 ## Additional Resources
 

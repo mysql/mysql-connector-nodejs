@@ -29,7 +29,7 @@ describe('build tools', () => {
 
         context('specific build environment', () => {
             beforeEach('setup environment', () => {
-                process.env.BRANCH_NAME = 'master';
+                process.env.BRANCH_NAME = 'trunk';
                 process.env.PUSH_REVISION = '0123456789abcdef';
             });
 
@@ -41,7 +41,7 @@ describe('build tools', () => {
             it('creates a valid metadata file when git is not available', () => {
                 const cmd = "git log -n 1 --date=format:'%F %T' --pretty=format:'branch=%D&date=%ad&commit=%H&short=%h'";
                 const file = path.join('docs', 'INFO_SRC');
-                const content = `version: ${pkg.version}\nbranch: master\ncommit: 0123456789abcdef\nshort: 0123456\n`;
+                const content = `version: ${pkg.version}\nbranch: trunk\ncommit: 0123456789abcdef\nshort: 0123456\n`;
 
                 td.when(exec(cmd)).thenCallback(new Error());
 
@@ -56,7 +56,7 @@ describe('build tools', () => {
             it('creates a valid metadata file when the git command throws an error', () => {
                 const cmd = "git log -n 1 --date=format:'%F %T' --pretty=format:'branch=%D&date=%ad&commit=%H&short=%h'";
                 const file = path.join('docs', 'INFO_SRC');
-                const content = `version: ${pkg.version}\nbranch: master\ncommit: 0123456789abcdef\nshort: 0123456\n`;
+                const content = `version: ${pkg.version}\nbranch: trunk\ncommit: 0123456789abcdef\nshort: 0123456\n`;
 
                 td.when(exec(cmd)).thenCallback(null, null, 'error');
 
