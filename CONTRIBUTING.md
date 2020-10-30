@@ -115,6 +115,28 @@ $ npm run linter:fixes
 
 The project maintainers reserve the right, of course, to further extend or amend any change in order to enforce additional informal rules.
 
+### Making Changes to the Source Code
+
+The project provides some utilities you can use in a proper hook for your Git workflow when making changes to the source code. These will increase the chance of a contribution to accepted as is and decrease the time it takes to actually merge the work into the main branch and release it as part of future product versions.
+
+You can go as far as executing test or code coverage scripts, but we recommend to, at least, check for code style and update/fix copyright header notices. This can be done (after installing the project dependencies), for instance, by adding the following to a `pre-commit` script (in this case, a bash script) under `.git/hooks`.
+
+```bash
+# linter checks
+node_modules/.bin/standardx --verbose | node_modules/.bin/snazzy
+if [[ $? -ne 0 ]]; then
+  echo 'JavaScript code style errors were detected. Aborting commit.'
+  exit 1
+fi
+
+# copyright header checks
+node bin/precommit.js
+if [[ $? -ne 0 ]]; then
+  echo 'Copyright header changes were detected. Aborting commit to verify changes.'
+  exit 1
+fi
+```
+
 ### Debug Mode
 
 Running your app in debug mode using the `NODE_DEBUG` environment variable allows to log and inspect some low-level details of your app. Connector/Node.js provides support for this feature and uses it, in particular, for logging information about the protocol messages (inbound and outbound) that are effectively exchanged with the MySQL server.
