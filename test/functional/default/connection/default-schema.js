@@ -39,948 +39,2004 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const os = require('os');
 
-describe('default schema with multiple authentication mechanisms', () => {
-    const schema = 'default';
+describe('connecting to a default schema', () => {
     const baseConfig = {};
 
-    context('MYSQL41', () => {
-        const auth = 'MYSQL41';
-        const user = 'foo';
-        const password = 'bar';
-        const plugin = 'mysql_native_password';
+    context('with different authentication mechanisms', () => {
+        const schema = 'default';
 
-        context('using TCP and TLS', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: true };
+        context('MYSQL41', () => {
+            const auth = 'MYSQL41';
+            const user = 'foo';
+            const password = 'bar';
+            const plugin = 'mysql_native_password';
 
-            beforeEach('create the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+            context('using TCP and TLS', () => {
+                const tlsConfig = { auth, socket: undefined, ssl: true };
 
-                return fixtures.createSchema(schema, schemaConfig);
-            });
+                beforeEach('create the default schema', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
 
-            beforeEach('create user with mysql_native_password plugin', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.createUser(user, plugin, password, schemaConfig);
-            });
-
-            beforeEach('invalidate the server authentication cache', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.resetAuthenticationCache(schemaConfig);
-            });
-
-            afterEach('delete user', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.dropUser(user, schemaConfig);
-            });
-
-            afterEach('drop the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.dropSchema(schema, schemaConfig);
-            });
-
-            context('connecting with a configuration object', () => {
-                it('sets the given default schema in the server', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
+                    return fixtures.createSchema(schema, schemaConfig);
                 });
 
-                it('sets the given default schema in the client', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
+                beforeEach('create user with mysql_native_password plugin', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
 
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
+                    return fixtures.createUser(user, plugin, password, schemaConfig);
                 });
 
-                it('fails if the default schema does not exist', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
+                beforeEach('invalidate the server authentication cache', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
 
-                    return mysqlx.getSession(schemaConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
+                    return fixtures.resetAuthenticationCache(schemaConfig);
+                });
+
+                afterEach('delete user', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
+
+                    return fixtures.dropUser(user, schemaConfig);
+                });
+
+                afterEach('drop the default schema', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
+
+                    return fixtures.dropSchema(schema, schemaConfig);
+                });
+
+                context('connecting with a configuration object', () => {
+                    it('sets the given default schema in the server', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema, user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema: undefined, user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema: '', user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema in the client', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema, user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema: undefined, user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema: '', user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
+                });
+
+                context('connecting with a URI', () => {
+                    it('sets the given default schema in the server', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema, user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema: undefined, user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema: '', user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema in the client', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema, user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema: undefined, user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema: '', user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
                 });
             });
 
-            context('connecting with a URI', () => {
-                it('sets the given default schema in the server', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+            context('using regular TCP', () => {
+                const tcpConfig = { auth, socket: undefined, ssl: false };
 
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
+                beforeEach('create the default schema', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+
+                    return fixtures.createSchema(schema, schemaConfig);
                 });
 
-                it('sets the given default schema in the client', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+                beforeEach('create user with mysql_native_password plugin', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
 
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
+                    return fixtures.createUser(user, plugin, password, schemaConfig);
                 });
 
-                it('fails if the default schema does not exist', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+                beforeEach('invalidate the server authentication cache', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
 
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
+                    return fixtures.resetAuthenticationCache(schemaConfig);
+                });
+
+                afterEach('delete user', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+
+                    return fixtures.dropUser(user, schemaConfig);
+                });
+
+                afterEach('drop the default schema', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+
+                    return fixtures.dropSchema(schema, schemaConfig);
+                });
+
+                context('connecting with a configuration object', () => {
+                    it('sets the given default schema in the server', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: undefined, user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: '', user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema in the client', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: undefined, user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: '', user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
+                });
+
+                context('connecting with a URI', () => {
+                    it('sets the given default schema in the server', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: undefined, user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: '', user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema in the client', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: undefined, user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: '', user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
+                });
+            });
+
+            context('using a UNIX socket', () => {
+                const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+
+                beforeEach('create the default schema', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+
+                    if (!schemaConfig.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    return fixtures.createSchema(schema, schemaConfig);
+                });
+
+                beforeEach('create user with mysql_native_password plugin', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+
+                    if (!schemaConfig.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    return fixtures.createUser(user, plugin, password, schemaConfig);
+                });
+
+                beforeEach('invalidate the server authentication cache', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+
+                    if (!schemaConfig.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    return fixtures.resetAuthenticationCache(schemaConfig);
+                });
+
+                afterEach('delete user', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+
+                    if (!schemaConfig.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    return fixtures.dropUser(user, schemaConfig);
+                });
+
+                afterEach('drop the default schema', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+
+                    if (!schemaConfig.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    return fixtures.dropSchema(schema, schemaConfig);
+                });
+
+                context('connecting with a configuration object', () => {
+                    it('sets the given default schema in the server', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema, user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: undefined, user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: '', user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema in the client', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema, user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: undefined, user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: '', user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
+                });
+
+                context('connecting with a URI', () => {
+                    it('sets the given default schema in the server', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema, user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: undefined, user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: '', user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema in the client', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema, user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: undefined, user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: '', user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
                 });
             });
         });
 
-        context('using regular TCP', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: false };
+        // PLAIN authentication only works with TCP using TLS or with a local
+        // UNIX socket (see test/functional/default/authentication/*.js)
+        context('PLAIN', () => {
+            const auth = 'PLAIN';
 
-            beforeEach('create the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+            context('using TCP and TLS', () => {
+                const tlsConfig = { auth, socket: undefined };
 
-                return fixtures.createSchema(schema, schemaConfig);
-            });
+                beforeEach('create the default schema', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
 
-            beforeEach('create user with mysql_native_password plugin', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.createUser(user, plugin, password, schemaConfig);
-            });
-
-            beforeEach('invalidate the server authentication cache', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.resetAuthenticationCache(schemaConfig);
-            });
-
-            afterEach('delete user', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.dropUser(user, schemaConfig);
-            });
-
-            afterEach('drop the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.dropSchema(schema, schemaConfig);
-            });
-
-            context('connecting with a configuration object', () => {
-                it('sets the given default schema in the server', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
+                    return fixtures.createSchema(schema, schemaConfig);
                 });
 
-                it('sets the given default schema in the client', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
+                afterEach('drop the default schema', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
 
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
+                    return fixtures.dropSchema(schema, schemaConfig);
                 });
 
-                it('fails if the default schema does not exist', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
+                context('connecting with a configuration object', () => {
+                    it('sets the given default schema in the server', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema });
 
-                    return mysqlx.getSession(schemaConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: undefined });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: '' });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema in the client', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: undefined });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: '' });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
+                });
+
+                context('connecting with a URI', () => {
+                    it('sets the given default schema in the server', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: undefined });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: '' });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema in the client', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: undefined });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: '' });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
                 });
             });
 
-            context('connecting with a URI', () => {
-                it('sets the given default schema in the server', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+            context('using a UNIX socket', () => {
+                const socketConfig = { auth, host: undefined, ssl: false };
 
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
+                beforeEach('create the default schema', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+
+                    if (!schemaConfig.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    return fixtures.createSchema(schema, schemaConfig);
                 });
 
-                it('sets the given default schema in the client', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema, user });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+                afterEach('drop the default schema', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
 
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
+                    if (!schemaConfig.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    return fixtures.dropSchema(schema, schemaConfig);
                 });
 
-                it('fails if the default schema does not exist', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+                context('connecting with a configuration object', () => {
+                    it('sets the given default schema in the server', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
 
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: undefined });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: '' });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema in the client', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: undefined });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: '' });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
+                });
+
+                context('connecting with a URI', () => {
+                    it('sets the given default schema in the server', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: undefined });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: '' });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema in the client', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: undefined });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: '' });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
                 });
             });
         });
 
-        context('using a UNIX socket', () => {
-            const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+        context('SHA256_MEMORY', () => {
+            const auth = 'SHA256_MEMORY';
 
-            beforeEach('create the default schema', function () {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+            context('using TCP and TLS', () => {
+                const tlsConfig = { auth, socket: undefined, ssl: true };
 
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
+                beforeEach('create the default schema', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
 
-                return fixtures.createSchema(schema, schemaConfig);
-            });
-
-            beforeEach('create user with mysql_native_password plugin', function () {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
-
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.createUser(user, plugin, password, schemaConfig);
-            });
-
-            beforeEach('invalidate the server authentication cache', function () {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
-
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.resetAuthenticationCache(schemaConfig);
-            });
-
-            afterEach('delete user', function () {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
-
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.dropUser(user, schemaConfig);
-            });
-
-            afterEach('drop the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
-
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.dropSchema(schema, schemaConfig);
-            });
-
-            context('connecting with a configuration object', () => {
-                it('sets the given default schema in the server', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema, user });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
+                    return fixtures.createSchema(schema, schemaConfig);
                 });
 
-                it('sets the given default schema in the client', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema, user });
+                beforeEach('invalidate the server authentication cache', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
 
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
+                    return fixtures.resetAuthenticationCache(schemaConfig);
                 });
 
-                it('fails if the default schema does not exist', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
+                beforeEach('save the password in the server authentication cache', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
 
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
+                    return fixtures.savePasswordInAuthenticationCache(schemaConfig);
+                });
 
-                    return mysqlx.getSession(schemaConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
+                afterEach('drop the default schema', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
+
+                    return fixtures.dropSchema(schema, schemaConfig);
+                });
+
+                context('connecting with a configuration object', () => {
+                    it('sets the given default schema on the server', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: undefined });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: '' });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema on the client', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: undefined });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: '' });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
+                });
+
+                context('connecting with a URI', () => {
+                    it('sets the given default schema on the server', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: undefined });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: '' });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema on the client', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: undefined });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: '' });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
                 });
             });
 
-            context('connecting with a URI', () => {
-                it('sets the given default schema in the server', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema, user });
+            context('using regular TCP', () => {
+                const tcpConfig = { auth, socket: undefined, ssl: false };
 
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
+                beforeEach('create the default schema', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
 
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
+                    return fixtures.createSchema(schema, schemaConfig);
                 });
 
-                it('sets the given default schema in the client', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema, user });
+                beforeEach('invalidate the server authentication cache', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
 
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
+                    return fixtures.resetAuthenticationCache(schemaConfig);
                 });
 
-                it('fails if the default schema does not exist', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { password, schema: schema.concat(crypto.randomBytes(4).toString('hex')), user });
+                beforeEach('save the password in the server authentication cache', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+
+                    return fixtures.savePasswordInAuthenticationCache(schemaConfig);
+                });
+
+                afterEach('drop the default schema', () => {
+                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+
+                    return fixtures.dropSchema(schema, schemaConfig);
+                });
+
+                context('connecting with a configuration object', () => {
+                    it('sets the given default schema on the server', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: undefined });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: '' });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema on the client', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: undefined });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: '' });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
+                });
+
+                context('connecting with a URI', () => {
+                    it('sets the given default schema on the server', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: undefined });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: '' });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema on the client', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: undefined });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: '' });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', () => {
+                        const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
+                });
+            });
+
+            context('using a UNIX socket', () => {
+                const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+
+                beforeEach('create the default schema', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
 
                     if (!schemaConfig.socket || os.platform() === 'win32') {
                         return this.skip();
                     }
 
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
+                    return fixtures.createSchema(schema, schemaConfig);
+                });
 
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
+                beforeEach('invalidate the server authentication cache', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+
+                    if (!schemaConfig.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    return fixtures.resetAuthenticationCache(schemaConfig);
+                });
+
+                beforeEach('save the password in the server authentication cache', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+
+                    if (!schemaConfig.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    return fixtures.savePasswordInAuthenticationCache(schemaConfig);
+                });
+
+                afterEach('drop the default schema', function () {
+                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+
+                    if (!schemaConfig.socket || os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    return fixtures.dropSchema(schema, schemaConfig);
+                });
+
+                context('connecting with a configuration object', () => {
+                    it('sets the given default schema on the server', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: undefined });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the server when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: '' });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema on the client', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: undefined });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: '' });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        return mysqlx.getSession(schemaConfig)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
+                });
+
+                context('connecting with a URI', () => {
+                    it('sets the given default schema on the server', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: undefined });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: '' });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                return session.sql('SELECT DATABASE()')
+                                    .execute()
+                                    .then(res => expect(res.fetchOne()[0]).to.be.null)
+                                    .then(() => session.close());
+                            });
+                    });
+
+                    it('sets the given default schema on the client', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is not defined', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: undefined });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('does not set any schema in the client when the default schema name is empty', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: '' });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                // eslint-disable-next-line no-unused-expressions
+                                expect(session.getDefaultSchema()).to.not.exist;
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the default schema does not exist', function () {
+                        const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
+
+                        if (!schemaConfig.socket || os.platform() === 'win32') {
+                            return this.skip();
+                        }
+
+                        const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => expect.fail())
+                            .catch(err => {
+                                expect(err.info).to.include.keys('code');
+                                expect(err.info.code).to.equal(1049);
+                            });
+                    });
                 });
             });
         });
     });
 
-    // PLAIN authentication only works with TCP using TLS or with a local
-    // UNIX socket (see test/functional/default/authentication/*.js)
-    context('PLAIN', () => {
-        const auth = 'PLAIN';
+    context('with a schema name containing special characters', () => {
+        const schema = '$_^%$';
 
-        context('using TCP and TLS', () => {
-            const tcpConfig = { auth, socket: undefined };
+        beforeEach('create the default schema', () => {
+            const schemaConfig = Object.assign({}, config, baseConfig);
 
-            beforeEach('create the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+            return fixtures.createSchema(schema, schemaConfig);
+        });
 
-                return fixtures.createSchema(schema, schemaConfig);
+        afterEach('drop the default schema', () => {
+            const schemaConfig = Object.assign({}, config, baseConfig);
+
+            return fixtures.dropSchema(schema, schemaConfig);
+        });
+
+        context('using a configuration object', () => {
+            it('sets the given default schema on the server', () => {
+                const schemaConfig = Object.assign({}, config, baseConfig, { schema });
+
+                return mysqlx.getSession(schemaConfig)
+                    .then(session => {
+                        return session.sql('SELECT DATABASE()')
+                            .execute()
+                            .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                            .then(() => session.close());
+                    });
             });
 
-            afterEach('drop the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+            it('sets the given default schema on the client', () => {
+                const schemaConfig = Object.assign({}, config, baseConfig, { schema });
 
-                return fixtures.dropSchema(schema, schemaConfig);
-            });
-
-            context('connecting with a configuration object', () => {
-                it('sets the given default schema in the server', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
-                });
-
-                it('sets the given default schema in the client', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
-                });
-
-                it('fails if the default schema does not exist', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
-                });
-            });
-
-            context('connecting with a URI', () => {
-                it('sets the given default schema in the server', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
-                });
-
-                it('sets the given default schema in the client', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
-                });
-
-                it('fails if the default schema does not exist', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?&auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
-                });
+                return mysqlx.getSession(schemaConfig)
+                    .then(session => {
+                        expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                        return session.close();
+                    });
             });
         });
 
-        context('using a UNIX socket', () => {
-            const socketConfig = { auth, host: undefined, ssl: false };
+        context('using a connection string', () => {
+            it('sets the given default schema on the server', () => {
+                const schemaConfig = Object.assign({}, config, baseConfig, { schema });
+                const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${encodeURIComponent(schemaConfig.schema)}`;
 
-            beforeEach('create the default schema', function () {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
-
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.createSchema(schema, schemaConfig);
+                return mysqlx.getSession(uri)
+                    .then(session => {
+                        return session.sql('SELECT DATABASE()')
+                            .execute()
+                            .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                            .then(() => session.close());
+                    });
             });
 
-            afterEach('drop the default schema', function () {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
+            it('sets the given default schema on the client', () => {
+                const schemaConfig = Object.assign({}, config, baseConfig, { schema });
+                const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${encodeURIComponent(schemaConfig.schema)}`;
 
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.dropSchema(schema, schemaConfig);
-            });
-
-            context('connecting with a configuration object', () => {
-                it('sets the given default schema in the server', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
-                });
-
-                it('sets the given default schema in the client', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
-                });
-
-                it('fails if the default schema does not exist', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
-                });
-            });
-
-            context('connecting with a URI', () => {
-                it('sets the given default schema in the server', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
-                });
-
-                it('sets the given default schema in the client', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
-                });
-
-                it('fails if the default schema does not exist', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
-                });
+                return mysqlx.getSession(uri)
+                    .then(session => {
+                        expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                        return session.close();
+                    });
             });
         });
     });
 
-    context('SHA256_MEMORY', () => {
-        const auth = 'SHA256_MEMORY';
+    context('with a schema called "null"', () => {
+        const schema = '$_^%$';
 
-        context('using TCP and TLS', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: true };
+        beforeEach('create the default schema', () => {
+            const schemaConfig = Object.assign({}, config, baseConfig);
 
-            beforeEach('create the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+            return fixtures.createSchema(schema, schemaConfig);
+        });
 
-                return fixtures.createSchema(schema, schemaConfig);
+        afterEach('drop the default schema', () => {
+            const schemaConfig = Object.assign({}, config, baseConfig);
+
+            return fixtures.dropSchema(schema, schemaConfig);
+        });
+
+        context('using a configuration object', () => {
+            it('sets the given default schema on the server', () => {
+                const schemaConfig = Object.assign({}, config, baseConfig, { schema });
+
+                return mysqlx.getSession(schemaConfig)
+                    .then(session => {
+                        return session.sql('SELECT DATABASE()')
+                            .execute()
+                            .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                            .then(() => session.close());
+                    });
             });
 
-            beforeEach('invalidate the server authentication cache', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+            it('sets the given default schema on the client', () => {
+                const schemaConfig = Object.assign({}, config, baseConfig, { schema });
 
-                return fixtures.resetAuthenticationCache(schemaConfig);
-            });
-
-            beforeEach('save the password in the server authentication cache', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.savePasswordInAuthenticationCache(schemaConfig);
-            });
-
-            afterEach('drop the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.dropSchema(schema, schemaConfig);
-            });
-
-            context('connecting with a configuration object', () => {
-                it('sets the given default schema on the server', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
-                });
-
-                it('sets the given default schema on the client', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
-                });
-
-                it('fails if the default schema does not exist', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
-                });
-            });
-
-            context('connecting with a URI', () => {
-                it('sets the given default schema on the server', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
-                });
-
-                it('sets the given default schema on the client', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
-                });
-
-                it('fails if the default schema does not exist', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
-                });
+                return mysqlx.getSession(schemaConfig)
+                    .then(session => {
+                        expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                        return session.close();
+                    });
             });
         });
 
-        context('using regular TCP', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: false };
+        context('using a connection string', () => {
+            it('sets the given default schema on the server', () => {
+                const schemaConfig = Object.assign({}, config, baseConfig, { schema });
+                const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${encodeURIComponent(schemaConfig.schema)}`;
 
+                return mysqlx.getSession(uri)
+                    .then(session => {
+                        return session.sql('SELECT DATABASE()')
+                            .execute()
+                            .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
+                            .then(() => session.close());
+                    });
+            });
+
+            it('sets the given default schema on the client', () => {
+                const schemaConfig = Object.assign({}, config, baseConfig, { schema });
+                const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${encodeURIComponent(schemaConfig.schema)}`;
+
+                return mysqlx.getSession(uri)
+                    .then(session => {
+                        expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
+                        return session.close();
+                    });
+            });
+        });
+    });
+
+    context('executing SQL statements', () => {
+        const schema = 'test';
+
+        context('with an existing schema', () => {
             beforeEach('create the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+                const schemaConfig = Object.assign({}, config, baseConfig);
 
                 return fixtures.createSchema(schema, schemaConfig);
-            });
-
-            beforeEach('invalidate the server authentication cache', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.resetAuthenticationCache(schemaConfig);
-            });
-
-            beforeEach('save the password in the server authentication cache', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
-
-                return fixtures.savePasswordInAuthenticationCache(schemaConfig);
             });
 
             afterEach('drop the default schema', () => {
-                const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
+                const schemaConfig = Object.assign({}, config, baseConfig);
 
                 return fixtures.dropSchema(schema, schemaConfig);
             });
 
-            context('connecting with a configuration object', () => {
-                it('sets the given default schema on the server', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
+            it('does not require the schema name', () => {
+                const schemaConfig = Object.assign({}, config, baseConfig, { schema });
 
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
-                });
-
-                it('sets the given default schema on the client', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
-                });
-
-                it('fails if the default schema does not exist', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
-                });
-            });
-
-            context('connecting with a URI', () => {
-                it('sets the given default schema on the server', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
-                });
-
-                it('sets the given default schema on the client', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
-                });
-
-                it('fails if the default schema does not exist', () => {
-                    const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@${schemaConfig.host}:${schemaConfig.port}/${schemaConfig.schema}?ssl-mode=DISABLED&auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
-                });
+                return mysqlx.getSession(schemaConfig)
+                    .then(session => {
+                        return session.sql(`CREATE TABLE test (name VARCHAR(3))`).execute()
+                            .then(() => {
+                                return session.close();
+                            });
+                    });
             });
         });
 
-        context('using a UNIX socket', () => {
-            const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+        context('with a non-existing schema', () => {
+            it('yields a corresponding SQL error', () => {
+                const schemaConfig = Object.assign({}, config, baseConfig, { schema });
 
-            beforeEach('create the default schema', function () {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
-
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.createSchema(schema, schemaConfig);
-            });
-
-            beforeEach('invalidate the server authentication cache', function () {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
-
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.resetAuthenticationCache(schemaConfig);
-            });
-
-            beforeEach('save the password in the server authentication cache', function () {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
-
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.savePasswordInAuthenticationCache(schemaConfig);
-            });
-
-            afterEach('drop the default schema', function () {
-                const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
-
-                if (!schemaConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.dropSchema(schema, schemaConfig);
-            });
-
-            context('connecting with a configuration object', () => {
-                it('sets the given default schema on the server', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
-                });
-
-                it('sets the given default schema on the client', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
-                });
-
-                it('fails if the default schema does not exist', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(schemaConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
-                });
-            });
-
-            context('connecting with a URI', () => {
-                it('sets the given default schema on the server', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            return session.sql('SELECT DATABASE()')
-                                .execute()
-                                .then(res => expect(res.fetchOne()[0]).to.equal(schemaConfig.schema))
-                                .then(() => session.close());
-                        });
-                });
-
-                it('sets the given default schema on the client', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.getDefaultSchema().getName()).to.equal(schemaConfig.schema);
-                            return session.close();
-                        });
-                });
-
-                it('fails if the default schema does not exist', function () {
-                    const schemaConfig = Object.assign({}, config, baseConfig, socketConfig, { schema: schema.concat(crypto.randomBytes(4).toString('hex')) });
-
-                    if (!schemaConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    const uri = `mysqlx://${schemaConfig.user}:${schemaConfig.password}@(${schemaConfig.socket})/${schemaConfig.schema}?auth=${schemaConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1049);
-                        });
-                });
+                return mysqlx.getSession(schemaConfig)
+                    .then(session => session.sql(`CREATE TABLE test (name VARCHAR(3))`).execute())
+                    .then(() => expect.fail())
+                    .catch(err => {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(1049);
+                    });
             });
         });
     });

@@ -151,6 +151,10 @@ describe('Session', () => {
             expect(schema.getTables).to.be.a('function');
             return expect(schema.getName()).to.equal('foo');
         });
+
+        it('returns undefined if the default schema was not set', () => {
+            return expect((new Session()).getDefaultSchema()).to.not.exist;
+        });
     });
 
     context('server access methods', () => {
