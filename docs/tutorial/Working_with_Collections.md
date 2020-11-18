@@ -1,12 +1,12 @@
-The X DevAPI provides an APIs for creating collections and relational tables. In this tutorial the Connector/Node.JS implementations of this API are presented.
+The X DevAPI includes methods for working with NoSQL collections and relational tables. This tutorial presents the Connector/Node.js implementation of the X DevAPI.
 
-All following examples assume a session was created and a `session` object exists. Check the appropriate [tutorial]{@tutorial Connecting_to_a_Server} if you don't know how to create a session. Additionally, the connector also provides an API for working with [single documents]{@tutorial Working_with_Documents}.
+Some of the examples assume a session was created and a `session` object exists. There is a [section]{@tutorial Connecting_to_a_Server} that describes in detail how to connect to the database and create an X Protocol session. Additionally, the API also provides utility methods for working with [single documents]{@tutorial Working_with_Documents}.
 
-## Creating collections
+#### Creating collections
 
-A collection is a special-purpose table for storing documents. For creating a collection the user only has to provide a name to {@link Schema#createCollection}:
+A collection is a special-purpose table for storing documents. For creating a collection the user only has to provide a name to {@link module:Schema#createCollection}:
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -21,11 +21,11 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-As you can see the `createColletion` function returns a Promise which resolves to a {@link Collection} object on success.
+The `createColletion` function returns a Promise which resolves to a {@link module:Collection} object on success.
 
-If a given collection already exists in the database, the `createCollection` call will fail unless you enable the `reuseExisting` property in an additional options object such as the following:
+If a given collection already exists in the database, the `createCollection` call will fail unless the `reuseExisting` property is defined in an additional options object such as the following:
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -34,9 +34,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-You can also use this options object to, for instance, create a server-side document validation schema. For that, you can include a `schema` property matching a valid [JSON schema](https://json-schema.org/) definition within an outer `validation` object. You should also include the `level` property to effectively enable (`'STRICT'`) or disable (`'OFF'`) it.
+This options object can be used to, for instance, create a server-side document validation schema. For that, one can include a `schema` property matching a valid [JSON schema](https://json-schema.org/) definition within an outer `validation` object. The `level` property, used to effectively enable (`'STRICT'`) or disable (`'OFF'`) a schema, should also be included.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const validation = { schema: { type: 'object', properties: { name: { type: 'string' } } }, level: mysqlx.Schema.ValidationLevel.STRICT };
 
@@ -48,7 +48,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 When trying to insert a document that violates the schema definition for the collection, an error is thrown:
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
@@ -62,7 +62,7 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
 
 The schema is created but not enabled when the `level` property is absent or set to `'OFF'`, and any document will end up being inserted in that case.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const validation = { schema: { type: 'object', properties: { name: { type: 'string' } } } };
 
@@ -76,7 +76,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const validation = { schema: { type: 'object', properties: { name: { type: 'string' } } }, level: mysqlx.Schema.ValidationLevel.OFF };
 
@@ -89,9 +89,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
         return collection.add({ name: 1 }).execute();
 ```
 
-To enable a JSON schema on an existing collection (or to update it if it already exists), you can use `modifyCollection()`.
+The `modifyCollection()` method is used to enable a JSON schema on an existing collection (or to update it if it already exists).
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const validation = { schema: { type: 'object', properties: { name: { type: 'string' } } }, level: mysqlx.Schema.ValidationLevel.STRICT };
 
@@ -103,7 +103,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 Disabling the JSON schema on an existing collection can be done by setting the `level` property to `'OFF'` under the `validation` options object.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const validation = { level: mysqlx.Schema.ValidationLevel.OFF }
 
@@ -115,7 +115,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 Re-enabling the JSON schema can be some by setting the `level` property back to `'STRICT'`.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const validation = { level: mysqlx.Schema.ValidationLevel.STRICT }
 
@@ -125,9 +125,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-## Listing all the existing collections
+#### Listing all the existing collections
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -145,9 +145,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-## Dropping a collection
+#### Dropping a collection
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -161,7 +161,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-## Handling documents in existing collections
+#### Handling documents in existing collections
 
 Considering a collection `mySchema.myCollection` containing the following documents:
 
@@ -187,9 +187,9 @@ To modify/remove specific documents from a collection, one should provide the ap
 
 To modify/remove all documents from a collection, one should provide any expression that evaluates to `true` (if no expression is provided, executing the operation will result in an error) when calling `modify()` or `remove()`.
 
-### Removing documents that match a given criteria
+#### Removing documents that match a given criteria
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -211,9 +211,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-### Removing all documents
+#### Removing all documents
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -234,9 +234,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-### Modifying documents that match a given criteria
+#### Modifying documents that match a given criteria
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -263,9 +263,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-### Modifying all documents
+#### Modifying all documents
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -292,13 +292,13 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-### Bulk-updating multiple document properties
+#### Bulk-updating multiple document properties
 
-Additionaly, instead of explicitly updating individual document properties using `set()`, you can update multiple properties in a single call, by using `patch()`.
+Additionaly, besides explicitly updating individual document properties with `set()`, the `patch()` method allows to update multiple properties in a single call.
 
-Using `patch()` will, remove properties set to `null`, add previously nonexisting properties and update the existing ones. This behavior also applies to nested properties.
+Using `patch()` will remove properties containing a `null` value, add previously nonexisting properties and update the existing ones. This behavior also applies to nested properties.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -324,11 +324,11 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 Note: the criteria expression string provided via `modify()` establishes the filtering rules, thus any `_id` value provided as part of the properties to be updated will simply be ignored (and will not be updated).
 
-### Retrieving the collection size
+#### Retrieving the collection size
 
-You can also retrieve the collection size at any point in time, using the `count()` method.
+The `count()` method retrieves the collection size at a given point in time.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -342,11 +342,11 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ### Cursors
 
-Up until now, we've been using the `fetchAll()` method to retrieve the entire result set originated by each `find()` query. This method pulls the data from memory and flushing it subsequently. There are, however, two alternive APIs for consuming result set entries individually using a cursor. One API uses a regular pull-based cursor via an additional `fetchOne()` method available in the {@link Result} instance. The other is a pull-based API where you can provide a callback function when calling the `execute()` method, which totally disables buffering at the connector-level and leaves that responsability to the application.
+The `fetchAll()` method to retrieve the entire result set originated by each `find()` query. This method pulls the data from memory and flushing it subsequently. There are, however, two alternive APIs for consuming result set entries individually using a cursor. One API uses a regular pull-based cursor via an additional `fetchOne()` method available in the {@link module:Result} instance. The other is a pull-based API that works with a callback function provided in the `execute()` method, which totally disables buffering at the connector-level and leaves that responsability to the application.
 
-**Pull-based approach**
+#### Pull-based approach
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -362,9 +362,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-**Push-based approach**
+#### Push-based approach
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const docs = [];
 
@@ -384,7 +384,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-## Collection indexes
+### Collection indexes
 
 Collection indexes are ordinary MySQL indexes on virtual columns that extract data from JSON document. To create an index, both the index name and the index definition are required.
 
@@ -400,7 +400,7 @@ The index definition contains the following properties:
     {number} [srid] - unique value used to unambiguously identify projected, unprojected, and local spatial coordinate system definitions
 ```
 
-You can create an index with one of the following types:
+An index can be created using one of the following types:
 ```text
 INT [UNSIGNED]
 TINYINT [UNSIGNED]
@@ -424,17 +424,9 @@ GEOJSON (extra options: options, srid)
 
 Additional details about spacial indexes can be found [here](https://dev.mysql.com/doc/refman/8.0/en/spatial-geojson-functions.html).
 
-### Gotchas
+#### Creating a regular index
 
-Unique indexes are currently not supported by the xplugin, so, for now, you can only create non-unique indexes.
-
-If a collection is not empty, you can't create `SPATIAL` indexes for `GEOJSON` fields and you can't also create regular required (`NOT NULL`) indexes for `DATE` or `DATETIME` fields, due to some limitations of the xplugin.
-
-Index defintions for document fields containing arrays should explicitely specify a multi-value option (`array: true`).
-
-### Creating a regular index
-
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://root@localhost:33060')
@@ -457,9 +449,9 @@ mysqlx.getSession('mysqlx://root@localhost:33060')
     });
 ```
 
-### Creating a multi-value index
+#### Creating a multi-value index
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://root@localhost:33060')
@@ -482,9 +474,9 @@ mysqlx.getSession('mysqlx://root@localhost:33060')
     });
 ```
 
-### Creating a spatial index
+#### Creating a spatial index
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://root@localhost:33060')
@@ -510,9 +502,9 @@ mysqlx.getSession('mysqlx://root@localhost:33060')
     });
 ```
 
-### Dropping an index
+#### Dropping an index
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://root@localhost:33060')
@@ -528,3 +520,11 @@ mysqlx.getSession('mysqlx://root@localhost:33060')
         // the operation failed
     });
 ```
+
+#### Gotchas
+
+Unique indexes are currently not supported by the X Plugin.
+
+Due to other limitations of the X Plugin, `SPATIAL` indexes for `GEOJSON` fields and `NOT NULL` indexes for `DATE` and/or `DATETIME` fileds cannot be created.
+
+Index definitions for document fields containing arrays should explicitly specify a multi-value option (`array: true`).

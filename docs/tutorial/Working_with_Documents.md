@@ -1,10 +1,10 @@
-## Id generation
+### Id generation
 
 When adding documents to a collection, if a document does not contain an `_id`, it will be automatically assigned a sequential UUID-like value. One can, however, override this behavior by providing a static `_id` for each document.
 
-### Using automatically assigned values
+#### Using automatically assigned values
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const docs = [];
 
@@ -26,9 +26,9 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     });
 ```
 
-### Using static values
+#### Using static values
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const docs = [];
 
@@ -48,7 +48,7 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
         console.log(docs); // [{ _id: 1, name: 'foo' }]
     });
 ```
-## Single document CRUD
+### Single document CRUD
 
 The connector provides a set of utility methods that can be used to add, remove, replace or retrieve a single specific document via its `_id` property.
 
@@ -66,11 +66,11 @@ Consider a collection `mySchema.myCollection` containing the following documents
 
 The following scenarios are possible.
 
-### Replacing a single document
+#### Replacing a single document
 
 If a document with a given `_id` already exists in the database, it can be replaced via the `Collection.replaceOne()` method.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const docs = [];
 
@@ -93,7 +93,7 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
 
 If no such document exists, the method will neither fail nor have any effect.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const docs = [];
 
@@ -114,13 +114,13 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     });
 ```
 
-### Creating or updating a single document
+#### Creating or updating a single document
 
 The connector also provides an additional utility method - `Collection.addOrReplaceOne()` - that allows to seamlessly either create a document with a given `_id` and properties or automatically replace an existing matching document.
 
 So, if a document with the given `_id` already exists in a collection, the behavior is the same as with `Collection.replaceOne()`.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
@@ -144,7 +144,7 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
 
 If no such document exists, a new one will be created.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
@@ -172,7 +172,7 @@ ALTER TABLE mySchema.myCollection ADD COLUMN name VARCHAR(3) GENERATED ALWAYS AS
 
 Existing documents will be updated with the given properties, provided that there are no unique key constraint violations with other documents.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
@@ -196,7 +196,7 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
 
 Unique key values themselves can also be updated with the same restrictions.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const docs = [];
 
@@ -221,7 +221,7 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
 
 Unique key constraint violations will, of course, result in an error.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi')
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
@@ -233,11 +233,11 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     })
 ```
 
-### Retrieving a single document
+#### Retrieving a single document
 
-There's also an utility method to retrieve a single document from a collection, given its `id` - `Collection.getOne()`. The method returns a `Promise` which resolves to the document instance (in the form of a literal object), if it exists or `null`, if it does not.
+There is also an utility method to retrieve a single document from a collection, given its `id` - `Collection.getOne()`. The method returns a `Promise` which resolves to the document instance (in the form of a literal object), if it exists or `null`, if it does not.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi')
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
@@ -249,7 +249,7 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     });
 ```
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi')
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
@@ -261,11 +261,11 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     });
 ```
 
-### Removing a single document
+#### Removing a single document
 
 One can also remove a specific document from a collection given its `id` - `Collection.removeOne()`. If no such document exists, the operation succeeds, but nothing really happens.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
@@ -285,7 +285,7 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     });
 ```
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')

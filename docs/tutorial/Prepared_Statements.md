@@ -11,11 +11,11 @@ Currently, this happens for the following operations:
 
 The scope of the statement is defined by existing invariants such as projection and aggregation boundaries. On the other hand, things like assigning new values to existing statement placeholders for things like filtering criteria or limiting and skipping records will not change the scope of a statement that has been previously prepared.
 
-The entire statement state (apart from an identifier that is used to match the given statement in the server) is kept on the client, which means that for enabling autonomous prepared staments, you have to rely on the same statement instance within your application.
+The entire statement state (apart from an identifier that is used to match the given statement in the server) is kept on the client, which means that for enabling autonomous prepared staments, one has to rely on the same statement instances within an application.
 
 In a nutshell, a statement has the lifecycle described below:
 
-```js
+```javascript
 const stmt = collection.find('_id = :id');
 
 stmt.bind('id', 1).execute()                    // executes a plain CRUD operation
@@ -31,7 +31,7 @@ stmt.bind('id', 1).execute()                    // executes a plain CRUD operati
 
 ### Caveats
 
-Since you operate on the same statement instance, you need to be extra carefull with [`Promise.all()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all), which executes each thenable in parallel, meaning it will lead to race conditions when determining the current stage in the statement lifecycle.
+Since one operates on the same statement instance, there needs to be extra caution with [`Promise.all()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all), which executes each thenable in parallel, meaning it will lead to race conditions when determining the current stage in the statement lifecycle.
 
 To avoid these race conditions, the client-side state only gets updated when there is server feedback. To provide compatibility with older MySQL and X Plugin servers (without support for X Protocol prepared statements), when the client tries to prepare a statement, it checks for a specific error message, that needs to be accounted for, in order to avoid any attempts of preparing any further statements in the given session, and the respective extra server round-trips.
 
@@ -39,7 +39,7 @@ This means that each thenable executed by `Promise.all()` will have the same ini
 
 However, there is still the risk of leaving the application and the MySQL server in an inconsistent state, for instance, when a statement has been executed once, executing it again **n** times using `Promise.all()` will create **n** prepared statements which won't be able to be deallocated (until the session is closed) and will clog up server resources.
 
-```js
+```javascript
 const stmt = collection.find()
 
 Promise.all([stmt.execute(), stmt.execute()])                                                 // executes a plain CRUD operation twice
@@ -50,7 +50,7 @@ Promise.all([stmt.execute(), stmt.execute()])                                   
 
 Additionally, running thenables that lead to using existing a prepared statement and at the same, running other that deallocates that same statement will also not work.
 
-```js
+```javascript
 const stmt = collection.find()
 
 Promise.all([stmt.execute(), stmt.execute()])
@@ -59,9 +59,9 @@ Promise.all([stmt.execute(), stmt.execute()])
     .then(() => Promise.all([stmt.fields('foo').execute(), stmt.execute()])); // Server error on the 2nd call, since the state is still not up-to-date and the client will try to execute the prepared statement
 ```
 
-So, since the statement lifecycle enforces a natural order, the behavior is incompatible (or leads to a lot of inconsistencies) with `Promise.all()`. There is, however, a fair use of the API, which is when you are certain the statement was already prepared and you just want to execute it over and over.
+So, since the statement lifecycle enforces a natural order, the behavior is incompatible (or leads to a lot of inconsistencies) with `Promise.all()`. There is, however, a fair use of the API, which is when one is certain the statement was already prepared and is meant to be executed over and over.
 
-```js
+```javascript
 const stmt = collection.find()
 
 stmt.execute()                                                  // executes a plain CRUD operation

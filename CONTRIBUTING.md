@@ -134,6 +134,17 @@ Recent Node.js versions (`v10` and later) support the use of wildcard pattern ma
 - filtering all protocol messages (`NODE_DEBUG='protocol:*'`)
 - show all logs (`NODE_DEBUG='*'`)
 
+### Documentation
+
+The API reference documentation and tutorials are available at the [website](https://dev.mysql.com/doc/dev/connector-nodejs/). It is also possible to generate these locally. To do that, use [JSDoc](https://jsdoc.app/) and [`ink-docstrap`](https://www.npmjs.com/package/ink-docstrap). Then execute the following command in the project root directory:
+
+```sh
+# assuming both jsdoc and ink-docstrap were installed globally
+$ jsdoc -c .jsdocrc.json -t $(npm config get prefix)/lib/node_modules/ink-docstrap/template -R docs/Intro.md .
+```
+
+The command will generate the output files in the `docs/ref` directory.
+
 ## Getting Help
 
 If you need help or just want to get in touch with us, please use the following resources:

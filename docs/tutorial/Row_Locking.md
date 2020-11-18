@@ -19,11 +19,11 @@ Consider a collection `testSchema.testCollection` containing the following docum
 
 The following scenarios apply when using row locks with the default mode (the same should be true when working with tables).
 
-### Writing data in two sessions with exclusive locks
+#### Writing data in two sessions with exclusive locks
 
 When two transactions are using exclusive locks, writes and updates from both of them will eventually be acknowledged even if they run (to completion) in parallel.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
@@ -75,11 +75,11 @@ Promise.all([transactionA, transactionB])
     });
 ```
 
-### Writing data in two sessions with a shared lock and no active transaction
+#### Writing data in two sessions with a shared lock and no active transaction
 
 When two transactions are bound to the same shared lock, writes and updates from both of them will only eventually be acknowledged if they run (to completion) in series (one after the other).
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
@@ -130,11 +130,11 @@ sessionA.startTransaction()
     });
 ```
 
-### Reading data in two sessions with a shared lock and an active transaction
+#### Reading data in two sessions with a shared lock and an active transaction
 
 When two transactions are bound to the same shared lock, if one of the transactions is not committed, reads from the other transaction will block until the first one gets committed.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const pTimeout = require('p-timeout');
 
@@ -178,11 +178,11 @@ sessionA.startTransaction()
     });
 ```
 
-### Reading data in two sessions without any kind of lock
+#### Reading data in two sessions without any kind of lock
 
 When two transactions are not bound to any kind of lock, if both write/update a given document, it will contain inconsistent data even after they get committed.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
@@ -216,11 +216,11 @@ sessionA.startTransaction()
     });
 ```
 
-### Writing data in two sessions with a shared lock and an active transaction
+#### Writing data in two sessions with a shared lock and an active transaction
 
 When two transactions are bound to the same shared lock, if one of the transactions is not committed, writes from the other transaction will fail with a deadlock error.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
@@ -253,13 +253,13 @@ sessionA.startTransaction()
     });
 ```
 
-## NOWAIT and SKIP LOCKED
+### `NOWAIT` and `SKIP LOCKED`
 
 The default behavior of row locks can be overridden using the `NOWAIT` and `SKIP LOCKED` [options](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html#innodb-locking-reads-nowait-skip-locked). These options are available through the `mysqlx.LockContention` property.
 
 `NOWAIT` works similarly to the default mode when there isn't any ongoing transaction, whereas reads will fail when there is an ongoing transaction.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');
@@ -295,7 +295,7 @@ sessionA.startTransaction()
 
 `SKIP LOCKED` will allow reads, risking the chance of working with inconsistent data.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 const collectionA = sessionA.getSchema('testSchema').getCollection('testCollection');

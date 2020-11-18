@@ -1,26 +1,16 @@
-### TCP connections
-
 By default, the connector creates a new session using SSL/TLS for TCP connections.
 
-#### URI or unified-connection string
-
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
+// using a connection string
 mysqlx.getSession('mysqlx://localhost')
     .then(session => {
         console.log(session.inspect()); // { host: 'localhost', ssl: true }
     });
-```
 
-#### Connection options
-
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-const options = { host: 'localhost', ssl: true };
-
-mysqlx.getSession(options)
+// using a configuration object
+mysqlx.getSession({ host: 'localhost' })
     .then(session => {
         console.log(session.inspect()); // { host: 'localhost', ssl: true }
     });
@@ -28,7 +18,7 @@ mysqlx.getSession(options)
 
 If the server does not support secure TCP connections, the operation will fail.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost')
@@ -37,15 +27,13 @@ mysqlx.getSession('mysqlx://localhost')
     });
 ```
 
-### Unix socket connections
+Note: SSL/TLS is not used with local Unix sockets.
 
-SSL/TLS is not used with local Unix sockets.
-
-## Disabling secure connections
+### Disabling secure connections
 
 The user can easily disable this feature explicitly (thus avoiding failures when using a server that does not support SSL/TLS connections):
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost?ssl-mode=DISABLED')
@@ -53,8 +41,7 @@ mysqlx.getSession('mysqlx://localhost?ssl-mode=DISABLED')
         console.log(session.inspect()); // { host: 'localhost', ssl: false }
     });
 
-// you can also use a plain JavaScript configuration object
-
+// or using a plain JavaScript configuration object
 const options = { host: 'localhost', tls: { enabled: true };
 
 mysqlx.getSession(options)
@@ -63,15 +50,15 @@ mysqlx.getSession(options)
     });
 ```
 
-## Additional security options
+### Additional security options
 
 For additional security, the user is able to customize the setup and do other things such as provide a list of hand-picked TLS protocol versions, verify that the server certificate is signed and/or isn't revoked by a given certificate authority (each one works independently of the other). To enable this additional security step, a link to each PEM file (CA and CRL) should be provided (certificate chaining and ordering should be done by the user beforehand). All these options are interchangeable and decoupled, altough a CRL is of no use in the absense of an associated CA.
 
-### TLS versions
+#### TLS versions
 
-You can provide a handpicked list of TLS versions or rely on the default list supported by the client which includes `TLSv1`, `TLSv1.1` and `TLSv1.2` and `TLSv1.3` (depending on the Node.js version).
+A handpicked list of allowed TLS versions can be defined. Alternatively the client will rely on a default list of versions it supports, which includes `TLSv1`, `TLSv1.1` and `TLSv1.2` and `TLSv1.3` (depending on the Node.js version).
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.2,TLSv1.3]')
@@ -88,9 +75,9 @@ mysqlx.getSession(options)
     });
 ```
 
-If you are using Node.js v10.0.0 (or higher), where the TLS negotiation supports a range of versions, as long as the MySQL server supports the oldest TLS version in the list, the connection will be sucessful. however, on older Node.js versions, where range negotiation is not supported, since the client picks up the latest TLS version in the list by default, the connection will fail if the server does not support that specific version.
+With Node.js v10.0.0 (or higher), where the TLS negotiation supports a range of versions, as long as the MySQL server supports the oldest TLS version in the list, the connection will be sucessful. However, on older Node.js versions, where range negotiation is not supported, since the client picks up the latest TLS version in the list by default, the connection will fail if the server does not support that specific version.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 // With older Node.js versions, if the server does not support TLSv1.2
@@ -108,7 +95,7 @@ mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.1,TLSv1.2]')
 
 If the oldest version of TLS supported by the server is newer than the one used by the client, the socket will hang up during the negotiation, regardless of the Node.js engine version being used.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 // The server supports only TLSv1.2 or higher
@@ -118,7 +105,7 @@ mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1,TLSv1.1]')
     });
 ```
 
-### TLS Ciphersuites
+#### TLS Ciphersuites
 
 Connector/Node.js passes the following default ciphersuite list to the OpenSSL package that is statically linked with the available Node.js engine:
 
@@ -155,7 +142,7 @@ The last three ciphersuites from the list are deprecated, and exist only to prov
 
 Applications are allowed to override this list by providing their own set of ciphersuites, using the respective IANA name, like the following:
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost?tls-ciphersuites=[TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256]')
@@ -175,9 +162,9 @@ Applications are free to use older TLSv1 and TLSv1.1 compatible ciphersuites (li
 
 Non-TLS ciphersuites, including the `MD5`, `SSLv3` and other older sets are not supported and will be ignored if the application wants to use them. If none of the ciphers provided by the application is actually supported by the client, an error will be thrown.
 
-### Certificate authority validation
+#### Certificate authority validation
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost?ssl-ca=(/path/to/ca.pem)&ssl-crl=(/path/to/crl.pem)')
@@ -196,7 +183,7 @@ mysqlx.getSession(options)
 
 Note: file paths can be either [pct-encoded](https://en.wikipedia.org/wiki/Percent-encoding) or unencoded but enclosed by parenthesis (as demonstrated in the example).
 
-## Authentication mechanisms
+### Authentication Mechanisms
 
 Currently, the MySQL X plugin supports the following authentication methods:
 
@@ -214,7 +201,7 @@ The user is allowed to override this automatic choice, and fallback to `MYSQL41`
 
 Below is an overview of the major compatibility rules, which change based not only if the server connection uses TLS or unix sockets (secure - S) or uses an unencrypted TCP channel (insecure - N) but also on the server version. The examples provided are valid for MySQL 8.0.11 or later versions.
 
-### `mysql_native_password`
+#### `mysql_native_password`
 
 The `mysql_native_password` authentication plugin is used by default from [MySQL 5.7](https://dev.mysql.com/doc/refman/5.7/en/native-pluggable-authentication.html) up to [MySQL 8.0.11](https://dev.mysql.com/doc/refman/8.0/en/native-pluggable-authentication.html).
 
@@ -224,11 +211,9 @@ The `mysql_native_password` authentication plugin is used by default from [MySQL
 | `PLAIN`                   | OK        | NO        | OK         | NO         |
 | `SHA256_MEMORY`           | N/A       | N/A       | OK         | OK         |
 
-#### Examples
-
 `MYSQL41` will always work, whereas `PLAIN` will only work over TLS. `SHA256_MEMORY` requires the password to be previously cached (see examples below).
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('root@localhost?auth=MYSQL41')
@@ -257,9 +242,9 @@ mysqlx.getSession('root@localhost?auth=PLAIN&ssl-mode=DISABLED')
     });
 ```
 
-### `caching_sha2_password`
+#### `caching_sha2_password`
 
-The `caching_sha2_password` authentication plugin was introduced with [MySQL 8.0.11](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html) and is used by default since then. It's not supported on older server versions.
+The `caching_sha2_password` authentication plugin was introduced with [MySQL 8.0.11](https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html) and is used by default since then. It is not supported on older server versions.
 
 | Authentication mechanism  | 5.7 (S)   | 5.7 (N)   | 8.0.11 (S) | 8.0.11 (N) |
 | --------------------------|-----------|-----------|------------|------------|
@@ -267,11 +252,9 @@ The `caching_sha2_password` authentication plugin was introduced with [MySQL 8.0
 | `PLAIN`                   | N/A       | N/A       | OK         | NO         |
 | `SHA256_MEMORY`           | N/A       | N/A       | OK         | OK         |
 
-#### Examples
-
 To save the password on the server cache, first, the client must authenticate using `PLAIN` over TLS. Any other authentication setup will not work.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('root@localhost')

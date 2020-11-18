@@ -1,9 +1,8 @@
 .*/
 coverage
-doc
 docs/INFO_BIN
 docs/INFO_SRC
-docs/ref
+docs/ref/
 node_modules
 npm-debug.log
 package-lock.json

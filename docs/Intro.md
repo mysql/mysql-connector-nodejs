@@ -1,29 +1,31 @@
-MySQL Connector/Node.js is the official Node.js driver for MySQL. It is written in JavaScript, does not require compiling, and is, currently, the only driver with out-of-the-box support for the MySQL document-store, through the [X Protocol](https://dev.mysql.com/doc/refman/8.0/en/document-store.html) (it does not support the classic MySQL protocol).
+## MySQL Connector/Node.js
+
+MySQL Connector/Node.js is a MySQL 8 driver for Node.js, officially supported and maintained by Oracle. It contains a pure JavaScript implementation of the [X DevAPI](https://dev.mysql.com/doc/x-devapi-userguide/en/), an Application Programming Interface for working with the [MySQL Document Store](https://dev.mysql.com/doc/refman/8.0/en/document-store.html) through CRUD-based, NoSQL operations on top of the [X Protocol](https://dev.mysql.com/doc/dev/mysql-server/latest/mysqlx_protocol.html) (it does not support the classic MySQL protocol).
 
 ### Requirements
 
  * MySQL 8.0.11 or higher
  * Node.js 12.0.0 or higher
 
-Altough some of the latest MySQL `5.7` versions are partially supported, you will only take advantage of the entire feature set using, at least, MySQL `8.0.11`.
+Altough some of the latest MySQL `5.7` versions are partially supported, the entire feature set is only available in the latest 8.x version.
 
 ### Installation
 
 Download and install directly from the [npm registry](https://www.npmjs.com/package/@mysql/xdevapi):
 
-```sh
+```shell
 $ npm install @mysql/xdevapi
 ```
 
-Alternatively, download the tarball from the official [website](https://dev.mysql.com/downloads/connector/nodejs/) and install the package by running the following command in the root directory of your project:
+Alternatively, download the tarball from the official [website](https://dev.mysql.com/downloads/connector/nodejs/) and install the package by running the following command in the project's root directory:
 
-```sh
+```shell
 $ npm install /path/to/mysql-connector-nodejs-<version>.tar.gz
 ```
 
 ### Overview
 
-The MySQL Connector/Node.js allows you, among other things, to [tap into]{@tutorial Connecting_to_a_Server} the MySQL document-store and write [schemaless]{@tutorial Working_with_Collections} data apps or plain old traditional [relational-flavored]{@tutorial Working_with_Tables} apps using a fluent API and an integrated small but expressive query language (for complex queries). Besides traditional document-store functionality, the MySQL Connector/Node.js provides additional support for features such as [transactions]{@tutorial Session_Management}, [savepoints]{@tutorial Session_Management} and [row-locking]{@tutorial Row_Locking}.
+The MySQL Connector/Node.js allows to, among other things, [tap into]{@tutorial Connecting_to_a_Server} the MySQL document-store and write [schemaless]{@tutorial Working_with_Collections} data apps or plain old traditional [relational-flavored]{@tutorial Working_with_Tables} apps using a fluent API and an integrated small but expressive query language (for complex queries). Besides traditional document-store functionality, the MySQL Connector/Node.js provides additional support for features such as [transactions]{@tutorial Session_Management}, [savepoints]{@tutorial Session_Management} and [row-locking]{@tutorial Row_Locking}.
 
 The API is entirely asynchronous and uses the JavaScript `Promise` interface for flow control, which means it also enables the use of `async-await` on Node.js `8.0.0` or above. Check the following links to learn how to use `Promise` and `async-await` in JavaScript and Node.js:
 
@@ -38,7 +40,7 @@ The API provides support for managing database [sessions]{@tutorial Session_Mana
 
 The following is an example encompassing the different sort of CRUD operations using the document-store:
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const config = { collection: 'myCollection', schema: 'mySchema', user: 'root' };
 
@@ -107,11 +109,11 @@ mysqlx.getSession({ user: config.user })
     });
 ```
 
-You can always fallback to plain-old raw SQL statements if you feel the need to. In fact, there's currently no support for relational DDL operations through the X DevAPI, which means you will most likely need some SQL to work with traditional tables and views.
+Executing plain-old raw SQL statements is also possible. In fact, there are currently no methods for relational DDL operations in the X DevAPI, which means one will most likely need some SQL to work with traditional tables and views.
 
 The following is an example encompassing the different sort of CRUD operations using relational tables:
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const config = { schema: 'mySchema', table: 'myTable', user: 'root' }
 

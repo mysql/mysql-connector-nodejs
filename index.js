@@ -57,8 +57,8 @@ authenticationManager.registerPlugin(sha256MemoryAuth);
  * @private
  * @param {string|URI} input - connection specification
  * @param {Object} [options] - string validation options
- * @throws {Error} When the input if not a valid connection specification.
- * @returns {Promise.<Session>}
+ * @throws {Error} When the input is not a valid connection specification.
+ * @returns {Promise.<module:Session>}
  */
 function parseConnectionSpec (input, options) {
     options = Object.assign({ enforceJSON: false }, options);
@@ -93,7 +93,7 @@ function parseConnectionSpec (input, options) {
  *   .then(session => {
  *     console.log(session.inspect()); // { host: 'localhost', port: 33060, user: 'root', pooling: false, ... }
  *   })
- * @returns {Promise.<Session>}
+ * @returns {Promise.<module:Session>}
  */
 exports.getSession = function (connection) {
     connection = typeof connection === 'undefined' ? {} : connection;
@@ -108,9 +108,24 @@ exports.getSession = function (connection) {
 };
 
 /**
+ * Connection pool options.
+ * @typedef {Object} PoolOptions
+ * @property {boolean} [enabled=true] - use a connection pool
+ * @property {number} [maxSize=25] - maximum number of connections in the pool
+ * @property {number} [maxIdleTime=0] - maximum number of milliseconds to allow a connection to be idle (0 - infinite)
+ * @property {number} [queueTimeout=0] - maximum number of milliseconds to wait for a connection to become available (0 - infinite)
+ */
+
+/**
+ * Extended client options.
+ * @typedef {Object} ClientOptions
+ * @property {module:mysqlx~PoolOptions} [pooling] - pooling options
+ */
+
+/**
  * Create a new X DevAPI connection pool.
  * @param {string|URI} connection - connection specification
- * @param {PoolingOptions} options - pooling options
+ * @param {module:mysqlx~ClientOptions} [options] - client options
  * @example
  * const client = mysqlx.getClient({ user: 'root' }, { pooling: { enabled: true, maxSize: 3 } })
  *
@@ -130,13 +145,13 @@ exports.getClient = function (connection, options) {
 /**
  * Additional parser options.
  * @typedef {Object} ParserOptions
- * @prop {DataModel} [mode] - the parsing mode
+ * @property {module:mysqlx~Mode} [mode] - the parsing mode
  */
 
 /**
  * Parse an expression string into a Mysqlx.Expr.Expr.
  * @param {string} value - expression string
- * @param {ParserOptions} options - additional options
+ * @param {module:mysqlx~ParserOptions} [options] - additional options
  * @return {proto.Mysqlx.Expr.Expr} The protobuf object version.
  */
 exports.expr = function (value, options) {
@@ -153,8 +168,8 @@ exports.getVersion = function () {
 
 /**
  * Database entity types.
- * @type {DataModel}
- * @const
+ * @name Mode
+ * @type {Query~DataModel}
  * @example
  * mysqlx.Mode.TABLE
  * mysqlx.Mode.DOCUMENT
@@ -163,8 +178,8 @@ exports.Mode = query.Type;
 
 /**
  * Locking modes.
- * @type {LockContention}
- * @const
+ * @name LockContention
+ * @type {Locking~LockContention}
  * @example
  * mysqlx.LockContention.DEFAULT
  * mysqlx.LockContention.NOWAIT
@@ -174,8 +189,7 @@ exports.LockContention = locking.LockContention;
 
 /**
  * Schema validation.
- * @type {ValidationLevel}
- * @const
+ * @name Schema
  * @example
  * mysqlx.Schema.ValidationLevel.OFF
  * mysqlx.Schema.ValidationLevel.STRICT

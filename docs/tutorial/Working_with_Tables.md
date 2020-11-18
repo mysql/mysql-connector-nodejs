@@ -1,8 +1,8 @@
-## Creating a Table
+#### Creating a Table
 
 `Session.sql()` API is exposed to execute raw SQL commands on the server. MySQL tables can be created using this API as shown below:
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -21,9 +21,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-## Listing all the existing tables
+#### Listing all the existing tables
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -44,11 +44,11 @@ mysqlx.getSession('mysqlx://localhost:33060')
     })
 ```
 
-## Dropping a Table
+#### Dropping a Table
 
-Consider a table `testSchema.testTable`. We can drop this table using the `Session.sql()` API similar to above.
+Dropping a `testSchema.testTable` with the `Session.sql()` API is similar to the above:
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -65,9 +65,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-## Handling data in existing tables
+### Handling data in existing tables
 
-Considering a table `testSchema.testTable` such as the following:
+With a table `testSchema.testTable` such as the following:
 
 ```
 +------+------+
@@ -84,11 +84,9 @@ To update/delete specific rows from a table, one should provide the appropriate 
 
 To update/delete all rows from a table, one should provide any expression that evaluates to `true` (if no expression is provided, executing the operation will result in an error) when calling `delete()` or by appending a call to  `where()`.
 
-### Deleting rows that match a given criteria
+#### Deleting rows that match a given criteria
 
-#### Without `where()`
-
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -108,31 +106,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-#### With `where()`
+#### Deleting all rows
 
-```js
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://localhost:33060')
-    .then(session => {
-        const table = session.getSchema('testSchema').getTable('testTable');
-
-        return table.delete()
-            .where('name = "foo"')
-            .execute()
-            .then(() => {
-                return table.select()
-                    .execute();
-            });
-    })
-    .then(result => {
-        console.log(result.fetchAll()); // [ [ 'bar', 42 ] ]
-    });
-```
-
-### Deleting all rows
-
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -153,9 +129,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-### Updating rows that match a given criteria
+#### Updating rows that match a given criteria
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -178,9 +154,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-### Deleting all rows
+#### Deleting all rows
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -201,11 +177,11 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ### Cursors
 
-Similarly to the document-based API, iterating over result sets originating from regular relational tables can be done either with `fetchAll()` (as depicted up until now) and with the pull-based `fetchOne()` cursor or the push-based API using callbacks. The only difference in the later is the fact that you can provide an additional callback function to handle column metadata.
+Similarly to the document-based API, iterating over result sets originating from regular relational tables can be done either with `fetchAll()` (as depicted up until now) and with the pull-based `fetchOne()` cursor or the push-based API using callbacks. The only difference in the later is the fact that any callback provided for handling column metadata will be ignored.
 
-**Pull-based approach**
+#### Pull-based approach
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -222,9 +198,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-**Push-based approach**
+#### Push-based approach
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 const data = [];
 const metadata = [];
@@ -245,7 +221,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ### Iterating over multiple result sets
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 const procedure = `CREATE PROCEDURE proc() BEGIN
@@ -275,7 +251,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ### Handling column metadata
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -296,9 +272,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ### Retrieving the table size
 
-You can also retrieve the table size at any point in time, using the `count()` method.
+The size of a given table can be retrieved using the `count()` method.
 
-```js
+```javascript
 const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost:33060')
@@ -310,9 +286,9 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-## Column Types
+### Column Types
 
-It's important to understand how MySQL column types are translated to JavaScript/Node.js native types. One case worth a special mention is the fact every possible `number` higher than 2^53 - 1 (the maximum safest integer in JavaScript) or lower than -2^53 + 1 (the minimum safest integer in JavaScript) will be preserved as a `string` in order to avoid loosing precision. The following table depicts a non-comprehensive and possible mapping between data types.
+It is important to understand how MySQL column types are translated to JavaScript/Node.js native types. One case worth a special mention is the fact every possible `number` higher than 2^53 - 1 (the maximum safest integer in JavaScript) or lower than -2^53 + 1 (the minimum safest integer in JavaScript) will be preserved as a `string` in order to avoid loosing precision. The following table depicts a non-comprehensive and possible mapping between data types.
 
 | MySQL             | JavaScript/Node.js    |
 |-------------------|-----------------------|
@@ -342,16 +318,15 @@ It's important to understand how MySQL column types are translated to JavaScript
 | `JSON`            | `Object`              |
 | `SPATIAL`         | `Buffer`              |
 
-Additionally, except for `JSON` fields, you should also account for the following:
-
+Additionally, except for `JSON` fields, one must also account for the following:
 - `Boolean` values (`true` and `false`) will be coerced into any kind of [numeric](https://dev.mysql.com/doc/refman/8.0/en/numeric-types.html) type
 - `null` or `undefined` will be coerced into the MySQL [`NULL`](https://dev.mysql.com/doc/refman/8.0/en/working-with-null.html) value
 
-### Types as column metadata
+#### Types as column metadata
 
 One of the dimensions provided as part of the column metadata is its type. However, most of the times this type is not a direct match of the SQL data type. This happens not only because MySQL itself extends the set of types defined by the SQL standard but also because not all queries happen over a table with a defined schema. For instance:
 
-```js
+```javascript
 session.select('SELECT 1 + 2.0')
     .execute()
     .then(res => {

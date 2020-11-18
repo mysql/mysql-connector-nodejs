@@ -1,0 +1,23 @@
+{
+    "opts": {
+        "recurse": true,
+        "destination": "docs/ref",
+        "tutorials": "docs/tutorial"
+    },
+    "source": {
+        "includePattern": ".+\\.js(doc|x)?$",
+        "exclude": [
+            "lib/Protocol/Stubs",
+            "node_modules",
+            "test"
+        ]
+    },
+    "templates": {
+        "copyright": "Copyright (c) 2016, 2021, Oracle and/or its affiliates.",
+        "dateFormat": "MMMM YYYY",
+        "linenums": true,
+        "search": false,
+        "systemName": "MySQL Connector/Node.js X DevAPI Reference",
+        "theme": "spacelab"
+    }
+}
