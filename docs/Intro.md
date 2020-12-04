@@ -182,3 +182,7 @@ mysqlx.getSession({ user: config.user })
 ```
 
 Note: raw SQL statements are also sent to the server using a specialized protobuf message, again, since there is no support for the classic MySQL protocol.
+
+### Licensing information
+
+This product may include third-party software, used under license. If you are using a Commercial release of MySQL Connector/Node.js 8.0, see the [MySQL Connector/Node.js 8.0 Commercial License Information User Manual](https://downloads.mysql.com/docs/licenses/connector-nodejs-8.0-com-en.pdf) for licensing information, including licensing information relating to third-party software that may be included in this Commercial release. If you are using a Community release of MySQL Connector/Node.js 8.0, see the [MySQL Connector/Node.js 8.0 Community License Information User Manual](https://downloads.mysql.com/docs/licenses/connector-nodejs-8.0-gpl-en.pdf) for licensing information, including licensing information relating to third-party software that may be included in this Community release.
