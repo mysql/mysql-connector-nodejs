@@ -152,7 +152,7 @@ mysqlx.getSession(uri)
 // if neither 33061 nor 33062 are available
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect().port); // 33061
+        console.log(session.inspect().port); // 33060
     });
 
 // if only 33060 is not available, any of the other two can be picked
