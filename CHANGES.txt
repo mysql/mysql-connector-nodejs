@@ -8,6 +8,15 @@ Copyright (c) 2016, 2021, Oracle and/or its affiliates.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.24
+=======
+
+- Add support for handling notifications of connections closed by the server
+- Fix issues preventing refused connections to be released back to a pool
+- Fix behaviour of "Session.getDefaultSchema()" for undefined schemas
+- Overall documentation style, structure and content improvements
+- Update 3rd-party dependencies
+
 v8.0.23
 =======
 
