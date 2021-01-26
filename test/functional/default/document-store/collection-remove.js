@@ -81,7 +81,7 @@ describe('removing documents from a collection', () => {
         });
 
         it('removes all documents from a collection', () => {
-            let actual = [];
+            const actual = [];
 
             return collection
                 .remove('true')
@@ -108,7 +108,7 @@ describe('removing documents from a collection', () => {
 
         it('removes the documents from a collection that match the criteria', () => {
             const expected = [{ _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .remove('name = "foo"')
@@ -119,7 +119,7 @@ describe('removing documents from a collection', () => {
 
         it('removes the documents from a collection that match a multi-stage bindable criteria', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .remove('name = :name && _id = :id')
@@ -132,7 +132,7 @@ describe('removing documents from a collection', () => {
 
         it('removes the documents from a collection that match an object bindable criteria', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .remove('name = :name && _id = :id')
@@ -154,7 +154,7 @@ describe('removing documents from a collection', () => {
 
         it('removes a given number of documents', () => {
             const expected = [{ _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .remove('true')
@@ -176,7 +176,7 @@ describe('removing documents from a collection', () => {
 
         it('removes an existing document with the given id', () => {
             const expected = [{ _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .removeOne('1')
@@ -192,7 +192,7 @@ describe('removing documents from a collection', () => {
 
         it('does nothing if no document exists with the given id', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .removeOne('4')
@@ -218,7 +218,7 @@ describe('removing documents from a collection', () => {
 
         it('removes all documents that match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '2', name: 'bar' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .remove("_id in ('1', '3')")
@@ -233,7 +233,7 @@ describe('removing documents from a collection', () => {
 
         it('removes all documents that do not match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .remove("_id not in ('1', '3')")

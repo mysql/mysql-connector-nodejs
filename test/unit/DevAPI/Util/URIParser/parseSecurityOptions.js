@@ -40,8 +40,8 @@ describe('parseSecurityOptions', () => {
         // TODO(Rui): add `ssl-mode=VERIFY_CA`, `ssl-mode=VERIFY_IDENTITY` and/or `ssl-mode=VERIFY_CRL`?
         expect(parseSecurityOptions('?ssl-mode=REQUIRED')).to.deep.include({ enabled: true });
         expect(parseSecurityOptions('?ssl-ca=foo')).to.deep.include({ enabled: true });
-        expect(parseSecurityOptions(`?ssl-crl=bar`)).to.deep.include({ enabled: true });
-        expect(parseSecurityOptions(`?tls-versions=[foo,bar]`)).to.deep.include({ enabled: true });
+        expect(parseSecurityOptions('?ssl-crl=bar')).to.deep.include({ enabled: true });
+        expect(parseSecurityOptions('?tls-versions=[foo,bar]')).to.deep.include({ enabled: true });
     });
 
     it('enables ssl by default if no security properties are provided', () => {

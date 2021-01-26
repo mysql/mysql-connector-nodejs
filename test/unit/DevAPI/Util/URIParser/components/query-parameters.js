@@ -48,7 +48,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061`;
+            connectionString = 'user:password@hostname:33061';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -58,7 +58,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061/`;
+            connectionString = 'user:password@hostname:33061/';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -68,7 +68,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061?foo=bar`;
+            connectionString = 'user:password@hostname:33061?foo=bar';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -78,7 +78,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061/?foo=bar`;
+            connectionString = 'user:password@hostname:33061/?foo=bar';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -100,7 +100,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061?ssl-mode=foo`;
+            connectionString = 'user:password@hostname:33061?ssl-mode=foo';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -110,7 +110,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061/?ssl-mode=foo`;
+            connectionString = 'user:password@hostname:33061/?ssl-mode=foo';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -120,7 +120,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061?foo=bar&ssl-mode=foo`;
+            connectionString = 'user:password@hostname:33061?foo=bar&ssl-mode=foo';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -130,7 +130,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061/?foo=bar&ssl-mode=foo`;
+            connectionString = 'user:password@hostname:33061/?foo=bar&ssl-mode=foo';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -151,7 +151,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061?ssl-mode=REQUIRED`;
+            connectionString = 'user:password@hostname:33061?ssl-mode=REQUIRED';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -161,7 +161,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061/?ssl-mode=REQUIRED`;
+            connectionString = 'user:password@hostname:33061/?ssl-mode=REQUIRED';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -171,7 +171,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061?foo=bar&ssl-mode=REQUIRED`;
+            connectionString = 'user:password@hostname:33061?foo=bar&ssl-mode=REQUIRED';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -181,7 +181,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061/?foo=bar&ssl-mode=REQUIRED`;
+            connectionString = 'user:password@hostname:33061/?foo=bar&ssl-mode=REQUIRED';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -191,7 +191,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061?foo=bar&ssl-mode=REQUIRED&baz=qux`;
+            connectionString = 'user:password@hostname:33061?foo=bar&ssl-mode=REQUIRED&baz=qux';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -201,7 +201,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061/?foo=bar&ssl-mode=REQUIRED&baz=qux`;
+            connectionString = 'user:password@hostname:33061/?foo=bar&ssl-mode=REQUIRED&baz=qux';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -211,7 +211,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
 
-            connectionString = `user:password@hostname:33061/foo?bar=baz&ssl-mode=REQUIRED&qux=quux`;
+            connectionString = 'user:password@hostname:33061/foo?bar=baz&ssl-mode=REQUIRED&qux=quux';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.true;
@@ -233,7 +233,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
 
-            connectionString = `user:password@hostname:33061?ssl-mode=DISABLED`;
+            connectionString = 'user:password@hostname:33061?ssl-mode=DISABLED';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
@@ -243,7 +243,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
 
-            connectionString = `user:password@hostname:33061/?ssl-mode=DISABLED`;
+            connectionString = 'user:password@hostname:33061/?ssl-mode=DISABLED';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
@@ -253,7 +253,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
 
-            connectionString = `user:password@hostname:33061?foo=bar&ssl-mode=DISABLED`;
+            connectionString = 'user:password@hostname:33061?foo=bar&ssl-mode=DISABLED';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
@@ -263,7 +263,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
 
-            connectionString = `user:password@hostname:33061/?foo=bar&ssl-mode=DISABLED`;
+            connectionString = 'user:password@hostname:33061/?foo=bar&ssl-mode=DISABLED';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
@@ -273,7 +273,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
 
-            connectionString = `user:password@hostname:33061?foo=bar&ssl-mode=DISABLED&baz=qux`;
+            connectionString = 'user:password@hostname:33061?foo=bar&ssl-mode=DISABLED&baz=qux';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
@@ -283,7 +283,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
 
-            connectionString = `user:password@hostname:33061/?foo=bar&ssl-mode=DISABLED&baz=qux`;
+            connectionString = 'user:password@hostname:33061/?foo=bar&ssl-mode=DISABLED&baz=qux';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
@@ -293,7 +293,7 @@ describe('parsing query parameters', () => {
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;
 
-            connectionString = `user:password@hostname:33061/foo?bar=baz&ssl-mode=DISABLED&qux=quux`;
+            connectionString = 'user:password@hostname:33061/foo?bar=baz&ssl-mode=DISABLED&qux=quux';
             expect(parseUri(connectionString).tls).to.be.an('object');
             // eslint-disable-next-line no-unused-expressions
             expect(parseUri(connectionString).tls.enabled).to.be.false;

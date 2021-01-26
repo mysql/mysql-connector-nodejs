@@ -75,7 +75,7 @@ describe('collection miscellaneous tests', () => {
     });
 
     it('checks if a collection does not exist in the database', () => {
-        var collection = schema.getCollection('foobar');
+        const collection = schema.getCollection('foobar');
 
         return collection.existsInDatabase()
             .then(result => expect(result).to.be.false);

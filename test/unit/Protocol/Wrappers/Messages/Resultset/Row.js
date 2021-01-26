@@ -174,7 +174,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
         it('returns bit sequence values as Node.js buffers', () => {
             const columnProto = new ResultsetStub.ColumnMetaData([ResultsetStub.ColumnMetaData.FieldType.BIT]);
 
-            let writer = new BinaryWriter();
+            const writer = new BinaryWriter();
             writer.writeUint64(1, 23);
 
             const rowProto = new ResultsetStub.Row();
@@ -415,7 +415,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             const writer = new BinaryWriter();
             writer.writeUint64(1, 999999);
             // eslint-disable-next-line node/no-deprecated-api
-            let useconds = new Buffer(writer.getResultBuffer().slice(1));
+            const useconds = new Buffer(writer.getResultBuffer().slice(1));
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.deserialize(Buffer.concat([time, useconds], time.length + useconds.length)).valueOf());
@@ -508,8 +508,8 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([-12.3401]);
 
-            let overflow = Number.MAX_SAFE_INTEGER + 1;
-            let scale = 10; // overflow size in hexadecimal
+            const overflow = Number.MAX_SAFE_INTEGER + 1;
+            const scale = 10; // overflow size in hexadecimal
             // eslint-disable-next-line node/no-deprecated-api
             decimal = new Buffer(`${scale}${overflow}${overflow}c0`, 'hex');
 

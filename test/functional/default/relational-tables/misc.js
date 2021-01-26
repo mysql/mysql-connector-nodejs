@@ -268,6 +268,7 @@ describe('relational miscellaneous tests', () => {
             });
 
             it('decodes values correctly', () => {
+                // eslint-disable-next-line no-loss-of-precision
                 const expected = [[1.2345678910111213141516171819202, 1.2346, 1.23]];
                 const actual = [];
 

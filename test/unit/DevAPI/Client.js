@@ -43,7 +43,7 @@ describe('DevAPI Client', () => {
 
     context('factory', () => {
         it('throws an error when unknown options are provided', () => {
-            expect(() => client({ foo: 'bar' })).to.throw(`Client option 'foo' is not recognized as valid.`);
+            expect(() => client({ foo: 'bar' })).to.throw('Client option \'foo\' is not recognized as valid.');
         });
 
         it('throws an error when invalid option values are provided', () => {

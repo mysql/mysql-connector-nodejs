@@ -56,15 +56,15 @@ describe('connection pooling', () => {
         it('fails when unknown options are provided', () => {
             const poolingConfig = Object.assign({}, config, baseConfig);
 
-            expect(() => mysqlx.getClient(poolingConfig, { foo: 'bar' })).to.throw(`Client option 'foo' is not recognized as valid.`);
-            expect(() => mysqlx.getClient(poolingConfig, { pooling: { foo: 'bar' } })).to.throw(`Client option 'pooling.foo' is not recognized as valid.`);
+            expect(() => mysqlx.getClient(poolingConfig, { foo: 'bar' })).to.throw('Client option \'foo\' is not recognized as valid.');
+            expect(() => mysqlx.getClient(poolingConfig, { pooling: { foo: 'bar' } })).to.throw('Client option \'pooling.foo\' is not recognized as valid.');
         });
 
         it('fails when invalid option values are provided', () => {
             const poolingConfig = Object.assign({}, config, baseConfig);
 
-            expect(() => mysqlx.getClient(poolingConfig, { pooling: { maxSize: 'foo' } })).to.throw(`Client option 'pooling.maxSize' does not support value 'foo'.`);
-            expect(() => mysqlx.getClient(poolingConfig, { pooling: { enabled: 2.2 } })).to.throw(`Client option 'pooling.enabled' does not support value '2.2'.`);
+            expect(() => mysqlx.getClient(poolingConfig, { pooling: { maxSize: 'foo' } })).to.throw('Client option \'pooling.maxSize\' does not support value \'foo\'.');
+            expect(() => mysqlx.getClient(poolingConfig, { pooling: { enabled: 2.2 } })).to.throw('Client option \'pooling.enabled\' does not support value \'2.2\'.');
         });
     });
 

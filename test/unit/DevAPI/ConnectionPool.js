@@ -43,7 +43,7 @@ describe('DevAPI ConnectionPool', () => {
 
     context('factory', () => {
         it('throws an error when unknown options are provided', () => {
-            expect(() => connectionPool({ foo: 'bar' })).to.throw(`Client option 'pooling.foo' is not recognized as valid.`);
+            expect(() => connectionPool({ foo: 'bar' })).to.throw('Client option \'pooling.foo\' is not recognized as valid.');
         });
 
         it('throws an error when invalid option values are provided', () => {

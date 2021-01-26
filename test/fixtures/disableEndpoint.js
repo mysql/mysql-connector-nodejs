@@ -61,7 +61,7 @@ module.exports = function (id, waitFor) {
                     return setTimeout(() => resolve(), waitFor);
                 }
 
-                reject(new Error(`Unable to disconnect service.`));
+                reject(new Error('Unable to disconnect service.'));
             });
         });
 

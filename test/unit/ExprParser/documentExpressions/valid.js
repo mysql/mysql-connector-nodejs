@@ -49,11 +49,11 @@ describe('ExprParser', () => {
 
                 expect(expr.output.getType()).to.equal(Expr.Type.OPERATOR);
 
-                let equalityOperator = expr.output.getOperator();
+                const equalityOperator = expr.output.getOperator();
                 expect(equalityOperator.getName()).to.equal('==');
                 expect(equalityOperator.getParamList()).to.have.lengthOf(2);
 
-                let inOperator = equalityOperator.getParamList()[0];
+                const inOperator = equalityOperator.getParamList()[0];
                 expect(inOperator.getType()).to.equal(Expr.Type.OPERATOR);
                 expect(inOperator.getOperator().getName()).to.equal('in');
 
@@ -203,7 +203,7 @@ describe('ExprParser', () => {
             });
 
             it('parses valid double-quoted literals', () => {
-                let input = `"foo'bar"`;
+                let input = '"foo\'bar"';
                 let expr = Parser.parse(input);
                 expect(expr.input).to.equal(input);
 
@@ -215,7 +215,7 @@ describe('ExprParser', () => {
                 expect(new Buffer(literal.getVString().getValue()).toString()).to.equal("foo'bar");
                 /* eslint-enable node/no-deprecated-api */
 
-                input = `"foo''bar"`;
+                input = '"foo\'\'bar"';
                 expr = Parser.parse(input);
                 expect(expr.input).to.equal(input);
 
@@ -289,7 +289,7 @@ describe('ExprParser', () => {
             });
 
             it('parses valid single-quoted literals', () => {
-                let input = `'foo"bar'`;
+                let input = '\'foo"bar\'';
                 let expr = Parser.parse(input);
                 expect(expr.input).to.equal(input);
 
@@ -301,7 +301,7 @@ describe('ExprParser', () => {
                 expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('foo"bar');
                 /* eslint-enable node/no-deprecated-api */
 
-                input = `'foo""bar'`;
+                input = '\'foo""bar\'';
                 expr = Parser.parse(input);
                 expect(expr.input).to.equal(input);
 
@@ -402,7 +402,7 @@ describe('ExprParser', () => {
                 expect(params).to.have.lengthOf(1);
                 expect(params[0].getType()).to.equal(Expr.Type.IDENT);
 
-                let docPath = params[0].getIdentifier().getDocumentPathList();
+                const docPath = params[0].getIdentifier().getDocumentPathList();
                 expect(docPath[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
                 expect(docPath[0].getValue()).to.equal('foo');
             });
@@ -433,13 +433,13 @@ describe('ExprParser', () => {
                 expect(params).to.have.lengthOf(1);
                 expect(params[0].getType()).to.equal(Expr.Type.IDENT);
 
-                let docPath = params[0].getIdentifier().getDocumentPathList();
+                const docPath = params[0].getIdentifier().getDocumentPathList();
                 expect(docPath[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
                 expect(docPath[0].getValue()).to.equal('foo');
             });
 
             it('parses valid binary operations', () => {
-                let input = `1 <> 2`;
+                let input = '1 <> 2';
                 let expr = Parser.parse(input);
                 expect(expr.input).to.equal(input);
 
@@ -456,7 +456,7 @@ describe('ExprParser', () => {
                 expect(params[0].getLiteral().getVUnsignedInt()).to.equal(1);
                 expect(params[1].getLiteral().getVUnsignedInt()).to.equal(2);
 
-                input = `4 % 2`;
+                input = '4 % 2';
                 expr = Parser.parse(input);
                 expect(expr.input).to.equal(input);
 
@@ -739,7 +739,7 @@ describe('ExprParser', () => {
                 expect(params).to.have.lengthOf(2);
                 expect(params[0].getType()).to.equal(Expr.Type.ARRAY);
 
-                let selector = params[0].getArray().getValueList();
+                const selector = params[0].getArray().getValueList();
                 expect(selector).to.have.lengthOf(1);
                 expect(selector[0].getType()).to.equal(Expr.Type.LITERAL);
                 expect(selector[0].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
@@ -767,7 +767,7 @@ describe('ExprParser', () => {
                 expect(params).to.have.lengthOf(2);
                 expect(params[0].getType()).to.equal(Expr.Type.LITERAL);
 
-                let literal = params[0].getLiteral();
+                const literal = params[0].getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
                 /* eslint-disable node/no-deprecated-api */
                 expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('DocumentStore');
@@ -819,7 +819,7 @@ describe('ExprParser', () => {
 
                 expect(params[1].getType()).to.equal(Expr.Type.ARRAY);
 
-                let values = params[1].getArray().getValueList();
+                const values = params[1].getArray().getValueList();
                 expect(values).to.have.lengthOf(2);
                 values.forEach(value => {
                     expect(value.getType()).to.equal(Expr.Type.LITERAL);
@@ -889,7 +889,7 @@ describe('ExprParser', () => {
                 expect(params).to.have.lengthOf(2);
                 expect(params[0].getType()).to.equal(Expr.Type.OBJECT);
 
-                let fields = params[0].getObject().getFldList();
+                const fields = params[0].getObject().getFldList();
                 expect(fields).to.have.lengthOf(1);
                 expect(fields[0].getKey()).to.equal('a');
                 expect(fields[0].getValue().getType()).to.equal(Expr.Type.LITERAL);
@@ -1091,7 +1091,7 @@ describe('ExprParser', () => {
                 expect(params[0].getIdentifier().getDocumentPathList()).to.have.lengthOf(0);
                 expect(params[1].getType()).to.equal(Expr.Type.OBJECT);
 
-                let fields = params[1].getObject().getFldList();
+                const fields = params[1].getObject().getFldList();
                 expect(fields).to.have.lengthOf(1);
                 expect(fields[0].getKey()).to.equal('a');
                 expect(fields[0].getValue().getType()).to.equal(Expr.Type.LITERAL);

@@ -2018,7 +2018,7 @@ describe('connecting to a default schema', () => {
 
                 return mysqlx.getSession(schemaConfig)
                     .then(session => {
-                        return session.sql(`CREATE TABLE test (name VARCHAR(3))`).execute()
+                        return session.sql('CREATE TABLE test (name VARCHAR(3))').execute()
                             .then(() => {
                                 return session.close();
                             });
@@ -2031,7 +2031,7 @@ describe('connecting to a default schema', () => {
                 const schemaConfig = Object.assign({}, config, baseConfig, { schema });
 
                 return mysqlx.getSession(schemaConfig)
-                    .then(session => session.sql(`CREATE TABLE test (name VARCHAR(3))`).execute())
+                    .then(session => session.sql('CREATE TABLE test (name VARCHAR(3))').execute())
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');

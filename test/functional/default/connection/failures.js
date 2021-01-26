@@ -427,7 +427,7 @@ describe('connection failures', () => {
                             .then(res => {
                                 return mysqlx.getSession(killedConnectionConfig)
                                     .then(session => {
-                                        return session.sql(`KILL ?`)
+                                        return session.sql('KILL ?')
                                             .bind(res.fetchOne()[0])
                                             .execute()
                                             .then(() => {
@@ -488,7 +488,7 @@ describe('connection failures', () => {
                             return sessions[0].sql('SELECT CONNECTION_ID()')
                                 .execute()
                                 .then(res => {
-                                    return sessions[1].sql(`KILL ?`)
+                                    return sessions[1].sql('KILL ?')
                                         .bind(res.fetchOne()[0])
                                         .execute();
                                 });

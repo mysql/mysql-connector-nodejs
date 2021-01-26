@@ -81,7 +81,7 @@ describe('modifying documents in a collection', () => {
 
         it('updates properties of all documents in a collection', () => {
             const expected = [{ _id: '1', name: 'qux' }, { _id: '2', name: 'qux' }];
-            let actual = [];
+            const actual = [];
 
             return collection.modify('true')
                 .set('name', 'qux')
@@ -92,7 +92,7 @@ describe('modifying documents in a collection', () => {
 
         it('removes properties of all documents in a collection', () => {
             const expected = [{ _id: '1' }, { _id: '2' }];
-            let actual = [];
+            const actual = [];
 
             return collection.modify('true')
                 .unset('name')
@@ -113,7 +113,7 @@ describe('modifying documents in a collection', () => {
 
         it('updates properties of the documents from a collection that match the criteria', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'qux' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .modify('name = "bar"')
@@ -125,7 +125,7 @@ describe('modifying documents in a collection', () => {
 
         it('removes properties of the documents from a collection that match the criteria', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .modify('name = "bar"')
@@ -147,7 +147,7 @@ describe('modifying documents in a collection', () => {
 
         it('modifies a given number of documents', () => {
             const expected = [{ _id: '1', name: 'qux' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection.modify('true')
                 .set('name', 'qux')
@@ -169,7 +169,7 @@ describe('modifying documents in a collection', () => {
 
         it('replaces the entire document if it exists', () => {
             const expected = [{ _id: '1', age: 23 }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .replaceOne('1', { _id: '3', age: 23 })
@@ -185,7 +185,7 @@ describe('modifying documents in a collection', () => {
 
         it('does nothing if the document does not exist', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .replaceOne('4', { _id: '1', name: 'baz', age: 23 })
@@ -211,7 +211,7 @@ describe('modifying documents in a collection', () => {
 
         it('modifies all documents that match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '1', name: 'qux' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'qux' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .modify("_id in ('1', '3')")
@@ -227,7 +227,7 @@ describe('modifying documents in a collection', () => {
 
         it('modifies all documents that do not match a criteria specified by a grouped expression', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'qux' }, { _id: '3', name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .modify("_id not in ('1', '3')")
@@ -258,7 +258,7 @@ describe('modifying documents in a collection', () => {
                 { _id: '3', name: 'qux', age: 23, address: { city: 'qux', street: 'quux', zip: 'biz' } }
             ];
 
-            let actual = [];
+            const actual = [];
 
             return collection
                 .modify('age = 23')
@@ -279,7 +279,7 @@ describe('modifying documents in a collection', () => {
                 { _id: '3', name: 'baz', age: 23, address: { city: 'qux', street: 'quux', zip: 'biz' } }
             ];
 
-            let actual = [];
+            const actual = [];
 
             return collection
                 .modify('_id = "1"')
@@ -300,7 +300,7 @@ describe('modifying documents in a collection', () => {
                 { _id: '3', name: 'baz', age: 23, more: true, address: { city: 'qux', street: 'quux', zip: 'biz', more: true } }
             ];
 
-            let actual = [];
+            const actual = [];
 
             return collection.modify('true')
                 .patch({ more: true, address: { more: true } })
@@ -320,7 +320,7 @@ describe('modifying documents in a collection', () => {
                 { _id: '3', name: 'baz', address: { city: 'qux', street: 'quux' } }
             ];
 
-            let actual = [];
+            const actual = [];
 
             return collection
                 .modify('age = 23')
@@ -341,7 +341,7 @@ describe('modifying documents in a collection', () => {
                 { _id: '3', name: 'baz', age: 23, address: { city: 'qux', street: 'quux', zip: 'biz' } }
             ];
 
-            let actual = [];
+            const actual = [];
 
             return collection
                 .modify('_id = "1"')

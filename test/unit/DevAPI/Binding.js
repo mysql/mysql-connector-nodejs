@@ -85,7 +85,7 @@ describe('Binding', () => {
         });
 
         it('mixes and match both type of parameters', () => {
-            const query = binding().bind('foo', 'qux').bind({ 'bar': 'quux' });
+            const query = binding().bind('foo', 'qux').bind({ bar: 'quux' });
 
             expect(query.getBindings()).to.deep.equal({ foo: 'qux', bar: 'quux' });
         });

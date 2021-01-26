@@ -212,7 +212,7 @@ describe('CollectionModify', () => {
 
         it('updates the operation list with the correct operation', () => {
             const session = 'foo';
-            const doc = { foo: 'bar', baz: { 'qux': 'quux' } };
+            const doc = { foo: 'bar', baz: { qux: 'quux' } };
             const expected = [{ source: '$', type: updating.Operation.MERGE_PATCH, value: doc }];
 
             td.when(preparing({ session })).thenReturn({ forceRestart });

@@ -57,7 +57,7 @@ describe('collation and charset names', () => {
         it('metadata is undefined for non-textual fields', () => {
             let metadata = [];
 
-            return session.sql(`SELECT 1`)
+            return session.sql('SELECT 1')
                 .execute(() => {}, meta => {
                     metadata = metadata.concat(meta);
                 })

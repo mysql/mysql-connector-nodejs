@@ -369,7 +369,7 @@ describe('Collection', () => {
         it('escapes the id value', () => {
             // eslint-disable-next-line no-useless-escape
             const documentId = 'b\"ar';
-            const criteria = `_id = "b\\"ar"`;
+            const criteria = '_id = "b\\"ar"';
             const instance = collection('foo', 'bar', 'baz');
             const state = { ok: true };
             const expected = result(state);
@@ -479,7 +479,7 @@ describe('Collection', () => {
         it('returns the document instance if it exists', () => {
             const collectionName = 'foobar';
             const documentId = 'foo';
-            const criteria = `_id = :id`;
+            const criteria = '_id = :id';
             const expected = { _id: documentId, name: 'bar' };
             const schema = 'baz';
             const session = 'qux';
@@ -498,7 +498,7 @@ describe('Collection', () => {
         it('returns `null` if the document does not exist', () => {
             const collectionName = 'foobar';
             const documentId = 'foo';
-            const criteria = `_id = :id`;
+            const criteria = '_id = :id';
             const schema = 'baz';
             const session = 'qux';
 
@@ -544,7 +544,7 @@ describe('Collection', () => {
             const documentId = 'fo\"o';
             const state = { rows_affected: 1 };
             const expected = result(state);
-            const criteria = `_id = "fo\\"o"`;
+            const criteria = '_id = "fo\\"o"';
             const instance = collection('bar', 'baz', 'qux');
 
             td.when(execute()).thenResolve(expected);
@@ -639,7 +639,7 @@ describe('Collection', () => {
                     collection: 'qux',
                     unique: false,
                     type: 'INDEX',
-                    constraint: [ { array: false, member: '$.age', required: false, type: 'TINYINT' } ]
+                    constraint: [{ array: false, member: '$.age', required: false, type: 'TINYINT' }]
                 }];
 
                 const index = {
@@ -666,7 +666,7 @@ describe('Collection', () => {
                     collection: 'qux',
                     unique: false,
                     type: 'INDEX',
-                    constraint: [ { array: true, member: '$.tags', required: false, type: 'CHAR' } ]
+                    constraint: [{ array: true, member: '$.tags', required: false, type: 'CHAR' }]
                 }];
 
                 const index = {

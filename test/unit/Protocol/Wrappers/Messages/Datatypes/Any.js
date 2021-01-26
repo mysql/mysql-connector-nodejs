@@ -116,7 +116,7 @@ describe('Mysqlx.Datatypes.Scalar.Any wrapper', () => {
                 const toJSON = td.function();
                 const scalarProto = new DatatypesStub.Scalar();
 
-                let proto = new DatatypesStub.Any([DatatypesStub.Any.Type.SCALAR]);
+                const proto = new DatatypesStub.Any([DatatypesStub.Any.Type.SCALAR]);
                 proto.setScalar(scalarProto);
 
                 td.when(toJSON()).thenReturn('foo');
@@ -175,7 +175,7 @@ describe('Mysqlx.Datatypes.Scalar.Any wrapper', () => {
                 const toLiteral = td.function();
                 const scalarProto = new DatatypesStub.Scalar();
 
-                let proto = new DatatypesStub.Any([DatatypesStub.Any.Type.SCALAR]);
+                const proto = new DatatypesStub.Any([DatatypesStub.Any.Type.SCALAR]);
                 proto.setScalar(scalarProto);
 
                 td.when(toLiteral()).thenReturn('foo');

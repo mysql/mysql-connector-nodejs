@@ -80,8 +80,8 @@ describe('row locking in collection transactions', () => {
                 const expected = [{ _id: '1', a: 3, b: 'foo' }];
                 const actual = [];
 
-                let samplesA = [];
-                let samplesB = [];
+                const samplesA = [];
+                const samplesB = [];
 
                 const transaction1 = sessionA.startTransaction()
                     .then(() => {
@@ -188,8 +188,8 @@ describe('row locking in collection transactions', () => {
             const expected = [{ _id: '1', a: 3, b: 'foo' }];
             const actual = [];
 
-            let samplesA = [];
-            let samplesB = [];
+            const samplesA = [];
+            const samplesB = [];
 
             return sessionA.startTransaction()
                 .then(() => {

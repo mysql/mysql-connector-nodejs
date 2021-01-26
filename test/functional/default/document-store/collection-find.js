@@ -82,7 +82,7 @@ describe('finding documents in collections', () => {
         context('with a callback', () => {
             it('includes all documents in the collection', () => {
                 const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }];
-                let actual = [];
+                const actual = [];
 
                 return collection.find()
                     .execute(doc => {
@@ -165,7 +165,7 @@ describe('finding documents in collections', () => {
 
         it('returns documents that match a criteria specified with named parameter pairs', () => {
             const expected = [{ _id: 'foo', foo: 'bar', size: 42 }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .find('size = :size')
@@ -176,7 +176,7 @@ describe('finding documents in collections', () => {
 
         it('returns documents that match a criteria specified with a named parameter mapping', () => {
             const expected = [{ _id: 'foo', foo: 'bar', size: 42 }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .find('size = :size')
@@ -196,7 +196,7 @@ describe('finding documents in collections', () => {
 
         it('includes only columns provided as an expression array', () => {
             const expected = [{ name: 'foo', size: 42 }, { name: 'bar', size: 23 }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .find()
@@ -207,7 +207,7 @@ describe('finding documents in collections', () => {
 
         it('includes only columns provided as expression arguments', () => {
             const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .find()
@@ -218,7 +218,7 @@ describe('finding documents in collections', () => {
 
         it('performs computed projections', () => {
             const expected = [{ name: 'bar', newSize: 24 }, { name: 'foo', newSize: 43 }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .find()
@@ -278,7 +278,7 @@ describe('finding documents in collections', () => {
 
         it('returns a given number of documents', () => {
             const expected = [{ _id: 1, name: 'foo' }, { _id: 2, name: 'bar' }, { _id: 3, name: 'baz' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .find()
@@ -289,7 +289,7 @@ describe('finding documents in collections', () => {
 
         it('returns the documents after a given offset', () => {
             const expected = [{ _id: 3, name: 'baz' }, { _id: 4, name: 'qux' }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .find()

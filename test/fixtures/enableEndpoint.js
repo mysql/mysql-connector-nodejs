@@ -61,7 +61,7 @@ module.exports = function (id, waitFor) {
                     return setTimeout(() => resolve(), waitFor);
                 }
 
-                reject(new Error(`Unable to connect service.`));
+                reject(new Error('Unable to connect service.'));
             });
         });
 

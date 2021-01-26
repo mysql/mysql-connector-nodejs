@@ -82,7 +82,7 @@ describe('raw SQL', () => {
 
         context('operation outcomes', () => {
             it('checks if the result set contains additional data', () => {
-                return session.sql(`SELECT 1 AS s1_m1, 2.2 AS s1_m2`)
+                return session.sql('SELECT 1 AS s1_m1, 2.2 AS s1_m2')
                     .execute()
                     .then(result => expect(result.hasData()).to.equal(true));
             });
@@ -100,7 +100,7 @@ describe('raw SQL', () => {
 
         context('single result sets', () => {
             it('retrieves the first record in the result set', () => {
-                return session.sql(`SELECT 1 AS s1_m1, 2.2 AS s1_m2`)
+                return session.sql('SELECT 1 AS s1_m1, 2.2 AS s1_m2')
                     .execute()
                     .then(result => {
                         const first = result.fetchOne();
@@ -111,7 +111,7 @@ describe('raw SQL', () => {
             });
 
             it('retrieves each record in the result set', () => {
-                return session.sql(`SELECT 'foo' AS s1_m1, 'bar' AS s1_m2`)
+                return session.sql('SELECT \'foo\' AS s1_m1, \'bar\' AS s1_m2')
                     .execute()
                     .then(result => {
                         expect(result.fetchOne()).to.deep.equal(['foo', 'bar']);
@@ -121,7 +121,7 @@ describe('raw SQL', () => {
             });
 
             it('retrieves all the records at once in the result set', () => {
-                return session.sql(`SELECT 1 AS s1_m1, 2.2 AS s1_m2`)
+                return session.sql('SELECT 1 AS s1_m1, 2.2 AS s1_m2')
                     .execute()
                     .then(result => {
                         const first = result.fetchAll();
@@ -132,7 +132,7 @@ describe('raw SQL', () => {
             });
 
             it('retrieves the column metadata for each row', () => {
-                return session.sql(`SELECT 1 AS s1_m1, 2.2 AS s1_m2`)
+                return session.sql('SELECT 1 AS s1_m1, 2.2 AS s1_m2')
                     .execute()
                     .then(result => {
                         const columns = result.getColumns();
@@ -165,11 +165,11 @@ describe('raw SQL', () => {
             });
 
             afterEach('drop procedure', () => {
-                return session.sql(`DROP PROCEDURE multi`);
+                return session.sql('DROP PROCEDURE multi');
             });
 
             it('retrieves the first record in the result set', () => {
-                return session.sql(`CALL multi()`)
+                return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
                         const first = result.fetchOne();
@@ -180,7 +180,7 @@ describe('raw SQL', () => {
             });
 
             it('retrieves each item in the result sets', () => {
-                return session.sql(`CALL multi()`)
+                return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
                         expect(result.fetchOne()).to.deep.equal(['foo', 'pending']);
@@ -197,7 +197,7 @@ describe('raw SQL', () => {
             });
 
             it('retrieves all the items in the result sets', () => {
-                return session.sql(`CALL multi()`)
+                return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
                         let item = result.fetchAll();
@@ -218,7 +218,7 @@ describe('raw SQL', () => {
             });
 
             it('retrieves an array of result sets', () => {
-                return session.sql(`CALL multi()`)
+                return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
                         const first = result.toArray();
@@ -229,7 +229,7 @@ describe('raw SQL', () => {
             });
 
             it('returns the column metadata for each row', () => {
-                return session.sql(`CALL multi()`)
+                return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
                         let columns = result.getColumns();
@@ -361,11 +361,11 @@ describe('raw SQL', () => {
             });
 
             afterEach('drop procedure', () => {
-                return session.sql(`DROP PROCEDURE multi`);
+                return session.sql('DROP PROCEDURE multi');
             });
 
             it('correctly consumes empty result sets', () => {
-                return session.sql(`CALL multi()`)
+                return session.sql('CALL multi()')
                     .execute()
                     .then(result => {
                         expect(result.fetchOne()).to.deep.equal(['foo']);
@@ -503,17 +503,17 @@ describe('raw SQL', () => {
 
         context('BIT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value BIT)`)
+                return session.sql('CREATE TABLE test (value BIT)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (b'1')`)
+                return session.sql('INSERT INTO test VALUES (b\'1\')')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('BIT'));
             });
@@ -521,17 +521,17 @@ describe('raw SQL', () => {
 
         context('TINYINT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value1 TINYINT, value2 TINYINT SIGNED)`)
+                return session.sql('CREATE TABLE test (value1 TINYINT, value2 TINYINT SIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (-1, 1)`)
+                return session.sql('INSERT INTO test VALUES (-1, 1)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => {
                         const columns = res.getColumns();
@@ -544,17 +544,17 @@ describe('raw SQL', () => {
 
         context('UNSIGNED TINYINT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value TINYINT UNSIGNED)`)
+                return session.sql('CREATE TABLE test (value TINYINT UNSIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (1)`)
+                return session.sql('INSERT INTO test VALUES (1)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED TINYINT'));
             });
@@ -562,17 +562,17 @@ describe('raw SQL', () => {
 
         context('SMALLINT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value1 SMALLINT, value2 SMALLINT SIGNED)`)
+                return session.sql('CREATE TABLE test (value1 SMALLINT, value2 SMALLINT SIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (-1, 1)`)
+                return session.sql('INSERT INTO test VALUES (-1, 1)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => {
                         const columns = res.getColumns();
@@ -585,17 +585,17 @@ describe('raw SQL', () => {
 
         context('UNSIGNED SMALLINT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value SMALLINT UNSIGNED)`)
+                return session.sql('CREATE TABLE test (value SMALLINT UNSIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (1)`)
+                return session.sql('INSERT INTO test VALUES (1)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED SMALLINT'));
             });
@@ -603,17 +603,17 @@ describe('raw SQL', () => {
 
         context('MEDIUMINT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value1 MEDIUMINT, value2 MEDIUMINT SIGNED)`)
+                return session.sql('CREATE TABLE test (value1 MEDIUMINT, value2 MEDIUMINT SIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (-1, 1)`)
+                return session.sql('INSERT INTO test VALUES (-1, 1)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => {
                         const columns = res.getColumns();
@@ -626,17 +626,17 @@ describe('raw SQL', () => {
 
         context('UNSIGNED MEDIUMINT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value MEDIUMINT UNSIGNED)`)
+                return session.sql('CREATE TABLE test (value MEDIUMINT UNSIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (1)`)
+                return session.sql('INSERT INTO test VALUES (1)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED MEDIUMINT'));
             });
@@ -644,17 +644,17 @@ describe('raw SQL', () => {
 
         context('INT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value1 INT, value2 INT SIGNED)`)
+                return session.sql('CREATE TABLE test (value1 INT, value2 INT SIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (-1, 1)`)
+                return session.sql('INSERT INTO test VALUES (-1, 1)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => {
                         const columns = res.getColumns();
@@ -667,17 +667,17 @@ describe('raw SQL', () => {
 
         context('UNSIGNED INT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value INT UNSIGNED)`)
+                return session.sql('CREATE TABLE test (value INT UNSIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (1)`)
+                return session.sql('INSERT INTO test VALUES (1)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED INT'));
             });
@@ -685,17 +685,17 @@ describe('raw SQL', () => {
 
         context('BIGINT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value1 BIGINT, value2 BIGINT SIGNED)`)
+                return session.sql('CREATE TABLE test (value1 BIGINT, value2 BIGINT SIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (-1, 1)`)
+                return session.sql('INSERT INTO test VALUES (-1, 1)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => {
                         const columns = res.getColumns();
@@ -708,17 +708,17 @@ describe('raw SQL', () => {
 
         context('UNSIGNED BIGINT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value BIGINT UNSIGNED)`)
+                return session.sql('CREATE TABLE test (value BIGINT UNSIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (1)`)
+                return session.sql('INSERT INTO test VALUES (1)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED BIGINT'));
             });
@@ -726,17 +726,17 @@ describe('raw SQL', () => {
 
         context('FLOAT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value FLOAT)`)
+                return session.sql('CREATE TABLE test (value FLOAT)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (1.23)`)
+                return session.sql('INSERT INTO test VALUES (1.23)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('FLOAT'));
             });
@@ -744,17 +744,17 @@ describe('raw SQL', () => {
 
         context('UNSIGNED FLOAT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value FLOAT UNSIGNED)`)
+                return session.sql('CREATE TABLE test (value FLOAT UNSIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (1.23)`)
+                return session.sql('INSERT INTO test VALUES (1.23)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED FLOAT'));
             });
@@ -762,17 +762,17 @@ describe('raw SQL', () => {
 
         context('DECIMAL', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value DECIMAL(5,2))`)
+                return session.sql('CREATE TABLE test (value DECIMAL(5,2))')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (5.67)`)
+                return session.sql('INSERT INTO test VALUES (5.67)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('DECIMAL'));
             });
@@ -780,17 +780,17 @@ describe('raw SQL', () => {
 
         context('UNSIGNED DECIMAL', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value DECIMAL(5,2) UNSIGNED)`)
+                return session.sql('CREATE TABLE test (value DECIMAL(5,2) UNSIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (5.67)`)
+                return session.sql('INSERT INTO test VALUES (5.67)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED DECIMAL'));
             });
@@ -798,17 +798,17 @@ describe('raw SQL', () => {
 
         context('DOUBLE', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value DOUBLE)`)
+                return session.sql('CREATE TABLE test (value DOUBLE)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (1.23)`)
+                return session.sql('INSERT INTO test VALUES (1.23)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('DOUBLE'));
             });
@@ -816,17 +816,17 @@ describe('raw SQL', () => {
 
         context('UNSIGNED DOUBLE', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value DOUBLE UNSIGNED)`)
+                return session.sql('CREATE TABLE test (value DOUBLE UNSIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (1.23)`)
+                return session.sql('INSERT INTO test VALUES (1.23)')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED DOUBLE'));
             });
@@ -834,17 +834,17 @@ describe('raw SQL', () => {
 
         context('JSON', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value JSON)`)
+                return session.sql('CREATE TABLE test (value JSON)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES ('{"foo":"bar"}')`)
+                return session.sql('INSERT INTO test VALUES (\'{"foo":"bar"}\')')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('JSON'));
             });
@@ -852,17 +852,17 @@ describe('raw SQL', () => {
 
         context('STRING', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (vc CHAR(3), vv VARCHAR(3))`)
+                return session.sql('CREATE TABLE test (vc CHAR(3), vv VARCHAR(3))')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES ('foo', 'foo')`)
+                return session.sql('INSERT INTO test VALUES (\'foo\', \'foo\')')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => {
                         const columns = res.getColumns();
@@ -875,17 +875,17 @@ describe('raw SQL', () => {
 
         context('BYTES', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (vb BINARY(3), vv VARBINARY(3))`)
+                return session.sql('CREATE TABLE test (vb BINARY(3), vv VARBINARY(3))')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES ('foo', 'foo')`)
+                return session.sql('INSERT INTO test VALUES (\'foo\', \'foo\')')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => {
                         const columns = res.getColumns();
@@ -898,17 +898,17 @@ describe('raw SQL', () => {
 
         context('TIME', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value TIME)`)
+                return session.sql('CREATE TABLE test (value TIME)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES ('23:45')`)
+                return session.sql('INSERT INTO test VALUES (\'23:45\')')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('TIME'));
             });
@@ -916,17 +916,17 @@ describe('raw SQL', () => {
 
         context('DATE', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value DATE)`)
+                return session.sql('CREATE TABLE test (value DATE)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES ('2020-03-30')`)
+                return session.sql('INSERT INTO test VALUES (\'2020-03-30\')')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('DATE'));
             });
@@ -934,17 +934,17 @@ describe('raw SQL', () => {
 
         context('DATETIME', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value DATETIME)`)
+                return session.sql('CREATE TABLE test (value DATETIME)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES ('2020-03-30 18:33:38')`)
+                return session.sql('INSERT INTO test VALUES (\'2020-03-30 18:33:38\')')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('DATETIME'));
             });
@@ -952,17 +952,17 @@ describe('raw SQL', () => {
 
         context('TIMESTAMP', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value TIMESTAMP)`)
+                return session.sql('CREATE TABLE test (value TIMESTAMP)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES ('2020-03-30 18:33:38.123456')`)
+                return session.sql('INSERT INTO test VALUES (\'2020-03-30 18:33:38.123456\')')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('TIMESTAMP'));
             });
@@ -970,17 +970,17 @@ describe('raw SQL', () => {
 
         context('SET', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value SET('foo', 'bar'))`)
+                return session.sql('CREATE TABLE test (value SET(\'foo\', \'bar\'))')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES ('foo')`)
+                return session.sql('INSERT INTO test VALUES (\'foo\')')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('SET'));
             });
@@ -988,17 +988,17 @@ describe('raw SQL', () => {
 
         context('ENUM', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value ENUM('foo', 'bar'))`)
+                return session.sql('CREATE TABLE test (value ENUM(\'foo\', \'bar\'))')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES ('foo')`)
+                return session.sql('INSERT INTO test VALUES (\'foo\')')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('ENUM'));
             });
@@ -1006,17 +1006,17 @@ describe('raw SQL', () => {
 
         context('GEOMETRY', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE test (value GEOMETRY)`)
+                return session.sql('CREATE TABLE test (value GEOMETRY)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO test VALUES (ST_GeomFromText('POINT(1 1)'))`)
+                return session.sql('INSERT INTO test VALUES (ST_GeomFromText(\'POINT(1 1)\'))')
                     .execute();
             });
 
             it('returns the correct name of the column data type', () => {
-                return session.sql(`SELECT * FROM test`)
+                return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('GEOMETRY'));
             });

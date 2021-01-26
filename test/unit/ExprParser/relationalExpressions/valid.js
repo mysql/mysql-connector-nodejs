@@ -399,7 +399,7 @@ describe('ExprParser', () => {
                 expect(pathItems[0].getType()).to.equal(DocumentPathItem.Type.MEMBER);
                 expect(pathItems[0].getValue()).to.equal('foo');
 
-                input = `doc->'$." ".bar'`;
+                input = 'doc->\'$." ".bar\'';
                 expr = Parser.parse(input, options);
 
                 expect(expr.input).to.equal(input);
@@ -476,7 +476,7 @@ describe('ExprParser', () => {
                 expect(pathItems[2].getType()).to.equal(DocumentPathItem.Type.MEMBER);
                 expect(pathItems[2].getValue()).to.equal('z');
 
-                input = `doc->'$."foo bar"."baz**"'`;
+                input = 'doc->\'$."foo bar"."baz**"\'';
                 expr = Parser.parse(input, options);
 
                 expect(expr.input).to.equal(input);
@@ -505,7 +505,7 @@ describe('ExprParser', () => {
                 expect(pathItems[2].getType()).to.equal(DocumentPathItem.Type.MEMBER);
                 expect(pathItems[2].getValue()).to.equal('bar');
 
-                input = `doc->'$."foo bar"**.baz'`;
+                input = 'doc->\'$."foo bar"**.baz\'';
                 expr = Parser.parse(input, options);
 
                 expect(expr.input).to.equal(input);
@@ -520,7 +520,7 @@ describe('ExprParser', () => {
                 expect(pathItems[2].getType()).to.equal(DocumentPathItem.Type.MEMBER);
                 expect(pathItems[2].getValue()).to.equal('baz');
 
-                input = `doc->'$."foo"**."bar"'`;
+                input = 'doc->\'$."foo"**."bar"\'';
                 expr = Parser.parse(input, options);
 
                 expect(expr.input).to.equal(input);
@@ -535,7 +535,7 @@ describe('ExprParser', () => {
                 expect(pathItems[2].getType()).to.equal(DocumentPathItem.Type.MEMBER);
                 expect(pathItems[2].getValue()).to.equal('bar');
 
-                input = `doc->'$."foo."**."bar"'`;
+                input = 'doc->\'$."foo."**."bar"\'';
                 expr = Parser.parse(input, options);
 
                 expect(expr.input).to.equal(input);
@@ -550,7 +550,7 @@ describe('ExprParser', () => {
                 expect(pathItems[2].getType()).to.equal(DocumentPathItem.Type.MEMBER);
                 expect(pathItems[2].getValue()).to.equal('bar');
 
-                input = `doc->'$."foo."**.".bar"'`;
+                input = 'doc->\'$."foo."**.".bar"\'';
                 expr = Parser.parse(input, options);
 
                 expect(expr.input).to.equal(input);
@@ -565,7 +565,7 @@ describe('ExprParser', () => {
                 expect(pathItems[2].getType()).to.equal(DocumentPathItem.Type.MEMBER);
                 expect(pathItems[2].getValue()).to.equal('.bar');
 
-                input = `doc->'$.""'`;
+                input = 'doc->\'$.""\'';
                 expr = Parser.parse(input, options);
 
                 expect(expr.input).to.equal(input);
@@ -804,7 +804,7 @@ describe('ExprParser', () => {
                 expect(values[1].getLiteral().getVUnsignedInt()).to.equal(2);
                 expect(values[2].getLiteral().getVUnsignedInt()).to.equal(3);
 
-                input = `{"a":1} in doc->'$'`;
+                input = '{"a":1} in doc->\'$\'';
                 expr = Parser.parse(input, options);
 
                 expect(expr.input).to.equal(input);
@@ -1116,8 +1116,8 @@ describe('ExprParser', () => {
         context('interval expressions', () => {
             it('parses multi-parameter interval expressions', () => {
                 // date_add(date_add(date_add('2000-12-31 23:59:59', INTERVAL 30 SECOND), INTERVAL 4 HOUR), INTERVAL 8 DAY)
-                let input = "'2000-12-31 23:59:59' + INTERVAL 30 SECOND + INTERVAL 4 HOUR + INTERVAL 8 DAY";
-                let expr = Parser.parse(input, options);
+                const input = "'2000-12-31 23:59:59' + INTERVAL 30 SECOND + INTERVAL 4 HOUR + INTERVAL 8 DAY";
+                const expr = Parser.parse(input, options);
 
                 expect(expr.input).to.equal(input);
                 expect(expr.output.getType()).to.equal(Expr.Type.OPERATOR);

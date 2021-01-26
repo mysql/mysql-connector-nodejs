@@ -74,7 +74,7 @@ describe('adding documents to a collection', () => {
     context('with a single call', () => {
         it('saves documents provided as an array', () => {
             const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .add(documents)
@@ -88,7 +88,7 @@ describe('adding documents to a collection', () => {
 
         it('saves documents provided as multiple arguments', () => {
             const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .add(documents[0], documents[1])
@@ -104,7 +104,7 @@ describe('adding documents to a collection', () => {
     context('with multiple calls', () => {
         it('saves documents provided as an array', () => {
             const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }, { name: 'baz', age: 50 }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .add(documents[0])
@@ -119,7 +119,7 @@ describe('adding documents to a collection', () => {
 
         it('saves documents provided as multiple arguments', () => {
             const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }, { name: 'baz', age: 50 }];
-            let actual = [];
+            const actual = [];
 
             return collection
                 .add(documents[0])

@@ -66,7 +66,7 @@ describe('Locking', () => {
         });
 
         it('sets a valid given locking mode', () => {
-            let query = locking().lockShared(locking.LockContention.NOWAIT);
+            const query = locking().lockShared(locking.LockContention.NOWAIT);
 
             expect(query.getRowLock()).to.equal(locking.Type.SHARED_LOCK);
             expect(query.getLockContention()).to.equal(locking.LockContention.NOWAIT);
@@ -100,7 +100,7 @@ describe('Locking', () => {
         });
 
         it('sets a valid given locking mode', () => {
-            let query = locking().lockExclusive(locking.LockContention.NOWAIT);
+            const query = locking().lockExclusive(locking.LockContention.NOWAIT);
 
             expect(query.getRowLock()).to.equal(locking.Type.EXCLUSIVE_LOCK);
             expect(query.getLockContention()).to.equal(locking.LockContention.NOWAIT);

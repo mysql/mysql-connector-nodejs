@@ -169,7 +169,7 @@ describe('parsing the path', () => {
     });
 
     it('fails if the value is not valid', () => {
-        let connectionString = `user@hostname/^`;
+        let connectionString = 'user@hostname/^';
         expect(() => parseUri(connectionString)).to.throw('Invalid schema name');
 
         connectionString = `mysqlx://${connectionString}`;

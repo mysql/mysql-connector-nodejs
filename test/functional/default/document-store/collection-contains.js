@@ -80,7 +80,7 @@ describe('collection contains', () => {
 
     it('returns all documents where some field contains a given value', () => {
         const expected = [{ _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } }];
-        let actual = [];
+        const actual = [];
 
         return collection
             .find("'DocumentStore' in categories")
@@ -93,7 +93,7 @@ describe('collection contains', () => {
             { _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } },
             { _id: 3, categories: ['MySQL', 'Shell'], author: 48, reviewers: [48, 48] }
         ];
-        let actual = [];
+        const actual = [];
 
         return collection
             .find("'DocumentStore' not in categories")
@@ -107,7 +107,7 @@ describe('collection contains', () => {
             { _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } },
             { _id: 3, categories: ['MySQL', 'Shell'], author: 48, reviewers: [48, 48] }
         ];
-        let actual = [];
+        const actual = [];
 
         return collection
             .find('author in reviewers')
@@ -117,7 +117,7 @@ describe('collection contains', () => {
 
     it('returns all documents where some field does not contain the value of another field', () => {
         const expected = [];
-        let actual = [];
+        const actual = [];
 
         return collection
             .find('author not in reviewers')
@@ -130,7 +130,7 @@ describe('collection contains', () => {
             { _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } },
             { _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } }
         ];
-        let actual = [];
+        const actual = [];
 
         return collection
             .find('author in [45, 46]')
@@ -140,7 +140,7 @@ describe('collection contains', () => {
 
     it('returns all documents where the value of some field does not exist in a given set of values', () => {
         const expected = [{ _id: 3, categories: ['MySQL', 'Shell'], author: 48, reviewers: [48, 48] }];
-        let actual = [];
+        const actual = [];
 
         return collection
             .find('author not in [45, 46]')
@@ -150,7 +150,7 @@ describe('collection contains', () => {
 
     it('returns all documents where some nested field contains a given value', () => {
         const expected = [{ _id: 1, categories: ['DocumentStore'], author: 45, reviewers: [45], meta: { foo: 'bar', baz: 'qux' } }];
-        let actual = [];
+        const actual = [];
 
         return collection
             .find('{ "foo": "bar" } in meta')
@@ -160,7 +160,7 @@ describe('collection contains', () => {
 
     it('returns all documents where some nested field does not contain a given value', () => {
         const expected = [{ _id: 2, categories: ['InnoDB cluster'], author: 46, reviewers: [45, 46], meta: { foo: 'baz' } }];
-        let actual = [];
+        const actual = [];
 
         return collection
             .find('{ "foo": "bar" } not in meta')

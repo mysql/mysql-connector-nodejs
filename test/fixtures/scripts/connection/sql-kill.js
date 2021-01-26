@@ -44,7 +44,7 @@ mysqlx.getSession(baseConfig)
     .then(res => {
         return mysqlx.getSession(baseConfig)
             .then(session => {
-                return session.sql(`KILL ?`)
+                return session.sql('KILL ?')
                     .bind(res.fetchOne()[0])
                     .execute()
                     .then(() => {

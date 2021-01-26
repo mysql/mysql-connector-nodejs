@@ -218,7 +218,7 @@ describe('inserting data into a table', () => {
 
     context('BUG#31734504 floating point precision', () => {
         beforeEach('create table', () => {
-            return session.sql(`CREATE TABLE double_precision (v_double DOUBLE)`)
+            return session.sql('CREATE TABLE double_precision (v_double DOUBLE)')
                 .execute();
         });
 

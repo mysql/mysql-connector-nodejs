@@ -128,7 +128,7 @@ describe('connection attributes', () => {
 
     it('sets the default attributes, even when custom ones are set', () => {
         const attributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: { foo: 'bar' } });
-        const expected = [ '_client_license', '_client_name', '_client_version', '_os', '_pid', '_platform', '_source_host', 'foo' ];
+        const expected = ['_client_license', '_client_name', '_client_version', '_os', '_pid', '_platform', '_source_host', 'foo'];
 
         return mysqlx.getSession(attributesConfig)
             .then(session => {

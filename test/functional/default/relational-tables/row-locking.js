@@ -53,7 +53,7 @@ describe('row locking in table transactions', () => {
     });
 
     beforeEach('create table', function () {
-        return sessionA.sql(`CREATE TABLE test (_id VARCHAR(10), a INT, b VARCHAR(10))`)
+        return sessionA.sql('CREATE TABLE test (_id VARCHAR(10), a INT, b VARCHAR(10))')
             .execute();
     });
 
@@ -81,11 +81,11 @@ describe('row locking in table transactions', () => {
     context('exclusive locks', () => {
         context('default mode', () => {
             it('allows any session to consistently update row data', () => {
-                const expected = [ [ '1', 3, 'foo' ] ];
+                const expected = [['1', 3, 'foo']];
                 const actual = [];
 
-                let samplesA = [];
-                let samplesB = [];
+                const samplesA = [];
+                const samplesB = [];
 
                 const transaction1 = sessionA.startTransaction()
                     .then(() => {
@@ -165,7 +165,7 @@ describe('row locking in table transactions', () => {
 
         context('SKIP LOCKED mode', () => {
             it('allows a session to read inconsistent row data before the other session\'s transaction is committed', () => {
-                const expected = [ [ '1', 2, 'foo' ] ];
+                const expected = [['1', 2, 'foo']];
                 const actual = [];
 
                 return sessionA.startTransaction()
@@ -198,11 +198,11 @@ describe('row locking in table transactions', () => {
 
     context('shared locks', () => {
         it('allows any session to consistently update row data when no other transaction is active', () => {
-            const expected = [ [ '1', 3, 'foo' ] ];
+            const expected = [['1', 3, 'foo']];
             const actual = [];
 
-            let samplesA = [];
-            let samplesB = [];
+            const samplesA = [];
+            const samplesB = [];
 
             return sessionA.startTransaction()
                 .then(() => {
@@ -245,7 +245,7 @@ describe('row locking in table transactions', () => {
 
         context('default mode', () => {
             it('allows a session to wait until the other session\'s transaction is committed before reading row data', () => {
-                const expected = [ [ '1', 2, 'foo' ] ];
+                const expected = [['1', 2, 'foo']];
                 const actual = [];
 
                 return sessionA.startTransaction()
