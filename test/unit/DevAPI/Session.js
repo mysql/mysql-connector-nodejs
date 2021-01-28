@@ -80,7 +80,6 @@ describe('Session', () => {
             };
 
             expect((new Session()).inspect()).to.deep.equal(saneDefaults);
-            expect((new Session(`mysqlx://localhost`)).inspect()).to.deep.equal(saneDefaults);
         });
 
         it('throws an error if the port is not in the appropriate range', () => {

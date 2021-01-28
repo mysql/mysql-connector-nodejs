@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -390,7 +390,7 @@ describe('connecting with a list of MySQL servers', () => {
     });
 
     context('when the endpoint used by the current connection becomes unvailable', () => {
-        const multihostConfig = { endpoints: [{ host: 'mysql-primary' }, { host: 'mysql-secondary' }] };
+        const multihostConfig = { endpoints: [{ host: 'mysql-primary' }, { host: 'mysql-secondary1' }] };
 
         context('using a connection pool', () => {
             let pool;
@@ -418,6 +418,96 @@ describe('connecting with a list of MySQL servers', () => {
                             })
                             .then(session2 => {
                                 expect(session2.inspect().host).to.not.equal(session1.inspect().host);
+                            });
+                    });
+            });
+        });
+    });
+
+    context('when no endpoint is available', () => {
+        const multihostConfig = { endpoints: [{ host: 'mysql-primary', priority: 100 }, { host: 'mysql-secondary1', priority: 90 }] };
+
+        const waitForEndpointToChangeState = 5000; // (ms)
+        const waitForEndpointToBecomeAvailable = 20000 + 1000; // (ms) must exceed the value defined by MULTIHOST_RETRY on lib/DevAPI/Session.js
+
+        beforeEach('make the endpoints unvailable', function () {
+            this.timeout(this.timeout() + waitForEndpointToChangeState * multihostConfig.endpoints.length);
+
+            return Promise.all(multihostConfig.endpoints.map(e => fixtures.disableEndpoint(e.host, waitForEndpointToChangeState)));
+        });
+
+        context('using a connection pool', () => {
+            let pool;
+
+            beforeEach('create pool', () => {
+                const failoverConfig = Object.assign({}, config, baseConfig, multihostConfig);
+
+                pool = mysqlx.getClient(failoverConfig);
+            });
+
+            afterEach('destroy pool', () => {
+                return pool.close();
+            });
+
+            it('fails to connect to any endpoint after a short time', function () {
+                // enable any endpoint and wait for less than the time it takes
+                // for it to become available
+                const endpoint = multihostConfig.endpoints[Math.floor(Math.random() * multihostConfig.endpoints.length)];
+
+                this.timeout(this.timeout() + waitForEndpointToBecomeAvailable);
+
+                return pool.getSession()
+                    .then(() => expect.fail())
+                    .catch(err => {
+                        expect(err.errno).to.equal(4001);
+                        return fixtures.enableEndpoint(endpoint.host, waitForEndpointToBecomeAvailable)
+                            .then(() => {
+                                return pool.getSession();
+                            })
+                            .then(session => {
+                                expect(session.inspect().host).to.equal(endpoint.host);
+                            });
+                    });
+            });
+
+            it('connects to the endpoint that becomes available first after some time', function () {
+                // enable the endpoint with the lower priority and wait for less than
+                // the time it takes for it to become available
+                const endpoint = multihostConfig.endpoints[1];
+
+                this.timeout(this.timeout() + waitForEndpointToBecomeAvailable);
+
+                return pool.getSession()
+                    .then(() => expect.fail())
+                    .catch(err => {
+                        expect(err.errno).to.equal(4001);
+                        return fixtures.enableEndpoint(endpoint.host, waitForEndpointToBecomeAvailable)
+                            .then(() => {
+                                return pool.getSession();
+                            })
+                            .then(session => {
+                                expect(session.inspect().host).to.equal(endpoint.host);
+                            });
+                    });
+            });
+
+            it('connects to the endpoint with highest priority that becomes available first after some time', function () {
+                // enable all endpoints and wait for all of them to become available
+                const endpoints = multihostConfig.endpoints;
+                const timeout = waitForEndpointToBecomeAvailable + 2 * waitForEndpointToChangeState;
+
+                this.timeout(this.timeout() + timeout);
+
+                return pool.getSession()
+                    .then(() => expect.fail())
+                    .catch(err => {
+                        expect(err.errno).to.equal(4001);
+                        return Promise.all(endpoints.map(e => fixtures.enableEndpoint(e.host, timeout)))
+                            .then(() => {
+                                return pool.getSession();
+                            })
+                            .then(session => {
+                                expect(session.inspect().host).to.equal(endpoints[0].host);
                             });
                     });
             });

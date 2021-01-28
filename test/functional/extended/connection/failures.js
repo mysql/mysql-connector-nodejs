@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -103,7 +103,7 @@ describe('connection failures', () => {
                 return pool.close();
             });
 
-            it('releases the connection even if maxIdleTime is not exceeded', function () {
+            it('releases the connection even if maxIdleTime is not exceeded', () => {
                 const serverShutdownConfig = Object.assign({}, config, baseConfig);
 
                 return Promise.all([pool.getSession(), pool.getSession()])
@@ -121,6 +121,43 @@ describe('connection failures', () => {
                         expect(err.code).to.equal('ECONNREFUSED');
                         expect(err.address).to.equal(serverShutdownConfig.host);
                         expect(err.port).to.equal(serverShutdownConfig.port);
+                    });
+            });
+        });
+    });
+
+    context('when the client cannot connect to the server', () => {
+        context('the connection pool', () => {
+            let pool;
+
+            beforeEach('create pool', () => {
+                const connectionReleaseConfig = Object.assign({}, config, baseConfig);
+
+                // we expect the error to not be related to queueTimeout, so we want it to be a factor
+                pool = mysqlx.getClient(connectionReleaseConfig, { pooling: { maxSize: 2, queueTimeout: waitForEndpointToBecomeAvailable } });
+            });
+
+            afterEach('destroy pool', () => {
+                return pool.close();
+            });
+
+            it('releases the connection for subsequent attempts', () => {
+                const connectionReleaseConfig = Object.assign({}, config, baseConfig);
+
+                return fixtures.disableEndpoint(connectionReleaseConfig.host, waitForEndpointToBecomeUnavailable)
+                    .then(() => {
+                        // the first attempt should fail
+                        return pool.getSession();
+                    })
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(() => {
+                        return fixtures.enableEndpoint(connectionReleaseConfig.host, waitForEndpointToBecomeAvailable)
+                            .then(() => {
+                                // the second attempt should be successful
+                                return pool.getSession();
+                            });
                     });
             });
         });
