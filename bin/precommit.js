@@ -39,7 +39,13 @@ const path = require('path');
  * @returns {Promise}
  */
 function precommit () {
-    return copyright.fixHeaders(process.cwd(), { ignore: [path.join(process.cwd(), 'node_modules')] });
+    const ignoreList = [
+        path.join(process.cwd(), 'coverage'),
+        path.join(process.cwd(), 'docs'),
+        path.join(process.cwd(), 'node_modules')
+    ];
+
+    return copyright.fixHeaders(process.cwd(), { ignore: ignoreList });
 }
 
 precommit()

@@ -21,7 +21,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-The `createColletion` function returns a Promise which resolves to a {@link module:Collection} object on success.
+The `createColletion` function returns a Promise which resolves to a {@link module:Collection|Collection} object on success.
 
 If a given collection already exists in the database, the `createCollection` call will fail unless the `reuseExisting` property is defined in an additional options object such as the following:
 
@@ -34,7 +34,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-This options object can be used to, for instance, create a server-side document validation schema. For that, one can include a `schema` property matching a valid [JSON schema](https://json-schema.org/) definition within an outer `validation` object. The `level` property, used to effectively enable (`'STRICT'`) or disable (`'OFF'`) a schema, should also be included.
+This options object can be used to, for instance, create a server-side document validation schema. For that, one can include a `schema` property matching a valid [JSON Schema](https://json-schema.org/) definition within an outer {@link module:Schema.SchemaValidationOptions|`validation`} object. The {@link ValidationLevel|`level`} property, used to effectively enable (`'STRICT'`) or disable (`'OFF'`) a schema, should also be included.
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
@@ -60,7 +60,7 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     });
 ```
 
-The schema is created but not enabled when the `level` property is absent or set to `'OFF'`, and any document will end up being inserted in that case.
+The schema is created but not enabled when the {@link ValidationLevel|`level`} property is absent or set to `'OFF'`, and any document will end up being inserted in that case.
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
@@ -89,7 +89,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
         return collection.add({ name: 1 }).execute();
 ```
 
-The `modifyCollection()` method is used to enable a JSON schema on an existing collection (or to update it if it already exists).
+The `modifyCollection()` method is used to enable a JSON Schema on an existing collection (or to update it if it already exists).
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
@@ -101,7 +101,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-Disabling the JSON schema on an existing collection can be done by setting the `level` property to `'OFF'` under the `validation` options object.
+Disabling the JSON schema on an existing collection can be done by setting the {@link ValidationLevel|`level`} property to `'OFF'` under the {@link module:Schema.SchemaValidationOptions|`validation`} options object.
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
@@ -113,7 +113,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
-Re-enabling the JSON schema can be some by setting the `level` property back to `'STRICT'`.
+Re-enabling the JSON schema can be some by setting the {@link ValidationLevel|`level`} property back to `'STRICT'`.
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
@@ -342,7 +342,7 @@ mysqlx.getSession('mysqlx://localhost:33060')
 
 ### Cursors
 
-The `fetchAll()` method to retrieve the entire result set originated by each `find()` query. This method pulls the data from memory and flushing it subsequently. There are, however, two alternive APIs for consuming result set entries individually using a cursor. One API uses a regular pull-based cursor via an additional `fetchOne()` method available in the {@link module:Result} instance. The other is a pull-based API that works with a callback function provided in the `execute()` method, which totally disables buffering at the connector-level and leaves that responsability to the application.
+The `fetchAll()` method to retrieve the entire result set originated by each `find()` query. This method pulls the data from memory and flushing it subsequently. There are, however, two alternive APIs for consuming result set entries individually using a cursor. One API uses a regular pull-based cursor via an additional `fetchOne()` method available in the {@link module:Result|Result} instance. The other is a pull-based API that works with a callback function provided in the `execute()` method, which totally disables buffering at the connector-level and leaves that responsability to the application.
 
 #### Pull-based approach
 
