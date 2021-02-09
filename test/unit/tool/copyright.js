@@ -148,7 +148,7 @@ describe('copyright tooling', () => {
 
                 return copyright.fixHeaders('foo')
                     .then(filesChanged => {
-                        return expect(filesChanged).to.deep.equal(['foo/bar.js']);
+                        return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
                     });
             });
 
@@ -164,7 +164,7 @@ describe('copyright tooling', () => {
 
                 return copyright.fixHeaders('foo')
                     .then(filesChanged => {
-                        return expect(filesChanged).to.deep.equal(['foo/bar.js']);
+                        return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
                     });
             });
 
@@ -197,7 +197,7 @@ describe('copyright tooling', () => {
 
                 return copyright.fixHeaders('foo')
                     .then(filesChanged => {
-                        return expect(filesChanged).to.deep.equal(['foo/bar.js']);
+                        return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
                     });
             });
 
@@ -213,7 +213,7 @@ describe('copyright tooling', () => {
 
                 return copyright.fixHeaders('foo')
                     .then(filesChanged => {
-                        return expect(filesChanged).to.deep.equal(['foo/bar.js']);
+                        return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
                     });
             });
 
@@ -249,7 +249,7 @@ describe('copyright tooling', () => {
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal(['foo/bar.js']);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
                         });
                 });
 
@@ -265,7 +265,7 @@ describe('copyright tooling', () => {
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal(['foo/bar.js']);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
                         });
                 });
 
@@ -282,7 +282,7 @@ describe('copyright tooling', () => {
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal(['foo/bar.js']);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
                         });
                 });
             });
@@ -304,7 +304,7 @@ describe('copyright tooling', () => {
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal(['foo/bar/baz.js']);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
                         });
                 });
 
@@ -321,7 +321,7 @@ describe('copyright tooling', () => {
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal(['foo/bar/baz.js']);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
                         });
                 });
 
@@ -339,7 +339,7 @@ describe('copyright tooling', () => {
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal(['foo/bar/baz.js']);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
                         });
                 });
             });
