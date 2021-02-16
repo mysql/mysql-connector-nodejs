@@ -108,7 +108,7 @@ describe('connecting with a list of ciphersuites', () => {
         });
 
         it('fails if the connection is not using TLS', () => {
-            const tlsConfig = Object.assign({}, baseConfig, { ssl: false, tls: { ciphersuites: ['foo', 'bar'] } });
+            const tlsConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, ciphersuites: ['foo', 'bar'] } });
 
             return mysqlx.getSession(tlsConfig)
                 .then(() => expect.fail())

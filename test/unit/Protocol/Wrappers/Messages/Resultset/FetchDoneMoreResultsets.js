@@ -56,7 +56,7 @@ describe('Mysqlx.Resultset.FetchDoneMoreResultsets wrapper', () => {
     context('class methods', () => {
         context('deserialize()', () => {
             it('returns a Mysqlx.Resultset.FetchDoneMoreResultsets wrap instance encoded with raw protocol data from the network', () => {
-                td.when(bytes.deserialize('foo')).thenReturn({ valueOf: () => 'baz' });
+                td.when(bytes.deserialize('foo')).thenReturn('baz');
                 td.when(ResultsetStub.FetchDoneMoreResultsets.deserializeBinary('baz')).thenReturn('qux');
                 td.when(wraps('qux')).thenReturn({ valueOf: () => 'bar' });
 

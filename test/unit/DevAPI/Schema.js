@@ -37,13 +37,15 @@ const statement = require('../../../lib/DevAPI/Statement');
 const td = require('testdouble');
 
 describe('Schema', () => {
-    let execute, schema, sqlExecute;
+    let databaseObject, execute, schema, sqlExecute;
 
     beforeEach('create fakes', () => {
+        databaseObject = td.function();
         execute = td.function();
         sqlExecute = td.function();
         sqlExecute.Namespace = statement.Type;
 
+        td.replace('../../../lib/DevAPI/DatabaseObject', databaseObject);
         td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
         schema = require('../../../lib/DevAPI/Schema');
     });
@@ -56,6 +58,17 @@ describe('Schema', () => {
         it('includes the set of schema validation levels', () => {
             expect(schema.ValidationLevel.OFF).to.equal('off');
             expect(schema.ValidationLevel.STRICT).to.equal('strict');
+        });
+    });
+
+    context('mixins', () => {
+        it('mixes the DatabaseObject blueprint', () => {
+            const connection = 'foo';
+
+            schema(connection);
+
+            expect(td.explain(databaseObject).callCount).to.equal(1);
+            return expect(td.explain(databaseObject).calls[0].args).to.deep.equal([connection]);
         });
     });
 

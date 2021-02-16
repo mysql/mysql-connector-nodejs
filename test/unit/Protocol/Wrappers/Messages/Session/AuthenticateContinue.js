@@ -59,7 +59,7 @@ describe('Mysqlx.Session.AuthenticateContinue wrapper', () => {
             it('returns a Mysqlx.Session.AuthenticateContinue wrapper instance based on a given token', () => {
                 const proto = new SessionStub.AuthenticateContinue();
 
-                td.when(bytes.deserialize('foo')).thenReturn({ valueOf: () => 'bar' });
+                td.when(bytes.create('foo')).thenReturn({ valueOf: () => 'bar' });
                 td.when(wraps(proto)).thenReturn({ valueOf: () => 'baz' });
 
                 expect(authenticateContinue.create('foo').valueOf()).to.equal('baz');
@@ -70,7 +70,7 @@ describe('Mysqlx.Session.AuthenticateContinue wrapper', () => {
 
         context('deserialize()', () => {
             it('returns a Mysqlx.Session.AuthenticateContinue wrap instance encoded with raw protocol data from the network', () => {
-                td.when(bytes.deserialize('foo')).thenReturn({ valueOf: () => 'baz' });
+                td.when(bytes.deserialize('foo')).thenReturn('baz');
                 td.when(SessionStub.AuthenticateContinue.deserializeBinary('baz')).thenReturn('qux');
                 td.when(wraps('qux')).thenReturn({ valueOf: () => 'bar' });
 

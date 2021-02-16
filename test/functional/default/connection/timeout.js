@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../../');
 const net = require('net');
@@ -45,21 +46,27 @@ describe('connecting to unavailable servers with a timeout', () => {
 
         it('fails using a configuration object', () => {
             const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: -1 });
-            const error = 'The connection timeout value must be a positive integer (including 0).';
 
             return mysqlx.getSession(timeoutConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                });
         });
 
         it('fails using a URI', () => {
             const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: -1 });
             const uri = `mysqlx://${timeoutConfig.user}:${timeoutConfig.password}@(${timeoutConfig.socket})?connect-timeout=${timeoutConfig.connectTimeout}`;
-            const error = 'The connection timeout value must be a positive integer (including 0).';
 
             return mysqlx.getSession(uri)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                });
         });
     });
 
@@ -108,7 +115,7 @@ describe('connecting to unavailable servers with a timeout', () => {
                 server.emit('close');
             });
 
-            context('using a UNIX socket', () => {
+            context('using a Unix socket', () => {
                 const socket = path.join(os.tmpdir(), 'dummy.sock');
 
                 beforeEach('start fake server', function (done) {
@@ -231,7 +238,7 @@ describe('connecting to unavailable servers with a timeout', () => {
                 });
             });
 
-            context('using a UNIX socket', () => {
+            context('using a Unix socket', () => {
                 const primarysocket = path.join(os.tmpdir(), 'dummy-primary.sock');
                 const secondarySocket = path.join(os.tmpdir(), 'dummy-secondary.sock');
 

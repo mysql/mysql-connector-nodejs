@@ -32,8 +32,6 @@
 
 /* eslint-env node, mocha */
 
-const Client = require('../../../lib/Protocol/Client');
-const EventEmitter = require('events');
 const OkHandler = require('../../../lib/Protocol/InboundHandlers/OkHandler');
 const MysqlxStub = require('../../../lib/Protocol/Stubs/mysqlx_pb');
 const PassThrough = require('stream').PassThrough;
@@ -43,6 +41,9 @@ const condition = require('../../../lib/Protocol/Wrappers/Messages/Expect/Condit
 const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const td = require('testdouble');
+
+// subject under test needs to be reloaded with replacement fakes
+let Client = require('../../../lib/Protocol/Client');
 
 describe('Client', () => {
     let on;
@@ -74,198 +75,82 @@ describe('Client', () => {
 
             return expect(client._danglingFragment).to.be.null;
         });
+    });
 
-        it('registers a `data` event listener for the provided stream', () => {
-            const stream = { on };
-            const handleNetworkFragment = td.function();
+    context('decodeMessage()', () => {
+        it('returns an object containing the message id and data payload', () => {
+            const client = new Client();
+            const message = Buffer.from('MySQL X Protocol FTW');
+            const decodeMessageHeader = td.replace(client, 'decodeMessageHeader');
 
-            td.when(on('data')).thenCallback('foo');
-            td.when(handleNetworkFragment('foo')).thenReturn();
+            td.when(decodeMessageHeader(message)).thenReturn({ messageId: 3, packetLength: message.length });
 
-            Client.call({ handleNetworkFragment }, stream);
-
-            return expect(td.explain(handleNetworkFragment).callCount).to.equal(1);
+            expect(client.decodeMessage(message)).to.deep.equal({ id: 3, payload: message.slice(5) });
         });
 
-        it('registers a `close` event listener for the provided stream', () => {
-            const stream = { on };
-            const handleServerClose = td.function();
+        it('throws an error if the server is using the MySQL classic protocol', () => {
+            const client = new Client();
+            // eslint-disable-next-line node/no-deprecated-api
+            const classicServerGreeting = new Buffer('010000000a', 'hex');
 
-            td.when(on('close')).thenCallback();
-            td.when(handleServerClose('foo')).thenReturn();
+            expect(() => client.decodeMessage(classicServerGreeting)).to.throw(errors.MESSAGES.ERR_WIRE_PROTOCOL_HEADER);
+        });
 
-            Client.call({ handleServerClose }, stream);
+        it('throws an error if the server sends an incomplete protocol message', () => {
+            const client = new Client();
+            const message = Buffer.alloc(10);
+            const decodeMessageHeader = td.replace(client, 'decodeMessageHeader');
 
-            return expect(td.explain(handleServerClose).callCount).to.equal(1);
+            td.when(decodeMessageHeader(message)).thenReturn({ packetLength: 11 });
+
+            expect(() => client.decodeMessage(message)).to.throw(errors.MESSAGES.ERR_INCOMPLETE_PROTOCOL_MESSAGE);
         });
     });
 
-    context('enableTLS', () => {
-        let FakeClient, capabilitiesSet, handleNetworkFragment, handleServerClose, socket, tls;
+    context('decodeMessageHeader()', () => {
+        it('returns an object with the message id and length', () => {
+            const client = new Client();
+            const messageId = 5;
+            const packetLength = 10;
+            const message = Buffer.alloc(5);
+            // The length of the packet is encoded in the the first byte but
+            // does not include the length of the header itself (4 bytes).
+            message.writeUInt32LE(packetLength - 4);
+            // The id is encoded in the byte immediatelly after the header.
+            message[4] = messageId;
 
-        beforeEach('create fakes', () => {
-            socket = new PassThrough();
-
-            tls = td.replace('../../../lib/Protocol/Security/tls');
-
-            FakeClient = require('../../../lib/Protocol/Client');
-            capabilitiesSet = td.replace(FakeClient.prototype, 'capabilitiesSet');
-            handleNetworkFragment = td.replace(FakeClient.prototype, 'handleNetworkFragment');
-            handleServerClose = td.replace(FakeClient.prototype, 'handleServerClose');
+            expect(client.decodeMessageHeader(message)).to.deep.equal({ messageId, packetLength });
         });
 
-        it('fails if the server does not support TLS', () => {
-            const client = new FakeClient(socket);
-            const error = new Error();
-            error.info = { code: 5001 };
+        it('throw an error if the header is not a valid X Protocol header', () => {
+            const client = new Client();
+            const emptyMessage = Buffer.alloc(0);
 
-            td.when(capabilitiesSet({ tls: true })).thenReject(error);
-
-            return client.enableTLS()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_DISABLED_IN_SERVER));
-        });
-
-        it('fails if there is an unexpected error while setting the capabilities in the server', () => {
-            const client = new FakeClient(socket);
-            const error = new Error('foobar');
-
-            td.when(capabilitiesSet({ tls: true })).thenReject(error);
-
-            return client.enableTLS()
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
-        });
-
-        it('fails if there is an error while creating the security context', () => {
-            const config = { foo: 'bar' };
-            const baseContext = Object.assign({}, config, { socket });
-            const client = new FakeClient(socket);
-            const error = new Error('foobar');
-
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(tls.createCustomSecurityContext(baseContext)).thenReject(error);
-
-            return client.enableTLS(config)
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
-        });
-
-        it('fails if there is an error while creating the secure channel', () => {
-            const config = { foo: 'bar' };
-            const baseContext = Object.assign({}, config, { socket });
-            const secureContext = { baz: 'qux' };
-            const client = new FakeClient(socket);
-            const error = new Error('foobar');
-
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(tls.createCustomSecurityContext(baseContext)).thenResolve(secureContext);
-            td.when(tls.createSecureChannel(secureContext)).thenReject(error);
-
-            return client.enableTLS(config)
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
-        });
-
-        it('adds an event listener for incoming data in the secure socket', () => {
-            const config = { foo: 'bar' };
-            const baseContext = Object.assign({}, config, { socket });
-            const secureContext = { baz: 'qux' };
-            const client = new FakeClient(socket);
-            const secureSocket = new PassThrough();
-
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(tls.createCustomSecurityContext(baseContext)).thenResolve(secureContext);
-            td.when(tls.createSecureChannel(secureContext)).thenResolve(secureSocket);
-
-            return client.enableTLS(config)
-                .then(() => {
-                    secureSocket.emit('data', 'quux');
-                    expect(td.explain(handleNetworkFragment).callCount).to.equal(1);
-                    expect(td.explain(handleNetworkFragment).calls[0].args[0]).to.equal('quux');
-                });
-        });
-
-        it('adds an event listener for errors in the secure socket', () => {
-            const session = { _isOpen: true, _isValid: true };
-            const config = { foo: 'bar' };
-            const baseContext = Object.assign({}, config, { socket });
-            const secureContext = { baz: 'qux' };
-            const client = new FakeClient(socket, session);
-            const secureSocket = new PassThrough();
-
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(tls.createCustomSecurityContext(baseContext)).thenResolve(secureContext);
-            td.when(tls.createSecureChannel(secureContext)).thenResolve(secureSocket);
-
-            return client.enableTLS(config)
-                .then(() => {
-                    secureSocket.emit('error');
-                    // eslint-disable-next-line no-unused-expressions
-                    expect(session._isOpen).to.be.false;
-                    return expect(session._isValid).to.be.false;
-                });
-        });
-
-        it('adds an event listener for cleanup when the socket finishes receiving data', () => {
-            const session = { _isOpen: true, _isValid: true };
-            const config = { foo: 'bar' };
-            const baseContext = Object.assign({}, config, { socket });
-            const secureContext = { baz: 'qux' };
-            const client = new FakeClient(socket, session);
-            const secureSocket = new PassThrough();
-
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(tls.createCustomSecurityContext(baseContext)).thenResolve(secureContext);
-            td.when(tls.createSecureChannel(secureContext)).thenResolve(secureSocket);
-
-            return client.enableTLS(config)
-                .then(() => {
-                    secureSocket.emit('end');
-                    // eslint-disable-next-line no-unused-expressions
-                    expect(session._isOpen).to.be.false;
-                    return expect(session._isValid).to.be.false;
-                });
-        });
-
-        it('adds an event listener for cleanup when the socket is closed', () => {
-            const session = { _isOpen: true, _isValid: true };
-            const config = { foo: 'bar' };
-            const baseContext = Object.assign({}, config, { socket });
-            const secureContext = { baz: 'qux' };
-            const client = new FakeClient(socket, session);
-            const secureSocket = new PassThrough();
-
-            td.when(capabilitiesSet({ tls: true })).thenResolve();
-            td.when(tls.createCustomSecurityContext(baseContext)).thenResolve(secureContext);
-            td.when(tls.createSecureChannel(secureContext)).thenResolve(secureSocket);
-
-            return client.enableTLS(config)
-                .then(() => {
-                    secureSocket.emit('close');
-                    expect(td.explain(handleServerClose).callCount).to.equal(1);
-                });
+            expect(() => client.decodeMessageHeader(emptyMessage)).to.throw(errors.MESSAGES.ERR_UNKNOWN_PROTOCOL_HEADER);
         });
     });
 
-    context('network fragmentation', () => {
-        // stubs
-        let clientProto, decodeMessage, decodeMessageHeader, fakeProcess, workQueueProto;
-        // dummies
-        let message1, message2, rawMessage1, rawMessage2;
+    context('encodeMessage()', () => {
+        it('returns a Node.js Buffer representation of an X Protocol message', () => {
+            const client = new Client();
+            const messageType = 5;
+            const payload = Buffer.from('MySQL X Protocol FTW!');
+
+            const message = client.encodeMessage(messageType, payload);
+
+            expect(message).to.be.an.instanceOf(Buffer);
+            expect(message).to.have.lengthOf(payload.length + 5); // includes 4 bytes for the header and 1 byte for the message id
+            expect(message.readUInt32LE(0) - 1).to.equal(payload.length); // excludes 1 byte of the message id
+            expect(message[4]).to.equal(messageType);
+        });
+    });
+
+    context('handleNetworkFragment()', () => {
+        let decodeMessage, process, message1, message2, rawMessage1, rawMessage2;
 
         beforeEach('create fakes', () => {
-            clientProto = Object.assign({}, Client.prototype);
-            workQueueProto = Object.assign({}, WorkQueue.prototype);
-
-            decodeMessage = td.function('decodeMessage');
-            decodeMessageHeader = td.function('decodeMessageHeader');
-            fakeProcess = td.function('process');
-
-            Client.prototype.decodeMessage = decodeMessage;
-            Client.prototype.decodeMessageHeader = decodeMessageHeader;
-
-            WorkQueue.prototype.process = fakeProcess;
+            decodeMessage = td.replace(Client.prototype, 'decodeMessage');
+            process = td.replace(WorkQueue.prototype, 'process');
 
             /* eslint-disable node/no-deprecated-api */
             rawMessage1 = new Buffer(8);
@@ -282,136 +167,104 @@ describe('Client', () => {
             message2 = { id: 2, payload: new Buffer('bar') };
             /* eslint-enable node/no-deprecated-api */
 
-            td.when(fakeProcess(), { ignoreExtraArgs: true }).thenReturn();
+            td.when(process(), { ignoreExtraArgs: true }).thenReturn();
             td.when(decodeMessage(rawMessage2), { ignoreExtraArgs: true }).thenReturn(message2);
             td.when(decodeMessage(rawMessage1), { ignoreExtraArgs: true }).thenReturn(message1);
         });
 
-        afterEach('reset fakes', () => {
-            Client.prototype = clientProto;
-            WorkQueue.prototype = workQueueProto;
-        });
-
         it('handles messages fully-contained in a fragment', () => {
-            const network = new EventEmitter();
-            /* eslint-disable no-unused-vars */
-            const client = new Client(network);
-            /* eslint-enable no-unused-vars */
-
+            const client = new Client();
             // fragment containing two messages
             const fragment = Buffer.concat([rawMessage1, rawMessage2], rawMessage1.length + rawMessage2.length);
 
-            network.emit('data', fragment);
+            client.handleNetworkFragment(fragment);
 
-            expect(td.explain(fakeProcess).callCount).to.equal(2);
-            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
-            expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
+            expect(td.explain(process).callCount).to.equal(2);
+            expect(td.explain(process).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(process).calls[1].args).to.deep.equal([message2]);
         });
 
         it('handles message headers split between fragments', () => {
-            const network = new EventEmitter();
-            /* eslint-disable no-unused-vars */
-            const client = new Client(network);
-            /* eslint-enable no-unused-vars */
+            const client = new Client();
             const partialHeader = rawMessage2.slice(0, 2);
-
             // fragment containing the first message and a partial header of the second message
             const fragment1 = Buffer.concat([rawMessage1, partialHeader], rawMessage1.length + partialHeader.length);
             // fragment containing the remaining content
             const fragment2 = rawMessage2.slice(2);
 
-            network.emit('data', fragment1);
-            network.emit('data', fragment2);
+            client.handleNetworkFragment(fragment1);
+            client.handleNetworkFragment(fragment2);
 
-            expect(td.explain(fakeProcess).callCount).to.equal(2);
-            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
-            expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
+            expect(td.explain(process).callCount).to.equal(2);
+            expect(td.explain(process).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(process).calls[1].args).to.deep.equal([message2]);
         });
 
         it('handles message headers and payloads split between fragments', () => {
-            const network = new EventEmitter();
-            /* eslint-disable no-unused-vars */
-            const client = new Client(network);
-            /* eslint-enable no-unused-vars */
+            const client = new Client();
             const header = rawMessage2.slice(0, 4);
-
             // fragment containing the first message and the entire header of the second message
             const fragment1 = Buffer.concat([rawMessage1, header], rawMessage1.length + header.length);
             // fragment containing the payload of the second message
             const fragment2 = rawMessage2.slice(4);
 
-            network.emit('data', fragment1);
-            network.emit('data', fragment2);
+            client.handleNetworkFragment(fragment1);
+            client.handleNetworkFragment(fragment2);
 
-            expect(td.explain(fakeProcess).callCount).to.equal(2);
-            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
-            expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
+            expect(td.explain(process).callCount).to.equal(2);
+            expect(td.explain(process).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(process).calls[1].args).to.deep.equal([message2]);
         });
 
         it('handles message payloads split between fragments', () => {
-            const network = new EventEmitter();
-            /* eslint-disable no-unused-vars */
-            const client = new Client(network);
-            /* eslint-enable no-unused-vars */
+            const client = new Client();
             const partialMessage = rawMessage2.slice(0, 6);
-
             // fragment containing the first message and a partial payload of the second message
             const fragment1 = Buffer.concat([rawMessage1, partialMessage], rawMessage1.length + partialMessage.length);
             // fragment containing the remaining content
             const fragment2 = rawMessage2.slice(6);
 
-            network.emit('data', fragment1);
-            network.emit('data', fragment2);
+            client.handleNetworkFragment(fragment1);
+            client.handleNetworkFragment(fragment2);
 
-            expect(td.explain(fakeProcess).callCount).to.equal(2);
-            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
-            expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
+            expect(td.explain(process).callCount).to.equal(2);
+            expect(td.explain(process).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(process).calls[1].args).to.deep.equal([message2]);
         });
 
         it('handles smaller fragments', () => {
-            const network = new EventEmitter();
-            /* eslint-disable no-unused-vars */
-            const client = new Client(network);
-            /* eslint-enable no-unused-vars */
+            const client = new Client();
             const partialMessage = rawMessage1.slice(2);
-
             // fragment containing just a partial header of the first message
             const fragment1 = rawMessage1.slice(0, 2);
             // fragment the remaining content
             const fragment2 = Buffer.concat([partialMessage, rawMessage2], partialMessage.length + rawMessage2.length);
 
-            network.emit('data', fragment1);
-            network.emit('data', fragment2);
+            client.handleNetworkFragment(fragment1);
+            client.handleNetworkFragment(fragment2);
 
-            expect(td.explain(fakeProcess).callCount).to.equal(2);
-            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
-            expect(td.explain(fakeProcess).calls[1].args).to.deep.equal([message2]);
+            expect(td.explain(process).callCount).to.equal(2);
+            expect(td.explain(process).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(process).calls[1].args).to.deep.equal([message2]);
         });
 
         it('handles messages split between more than two fragments', () => {
-            const network = new EventEmitter();
-            /* eslint-disable no-unused-vars */
-            const client = new Client(network);
-            /* eslint-enable no-unused-vars */
-
+            const client = new Client();
+            // more than two fragments containing the same mesage
             const fragment1 = rawMessage1.slice(0, 4);
             const fragment2 = rawMessage1.slice(4, 6);
             const fragment3 = rawMessage1.slice(6, 8);
 
-            network.emit('data', fragment1);
-            network.emit('data', fragment2);
-            network.emit('data', fragment3);
+            client.handleNetworkFragment(fragment1);
+            client.handleNetworkFragment(fragment2);
+            client.handleNetworkFragment(fragment3);
 
-            expect(td.explain(fakeProcess).callCount).to.equal(1);
-            expect(td.explain(fakeProcess).calls[0].args).to.deep.equal([message1]);
+            expect(td.explain(process).callCount).to.equal(1);
+            expect(td.explain(process).calls[0].args).to.deep.equal([message1]);
         });
 
         it('handles fragments containing a lot of messages', () => {
-            const network = new EventEmitter();
-            /* eslint-disable no-unused-vars */
-            const client = new Client(network);
-            /* eslint-enable no-unused-vars */
-
+            const client = new Client();
             /* eslint-disable node/no-deprecated-api */
             let fragment = new Buffer(0);
             /* eslint-enable node/no-deprecated-api */
@@ -422,291 +275,22 @@ describe('Client', () => {
                 fragment = Buffer.concat([fragment, rawMessage1], fragment.length + rawMessage1.length);
             }
 
-            network.emit('data', fragment);
+            client.handleNetworkFragment(fragment);
 
-            expect(td.explain(fakeProcess).callCount).to.equal(7000);
-            td.explain(fakeProcess).calls.forEach(call => expect(call.args).to.deep.equal([message1]));
+            expect(td.explain(process).callCount).to.equal(7000);
+            td.explain(process).calls.forEach(call => expect(call.args).to.deep.equal([message1]));
         });
     });
 
-    context('cleanup', () => {
-        let FakeClient, FakeOkHandler, encodeMessage, network;
+    context('handleServerMessage()', () => {
+        let process;
 
         beforeEach('create fakes', () => {
-            FakeOkHandler = td.constructor(OkHandler);
-            network = new PassThrough();
-
-            td.replace('../../../lib/Protocol/InboundHandlers/OkHandler', FakeOkHandler);
+            process = td.replace(WorkQueue.prototype, 'process');
         });
 
-        afterEach('reset fakes', () => {
-            return new Promise(resolve => network.end(resolve));
-        });
-
-        context('sessionReset()', () => {
-            let authenticate, encodeReset;
-
-            beforeEach('create fakes', () => {
-                encodeReset = td.function();
-
-                td.replace('../../../lib/Protocol/OutboundHandlers/Session', { encodeReset });
-
-                FakeClient = require('../../../lib/Protocol/Client');
-                authenticate = td.replace(FakeClient.prototype, 'authenticate');
-                encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
-            });
-
-            context('in the first call', () => {
-                let expectOpen, expectClose;
-
-                beforeEach('create fakes', () => {
-                    expectOpen = td.replace(FakeClient.prototype, 'expectOpen');
-                    expectClose = td.replace(FakeClient.prototype, 'expectClose');
-                });
-
-                context('with new servers', () => {
-                    it('sets the expectations, resets the session keeping it open and updates the local state', () => {
-                        const client = new FakeClient(network);
-                        const expectations = [{
-                            condition: condition.ACTION.EXPECT_OP_SET,
-                            key: condition.TYPE.EXPECT_FIELD_EXIST,
-                            value: '6.1'
-                        }];
-
-                        td.when(expectOpen(expectations)).thenResolve();
-                        td.when(encodeReset({ keepOpen: true })).thenReturn('bar');
-                        td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
-                        td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
-                        td.when(expectClose()).thenResolve();
-
-                        return client.sessionReset()
-                            .then(() => expect(client._requiresAuthenticationAfterReset).to.equal('NO'));
-                    });
-                });
-
-                context('with old servers', () => {
-                    it('tries to set the server expectations, updates the local state, resets the session and re-authenticates', () => {
-                        const client = new FakeClient(network);
-                        const expectations = [{
-                            condition: condition.ACTION.EXPECT_OP_SET,
-                            key: condition.TYPE.EXPECT_FIELD_EXIST,
-                            value: '6.1'
-                        }];
-                        const error = new Error();
-                        // Error 5168 means the X Plugin does not support prepared statements (fails with the "6.1" expectation)
-                        error.info = { code: 5168 };
-
-                        td.replace(client, '_authenticator', 'foo');
-
-                        td.when(expectOpen(expectations)).thenReject(error);
-                        td.when(encodeReset({ keepOpen: false })).thenReturn('bar');
-                        td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
-                        td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
-                        td.when(authenticate('foo'), { ignoreExtraArgs: true }).thenResolve('qux');
-
-                        return client.sessionReset()
-                            .then(actual => {
-                                expect(actual).to.equal('qux');
-                                expect(client._requiresAuthenticationAfterReset).to.equal('YES');
-                            });
-                    });
-                });
-
-                it('fails if there is an unexpected error while opening the expectation block', () => {
-                    const client = new FakeClient(network);
-                    const error = new Error();
-                    error.info = { code: -1 };
-
-                    td.when(expectOpen(), { ignoreExtraArgs: true }).thenReject(error);
-
-                    return client.sessionReset()
-                        .then(() => expect.fail())
-                        .catch(err => expect(err).to.deep.equal(error));
-                });
-
-                it('fails if there is an unexpected error while encoding the Mysqlx.Session.Reset message ', () => {
-                    const client = new FakeClient(network);
-                    const error = new Error();
-                    error.info = { code: -1 };
-
-                    td.when(expectOpen(), { ignoreExtraArgs: true }).thenResolve();
-                    td.when(encodeReset(), { ignoreExtraArgs: true }).thenReturn();
-                    td.when(encodeMessage(), { ignoreExtraArgs: true }).thenThrow(error);
-
-                    return client.sessionReset()
-                        .then(() => expect.fail())
-                        .catch(err => expect(err).to.deep.equal(error));
-                });
-
-                it('fails if there is an unexpected error while resetting the connection ', () => {
-                    const client = new FakeClient(network);
-                    const error = new Error();
-                    error.info = { code: -1 };
-
-                    td.when(expectOpen(), { ignoreExtraArgs: true }).thenResolve();
-                    td.when(encodeReset(), { ignoreExtraArgs: true }).thenReturn();
-                    td.when(encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
-                    td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenReject(error);
-
-                    return client.sessionReset()
-                        .then(() => expect.fail())
-                        .catch(err => expect(err).to.deep.equal(error));
-                });
-
-                it('fails if there is an unexpected error while closing the expectation block', () => {
-                    const client = new FakeClient(network);
-                    const error = new Error();
-                    error.info = { code: -1 };
-
-                    td.when(expectOpen(), { ignoreExtraArgs: true }).thenResolve();
-                    td.when(encodeReset(), { ignoreExtraArgs: true }).thenReturn();
-                    td.when(encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
-                    td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenResolve();
-                    td.when(expectClose()).thenReject(error);
-
-                    return client.sessionReset()
-                        .then(() => expect.fail())
-                        .catch(err => expect(err).to.deep.equal(error));
-                });
-            });
-
-            context('in subsequent calls', () => {
-                it('resets the session and keeps it open with new servers in subsequent calls', () => {
-                    const client = new FakeClient(network);
-
-                    // does not require re-authentication
-                    td.replace(client, '_requiresAuthenticationAfterReset', 'NO');
-
-                    td.when(encodeReset({ keepOpen: true })).thenReturn('bar');
-                    td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
-                    td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve('qux');
-
-                    return client.sessionReset()
-                        .then(actual => expect(actual).to.equal('qux'));
-                });
-
-                it('resets the session and re-authenticates with older servers in subsequent calls', () => {
-                    const client = new FakeClient(network);
-
-                    td.replace(client, '_authenticator', 'foo');
-                    // requires re-authentication
-                    td.replace(client, '_requiresAuthenticationAfterReset', 'YES');
-
-                    td.when(encodeReset({ keepOpen: false })).thenReturn('bar');
-                    td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
-                    td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
-                    td.when(authenticate('foo')).thenResolve('qux');
-
-                    return client.sessionReset()
-                        .then(actual => expect(actual).to.equal('qux'));
-                });
-            });
-        });
-
-        // needs to be called with session.close()
-        context('sessionClose()', () => {
-            let encodeClose;
-
-            beforeEach('create fakes', () => {
-                encodeClose = td.function();
-
-                td.replace('../../../lib/Protocol/OutboundHandlers/Session', { encodeClose });
-
-                FakeClient = require('../../../lib/Protocol/Client');
-                encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
-            });
-
-            it('sends a Mysqlx.Session.Close message to the server', () => {
-                const client = new FakeClient(network);
-
-                td.when(encodeClose()).thenReturn('foo');
-                td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
-                td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
-
-                return client.sessionClose()
-                    .then(actual => expect(actual).to.equal('baz'));
-            });
-
-            it('fails if there is an error while encoding the message', () => {
-                const error = new Error('foo');
-                const client = new FakeClient(network);
-
-                td.when(encodeClose()).thenThrow(error);
-
-                return client.sessionClose()
-                    .then(() => expect.fail())
-                    .catch(err => expect(err).to.deep.equal(error));
-            });
-
-            it('fails if there is an error while sending the message to the server', () => {
-                const error = new Error('foo');
-                const client = new FakeClient(network);
-
-                td.when(encodeClose()).thenReturn('foo');
-                td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
-                td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenReject(error);
-
-                return client.sessionClose()
-                    .then(() => expect.fail())
-                    .catch(err => expect(err).to.deep.equal(error));
-            });
-        });
-
-        // needs to be called with client.close()
-        context('connectionClose()', () => {
-            let encodeClose;
-
-            beforeEach('create fakes', () => {
-                encodeClose = td.function();
-
-                td.replace('../../../lib/Protocol/OutboundHandlers/Connection', { encodeClose });
-
-                FakeClient = require('../../../lib/Protocol/Client');
-                encodeMessage = td.replace(FakeClient.prototype, 'encodeMessage');
-            });
-
-            it('sends a Mysqlx.Connection.Close message to the server', () => {
-                const client = new FakeClient(network);
-
-                td.when(encodeClose()).thenReturn('foo');
-                td.when(encodeMessage(MysqlxStub.ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
-                td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
-
-                return client.connectionClose()
-                    .then(actual => expect(actual).to.equal('baz'));
-            });
-
-            it('fails if there is an error while encoding the message', () => {
-                const error = new Error('foo');
-                const client = new FakeClient(network);
-
-                td.when(encodeClose()).thenThrow(error);
-
-                return client.connectionClose()
-                    .then(() => expect.fail())
-                    .catch(err => expect(err).to.deep.equal(error));
-            });
-
-            it('fails if there is an error while sending the message to the server', () => {
-                const error = new Error('foo');
-                const client = new FakeClient(network);
-
-                td.when(encodeClose()).thenReturn('foo');
-                td.when(encodeMessage(MysqlxStub.ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
-                td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenReject(error);
-
-                return client.connectionClose()
-                    .then(() => expect.fail())
-                    .catch(err => expect(err).to.deep.equal(error));
-            });
-        });
-    });
-
-    // TODO(Rui): this will be part of a different component.
-    context('handling notices', () => {
         it('does not process global notices', () => {
             const decodeFrame = td.function();
-            const process = td.function();
 
             td.replace('../../../lib/Protocol/OutboundHandlers/Notice', { decodeFrame });
             const Client = require('../../../lib/Protocol/Client');
@@ -718,7 +302,6 @@ describe('Client', () => {
             const message = { id: MysqlxStub.ServerMessages.Type.NOTICE, payload: 'bar' };
             const notice = { scope: Scope.GLOBAL };
 
-            td.replace(client, '_workQueue', { process });
             td.when(decodeFrame(message.payload)).thenReturn(notice);
             td.when(decodeMessage('foo')).thenReturn(message);
 
@@ -727,38 +310,282 @@ describe('Client', () => {
             expect(td.explain(process).callCount).to.equal(0);
         });
 
-        context('empty notices', () => {
-            let fakeProcess;
+        it('does not process empty notices', () => {
+            const client = new Client();
+            // eslint-disable-next-line node/no-deprecated-api
+            const emptyNotice = new Buffer('010000000b', 'hex');
 
-            beforeEach('create fakes', () => {
-                fakeProcess = td.replace(WorkQueue.prototype, 'process');
-            });
+            client.handleServerMessage(emptyNotice);
 
-            it('ignores empty notices', () => {
-                const network = new EventEmitter();
-                // eslint-disable-next-line no-unused-vars
-                const client = new Client(network);
-
-                // eslint-disable-next-line node/no-deprecated-api
-                const fragment = new Buffer('010000000b', 'hex');
-
-                network.emit('data', fragment);
-
-                expect(td.explain(fakeProcess).callCount).to.equal(0);
-            });
+            expect(td.explain(process).callCount).to.equal(0);
         });
     });
 
-    context('classic protocol', () => {
-        it('fails with an unsupported protocol error', () => {
-            const network = new EventEmitter();
-            // eslint-disable-next-line no-unused-vars
-            const client = new Client(network);
+    context('sessionClose()', () => {
+        let FakeOkHandler, encodeClose, encodeMessage;
 
-            // eslint-disable-next-line node/no-deprecated-api
-            const classicServerGreeting = new Buffer('010000000a', 'hex');
+        beforeEach('create fakes', () => {
+            FakeOkHandler = td.constructor(OkHandler);
+            encodeClose = td.function();
 
-            expect(() => network.emit('data', classicServerGreeting)).to.throw(errors.MESSAGES.ERR_WIRE_PROTOCOL_HEADER);
+            td.replace('../../../lib/Protocol/InboundHandlers/OkHandler', FakeOkHandler);
+            td.replace('../../../lib/Protocol/OutboundHandlers/Session', { encodeClose });
+
+            Client = require('../../../lib/Protocol/Client');
+            encodeMessage = td.replace(Client.prototype, 'encodeMessage');
+        });
+
+        it('sends a Mysqlx.Session.Close message to the server', () => {
+            const client = new Client();
+
+            td.when(encodeClose()).thenReturn('foo');
+            td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
+            td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
+
+            return client.sessionClose()
+                .then(actual => expect(actual).to.equal('baz'));
+        });
+
+        it('fails if there is an error while encoding the message', () => {
+            const error = new Error('foo');
+            const client = new Client();
+
+            td.when(encodeClose()).thenThrow(error);
+
+            return client.sessionClose()
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
+
+        it('fails if there is an error while sending the message to the server', () => {
+            const error = new Error('foo');
+            const client = new Client();
+
+            td.when(encodeClose()).thenReturn('foo');
+            td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_CLOSE, 'foo')).thenReturn('bar');
+            td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenReject(error);
+
+            return client.sessionClose()
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
+    });
+
+    // needs to be called with client.close()
+    context('connectionClose()', () => {
+        let FakeOkHandler, encodeMessage, encodeClose;
+
+        beforeEach('create fakes', () => {
+            FakeOkHandler = td.constructor(OkHandler);
+            encodeClose = td.function();
+
+            td.replace('../../../lib/Protocol/InboundHandlers/OkHandler', FakeOkHandler);
+            td.replace('../../../lib/Protocol/OutboundHandlers/Connection', { encodeClose });
+
+            Client = require('../../../lib/Protocol/Client');
+            encodeMessage = td.replace(Client.prototype, 'encodeMessage');
+        });
+
+        it('sends a Mysqlx.Connection.Close message to the server', () => {
+            const client = new Client();
+
+            td.when(encodeClose()).thenReturn('foo');
+            td.when(encodeMessage(MysqlxStub.ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
+            td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenResolve('baz');
+
+            return client.connectionClose()
+                .then(actual => expect(actual).to.equal('baz'));
+        });
+
+        it('fails if there is an error while encoding the message', () => {
+            const error = new Error('foo');
+            const client = new Client();
+
+            td.when(encodeClose()).thenThrow(error);
+
+            return client.connectionClose()
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
+
+        it('fails if there is an error while sending the message to the server', () => {
+            const error = new Error('foo');
+            const client = new Client();
+
+            td.when(encodeClose()).thenReturn('foo');
+            td.when(encodeMessage(MysqlxStub.ClientMessages.Type.CON_CLOSE, 'foo')).thenReturn('bar');
+            td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), td.matchers.anything(), 'bar')).thenReject(error);
+
+            return client.connectionClose()
+                .then(() => expect.fail())
+                .catch(err => expect(err).to.deep.equal(error));
+        });
+    });
+
+    context('sessionReset()', () => {
+        let FakeOkHandler, authenticate, encodeMessage, encodeReset, network;
+
+        beforeEach('create fakes', () => {
+            FakeOkHandler = td.constructor(OkHandler);
+            encodeReset = td.function();
+            network = new PassThrough();
+
+            td.replace('../../../lib/Protocol/OutboundHandlers/Session', { encodeReset });
+            td.replace('../../../lib/Protocol/InboundHandlers/OkHandler', FakeOkHandler);
+
+            Client = require('../../../lib/Protocol/Client');
+            authenticate = td.replace(Client.prototype, 'authenticate');
+            encodeMessage = td.replace(Client.prototype, 'encodeMessage');
+        });
+
+        afterEach('reset fakes', () => {
+            return new Promise(resolve => network.end(resolve));
+        });
+
+        context('in the first call', () => {
+            let expectOpen, expectClose;
+
+            beforeEach('create fakes', () => {
+                expectOpen = td.replace(Client.prototype, 'expectOpen');
+                expectClose = td.replace(Client.prototype, 'expectClose');
+            });
+
+            context('with new servers', () => {
+                it('sets the expectations, resets the session keeping it open and updates the local state', () => {
+                    const client = new Client(network);
+                    const expectations = [{
+                        condition: condition.ACTION.EXPECT_OP_SET,
+                        key: condition.TYPE.EXPECT_FIELD_EXIST,
+                        value: '6.1'
+                    }];
+
+                    td.when(expectOpen(expectations)).thenResolve();
+                    td.when(encodeReset({ keepOpen: true })).thenReturn('bar');
+                    td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                    td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
+                    td.when(expectClose()).thenResolve();
+
+                    return client.sessionReset()
+                        .then(() => expect(client._requiresAuthenticationAfterReset).to.equal('NO'));
+                });
+            });
+
+            context('with old servers', () => {
+                it('tries to set the server expectations, updates the local state, resets the session and re-authenticates', () => {
+                    const client = new Client(network);
+                    const expectations = [{
+                        condition: condition.ACTION.EXPECT_OP_SET,
+                        key: condition.TYPE.EXPECT_FIELD_EXIST,
+                        value: '6.1'
+                    }];
+                    const error = new Error();
+                    // Error 5168 means the X Plugin does not support prepared statements (fails with the "6.1" expectation)
+                    error.info = { code: 5168 };
+
+                    td.replace(client, '_authenticator', 'foo');
+
+                    td.when(expectOpen(expectations)).thenReject(error);
+                    td.when(encodeReset({ keepOpen: false })).thenReturn('bar');
+                    td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                    td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
+                    td.when(authenticate('foo'), { ignoreExtraArgs: true }).thenResolve('qux');
+
+                    return client.sessionReset()
+                        .then(actual => {
+                            expect(actual).to.equal('qux');
+                            expect(client._requiresAuthenticationAfterReset).to.equal('YES');
+                        });
+                });
+            });
+
+            it('fails if there is an unexpected error while opening the expectation block', () => {
+                const client = new Client(network);
+                const error = new Error();
+                error.info = { code: -1 };
+
+                td.when(expectOpen(), { ignoreExtraArgs: true }).thenReject(error);
+
+                return client.sessionReset()
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
+            });
+
+            it('fails if there is an unexpected error while encoding the Mysqlx.Session.Reset message ', () => {
+                const client = new Client(network);
+                const error = new Error();
+                error.info = { code: -1 };
+
+                td.when(expectOpen(), { ignoreExtraArgs: true }).thenResolve();
+                td.when(encodeReset(), { ignoreExtraArgs: true }).thenReturn();
+                td.when(encodeMessage(), { ignoreExtraArgs: true }).thenThrow(error);
+
+                return client.sessionReset()
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
+            });
+
+            it('fails if there is an unexpected error while resetting the connection ', () => {
+                const client = new Client(network);
+                const error = new Error();
+                error.info = { code: -1 };
+
+                td.when(expectOpen(), { ignoreExtraArgs: true }).thenResolve();
+                td.when(encodeReset(), { ignoreExtraArgs: true }).thenReturn();
+                td.when(encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
+                td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenReject(error);
+
+                return client.sessionReset()
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
+            });
+
+            it('fails if there is an unexpected error while closing the expectation block', () => {
+                const client = new Client(network);
+                const error = new Error();
+                error.info = { code: -1 };
+
+                td.when(expectOpen(), { ignoreExtraArgs: true }).thenResolve();
+                td.when(encodeReset(), { ignoreExtraArgs: true }).thenReturn();
+                td.when(encodeMessage(), { ignoreExtraArgs: true }).thenReturn();
+                td.when(FakeOkHandler.prototype.sendMessage(), { ignoreExtraArgs: true }).thenResolve();
+                td.when(expectClose()).thenReject(error);
+
+                return client.sessionReset()
+                    .then(() => expect.fail())
+                    .catch(err => expect(err).to.deep.equal(error));
+            });
+        });
+
+        context('in subsequent calls', () => {
+            it('resets the session and keeps it open with new servers in subsequent calls', () => {
+                const client = new Client(network);
+
+                // does not require re-authentication
+                td.replace(client, '_requiresAuthenticationAfterReset', 'NO');
+
+                td.when(encodeReset({ keepOpen: true })).thenReturn('bar');
+                td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve('qux');
+
+                return client.sessionReset()
+                    .then(actual => expect(actual).to.equal('qux'));
+            });
+
+            it('resets the session and re-authenticates with older servers in subsequent calls', () => {
+                const client = new Client(network);
+
+                td.replace(client, '_authenticator', 'foo');
+                // requires re-authentication
+                td.replace(client, '_requiresAuthenticationAfterReset', 'YES');
+
+                td.when(encodeReset({ keepOpen: false })).thenReturn('bar');
+                td.when(encodeMessage(MysqlxStub.ClientMessages.Type.SESS_RESET, 'bar')).thenReturn('baz');
+                td.when(FakeOkHandler.prototype.sendMessage(td.matchers.anything(), network, 'baz')).thenResolve();
+                td.when(authenticate('foo')).thenResolve('qux');
+
+                return client.sessionReset()
+                    .then(actual => expect(actual).to.equal('qux'));
+            });
         });
     });
 });

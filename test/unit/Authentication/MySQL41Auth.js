@@ -37,10 +37,6 @@ const mysql41Auth = require('../../../lib/Authentication/MySQL41Auth');
 const td = require('testdouble');
 
 describe('MySQL41Auth', () => {
-    it('throws an error if the username is not provided', () => {
-        expect(() => mysql41Auth()).to.throw();
-    });
-
     it('mixes-in AuthPlugin', () => {
         expect(mysql41Auth({ user: 'foo' }).getPassword).to.be.a('function');
         expect(mysql41Auth({ user: 'foo' }).getSchema).to.be.a('function');

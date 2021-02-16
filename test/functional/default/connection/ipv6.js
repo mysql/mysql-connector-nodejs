@@ -49,7 +49,7 @@ describe('connecting to the MySQL server using IPv6', () => {
             });
     });
 
-    it('succeeds using a configuration object when the host has IPV6 support', function () {
+    it('succeeds using a configuration object when the host has IPv6 support', function () {
         const ipv6Config = Object.assign({}, config, baseConfig, { host });
 
         if (!ipv6Config.host) {
@@ -63,7 +63,7 @@ describe('connecting to the MySQL server using IPv6', () => {
             });
     });
 
-    it('succeeds using a URI when the host has IPV6 support', function () {
+    it('succeeds using a URI when the host has IPv6 support', function () {
         const ipv6Config = Object.assign({}, config, baseConfig, { host });
 
         if (!ipv6Config.host) {

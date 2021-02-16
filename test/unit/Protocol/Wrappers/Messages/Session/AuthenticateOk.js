@@ -56,7 +56,7 @@ describe('Mysqlx.Session.AuthenticateOk wrapper', () => {
     context('class methods', () => {
         context('deserialize()', () => {
             it('returns a Mysqlx.Session.AuthenticateOk wrap instance encoded with raw protocol data from the network', () => {
-                td.when(bytes.deserialize('foo')).thenReturn({ valueOf: () => 'baz' });
+                td.when(bytes.deserialize('foo')).thenReturn('baz');
                 td.when(SessionStub.AuthenticateOk.deserializeBinary('baz')).thenReturn('qux');
                 td.when(wraps('qux')).thenReturn({ valueOf: () => 'bar' });
 

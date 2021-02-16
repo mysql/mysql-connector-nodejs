@@ -35,21 +35,18 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
+// subject under test needs to be reloaded with replacement fakes
+let tableInsert = require('../../../lib/DevAPI/TableInsert');
+
 describe('TableInsert', () => {
-    let tableInsert;
-
-    beforeEach('load module', () => {
-        tableInsert = require('../../../lib/DevAPI/TableInsert');
-    });
-
     context('execute()', () => {
-        let crudInsert, fakeResult;
+        let crudInsert, result;
 
         beforeEach('create fakes', () => {
             crudInsert = td.function();
-            fakeResult = td.function();
+            result = td.function();
 
-            td.replace('../../../lib/DevAPI/Result', fakeResult);
+            td.replace('../../../lib/DevAPI/Result', result);
             tableInsert = require('../../../lib/DevAPI/TableInsert');
         });
 
@@ -57,17 +54,64 @@ describe('TableInsert', () => {
             td.reset();
         });
 
+        it('fails if the connection is not open', () => {
+            const getError = td.function();
+            const isOpen = td.function();
+            const connection = { isOpen, getError };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(false);
+            td.when(getError()).thenReturn(error);
+
+            return tableInsert(connection, null, null, ['foo', 'bar']).execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
+        it('fails if the connection is expired', () => {
+            const getError = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isIdle, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(true);
+            td.when(getError()).thenReturn(error);
+
+            return tableInsert(connection, null, null, ['foo', 'bar']).execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
         it('returns a Result instance containing the operation details', () => {
             const expected = { done: true };
             const state = { ok: true };
+            const getClient = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getClient, isIdle, isOpen };
 
-            const query = tableInsert({ _client: { crudInsert } });
+            const query = tableInsert(connection, null, null, ['foo', 'bar']);
 
-            td.when(fakeResult(state)).thenReturn(expected);
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
+            td.when(getClient()).thenReturn({ crudInsert });
+            td.when(result(state)).thenReturn(expected);
             td.when(crudInsert(query)).thenResolve(state);
 
             return query.execute()
-                .then(actual => expect(actual).to.deep.equal(expected));
+                .then(actual => {
+                    return expect(actual).to.deep.equal(expected);
+                });
         });
     });
 

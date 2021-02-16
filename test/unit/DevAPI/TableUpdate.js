@@ -36,8 +36,11 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 const updating = require('../../../lib/DevAPI/Updating');
 
+// subject under test needs to be reloaded with replacement fakes
+let tableUpdate = require('../../../lib/DevAPI/TableUpdate');
+
 describe('TableUpdate', () => {
-    let tableUpdate, preparing;
+    let preparing;
 
     beforeEach('create fakes', () => {
         preparing = td.function();
@@ -53,44 +56,104 @@ describe('TableUpdate', () => {
     context('execute()', () => {
         it('fails if a filtering criteria expression is not provided', () => {
             return tableUpdate().execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal('An explicit criteria needs to be provided using where().');
+                });
         });
 
         it('fails if the filtering criteria expression is empty', () => {
             return tableUpdate(null, null, null, '').execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal('An explicit criteria needs to be provided using where().');
+                });
         });
 
         it('fails if the filtering criteria expression is not valid', () => {
-            tableUpdate(null, null, null, ' ').execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
+            return tableUpdate(null, null, null, ' ').execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal('An explicit criteria needs to be provided using where().');
+                });
         });
 
         it('fails if the filtering criteria expression is undefined', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const forceRestart = td.function();
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            return tableUpdate(session).where().execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
+            return tableUpdate(connection).where().execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal('An explicit criteria needs to be provided using where().');
+                });
+        });
+
+        it('fails if the connection is not open', () => {
+            const getError = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(false);
+            td.when(getError()).thenReturn(error);
+
+            return tableUpdate(connection, null, null, 'true').execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
+        it('fails if the connection is expired', () => {
+            const getError = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isIdle, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(true);
+            td.when(getError()).thenReturn(error);
+
+            return tableUpdate(connection, null, null, 'true').execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
         });
 
         it('wraps the operation in a preparable instance', () => {
+            const isIdle = td.function();
+            const isOpen = td.function();
             const execute = td.function();
-            const session = 'foo';
+            const connection = { isIdle, isOpen };
             const expected = ['bar'];
             const state = { warnings: expected };
 
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
             td.when(execute(td.matchers.isA(Function))).thenResolve(state);
-            td.when(preparing({ session })).thenReturn({ execute });
+            td.when(preparing({ connection })).thenReturn({ execute });
 
-            return tableUpdate(session, null, null, 'true').execute()
-                .then(actual => expect(actual.getWarnings()).to.deep.equal(expected));
+            return tableUpdate(connection, null, null, 'true').execute()
+                .then(actual => {
+                    return expect(actual.getWarnings()).to.deep.equal(expected);
+                });
         });
     });
 
@@ -102,19 +165,19 @@ describe('TableUpdate', () => {
         });
 
         it('mixes in Limiting with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            tableUpdate(session).limit(1);
+            tableUpdate(connection).limit(1);
 
             return expect(td.explain(forceReprepare).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            const query = tableUpdate(session).limit(1);
+            const query = tableUpdate(connection).limit(1);
 
             return expect(query.limit).to.be.a('function');
         });
@@ -128,39 +191,39 @@ describe('TableUpdate', () => {
         });
 
         it('mixes in TableOrdering with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            tableUpdate(session).orderBy();
+            tableUpdate(connection).orderBy();
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = tableUpdate(session).orderBy();
+            const query = tableUpdate(connection).orderBy();
 
             expect(query.orderBy).to.be.a('function');
         });
 
         it('sets the order parameters provided as an array', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const parameters = ['foo desc', 'bar desc'];
-            const query = tableUpdate(session).orderBy(parameters);
+            const query = tableUpdate(connection).orderBy(parameters);
 
             expect(query.getOrderings()).to.deep.equal(parameters);
         });
 
         it('sets the order parameters provided as multiple arguments', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const parameters = ['foo desc', 'bar desc'];
-            const query = tableUpdate(session).orderBy(parameters[0], parameters[1]);
+            const query = tableUpdate(connection).orderBy(parameters[0], parameters[1]);
 
             expect(query.getOrderings()).to.deep.equal(parameters);
         });
@@ -174,32 +237,32 @@ describe('TableUpdate', () => {
         });
 
         it('forces the statement to be reprepared', () => {
-            const session = 'foo';
+            const connection = 'foo';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            tableUpdate(session).set('bar', 'baz');
+            tableUpdate(connection).set('bar', 'baz');
 
             return expect(td.explain(forceRestart).callCount).to.equal(1);
         });
 
         it('updates the operation list with the correct operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const expected = [{ source: 'bar', type: updating.Operation.SET, value: 'baz' }];
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            return expect(tableUpdate(session).set('bar', 'baz').getOperations()).to.deep.equal(expected);
+            return expect(tableUpdate(connection).set('bar', 'baz').getOperations()).to.deep.equal(expected);
         });
 
         it('does not delete any previously added operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const existing = [{ foo: 'bar' }];
             const expected = existing.concat([{ source: 'bar', type: updating.Operation.SET, value: 'baz' }]);
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = tableUpdate(session);
+            const query = tableUpdate(connection);
 
             return expect(query.setOperations(existing).set('bar', 'baz').getOperations()).to.deep.equal(expected);
         });
@@ -213,22 +276,22 @@ describe('TableUpdate', () => {
         });
 
         it('mixes in TableFiltering with the proper state', () => {
-            const session = 'foo';
+            const connection = 'foo';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            tableUpdate(session).where();
+            tableUpdate(connection).where();
 
             expect(td.explain(forceRestart).callCount).to.equal(1);
         });
 
         it('sets the query criteria', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const criteria = 'bar';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            expect(tableUpdate(session).where(criteria).getCriteria()).to.equal(criteria);
+            expect(tableUpdate(connection).where(criteria).getCriteria()).to.equal(criteria);
         });
     });
 });

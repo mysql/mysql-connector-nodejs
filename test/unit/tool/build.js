@@ -50,7 +50,7 @@ describe('build tools', () => {
             writeFile = td.function();
 
             td.replace('child_process', { exec });
-            td.replace('../../../lib/Adapters/fs', { writeFile });
+            td.replace('fs', { promises: { writeFile } });
 
             build = require('../../../lib/tool/build');
 
@@ -172,7 +172,7 @@ describe('build tools', () => {
             arch = td.function();
 
             td.replace('os', { arch, type, release });
-            td.replace('../../../lib/Adapters/fs', { writeFile });
+            td.replace('fs', { promises: { writeFile } });
 
             build = require('../../../lib/tool/build');
         });

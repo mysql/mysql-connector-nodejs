@@ -52,7 +52,7 @@ describe('connecting to a default schema', () => {
             const plugin = 'mysql_native_password';
 
             context('using TCP and TLS', () => {
-                const tlsConfig = { auth, socket: undefined, ssl: true };
+                const tlsConfig = { auth, socket: undefined, tls: { enabled: true } };
 
                 beforeEach('create the default schema', () => {
                     const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
@@ -255,7 +255,7 @@ describe('connecting to a default schema', () => {
             });
 
             context('using regular TCP', () => {
-                const tcpConfig = { auth, socket: undefined, ssl: false };
+                const tcpConfig = { auth, socket: undefined, tls: { enabled: false } };
 
                 beforeEach('create the default schema', () => {
                     const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -457,8 +457,8 @@ describe('connecting to a default schema', () => {
                 });
             });
 
-            context('using a UNIX socket', () => {
-                const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+            context('using a Unix socket', () => {
+                const socketConfig = { auth, host: undefined, port: undefined, tls: { enabled: false } };
 
                 beforeEach('create the default schema', function () {
                     const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -745,7 +745,7 @@ describe('connecting to a default schema', () => {
         });
 
         // PLAIN authentication only works with TCP using TLS or with a local
-        // UNIX socket (see test/functional/default/authentication/*.js)
+        // Unix socket (see test/functional/default/authentication/*.js)
         context('PLAIN', () => {
             const auth = 'PLAIN';
 
@@ -934,8 +934,8 @@ describe('connecting to a default schema', () => {
                 });
             });
 
-            context('using a UNIX socket', () => {
-                const socketConfig = { auth, host: undefined, ssl: false };
+            context('using a Unix socket', () => {
+                const socketConfig = { auth, host: undefined, tls: { enabled: false } };
 
                 beforeEach('create the default schema', function () {
                     const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -1194,7 +1194,7 @@ describe('connecting to a default schema', () => {
             const auth = 'SHA256_MEMORY';
 
             context('using TCP and TLS', () => {
-                const tlsConfig = { auth, socket: undefined, ssl: true };
+                const tlsConfig = { auth, socket: undefined, tls: { enabled: true } };
 
                 beforeEach('create the default schema', () => {
                     const schemaConfig = Object.assign({}, config, baseConfig, tlsConfig);
@@ -1391,7 +1391,7 @@ describe('connecting to a default schema', () => {
             });
 
             context('using regular TCP', () => {
-                const tcpConfig = { auth, socket: undefined, ssl: false };
+                const tcpConfig = { auth, socket: undefined, tls: { enabled: false } };
 
                 beforeEach('create the default schema', () => {
                     const schemaConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -1587,8 +1587,8 @@ describe('connecting to a default schema', () => {
                 });
             });
 
-            context('using a UNIX socket', () => {
-                const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+            context('using a Unix socket', () => {
+                const socketConfig = { auth, host: undefined, port: undefined, tls: { enabled: false } };
 
                 beforeEach('create the default schema', function () {
                     const schemaConfig = Object.assign({}, config, baseConfig, socketConfig);

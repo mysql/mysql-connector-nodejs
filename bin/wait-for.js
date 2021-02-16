@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -36,7 +36,7 @@ const dependencies = (process.env.WAIT_FOR || '').split(',')
     .map(service => service.trim())
     .filter(v => v.length);
 
-process.stdout.write('Waiting for external dependencies...');
+process.stdout.write('Waiting for external dependencies to be ready...');
 
 const progress = setInterval(() => {
     process.stdout.write('.');

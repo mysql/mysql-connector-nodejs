@@ -49,8 +49,8 @@ describe('parseConnectionAttributes', () => {
         expect(parseConnectionAttributes('?connection-attributes=true')).to.deep.equal({});
     });
 
-    it('returns `null` if "false" is provided', () => {
-        return expect(parseConnectionAttributes('?connection-attributes=false')).to.not.exist;
+    it('returns `false` if "false" is provided', () => {
+        return expect(parseConnectionAttributes('?connection-attributes=false')).to.be.false;
     });
 
     it('accepts an empty array', () => {
@@ -77,24 +77,5 @@ describe('parseConnectionAttributes', () => {
         const expected = { [decodeURIComponent(key)]: 'bar', baz: decodeURIComponent(value) };
 
         expect(parseConnectionAttributes(`?connection-attributes=[${key}=bar,baz=${value}]`)).to.deep.equal(expected);
-    });
-
-    it('throws an error for invalid keys', () => {
-        expect(() => parseConnectionAttributes('?connection-attributes=[_foo=bar]'))
-            .to.throw('Key names in "connection-attributes" cannot start with "_".');
-    });
-
-    it('throws an error for invalid values', () => {
-        ['foo', 'null', '-'].forEach(value => {
-            expect(() => parseConnectionAttributes(`?connection-attributes=${value}`))
-                .to.throw('The value of "connection-attributes" must be either a boolean or a list of key-value pairs.');
-        });
-    });
-
-    it('throws an error for duplicate keys', () => {
-        const key = 'foo';
-
-        expect(() => parseConnectionAttributes(`?connection-attributes=[${key}=bar,${key}=baz]`))
-            .to.throw('Duplicate key "foo" used in the "connection-attributes" option.');
     });
 });

@@ -36,8 +36,11 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 const updating = require('../../../lib/DevAPI/Updating');
 
+// subject under test needs to be reloaded with replacement fakes
+let collectionModify = require('../../../lib/DevAPI/CollectionModify');
+
 describe('CollectionModify', () => {
-    let collectionModify, preparing;
+    let preparing;
 
     beforeEach('create fakes', () => {
         preparing = td.function();
@@ -58,32 +61,32 @@ describe('CollectionModify', () => {
         });
 
         it('forces the statement to be reprepared', () => {
-            const session = 'foo';
+            const connection = 'foo';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionModify(session).unset('bar');
+            collectionModify(connection).unset('bar');
 
             return expect(td.explain(forceRestart).callCount).to.equal(1);
         });
 
         it('updates the operation list with the correct operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const expected = [{ source: 'bar', type: updating.Operation.ARRAY_APPEND, value: 'baz' }];
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            return expect(collectionModify(session).arrayAppend('bar', 'baz').getOperations()).to.deep.equal(expected);
+            return expect(collectionModify(connection).arrayAppend('bar', 'baz').getOperations()).to.deep.equal(expected);
         });
 
         it('does not delete any previously added operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const existing = [{ foo: 'bar' }];
             const expected = existing.concat([{ source: 'bar', type: updating.Operation.ARRAY_APPEND, value: 'baz' }]);
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = collectionModify(session);
+            const query = collectionModify(connection);
 
             return expect(query.setOperations(existing).arrayAppend('bar', 'baz').getOperations()).to.deep.equal(expected);
         });
@@ -97,32 +100,32 @@ describe('CollectionModify', () => {
         });
 
         it('forces the statement to be reprepared', () => {
-            const session = 'foo';
+            const connection = 'foo';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionModify(session).unset('bar');
+            collectionModify(connection).unset('bar');
 
             return expect(td.explain(forceRestart).callCount).to.equal(1);
         });
 
         it('updates the operation list with the correct operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const expected = [{ source: 'bar', type: updating.Operation.ARRAY_INSERT, value: 'baz' }];
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            return expect(collectionModify(session).arrayInsert('bar', 'baz').getOperations()).to.deep.equal(expected);
+            return expect(collectionModify(connection).arrayInsert('bar', 'baz').getOperations()).to.deep.equal(expected);
         });
 
         it('does not delete any previously added operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const existing = [{ foo: 'bar' }];
             const expected = existing.concat([{ source: 'bar', type: updating.Operation.ARRAY_INSERT, value: 'baz' }]);
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = collectionModify(session);
+            const query = collectionModify(connection);
 
             return expect(query.setOperations(existing).arrayInsert('bar', 'baz').getOperations()).to.deep.equal(expected);
         });
@@ -130,40 +133,90 @@ describe('CollectionModify', () => {
 
     context('execute()', () => {
         it('fails if a condition query is not provided', () => {
-            const query = collectionModify();
-
-            return query.execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with modify().'));
+            return collectionModify().execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal('An explicit criteria needs to be provided with modify().');
+                });
         });
 
         it('fails if a condition query is empty', () => {
-            const query = collectionModify(null, null, null, '');
-
-            return query.execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with modify().'));
+            return collectionModify(null, null, null, '').execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal('An explicit criteria needs to be provided with modify().');
+                });
         });
 
         it('fails if the condition is not valid', () => {
-            const query = collectionModify(null, null, null, ' ');
+            return collectionModify(null, null, null, ' ').execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal('An explicit criteria needs to be provided with modify().');
+                });
+        });
 
-            return query.execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with modify().'));
+        it('fails if the connection is not open', () => {
+            const getError = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(false);
+            td.when(getError()).thenReturn(error);
+
+            return collectionModify(connection, null, null, 'true').execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
+        it('fails if the connection is expired', () => {
+            const getError = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isIdle, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(true);
+            td.when(getError()).thenReturn(error);
+
+            return collectionModify(connection, null, null, 'true').execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
         });
 
         it('wraps the operation in a preparable instance', () => {
             const execute = td.function();
-            const session = 'foo';
-            const expected = ['bar'];
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { isIdle, isOpen };
+            const expected = ['foo'];
             const state = { warnings: expected };
 
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
             td.when(execute(td.matchers.isA(Function))).thenResolve(state);
-            td.when(preparing({ session })).thenReturn({ execute });
+            td.when(preparing({ connection })).thenReturn({ execute });
 
-            return collectionModify(session, null, null, 'true').execute()
-                .then(actual => expect(actual.getWarnings()).to.deep.equal(expected));
+            return collectionModify(connection, null, null, 'true').execute()
+                .then(actual => {
+                    return expect(actual.getWarnings()).to.deep.equal(expected);
+                });
         });
     });
 
@@ -175,19 +228,19 @@ describe('CollectionModify', () => {
         });
 
         it('mixes in Limiting with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            collectionModify(session).limit(1);
+            collectionModify(connection).limit(1);
 
             return expect(td.explain(forceReprepare).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            const query = collectionModify(session).limit(1);
+            const query = collectionModify(connection).limit(1);
 
             return expect(query.limit).to.be.a('function');
         });
@@ -201,34 +254,34 @@ describe('CollectionModify', () => {
         });
 
         it('forces the statement to be reprepared', () => {
-            const session = 'foo';
+            const connection = 'foo';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionModify(session).patch('bar');
+            collectionModify(connection).patch('bar');
 
             return expect(td.explain(forceRestart).callCount).to.equal(1);
         });
 
         it('updates the operation list with the correct operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const doc = { foo: 'bar', baz: { qux: 'quux' } };
             const expected = [{ source: '$', type: updating.Operation.MERGE_PATCH, value: doc }];
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            return expect(collectionModify(session).patch(doc).getOperations()).to.deep.equal(expected);
+            return expect(collectionModify(connection).patch(doc).getOperations()).to.deep.equal(expected);
         });
 
         it('does not delete any previously added operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const existing = [{ foo: 'bar' }];
             const doc = { baz: 'qux' };
             const expected = [{ foo: 'bar' }, { source: '$', type: updating.Operation.MERGE_PATCH, value: doc }];
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = collectionModify(session);
+            const query = collectionModify(connection);
 
             return expect(query.setOperations(existing).patch(doc).getOperations()).to.deep.equal(expected);
         });
@@ -242,32 +295,32 @@ describe('CollectionModify', () => {
         });
 
         it('forces the statement to be reprepared', () => {
-            const session = 'foo';
+            const connection = 'foo';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionModify(session).set('bar', 'baz');
+            collectionModify(connection).set('bar', 'baz');
 
             return expect(td.explain(forceRestart).callCount).to.equal(1);
         });
 
         it('updates the operation list with the correct operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const expected = [{ source: 'bar', type: updating.Operation.ITEM_SET, value: 'baz' }];
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            return expect(collectionModify(session).set('bar', 'baz').getOperations()).to.deep.equal(expected);
+            return expect(collectionModify(connection).set('bar', 'baz').getOperations()).to.deep.equal(expected);
         });
 
         it('does not delete any previously added operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const existing = [{ foo: 'bar' }];
             const expected = existing.concat([{ source: 'bar', type: updating.Operation.ITEM_SET, value: 'baz' }]);
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = collectionModify(session);
+            const query = collectionModify(connection);
 
             return expect(query.setOperations(existing).set('bar', 'baz').getOperations()).to.deep.equal(expected);
         });
@@ -281,41 +334,41 @@ describe('CollectionModify', () => {
         });
 
         it('mixes in CollectionOrdering with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionModify(session).sort();
+            collectionModify(connection).sort();
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const statement = collectionModify(session).sort();
+            const statement = collectionModify(connection).sort();
 
             return expect(statement.sort).to.be.a('function');
         });
 
         it('sets the order parameters provided as an array', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const parameters = ['bar desc', 'baz desc'];
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const statement = collectionModify(session).sort(parameters);
+            const statement = collectionModify(connection).sort(parameters);
 
             return expect(statement.getOrderings()).to.deep.equal(parameters);
         });
 
         it('sets the order parameters provided as multiple arguments', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const parameters = ['bar desc', 'baz desc'];
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const statement = collectionModify(session).sort(parameters[0], parameters[1]);
+            const statement = collectionModify(connection).sort(parameters[0], parameters[1]);
 
             return expect(statement.getOrderings()).to.deep.equal(parameters);
         });
@@ -329,32 +382,32 @@ describe('CollectionModify', () => {
         });
 
         it('forces the statement to be reprepared', () => {
-            const session = 'foo';
+            const connection = 'foo';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionModify(session).unset('bar');
+            collectionModify(connection).unset('bar');
 
             return expect(td.explain(forceRestart).callCount).to.equal(1);
         });
 
         it('updates the operation list with the correct operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const expected = [{ source: 'bar', type: updating.Operation.ITEM_REMOVE }];
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            return expect(collectionModify(session).unset('bar').getOperations()).to.deep.equal(expected);
+            return expect(collectionModify(connection).unset('bar').getOperations()).to.deep.equal(expected);
         });
 
         it('does not delete any previously added operation', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const existing = [{ foo: 'bar' }];
             const expected = existing.concat([{ source: 'bar', type: updating.Operation.ITEM_REMOVE }]);
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = collectionModify(session);
+            const query = collectionModify(connection);
 
             return expect(query.setOperations(existing).unset('bar').getOperations()).to.deep.equal(expected);
         });

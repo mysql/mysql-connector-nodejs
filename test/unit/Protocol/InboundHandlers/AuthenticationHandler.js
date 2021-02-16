@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -284,7 +284,7 @@ describe('AuthenticationHandler inbound handler', () => {
             handler[authenticateOk.MESSAGE_ID]('foo', () => {});
 
             expect(td.explain(handler._resolve).callCount).to.equal(1);
-            expect(td.explain(handler._resolve).calls[0].args[0]).deep.equal({ id: 'bar' });
+            expect(td.explain(handler._resolve).calls[0].args[0]).deep.equal({ connectionId: 'bar' });
         });
 
         it('logs the protocol message', () => {

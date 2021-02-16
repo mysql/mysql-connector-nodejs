@@ -38,19 +38,32 @@ const statement = require('../../../lib/DevAPI/Statement');
 const td = require('testdouble');
 
 describe('Collection', () => {
-    let collection, execute, sqlExecute;
+    let databaseObject, collection, execute, sqlExecute;
 
     beforeEach('create fakes', () => {
+        databaseObject = td.function();
         execute = td.function();
         sqlExecute = td.function();
         sqlExecute.Namespace = statement.Type;
 
+        td.replace('../../../lib/DevAPI/DatabaseObject', databaseObject);
         td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
         collection = require('../../../lib/DevAPI/Collection');
     });
 
     afterEach('reset fakes', () => {
         td.reset();
+    });
+
+    context('mixins', () => {
+        it('mixes the DatabaseObject blueprint', () => {
+            const connection = 'foo';
+
+            collection(connection);
+
+            expect(td.explain(databaseObject).callCount).to.equal(1);
+            return expect(td.explain(databaseObject).calls[0].args).to.deep.equal([connection]);
+        });
     });
 
     context('getName()', () => {
@@ -61,24 +74,14 @@ describe('Collection', () => {
 
     context('getSchema()', () => {
         it('returns the instance of the collection schema', () => {
-            const getSchema = td.function();
+            const connection = 'foo';
             const getName = td.function();
-            const session = { getSchema };
             const schema = { getName };
-            const coll = collection(session, schema, 'bar');
+            const coll = collection(connection, schema, 'bar');
 
-            td.when(getName()).thenReturn('foo');
-            td.when(getSchema('foo')).thenReturn(schema);
+            td.when(getName()).thenReturn('baz');
 
-            return expect(coll.getSchema().getName()).to.equal('foo');
-        });
-    });
-
-    context('getSession()', () => {
-        it('returns the associated session', () => {
-            const instance = collection({ foo: 'bar' });
-
-            expect(instance.getSession()).to.deep.equal({ foo: 'bar' });
+            return expect(coll.getSchema().getName()).to.equal('baz');
         });
     });
 

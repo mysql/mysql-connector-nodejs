@@ -48,7 +48,7 @@ describe('mysql_native_password authentication plugin', () => {
 
     context('connecting without an authentication mechanism', () => {
         context('over TCP and TLS', () => {
-            const tcpConfig = { socket: undefined, ssl: true };
+            const tcpConfig = { socket: undefined, tls: { enabled: true } };
 
             beforeEach('create user with mysql_native_password plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -114,7 +114,7 @@ describe('mysql_native_password authentication plugin', () => {
         });
 
         context('over regular TCP', () => {
-            const tcpConfig = { socket: undefined, ssl: false };
+            const tcpConfig = { socket: undefined, tls: { enabled: false } };
 
             beforeEach('create user with mysql_native_password plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -179,8 +179,8 @@ describe('mysql_native_password authentication plugin', () => {
             });
         });
 
-        context('over a UNIX socket', () => {
-            const socketConfig = { host: undefined, port: undefined, ssl: false };
+        context('over a Unix socket', () => {
+            const socketConfig = { host: undefined, port: undefined, tls: { enabled: false } };
 
             beforeEach('create user with mysql_native_password plugin', function () {
                 const authConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -280,7 +280,7 @@ describe('mysql_native_password authentication plugin', () => {
         const auth = 'MYSQL41';
 
         context('over TCP and TLS', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: true };
+            const tcpConfig = { auth, socket: undefined, tls: { enabled: true } };
 
             beforeEach('create user with mysql_native_password plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -346,7 +346,7 @@ describe('mysql_native_password authentication plugin', () => {
         });
 
         context('over regular TCP', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: false };
+            const tcpConfig = { auth, socket: undefined, tls: { enabled: false } };
 
             beforeEach('create user with mysql_native_password plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -411,8 +411,8 @@ describe('mysql_native_password authentication plugin', () => {
             });
         });
 
-        context('over a UNIX socket', () => {
-            const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+        context('over a Unix socket', () => {
+            const socketConfig = { auth, host: undefined, port: undefined, tls: { enabled: false } };
 
             beforeEach('create user with mysql_native_password plugin', function () {
                 const authConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -560,7 +560,7 @@ describe('mysql_native_password authentication plugin', () => {
         const auth = 'PLAIN';
 
         context('over TCP and TLS', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: true };
+            const tcpConfig = { auth, socket: undefined, tls: { enabled: true } };
 
             beforeEach('create user with mysql_native_password plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -626,7 +626,7 @@ describe('mysql_native_password authentication plugin', () => {
         });
 
         context('over regular TCP', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: false };
+            const tcpConfig = { auth, socket: undefined, tls: { enabled: false } };
 
             beforeEach('create user with mysql_native_password plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -670,8 +670,8 @@ describe('mysql_native_password authentication plugin', () => {
             });
         });
 
-        context('over a UNIX socket', () => {
-            const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+        context('over a Unix socket', () => {
+            const socketConfig = { auth, host: undefined, port: undefined, tls: { enabled: false } };
 
             beforeEach('create user with mysql_native_password plugin', function () {
                 const authConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -772,7 +772,7 @@ describe('mysql_native_password authentication plugin', () => {
 
         context('without a password in the server authentication cache', () => {
             context('over TCP and TLS', () => {
-                const tcpConfig = { auth, socket: undefined, ssl: true };
+                const tcpConfig = { auth, socket: undefined, tls: { enabled: true } };
 
                 beforeEach('create user with mysql_native_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -817,7 +817,7 @@ describe('mysql_native_password authentication plugin', () => {
             });
 
             context('over regular TCP', () => {
-                const tcpConfig = { auth, socket: undefined, ssl: false };
+                const tcpConfig = { auth, socket: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with mysql_native_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -861,8 +861,8 @@ describe('mysql_native_password authentication plugin', () => {
                 });
             });
 
-            context('over a UNIX socket', () => {
-                const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+            context('over a Unix socket', () => {
+                const socketConfig = { auth, host: undefined, port: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with mysql_native_password plugin', function () {
                     const authConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -930,7 +930,7 @@ describe('mysql_native_password authentication plugin', () => {
 
         context('with the password in the server authentication cache', () => {
             context('over TCP and TLS', () => {
-                const tcpConfig = { auth, socket: undefined, ssl: true };
+                const tcpConfig = { auth, socket: undefined, tls: { enabled: true } };
 
                 beforeEach('create user with mysql_native_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -979,7 +979,7 @@ describe('mysql_native_password authentication plugin', () => {
             });
 
             context('over regular TCP', () => {
-                const tcpConfig = { auth, socket: undefined, ssl: false };
+                const tcpConfig = { auth, socket: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with mysql_native_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -1027,8 +1027,8 @@ describe('mysql_native_password authentication plugin', () => {
                 });
             });
 
-            context('over a UNIX socket', () => {
-                const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+            context('over a Unix socket', () => {
+                const socketConfig = { auth, host: undefined, port: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with mysql_native_password plugin', function () {
                     const authConfig = Object.assign({}, config, baseConfig, socketConfig);

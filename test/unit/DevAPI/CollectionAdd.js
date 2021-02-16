@@ -32,9 +32,11 @@
 
 /* eslint-env node, mocha */
 
-const collectionAdd = require('../../../lib/DevAPI/CollectionAdd');
 const expect = require('chai').expect;
 const td = require('testdouble');
+
+// subject under test needs to be reloaded with replacement fakes
+let collectionAdd = require('../../../lib/DevAPI/CollectionAdd');
 
 describe('CollectionAdd', () => {
     context('add()', () => {
@@ -74,42 +76,91 @@ describe('CollectionAdd', () => {
     });
 
     context('execute()', () => {
-        let crudInsert;
+        let result, crudInsert;
 
         beforeEach('create fakes', () => {
             crudInsert = td.function();
+            result = td.function();
+
+            td.replace('../../../lib/DevAPI/Result', result);
+            collectionAdd = require('../../../lib/DevAPI/CollectionAdd');
         });
 
         afterEach('reset fakes', () => {
             td.reset();
         });
 
+        it('fails if the connection is not open', () => {
+            const getError = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(false);
+            td.when(getError()).thenReturn(error);
+
+            return collectionAdd(connection, null, null, { foo: 'bar' }).execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
+        it('fails if the connection is expired', () => {
+            const getError = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isIdle, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(true);
+            td.when(getError()).thenReturn(error);
+
+            return collectionAdd(connection, null, null, { foo: 'bar' }).execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
         it('returns a Result instance containing the operation details', () => {
             const expected = { done: true };
             const state = { ok: true };
-            const fakeResult = td.function();
+            const getClient = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getClient, isIdle, isOpen };
 
-            td.replace('../../../lib/DevAPI/Result', fakeResult);
-            const fakeCollectionAdd = require('../../../lib/DevAPI/CollectionAdd');
-
-            const query = fakeCollectionAdd({ _client: { crudInsert } }, 'bar', 'baz')
+            const query = collectionAdd(connection, 'bar', 'baz')
                 .add({ name: 'qux' })
                 .add({ name: 'quux' });
 
-            td.when(fakeResult(state)).thenReturn(expected);
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
+            td.when(getClient()).thenReturn({ crudInsert });
+            td.when(result(state)).thenReturn(expected);
             td.when(crudInsert(), { ignoreExtraArgs: true }).thenResolve(state);
 
             return query.execute()
-                .then(actual => expect(actual).deep.equal(expected));
+                .then(actual => {
+                    return expect(actual).deep.equal(expected);
+                });
         });
 
         it('returns early if no documents were provided', () => {
-            const query = collectionAdd({ _client: crudInsert }, 'foo', 'bar', []);
+            const query = collectionAdd();
 
             td.when(crudInsert(), { ignoreExtraArgs: true }).thenResolve();
 
             return query.execute()
-                .then(() => expect(td.explain(crudInsert).callCount).to.equal(0));
+                .then(() => {
+                    return expect(td.explain(crudInsert).callCount).to.equal(0);
+                });
         });
     });
 });

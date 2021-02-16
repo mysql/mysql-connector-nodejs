@@ -67,7 +67,7 @@ describe('Mysqlx.Sql.StmtExecute wrapper', () => {
 
                 td.when(statement.getSQL()).thenReturn('s_baz');
                 // eslint-disable-next-line node/no-deprecated-api
-                td.when(bytes.deserialize(new Buffer('s_baz'))).thenReturn({ valueOf: () => 'baz' });
+                td.when(bytes.create(new Buffer('s_baz'))).thenReturn({ valueOf: () => 'baz' });
 
                 td.when(statement.getArgs()).thenReturn(['s_qux', 's_quux']);
                 td.when(any.create('s_qux')).thenReturn({ valueOf: () => 'qux' });

@@ -42,74 +42,100 @@ describe('Preparing', () => {
     });
 
     context('allocate()', () => {
+        let getPreparedStatements;
+
+        beforeEach('create fakes', () => {
+            getPreparedStatements = td.function();
+        });
+
         it('generates a new statement id if none is available', () => {
-            const session = { _statements: [true, true] };
-            const statement = preparing({ session });
+            const connection = { getPreparedStatements };
+            const statement = preparing({ connection });
+
+            td.when(getPreparedStatements()).thenReturn([true, true]);
 
             statement.allocate();
+
             return expect(statement.getStatementId()).to.equal(3);
         });
 
         it('returns the first free statement id if one is available', () => {
-            const session = { _statements: [true, undefined, true] };
-            const statement = preparing({ session });
+            const connection = { getPreparedStatements };
+            const statement = preparing({ connection });
+
+            td.when(getPreparedStatements()).thenReturn([true, undefined, true]);
 
             statement.allocate();
+
             return expect(statement.getStatementId()).to.equal(2);
         });
     });
 
     context('deallocate()', () => {
-        let deallocate;
+        let deallocate, getClient, getPreparedStatements, removePreparedStatement;
 
         beforeEach('create fakes', () => {
             deallocate = td.function();
+            getClient = td.function();
+            getPreparedStatements = td.function();
+            removePreparedStatement = td.function();
+
+            td.when(getClient()).thenReturn({ deallocate });
         });
 
         it('deallocates a statement in the server', () => {
-            const session = { _client: { deallocate }, _statements: [] };
-            const statement = preparing({ session });
+            const connection = { getClient, getPreparedStatements, removePreparedStatement };
+            const statement = preparing({ connection });
 
             td.when(deallocate(statement)).thenResolve();
 
             return statement.deallocate()
-                .then(actual => expect(actual).to.deep.equal(statement));
+                .then(actual => {
+                    return expect(actual).to.deep.equal(statement);
+                });
         });
 
         it('requires the statement to restart in the next execution if the query scope changes', () => {
-            const session = { _client: { deallocate }, _statements: [] };
-            const statement = preparing({ session, stage: preparing.Stages.TO_RESTART });
+            const connection = { getClient, getPreparedStatements, removePreparedStatement };
+            const statement = preparing({ connection, stage: preparing.Stages.TO_RESTART });
 
             td.when(deallocate(statement)).thenResolve();
 
             return statement.deallocate()
-                .then(() => expect(statement.getStage()).to.equal(preparing.Stages.TO_START));
+                .then(() => {
+                    return expect(statement.getStage()).to.equal(preparing.Stages.TO_START);
+                });
         });
 
         it('requires the statement to be re-prepared in the next execution if the query scope does not change', () => {
-            const session = { _client: { deallocate }, _statements: [] };
-            const statement = preparing({ session, stage: preparing.Stages.TO_REPREPARE });
+            const connection = { getClient, getPreparedStatements, removePreparedStatement };
+            const statement = preparing({ connection, stage: preparing.Stages.TO_REPREPARE });
 
             td.when(deallocate(statement)).thenResolve();
 
             return statement.deallocate()
-                .then(() => expect(statement.getStage()).to.equal(preparing.Stages.TO_PREPARE));
+                .then(() => {
+                    return expect(statement.getStage()).to.equal(preparing.Stages.TO_PREPARE);
+                });
         });
 
         it('releases the statement in the client', () => {
-            const session = { _client: { deallocate }, _statements: ['foo', 'bar'] };
-            const statement = preparing({ session, statementId: 1 });
+            const connection = { getClient, getPreparedStatements, removePreparedStatement };
+            const statement = preparing({ connection, statementId: 1 });
 
             td.when(deallocate(statement)).thenResolve();
 
             return statement.deallocate()
-                .then(() => expect(session._statements).to.deep.equal([undefined, 'bar']));
+                .then(() => {
+                    expect(td.explain(removePreparedStatement).callCount).to.equal(1);
+                    expect(td.explain(removePreparedStatement).calls[0].args).to.deep.equal([1]);
+                });
         });
 
         it('fails if an unexpected error occurs while deallocating the statement in the server', () => {
             const error = new Error('foobar');
-            const session = { _client: { deallocate }, _statements: [] };
-            const statement = preparing({ session });
+            const connection = { getClient };
+            const statement = preparing({ connection });
 
             td.when(deallocate(statement)).thenReject(error);
 
@@ -120,6 +146,18 @@ describe('Preparing', () => {
     });
 
     context('execute()', () => {
+        let deallocate, getClient, getPreparedStatements, prepare, removePreparedStatement;
+
+        beforeEach('create fakes', () => {
+            deallocate = td.function();
+            getClient = td.function();
+            getPreparedStatements = td.function();
+            prepare = td.function();
+            removePreparedStatement = td.function();
+
+            td.when(getClient()).thenReturn({ deallocate, prepare });
+        });
+
         it('executes a plain statement on the first attempt', () => {
             const statement = preparing();
             const executePlain = td.replace(statement, 'executePlain');
@@ -127,7 +165,9 @@ describe('Preparing', () => {
             td.when(executePlain('foo')).thenResolve('bar');
 
             return statement.execute('foo')
-                .then(actual => expect(actual).to.equal('bar'));
+                .then(actual => {
+                    return expect(actual).to.equal('bar');
+                });
         });
 
         it('executes a plain statement when the session does not support prepared statements', () => {
@@ -137,13 +177,14 @@ describe('Preparing', () => {
             td.when(executePlain('foo')).thenResolve('bar');
 
             return statement.execute('foo')
-                .then(actual => expect(actual).to.equal('bar'));
+                .then(actual => {
+                    return expect(actual).to.equal('bar');
+                });
         });
 
         it('prepares a statement and executes it when the scope does not change', () => {
-            const prepare = td.function();
-            const session = { _client: { prepare } };
-            const statement = preparing({ session, stage: preparing.Stages.TO_PREPARE });
+            const connection = { getClient };
+            const statement = preparing({ connection, stage: preparing.Stages.TO_PREPARE });
             const executePrepared = td.replace(statement, 'executePrepared');
 
             td.replace(statement, 'allocate');
@@ -151,7 +192,9 @@ describe('Preparing', () => {
             td.when(executePrepared('bar', 'baz')).thenResolve('qux');
 
             return statement.execute('foo', 'bar', 'baz')
-                .then(actual => expect(actual).to.equal('qux'));
+                .then(actual => {
+                    return expect(actual).to.equal('qux');
+                });
         });
 
         it('executes a plain statement when the server does not support prepared statements', () => {
@@ -163,7 +206,9 @@ describe('Preparing', () => {
             td.when(handlePrepareError('qux', 'foo')).thenResolve('quux');
 
             return statement.execute('foo', 'bar', 'baz')
-                .then(actual => expect(actual).to.equal('quux'));
+                .then(actual => {
+                    return expect(actual).to.equal('quux');
+                });
         });
 
         it('fails if the server sends an unexpected error', () => {
@@ -177,7 +222,9 @@ describe('Preparing', () => {
 
             return statement.execute('foo', 'bar', 'baz')
                 .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
 
         it('executes a statement that has been previously prepared', () => {
@@ -187,35 +234,39 @@ describe('Preparing', () => {
             td.when(executePrepared('bar', 'baz')).thenResolve('qux');
 
             return statement.execute('foo', 'bar', 'baz')
-                .then(actual => expect(actual).to.equal('qux'));
+                .then(actual => {
+                    return expect(actual).to.equal('qux');
+                });
         });
 
         it('deallocates a statement that has been re-created and executes it', () => {
-            const deallocate = td.function();
-            const session = { _client: { deallocate }, _statements: [] };
-            const statement = preparing({ session, stage: preparing.Stages.TO_RESTART });
+            const connection = { getClient, removePreparedStatement };
+            const statement = preparing({ connection, stage: preparing.Stages.TO_RESTART });
             const executePlain = td.replace(statement, 'executePlain');
 
             td.when(deallocate(statement)).thenResolve();
             td.when(executePlain('foo')).thenResolve('bar');
 
             return statement.execute('foo')
-                .then(actual => expect(actual).to.equal('bar'));
+                .then(actual => {
+                    return expect(actual).to.equal('bar');
+                });
         });
 
         it('deallocates a statement that has been modified, re-prepares and executes it', () => {
-            const deallocate = td.function();
-            const prepare = td.function();
-            const session = { _client: { deallocate, prepare }, _statements: [] };
-            const statement = preparing({ session, stage: preparing.Stages.TO_REPREPARE });
+            const connection = { getClient, getPreparedStatements, removePreparedStatement };
+            const statement = preparing({ connection, stage: preparing.Stages.TO_REPREPARE });
             const executePrepared = td.replace(statement, 'executePrepared');
 
+            td.when(getPreparedStatements()).thenReturn([]);
             td.when(deallocate(statement)).thenResolve();
             td.when(prepare(statement)).thenResolve();
             td.when(executePrepared('bar', 'baz')).thenResolve('qux');
 
             return statement.execute('foo', 'bar', 'baz')
-                .then(actual => expect(actual).to.equal('qux'));
+                .then(actual => {
+                    return expect(actual).to.equal('qux');
+                });
         });
     });
 
@@ -228,7 +279,9 @@ describe('Preparing', () => {
             td.when(wrapper()).thenResolve(state);
 
             return statement.executePlain(wrapper)
-                .then(result => expect(result).to.equal(state));
+                .then(result => {
+                    return expect(result).to.equal(state);
+                });
         });
 
         it('moves the statement to the proper lifecycle stage', () => {
@@ -238,46 +291,60 @@ describe('Preparing', () => {
             td.when(wrapper()).thenResolve();
 
             return statement.executePlain(wrapper)
-                .then(() => expect(statement.getStage()).to.equal(preparing.Stages.TO_PREPARE));
+                .then(() => {
+                    return expect(statement.getStage()).to.equal(preparing.Stages.TO_PREPARE);
+                });
         });
     });
 
     context('executePrepared()', () => {
-        let prepareExecute;
+        let getClient, prepareExecute;
 
         beforeEach('create fakes', () => {
+            getClient = td.function();
             prepareExecute = td.function();
+
+            td.when(getClient()).thenReturn({ prepareExecute });
         });
 
         it('executes a previously prepared statement', () => {
             const state = 'baz';
-            const statement = preparing({ session: { _client: { prepareExecute } } });
+            const connection = { getClient };
+            const statement = preparing({ connection });
 
             td.when(prepareExecute(statement, 'foo', 'bar')).thenResolve(state);
 
             return statement.executePrepared('foo', 'bar')
-                .then(result => expect(result).to.equal(state));
+                .then(result => {
+                    return expect(result).to.equal(state);
+                });
         });
 
         it('leaves the statement to the proper lifecycle stage', () => {
             const stage = preparing.Stages.TO_EXECUTE;
-            const statement = preparing({ session: { _client: { prepareExecute } }, stage });
+            const connection = { getClient };
+            const statement = preparing({ connection, stage });
 
             td.when(prepareExecute(), { ignoreExtraArgs: true }).thenResolve();
 
             return statement.executePrepared()
-                .then(() => expect(statement.getStage()).to.equal(stage));
+                .then(() => {
+                    return expect(statement.getStage()).to.equal(stage);
+                });
         });
 
         it('fails when an unexpected error is thrown', () => {
             const error = new Error('foobar');
-            const statement = preparing({ session: { _client: { prepareExecute } } });
+            const connection = { getClient };
+            const statement = preparing({ connection });
 
             td.when(prepareExecute(statement, 'foo', 'bar')).thenReject(error);
 
             return statement.executePrepared('foo', 'bar')
                 .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
     });
 
@@ -308,12 +375,15 @@ describe('Preparing', () => {
 
             return statement.handlePrepareError(error, 'foo')
                 .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
 
         it('disables client-side prepared statement support if the plugin does not provide it', () => {
-            const session = { _statements: [], _canPrepareStatements: true };
-            const statement = preparing({ session });
+            const disablePreparedStatements = td.function();
+            const connection = { disablePreparedStatements };
+            const statement = preparing({ connection });
             const fallback = td.function();
             const error = new Error();
             error.info = { code: 1047 };
@@ -323,13 +393,14 @@ describe('Preparing', () => {
             return statement.handlePrepareError(error, fallback)
                 .then(() => {
                     expect(statement.getStage()).to.equal(preparing.Stages.TO_SKIP);
-                    return expect(session._canPrepareStatements).to.be.false;
+                    return expect(td.explain(disablePreparedStatements).callCount).to.equal(1);
                 });
         });
 
         it('disables client-side prepared statement support if the total statement count in the server is exceeded', () => {
-            const session = { _statements: [], _canPrepareStatements: true };
-            const statement = preparing({ session });
+            const disablePreparedStatements = td.function();
+            const connection = { disablePreparedStatements };
+            const statement = preparing({ connection });
             const fallback = td.function();
             const error = new Error();
             error.info = { code: 1461 };
@@ -339,12 +410,14 @@ describe('Preparing', () => {
             return statement.handlePrepareError(error, fallback)
                 .then(() => {
                     expect(statement.getStage()).to.equal(preparing.Stages.TO_SKIP);
-                    return expect(session._canPrepareStatements).to.be.false;
+                    return expect(td.explain(disablePreparedStatements).callCount).to.equal(1);
                 });
         });
 
         it('executes a plain statement if the plugin does not support prepared statements', () => {
-            const statement = preparing({ session: { _statements: [] } });
+            const disablePreparedStatements = td.function();
+            const connection = { disablePreparedStatements };
+            const statement = preparing({ connection });
             const fallback = td.function();
             const error = new Error();
             error.info = { code: 1047 };
@@ -352,47 +425,64 @@ describe('Preparing', () => {
             td.when(fallback()).thenResolve('foo');
 
             return statement.handlePrepareError(error, fallback)
-                .then(actual => expect(actual).to.equal('foo'));
+                .then(actual => {
+                    expect(actual).to.equal('foo');
+                    return expect(td.explain(disablePreparedStatements).callCount).to.equal(1);
+                });
         });
     });
 
     context('prepare()', () => {
-        let prepare;
+        let getClient, prepare;
 
         beforeEach('create fakes', () => {
+            getClient = td.function();
             prepare = td.function();
+
+            td.when(getClient()).thenReturn({ prepare });
         });
 
         it('allocates a client-side statement', () => {
-            const statement = preparing({ session: { _client: { prepare } } });
+            const connection = { getClient };
+            const statement = preparing({ connection });
             const allocate = td.replace(statement, 'allocate');
 
             td.when(prepare(), { ignoreExtraArgs: true }).thenResolve();
 
             return statement.prepare()
-                .then(() => expect(td.explain(allocate).callCount).to.equal(1));
+                .then(() => {
+                    return expect(td.explain(allocate).callCount).to.equal(1);
+                });
         });
 
         it('moves the statement to the proper lifecycle stage after preparing it', () => {
-            const statement = preparing({ session: { _client: { prepare } } });
+            const connection = { getClient };
+            const statement = preparing({ connection });
 
             td.replace(statement, 'allocate');
             td.when(prepare(), { ignoreExtraArgs: true }).thenResolve();
 
             return statement.prepare()
-                .then(() => expect(statement.getStage()).to.equal(preparing.Stages.TO_EXECUTE));
+                .then(() => {
+                    return expect(statement.getStage()).to.equal(preparing.Stages.TO_EXECUTE);
+                });
         });
 
         it('fails when an unexpected error is thrown when preparing the statement', () => {
-            const statement = preparing({ session: { _client: { prepare } } });
+            const connection = { getClient };
+            const statement = preparing({ connection });
             const error = new Error('foobar');
 
             td.replace(statement, 'allocate');
             td.when(prepare(), { ignoreExtraArgs: true }).thenReject(error);
 
             return statement.prepare()
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
     });
 });

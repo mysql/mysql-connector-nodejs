@@ -34,7 +34,7 @@ const config = require('../config');
 const mysqlx = require('../../');
 
 module.exports = function (options) {
-    options = Object.assign({}, config, options, { auth: 'PLAIN', schema: undefined, ssl: !options.socket ? true : options.socket });
+    options = Object.assign({}, config, options, { auth: 'PLAIN', schema: undefined, tls: { enabled: !options.socket ? true : options.socket } });
 
     return mysqlx.getSession(options)
         .then(session => {

@@ -36,8 +36,8 @@ const config = require('../config');
 /**
  * Log collection process.
  * @typedef {Object} LogProc
- * @property {number} id - the process id
- * @property {Object[]} logs - a list of log entries
+ * @prop {number} id - the process id
+ * @prop {Object[]} logs - a list of log entries
  */
 
 /**

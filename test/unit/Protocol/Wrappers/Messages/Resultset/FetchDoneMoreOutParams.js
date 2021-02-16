@@ -57,7 +57,7 @@ describe('Mysqlx.Resultset.FetchDoneMoreOutParams wrapper', () => {
         context('deserialize()', () => {
             context('deserialize()', () => {
                 it('returns a Mysqlx.Resultset.FetchDoneMoreOutParams wrap instance encoded with raw protocol data from the network', () => {
-                    td.when(bytes.deserialize('foo')).thenReturn({ valueOf: () => 'baz' });
+                    td.when(bytes.deserialize('foo')).thenReturn('baz');
                     td.when(ResultsetStub.FetchDoneMoreOutParams.deserializeBinary('baz')).thenReturn('qux');
                     td.when(wraps('qux')).thenReturn({ valueOf: () => 'bar' });
 

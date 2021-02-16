@@ -334,29 +334,29 @@ describe('parsing query parameters', () => {
 
     context('checking the value for the connection timeout', () => {
         it('uses any existing value for the connection timeout', () => {
-            let connectionString = 'user@hostname?connect-timeout=30';
-            expect(parseUri(connectionString).connectTimeout).to.equal('30');
+            let connectionString = 'user@hostname?connect-timeout=foo';
+            expect(parseUri(connectionString).connectTimeout).to.equal('foo');
 
             connectionString = `mysqlx://${connectionString}`;
-            expect(parseUri(connectionString).connectTimeout).to.equal('30');
+            expect(parseUri(connectionString).connectTimeout).to.equal('foo');
 
-            connectionString = 'user@hostname/schema?connect-timeout=30';
-            expect(parseUri(connectionString).connectTimeout).to.equal('30');
-
-            connectionString = `mysqlx://${connectionString}`;
-            expect(parseUri(connectionString).connectTimeout).to.equal('30');
-
-            connectionString = 'user@hostname?foo=bar&connect-timeout=30';
-            expect(parseUri(connectionString).connectTimeout).to.equal('30');
+            connectionString = 'user@hostname/schema?connect-timeout=foo';
+            expect(parseUri(connectionString).connectTimeout).to.equal('foo');
 
             connectionString = `mysqlx://${connectionString}`;
-            expect(parseUri(connectionString).connectTimeout).to.equal('30');
+            expect(parseUri(connectionString).connectTimeout).to.equal('foo');
 
-            connectionString = 'user@hostname/schema?foo=bar&connect-timeout=30';
-            expect(parseUri(connectionString).connectTimeout).to.equal('30');
+            connectionString = 'user@hostname?foo=bar&connect-timeout=foo';
+            expect(parseUri(connectionString).connectTimeout).to.equal('foo');
 
             connectionString = `mysqlx://${connectionString}`;
-            expect(parseUri(connectionString).connectTimeout).to.equal('30');
+            expect(parseUri(connectionString).connectTimeout).to.equal('foo');
+
+            connectionString = 'user@hostname/schema?foo=bar&connect-timeout=foo';
+            expect(parseUri(connectionString).connectTimeout).to.equal('foo');
+
+            connectionString = `mysqlx://${connectionString}`;
+            expect(parseUri(connectionString).connectTimeout).to.equal('foo');
         });
     });
 });

@@ -35,14 +35,20 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
+// subject under test needs to be reloaded with replacement fakes
+let sqlExecute = require('../../../lib/DevAPI/SqlExecute');
+
 describe('SqlExecute', () => {
-    let fakeResult, sqlExecute, sqlStmtExecute;
+    let deprecated, getAlias, result, sqlStmtExecute;
 
     beforeEach('create fakes', () => {
-        fakeResult = td.function();
+        deprecated = td.function();
+        getAlias = td.function();
+        result = td.function();
         sqlStmtExecute = td.function();
 
-        td.replace('../../../lib/DevAPI/SqlResult', fakeResult);
+        td.replace('../../../lib/DevAPI/Util/deprecated', deprecated);
+        td.replace('../../../lib/DevAPI/SqlResult', result);
         sqlExecute = require('../../../lib/DevAPI/SqlExecute');
     });
 
@@ -51,41 +57,93 @@ describe('SqlExecute', () => {
     });
 
     context('execute()', () => {
-        let deprecated, getAlias;
+        it('fails if the connection is not open', () => {
+            const getError = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isOpen };
+            const error = new Error('foobar');
 
-        beforeEach('create fakes', () => {
-            deprecated = td.function();
-            getAlias = td.function();
+            td.when(isOpen()).thenReturn(false);
+            td.when(getError()).thenReturn(error);
 
-            td.replace('../../../lib/DevAPI/Util/deprecated', deprecated);
-            sqlExecute = require('../../../lib/DevAPI/SqlExecute');
+            return sqlExecute(connection).execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
         });
 
-        it('executes the context statement', () => {
+        it('fails if the connection is expired', () => {
+            const getError = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isIdle, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(true);
+            td.when(getError()).thenReturn(error);
+
+            return sqlExecute(connection).execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
+        it('returns a SqlResult instance containing the operation details', () => {
             const expected = { done: true };
             const state = { ok: true };
+            const getClient = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getClient, isIdle, isOpen };
+            const query = sqlExecute(connection, 'foo', 'bar', 'baz');
 
-            const query = sqlExecute({ _client: { sqlStmtExecute } }, 'foo', 'bar', 'baz');
-
-            td.when(fakeResult(state)).thenReturn(expected);
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
+            td.when(getClient()).thenReturn({ sqlStmtExecute });
+            td.when(result(state)).thenReturn(expected);
             td.when(sqlStmtExecute(query), { ignoreExtraArgs: true }).thenResolve(state);
 
             return query.execute()
-                .then(actual => expect(actual).to.deep.equal(expected));
+                .then(actual => {
+                    return expect(actual).to.deep.equal(expected);
+                });
         });
 
         it('calls a result handler provided as an `execute` argument', () => {
-            const query = sqlExecute({ _client: { sqlStmtExecute } });
+            const getClient = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getClient, isIdle, isOpen };
+            const query = sqlExecute(connection);
 
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
+            td.when(getClient()).thenReturn({ sqlStmtExecute });
             td.when(sqlStmtExecute(td.matchers.anything(), td.callback('foo')), { ignoreExtraArgs: true }).thenResolve();
 
-            return query.execute(actual => expect(actual).to.equal('foo'));
+            return query.execute(actual => {
+                return expect(actual).to.equal('foo');
+            });
         });
 
         it('calls a metadata handler provided as an `execute` argument', () => {
-            const query = sqlExecute({ _client: { sqlStmtExecute } });
+            const getClient = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getClient, isIdle, isOpen };
+            const query = sqlExecute(connection);
             const meta = [{ getAlias }];
 
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
+            td.when(getClient()).thenReturn({ sqlStmtExecute });
             td.when(getAlias()).thenReturn('foo');
             td.when(sqlStmtExecute(td.matchers.anything(), td.matchers.anything(), td.callback(meta))).thenResolve();
 
@@ -97,9 +155,16 @@ describe('SqlExecute', () => {
 
         // Deprecated since release 8.0.22
         it('calls a handlers provided as an `execute` object argument', () => {
-            const query = sqlExecute({ _client: { sqlStmtExecute } });
+            const getClient = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getClient, isIdle, isOpen };
+            const query = sqlExecute(connection);
             const meta = [{ getAlias }];
 
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
+            td.when(getClient()).thenReturn({ sqlStmtExecute });
             td.when(getAlias()).thenReturn('bar');
             td.when(sqlStmtExecute(td.matchers.anything(), td.callback('foo'), td.callback(meta))).thenResolve();
 
@@ -112,17 +177,8 @@ describe('SqlExecute', () => {
                     expect(actual[0].getColumnLabel()).to.equal('bar');
                 }
             }).then(() => {
-                expect(td.explain(deprecated).callCount).to.equal(1);
+                return expect(td.explain(deprecated).callCount).to.equal(1);
             });
-        });
-
-        it('fails if an unexpected error is thrown', () => {
-            const query = sqlExecute({ _client: { sqlStmtExecute } });
-            const error = new Error('foobar');
-
-            td.when(sqlStmtExecute(), { ignoreExtraArgs: true }).thenReject(error);
-
-            return query.execute().catch(err => expect(err).to.deep.equal(error));
         });
     });
 });

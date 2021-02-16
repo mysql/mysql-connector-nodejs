@@ -58,7 +58,7 @@ describe('Mysqlx.Session.AuthenticateStart wrapper', () => {
             it('returns a Mysqlx.Session.AuthenticateStart wrapper instance based on a given authentication mechanism and password', () => {
                 const proto = new SessionStub.AuthenticateStart();
 
-                td.when(bytes.deserialize('bar')).thenReturn({ valueOf: () => 'baz' });
+                td.when(bytes.create('bar')).thenReturn({ valueOf: () => 'baz' });
                 td.when(wraps(proto)).thenReturn({ valueOf: () => 'qux' });
 
                 expect(authenticateStart.create('foo', 'bar').valueOf()).to.equal('qux');

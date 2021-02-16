@@ -49,7 +49,7 @@ describe('caching_sha2_password authentication plugin', () => {
     context('connecting without an authentication mechanism', () => {
         context('without a password in the server authentication cache', () => {
             context('over TCP and TLS', () => {
-                const tcpConfig = { socket: undefined, ssl: true };
+                const tcpConfig = { socket: undefined, tls: { enabled: true } };
 
                 beforeEach('create user with caching_sha2_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -98,6 +98,7 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                            expect(err.message).to.match(/Access denied for user/);
                         });
                 });
 
@@ -110,12 +111,13 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                            expect(err.message).to.match(/Access denied for user/);
                         });
                 });
             });
 
             context('over regular TCP', () => {
-                const tcpConfig = { socket: undefined, ssl: false };
+                const tcpConfig = { socket: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with caching_sha2_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -161,8 +163,8 @@ describe('caching_sha2_password authentication plugin', () => {
                 });
             });
 
-            context('over a UNIX socket', () => {
-                const socketConfig = { host: undefined, port: undefined, ssl: false };
+            context('over a Unix socket', () => {
+                const socketConfig = { host: undefined, port: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with caching_sha2_password plugin', function () {
                     const authConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -236,6 +238,7 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                            expect(err.message).to.match(/Access denied for user/);
                         });
                 });
 
@@ -253,6 +256,7 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                            expect(err.message).to.match(/Access denied for user/);
                         });
                 });
             });
@@ -297,7 +301,7 @@ describe('caching_sha2_password authentication plugin', () => {
 
         context('with the password in the server authentication cache', () => {
             context('over TCP and TLS', () => {
-                const tcpConfig = { socket: undefined, ssl: true };
+                const tcpConfig = { socket: undefined, tls: { enabled: true } };
 
                 beforeEach('create user with caching_sha2_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -346,7 +350,7 @@ describe('caching_sha2_password authentication plugin', () => {
             });
 
             context('over regular TCP', () => {
-                const tcpConfig = { socket: undefined, ssl: false };
+                const tcpConfig = { socket: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with caching_sha2_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -394,8 +398,8 @@ describe('caching_sha2_password authentication plugin', () => {
                 });
             });
 
-            context('over a UNIX socket', () => {
-                const socketConfig = { host: undefined, port: undefined, ssl: false };
+            context('over a Unix socket', () => {
+                const socketConfig = { host: undefined, port: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with caching_sha2_password plugin', function () {
                     const authConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -474,7 +478,7 @@ describe('caching_sha2_password authentication plugin', () => {
         const auth = 'MYSQL41';
 
         context('over TCP and TLS', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: true };
+            const tcpConfig = { auth, socket: undefined, tls: { enabled: true } };
 
             beforeEach('create user with caching_sha2_password plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -502,6 +506,7 @@ describe('caching_sha2_password authentication plugin', () => {
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1045);
+                        expect(err.message).to.match(/Access denied for user/);
                     });
             });
 
@@ -514,12 +519,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1045);
+                        expect(err.message).to.match(/Access denied for user/);
                     });
             });
         });
 
-        context('over regular TLS', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: false };
+        context('over regular TCP', () => {
+            const tcpConfig = { auth, socket: undefined, tls: { enabled: false } };
 
             beforeEach('create user with caching_sha2_password plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -547,6 +553,7 @@ describe('caching_sha2_password authentication plugin', () => {
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1045);
+                        expect(err.message).to.match(/Access denied for user/);
                     });
             });
 
@@ -559,12 +566,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1045);
+                        expect(err.message).to.match(/Access denied for user/);
                     });
             });
         });
 
-        context('over a UNIX socket', () => {
-            const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+        context('over a Unix socket', () => {
+            const socketConfig = { auth, host: undefined, port: undefined, tls: { enabled: false } };
 
             beforeEach('create user with caching_sha2_password plugin', function () {
                 const authConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -608,6 +616,7 @@ describe('caching_sha2_password authentication plugin', () => {
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1045);
+                        expect(err.message).to.match(/Access denied for user/);
                     });
             });
 
@@ -625,6 +634,7 @@ describe('caching_sha2_password authentication plugin', () => {
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1045);
+                        expect(err.message).to.match(/Access denied for user/);
                     });
             });
         });
@@ -634,7 +644,7 @@ describe('caching_sha2_password authentication plugin', () => {
         const auth = 'PLAIN';
 
         context('over TCP and TLS', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: true };
+            const tcpConfig = { auth, socket: undefined, tls: { enabled: true } };
 
             beforeEach('create user with caching_sha2_password plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -683,6 +693,7 @@ describe('caching_sha2_password authentication plugin', () => {
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1045);
+                        expect(err.message).to.match(/Access denied for user/);
                     });
             });
 
@@ -695,12 +706,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1045);
+                        expect(err.message).to.match(/Access denied for user/);
                     });
             });
         });
 
         context('over regular TCP', () => {
-            const tcpConfig = { auth, socket: undefined, ssl: false };
+            const tcpConfig = { auth, socket: undefined, tls: { enabled: false } };
 
             beforeEach('create user with caching_sha2_password plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -744,8 +756,8 @@ describe('caching_sha2_password authentication plugin', () => {
             });
         });
 
-        context('over a UNIX socket', () => {
-            const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+        context('over a Unix socket', () => {
+            const socketConfig = { auth, host: undefined, port: undefined, tls: { enabled: false } };
 
             beforeEach('create user with caching_sha2_password plugin', function () {
                 const authConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -819,6 +831,7 @@ describe('caching_sha2_password authentication plugin', () => {
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1045);
+                        expect(err.message).to.match(/Access denied for user/);
                     });
             });
 
@@ -836,6 +849,7 @@ describe('caching_sha2_password authentication plugin', () => {
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(1045);
+                        expect(err.message).to.match(/Access denied for user/);
                     });
             });
         });
@@ -883,7 +897,7 @@ describe('caching_sha2_password authentication plugin', () => {
 
         context('without a password in the server authentication cache', () => {
             context('over TCP and TLS', () => {
-                const tcpConfig = { auth, socket: undefined, ssl: true };
+                const tcpConfig = { auth, socket: undefined, tls: { enabled: true } };
 
                 beforeEach('create user with caching_sha2_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -911,6 +925,7 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                            expect(err.message).to.match(/Access denied for user/);
                         });
                 });
 
@@ -923,12 +938,13 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                            expect(err.message).to.match(/Access denied for user/);
                         });
                 });
             });
 
             context('over regular TCP', () => {
-                const tcpConfig = { auth, socket: undefined, ssl: false };
+                const tcpConfig = { auth, socket: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with caching_sha2_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -956,6 +972,7 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                            expect(err.message).to.match(/Access denied for user/);
                         });
                 });
 
@@ -968,12 +985,13 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                            expect(err.message).to.match(/Access denied for user/);
                         });
                 });
             });
 
-            context('over a UNIX socket', () => {
-                const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+            context('over a Unix socket', () => {
+                const socketConfig = { auth, host: undefined, port: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with caching_sha2_password plugin', function () {
                     const authConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -1017,6 +1035,7 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                            expect(err.message).to.match(/Access denied for user/);
                         });
                 });
 
@@ -1034,6 +1053,7 @@ describe('caching_sha2_password authentication plugin', () => {
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
                             expect(err.info.code).to.equal(1045);
+                            expect(err.message).to.match(/Access denied for user/);
                         });
                 });
             });
@@ -1041,7 +1061,7 @@ describe('caching_sha2_password authentication plugin', () => {
 
         context('with the password in the server authentication cache', () => {
             context('over TCP and TLS', () => {
-                const tcpConfig = { auth, socket: undefined, ssl: true };
+                const tcpConfig = { auth, socket: undefined, tls: { enabled: true } };
 
                 beforeEach('create user with caching_sha2_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -1090,7 +1110,7 @@ describe('caching_sha2_password authentication plugin', () => {
             });
 
             context('over regular TCP', () => {
-                const tcpConfig = { auth, socket: undefined, ssl: false };
+                const tcpConfig = { auth, socket: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with caching_sha2_password plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -1138,8 +1158,8 @@ describe('caching_sha2_password authentication plugin', () => {
                 });
             });
 
-            context('over a UNIX socket', () => {
-                const socketConfig = { auth, host: undefined, port: undefined, ssl: false };
+            context('over a Unix socket', () => {
+                const socketConfig = { auth, host: undefined, port: undefined, tls: { enabled: false } };
 
                 beforeEach('create user with caching_sha2_password plugin', function () {
                     const authConfig = Object.assign({}, config, baseConfig, socketConfig);

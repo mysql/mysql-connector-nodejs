@@ -33,7 +33,7 @@
 const mysqlx = require('../../../../');
 
 const config = JSON.parse(process.env.MYSQLX_CLIENT_CONFIG);
-const baseConfig = Object.assign({}, config, { schema: undefined });
+const baseConfig = Object.assign({}, config, { schema: undefined, socket: undefined });
 
 // additional configuration properties are provided via a JSON command argument
 const additionalConfig = JSON.parse(process.argv[2] || null);

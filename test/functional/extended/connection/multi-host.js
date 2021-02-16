@@ -200,16 +200,16 @@ describe('connecting with a list of MySQL servers', () => {
     context('when some endpoints in the list are not available', () => {
         const multihostConfig = { endpoints: [{ host: 'mysql-primary', priority: 99 }, { host: 'mysql-secondary1', priority: 98 }, { host: 'mysql-secondary2', priority: 97 }] };
 
-        const waitForEndpointToBecomeAvailable = 5000; // (ms)
-        const waitForEndpointToBecomeUnavailable = 2000; // (ms)
-        const waitForEndpointToBecomeActive = 20000 + 1000; // (ms) must exceed the value defined by MULTIHOST_RETRY on lib/DevAPI/Session.js
+        const waitForServerToBecomeAvailable = 8000; // (ms)
+        const waitForServerToBecomeUnavailable = 2000; // (ms)
+        const waitForServerToBecomeActive = 20000 + 1000; // (ms) must exceed the value defined by MULTIHOST_RETRY on lib/DevAPI/Session.js
 
         afterEach('reset all services', function () {
             const failoverConfig = Object.assign({}, config, baseConfig, multihostConfig);
 
-            this.timeout(this.timeout() + waitForEndpointToBecomeAvailable * failoverConfig.endpoints.length);
+            this.timeout(this.timeout() + waitForServerToBecomeAvailable * failoverConfig.endpoints.length);
 
-            return Promise.all(failoverConfig.endpoints.map(e => fixtures.enableEndpoint(e.host, waitForEndpointToBecomeAvailable)));
+            return Promise.all(failoverConfig.endpoints.map(e => fixtures.restartServer(e.host, waitForServerToBecomeAvailable)));
         });
 
         context('using standalone sessions', () => {
@@ -217,7 +217,8 @@ describe('connecting with a list of MySQL servers', () => {
 
             context('when the endpoint with the highest priority is unavailable', () => {
                 it('connects to the next available endpoint with the highest priority', function () {
-                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForEndpointToBecomeUnavailable * failoverConfig.endpoints.length + waitForEndpointToBecomeAvailable * failoverConfig.endpoints.length);
+                    // Waits for two servers to be killed.
+                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForServerToBecomeUnavailable * 2);
 
                     return mysqlx.getSession(failoverConfig)
                         .then(session => {
@@ -225,7 +226,7 @@ describe('connecting with a list of MySQL servers', () => {
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.disableEndpoint('mysql-primary', waitForEndpointToBecomeUnavailable);
+                            return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return mysqlx.getSession(failoverConfig);
@@ -235,7 +236,7 @@ describe('connecting with a list of MySQL servers', () => {
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.disableEndpoint('mysql-secondary1', waitForEndpointToBecomeUnavailable);
+                            return fixtures.killServer('mysql-secondary1', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return mysqlx.getSession(failoverConfig);
@@ -249,9 +250,10 @@ describe('connecting with a list of MySQL servers', () => {
 
             context('when an endpoint with higher priority becomes available', () => {
                 it('always connects to that endpoint', function () {
-                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForEndpointToBecomeUnavailable * failoverConfig.endpoints.length + waitForEndpointToBecomeAvailable * failoverConfig.endpoints.length);
+                    // Waits for one server to be killed and one to be restarted.
+                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForServerToBecomeUnavailable + waitForServerToBecomeAvailable);
 
-                    return fixtures.disableEndpoint('mysql-primary', waitForEndpointToBecomeUnavailable)
+                    return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable)
                         .then(() => {
                             return mysqlx.getSession(failoverConfig);
                         })
@@ -260,7 +262,7 @@ describe('connecting with a list of MySQL servers', () => {
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.enableEndpoint('mysql-primary', waitForEndpointToBecomeAvailable);
+                            return fixtures.restartServer('mysql-primary', waitForServerToBecomeAvailable);
                         })
                         .then(() => {
                             return mysqlx.getSession(failoverConfig);
@@ -286,9 +288,10 @@ describe('connecting with a list of MySQL servers', () => {
                 return pool.close();
             });
 
-            context('when the endpoint with the highest priority is unavailable and does not become available soon enough', () => {
+            context('when the endpoint with the highest priority is unavailable and does not become available', () => {
                 it('fails over to the next available endpoint with the highest priority', function () {
-                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForEndpointToBecomeUnavailable * failoverConfig.endpoints.length + waitForEndpointToBecomeAvailable * failoverConfig.endpoints.length);
+                    // Waits for two servers to be killed.
+                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForServerToBecomeUnavailable * 2);
 
                     return pool.getSession()
                         .then(session => {
@@ -296,7 +299,7 @@ describe('connecting with a list of MySQL servers', () => {
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.disableEndpoint('mysql-primary', waitForEndpointToBecomeUnavailable);
+                            return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return pool.getSession();
@@ -306,10 +309,45 @@ describe('connecting with a list of MySQL servers', () => {
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.enableEndpoint('mysql-primary', waitForEndpointToBecomeAvailable);
+                            return fixtures.killServer('mysql-secondary1', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
-                            return fixtures.disableEndpoint('mysql-secondary1', waitForEndpointToBecomeUnavailable);
+                            return pool.getSession();
+                        })
+                        .then(session => {
+                            expect(session.inspect().host).to.equal('mysql-secondary2');
+                            return session.close();
+                        });
+                });
+            });
+
+            context('when the endpoint with the highest priority is unavailable and does not become available soon enough', () => {
+                it('fails over to the next available endpoint with the highest priority', function () {
+                    // Waits for two servers to be killed and one to be restarted.
+                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForServerToBecomeUnavailable * 2 + waitForServerToBecomeAvailable);
+
+                    return pool.getSession()
+                        .then(session => {
+                            expect(session.inspect().host).to.equal('mysql-primary');
+                            return session.close();
+                        })
+                        .then(() => {
+                            return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable);
+                        })
+                        .then(() => {
+                            return pool.getSession();
+                        })
+                        .then(session => {
+                            expect(session.inspect().host).to.equal('mysql-secondary1');
+                            return session.close();
+                        })
+                        .then(() => {
+                            // We do not wait for the endpoint to become
+                            // active, so it will should not be picked again.
+                            return fixtures.restartServer('mysql-primary', waitForServerToBecomeAvailable);
+                        })
+                        .then(() => {
+                            return fixtures.killServer('mysql-secondary1', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return pool.getSession();
@@ -323,7 +361,8 @@ describe('connecting with a list of MySQL servers', () => {
 
             context('when the endpoint with the highest priority is unvailable but becomes available soon enough', () => {
                 it('connects to that endpoint if the current endpoint is not available anymore', function () {
-                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForEndpointToBecomeUnavailable * failoverConfig.endpoints.length + waitForEndpointToBecomeAvailable * failoverConfig.endpoints.length + waitForEndpointToBecomeActive * failoverConfig.endpoints.length);
+                    // Waits for two servers to be killed and one to become active.
+                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForServerToBecomeUnavailable * 2 + waitForServerToBecomeActive);
 
                     return pool.getSession()
                         .then(session => {
@@ -331,7 +370,7 @@ describe('connecting with a list of MySQL servers', () => {
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.disableEndpoint('mysql-primary', waitForEndpointToBecomeUnavailable);
+                            return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return pool.getSession();
@@ -341,13 +380,14 @@ describe('connecting with a list of MySQL servers', () => {
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.enableEndpoint('mysql-primary', waitForEndpointToBecomeAvailable);
+                            // Even though the endpoint is available when the
+                            // container starts, we need to wait for an
+                            // additional fixed number of seconds defined by
+                            // the connection to retry it.
+                            return fixtures.restartServer('mysql-primary', waitForServerToBecomeActive);
                         })
                         .then(() => {
-                            return fixtures.disableEndpoint('mysql-secondary1', waitForEndpointToBecomeUnavailable);
-                        })
-                        .then(() => {
-                            return new Promise(resolve => setTimeout(resolve, waitForEndpointToBecomeActive));
+                            return fixtures.killServer('mysql-secondary1', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return pool.getSession();
@@ -361,9 +401,10 @@ describe('connecting with a list of MySQL servers', () => {
 
             context('when an endpoint with higher priority becomes available', () => {
                 it('does not connect to that endpoint if the current one is still available', function () {
-                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForEndpointToBecomeUnavailable * failoverConfig.endpoints.length + waitForEndpointToBecomeAvailable * failoverConfig.endpoints.length + waitForEndpointToBecomeActive * failoverConfig.endpoints.length);
+                    // Waits for one server to be killed and one to be active.
+                    this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForServerToBecomeUnavailable + waitForServerToBecomeActive);
 
-                    return fixtures.disableEndpoint('mysql-primary', waitForEndpointToBecomeUnavailable)
+                    return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable)
                         .then(() => {
                             return pool.getSession();
                         })
@@ -372,10 +413,11 @@ describe('connecting with a list of MySQL servers', () => {
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.enableEndpoint('mysql-primary', waitForEndpointToBecomeAvailable);
-                        })
-                        .then(() => {
-                            return new Promise(resolve => setTimeout(resolve, waitForEndpointToBecomeActive));
+                            // Even though the endpoint is available when the
+                            // container starts, we need to wait for an
+                            // additional fixed number of seconds defined by
+                            // the connection to retry it.
+                            return fixtures.restartServer('mysql-primary', waitForServerToBecomeActive);
                         })
                         .then(() => {
                             return pool.getSession();
@@ -405,14 +447,16 @@ describe('connecting with a list of MySQL servers', () => {
                 return pool.close();
             });
 
-            it('switches to any other availabe endpoint as soon as the server starts to shutdown', () => {
-                const waitForServerNotification = 1000;
+            it('switches to any other available endpoint as soon as the server starts to shutdown', () => {
+                // We should not wait for the server to shutdown.
+                // However, we should wait a bit to ensure the server
+                // notification is sent. Something below the value of
+                // waitForServerToBecomeUnavailable.
+                const waitForServerNotification = 1500;
 
                 return pool.getSession()
                     .then(session1 => {
-                        // we should not wait for the server to shutdown
-                        // however, we should wait a bit to ensure the server notification is sent
-                        return fixtures.disableEndpoint(session1.inspect().host, waitForServerNotification)
+                        return fixtures.stopServer(session1.inspect().host, waitForServerNotification)
                             .then(() => {
                                 return pool.getSession();
                             })
@@ -427,13 +471,13 @@ describe('connecting with a list of MySQL servers', () => {
     context('when no endpoint is available', () => {
         const multihostConfig = { endpoints: [{ host: 'mysql-primary', priority: 100 }, { host: 'mysql-secondary1', priority: 90 }] };
 
-        const waitForEndpointToChangeState = 5000; // (ms)
-        const waitForEndpointToBecomeAvailable = 20000 + 1000; // (ms) must exceed the value defined by MULTIHOST_RETRY on lib/DevAPI/Session.js
+        const waitForServerToChangeState = 5000; // (ms)
+        const waitForServerToBecomeActive = 20000 + 1000; // (ms) must exceed the value defined by MULTIHOST_RETRY on lib/DevAPI/Session.js
 
         beforeEach('make the endpoints unvailable', function () {
-            this.timeout(this.timeout() + waitForEndpointToChangeState * multihostConfig.endpoints.length);
+            this.timeout(this.timeout() + waitForServerToChangeState * multihostConfig.endpoints.length);
 
-            return Promise.all(multihostConfig.endpoints.map(e => fixtures.disableEndpoint(e.host, waitForEndpointToChangeState)));
+            return Promise.all(multihostConfig.endpoints.map(e => fixtures.killServer(e.host, waitForServerToChangeState)));
         });
 
         context('using a connection pool', () => {
@@ -454,13 +498,15 @@ describe('connecting with a list of MySQL servers', () => {
                 // for it to become available
                 const endpoint = multihostConfig.endpoints[Math.floor(Math.random() * multihostConfig.endpoints.length)];
 
-                this.timeout(this.timeout() + waitForEndpointToBecomeAvailable);
+                this.timeout(this.timeout() + waitForServerToChangeState);
 
                 return pool.getSession()
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.errno).to.equal(4001);
-                        return fixtures.enableEndpoint(endpoint.host, waitForEndpointToBecomeAvailable)
+                        return fixtures.restartServer(endpoint.host, waitForServerToChangeState)
                             .then(() => {
                                 return pool.getSession();
                             })
@@ -475,13 +521,15 @@ describe('connecting with a list of MySQL servers', () => {
                 // the time it takes for it to become available
                 const endpoint = multihostConfig.endpoints[1];
 
-                this.timeout(this.timeout() + waitForEndpointToBecomeAvailable);
+                this.timeout(this.timeout() + waitForServerToBecomeActive);
 
                 return pool.getSession()
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.errno).to.equal(4001);
-                        return fixtures.enableEndpoint(endpoint.host, waitForEndpointToBecomeAvailable)
+                        return fixtures.restartServer(endpoint.host, waitForServerToBecomeActive)
                             .then(() => {
                                 return pool.getSession();
                             })
@@ -494,15 +542,17 @@ describe('connecting with a list of MySQL servers', () => {
             it('connects to the endpoint with highest priority that becomes available first after some time', function () {
                 // enable all endpoints and wait for all of them to become available
                 const endpoints = multihostConfig.endpoints;
-                const timeout = waitForEndpointToBecomeAvailable + 2 * waitForEndpointToChangeState;
+                const timeout = waitForServerToBecomeActive + 2 * waitForServerToChangeState;
 
                 this.timeout(this.timeout() + timeout);
 
                 return pool.getSession()
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.errno).to.equal(4001);
-                        return Promise.all(endpoints.map(e => fixtures.enableEndpoint(e.host, timeout)))
+                        return Promise.all(endpoints.map(e => fixtures.restartServer(e.host, timeout)))
                             .then(() => {
                                 return pool.getSession();
                             })

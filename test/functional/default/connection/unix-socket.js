@@ -37,7 +37,7 @@ const expect = require('chai').expect;
 const mysqlx = require('../../../../');
 const os = require('os');
 
-describe('connecting to the MySQL server using a UNIX socket', () => {
+describe('connecting to the MySQL server using a Unix socket', () => {
     const baseConfig = { host: undefined, port: undefined, schema: undefined };
 
     context('when the socket path points to an existing local socket', () => {
@@ -48,7 +48,7 @@ describe('connecting to the MySQL server using a UNIX socket', () => {
                 return this.skip();
             }
 
-            const expected = { host: undefined, port: undefined, socket: socketConfig.socket, ssl: false };
+            const expected = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
 
             return mysqlx.getSession(socketConfig)
                 .then(session => {
@@ -65,7 +65,7 @@ describe('connecting to the MySQL server using a UNIX socket', () => {
             }
 
             const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@(${socketConfig.socket})`;
-            const expected = { host: undefined, port: undefined, socket: socketConfig.socket, ssl: false };
+            const expected = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
 
             return mysqlx.getSession(uri)
                 .then(session => {
@@ -82,7 +82,7 @@ describe('connecting to the MySQL server using a UNIX socket', () => {
             }
 
             const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@${encodeURIComponent(socketConfig.socket)}`;
-            const expected = { host: undefined, port: undefined, socket: socketConfig.socket, ssl: false };
+            const expected = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
 
             return mysqlx.getSession(uri)
                 .then(session => {
@@ -98,7 +98,7 @@ describe('connecting to the MySQL server using a UNIX socket', () => {
                 return this.skip();
             }
 
-            const expected = { host: undefined, port: undefined, schema: undefined, socket: socketConfig.socket, ssl: false };
+            const expected = { host: undefined, port: undefined, schema: undefined, socket: socketConfig.socket, tls: false };
 
             return mysqlx.getSession(socketConfig)
                 .then(session => {
@@ -116,7 +116,7 @@ describe('connecting to the MySQL server using a UNIX socket', () => {
             }
 
             const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@(${socketConfig.socket})?ssl-mode=REQUIRED&ssl-ca=(${socketConfig.tls.ca})?ssl-crl=(${socketConfig.tls.ca})`;
-            const expected = { host: undefined, port: undefined, schema: undefined, socket: config.socket, ssl: false };
+            const expected = { host: undefined, port: undefined, schema: undefined, socket: config.socket, tls: false };
 
             return mysqlx.getSession(uri)
                 .then(session => {
@@ -134,7 +134,7 @@ describe('connecting to the MySQL server using a UNIX socket', () => {
             }
 
             const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@(${socketConfig.socket})?ssl-mode=REQUIRED&ssl-ca=${encodeURIComponent(socketConfig.tls.ca)}?ssl-crl=${encodeURIComponent(socketConfig.tls.ca)}`;
-            const expected = { host: undefined, port: undefined, schema: undefined, socket: config.socket, ssl: false };
+            const expected = { host: undefined, port: undefined, schema: undefined, socket: config.socket, tls: false };
 
             return mysqlx.getSession(uri)
                 .then(session => {

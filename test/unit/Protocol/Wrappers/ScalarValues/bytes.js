@@ -40,11 +40,11 @@ let bytes = require('../../../../../lib/Protocol/Wrappers/ScalarValues/bytes');
 
 describe('Protobuf bytes wrapper', () => {
     context('class methods', () => {
-        context('deserialize()', () => {
+        context('create()', () => {
             it('creates a wrapper with a typed array of raw network data using shared memory', () => {
                 // eslint-disable-next-line node/no-deprecated-api
                 const input = new Buffer('foo');
-                const output = bytes.deserialize(input).valueOf();
+                const output = bytes.create(input).valueOf();
 
                 // strict equality to ensure it references the same memory
                 expect(output.buffer).to.equal(input.buffer);
@@ -53,9 +53,20 @@ describe('Protobuf bytes wrapper', () => {
             it('creates a wrapper with an empty typed array if the data is not valid', () => {
                 const empty = new Uint8Array();
 
-                expect(bytes.deserialize().valueOf()).to.deep.equal(empty);
-                expect(bytes.deserialize(null).valueOf()).to.deep.equal(empty);
-                expect(bytes.deserialize('foo').valueOf()).to.deep.equal(empty);
+                expect(bytes.create().valueOf()).to.deep.equal(empty);
+                expect(bytes.create(null).valueOf()).to.deep.equal(empty);
+                expect(bytes.create('foo').valueOf()).to.deep.equal(empty);
+            });
+        });
+
+        context('deserialize()', () => {
+            it('converts binary networ raw data (Node.js Buffer) into binary protobuf raw data (JavaScript Uint8Array)', () => {
+                // eslint-disable-next-line node/no-deprecated-api
+                const input = new Buffer('foo');
+                const output = bytes.deserialize(input);
+
+                // strict equality to ensure it references the same memory
+                expect(output.buffer).to.equal(input.buffer);
             });
         });
     });

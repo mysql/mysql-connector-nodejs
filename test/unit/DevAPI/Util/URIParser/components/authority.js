@@ -91,7 +91,7 @@ describe('parsing the authority component', () => {
             expect(parseUri(connectionString).endpoints[0].host).to.equal('::');
         });
 
-        it('parses local UNIX sockets', () => {
+        it('parses local Unix sockets', () => {
             let connectionString = 'user@(/path/to/socket.sock)';
             expect(parseUri(connectionString).endpoints).to.be.an('array').and.have.lengthOf(1);
             // eslint-disable-next-line no-unused-expressions
@@ -157,7 +157,7 @@ describe('parsing the authority component', () => {
             expect(parseUri(connectionString).endpoints[0].host).to.equal('::');
         });
 
-        it('parses local UNIX sockets', () => {
+        it('parses local Unix sockets', () => {
             let connectionString = 'user:password@(/path/to/socket.sock)/schema';
             expect(parseUri(connectionString).endpoints).to.be.an('array').and.have.lengthOf(1);
             // eslint-disable-next-line no-unused-expressions
@@ -273,7 +273,7 @@ describe('parsing the authority component', () => {
             expect(parseUri(connectionString).endpoints[2].host).to.equal('a3:b2:c4:d4:e5:f6:a7:b8');
         });
 
-        it('parses local UNIX sockets', () => {
+        it('parses local Unix sockets', () => {
             // TODO(Rui): proposal for socket paths wrapped with parenthesis.
             // Right now parseUri('user@[(/path/to/socket.sock)]') throws an error
 
@@ -366,7 +366,7 @@ describe('parsing the authority component', () => {
             expect(parseUri(connectionString).endpoints[2].priority).to.equal(99);
         });
 
-        it('parses local UNIX sockets and priorities', () => {
+        it('parses local Unix sockets and priorities', () => {
             // TODO(Rui): proposal for socket paths wrapped with parenthesis.
             // Right now parseUri('user@[(/path/to/socket.sock)]') throws an error
 

@@ -68,7 +68,7 @@ describe('Mysqlx.Error wrapper', () => {
 
         context('deserialize()', () => {
             it('returns a Mysqlx.Error wrap instance encoded with raw protocol data from the network', () => {
-                td.when(bytes.deserialize('foo')).thenReturn({ valueOf: () => 'baz' });
+                td.when(bytes.deserialize('foo')).thenReturn('baz');
                 td.when(MysqlxStub.Error.deserializeBinary('baz')).thenReturn('qux');
                 td.when(wraps('qux')).thenReturn({ valueOf: () => 'bar' });
 

@@ -87,10 +87,20 @@ describe('autonomous prepared statements for collections without server support'
             const actual = [];
 
             const op = collection.find('name = :name').fields('_id');
-            const names = ['foo', 'bar', 'baz'];
 
-            return Promise.all(names.map(name => op.bind('name', name).execute(doc => actual.push(doc))))
-                .then(() => expect(actual).to.deep.equal(expected));
+            return op.bind('name', 'foo')
+                .execute(doc => actual.push(doc))
+                .then(() => {
+                    return op.bind('name', 'bar')
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    return op.bind('name', 'baz')
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    return expect(actual).to.deep.equal(expected);
+                });
         });
     });
 
@@ -100,11 +110,24 @@ describe('autonomous prepared statements for collections without server support'
             const actual = [];
 
             const op = collection.modify('name = :name').set('name', 'qux');
-            const names = ['foo', 'bar', 'baz'];
 
-            return Promise.all(names.map(name => op.bind('name', name).execute()))
-                .then(() => collection.find().execute(doc => actual.push(doc)))
-                .then(() => expect(actual).to.deep.equal(expected));
+            return op.bind('name', 'foo')
+                .execute(doc => actual.push(doc))
+                .then(() => {
+                    return op.bind('name', 'bar')
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    return op.bind('name', 'baz')
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    return collection.find()
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    return expect(actual).to.deep.equal(expected);
+                });
         });
     });
 
@@ -113,11 +136,24 @@ describe('autonomous prepared statements for collections without server support'
             const actual = [];
 
             const op = collection.remove('name = :name');
-            const names = ['foo', 'bar', 'baz'];
 
-            return Promise.all(names.map(name => op.bind('name', name).execute()))
-                .then(() => collection.find().execute(doc => actual.push(doc)))
-                .then(() => expect(actual).to.be.empty);
+            return op.bind('name', 'foo')
+                .execute(doc => actual.push(doc))
+                .then(() => {
+                    return op.bind('name', 'bar')
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    return op.bind('name', 'baz')
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    return collection.find()
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    return expect(actual).to.be.empty;
+                });
         });
     });
 });

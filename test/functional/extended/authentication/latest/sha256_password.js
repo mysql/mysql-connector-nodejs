@@ -49,7 +49,7 @@ describe('sha256_password authentication plugin on MySQL 8.0.15', () => {
         const auth = 'SHA256_MEMORY';
 
         it('fails over TCP with TLS', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, ssl: true });
+            const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: true } });
 
             return mysqlx.getSession(authConfig)
                 .then(() => expect.fail())
@@ -60,7 +60,7 @@ describe('sha256_password authentication plugin on MySQL 8.0.15', () => {
         });
 
         it('fails over regular TLS', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, ssl: false });
+            const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
                 .then(() => expect.fail())
@@ -70,8 +70,8 @@ describe('sha256_password authentication plugin on MySQL 8.0.15', () => {
                 });
         });
 
-        it('fails over a UNIX socket', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket, ssl: false });
+        it('fails over a Unix socket', () => {
+            const authConfig = Object.assign({}, config, baseConfig, { auth, socket, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
                 .then(() => expect.fail())

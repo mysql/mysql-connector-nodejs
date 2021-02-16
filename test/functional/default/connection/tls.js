@@ -53,7 +53,7 @@ describe('connecting with SSL/TLS', () => {
         });
 
         it('succeeds with TLS explicitly disabled', () => {
-            const tlsConfig = Object.assign({}, baseConfig, { ssl: false });
+            const tlsConfig = Object.assign({}, baseConfig, { tls: { enabled: false } });
 
             return mysqlx.getSession(tlsConfig)
                 .then(session => {
@@ -96,10 +96,11 @@ describe('connecting with SSL/TLS', () => {
 
             return fixtures.collectLogs('protocol:outbound:Mysqlx.Connection.CapabilitiesSet', script, [JSON.stringify(scriptConfig)])
                 .then(proc => {
-                    expect(proc.logs).to.have.lengthOf(2);
+                    expect(proc.logs).to.have.lengthOf(1);
                     expect(proc.logs[0]).to.contain.keys('capabilities');
                     expect(proc.logs[0].capabilities).to.contain.keys('capabilities');
-                    expect(proc.logs[0].capabilities.capabilities).to.be.an('array').and.have.lengthOf(1);
+                    expect(proc.logs[0].capabilities.capabilities).to.be.an('array').and.have.lengthOf(2);
+                    // The capability should be the first in the list (capabilities[0]).
                     expect(proc.logs[0].capabilities.capabilities[0].name).to.equal('tls');
                     expect(proc.logs[0].capabilities.capabilities[0].value).to.contain.keys('scalar');
                     expect(proc.logs[0].capabilities.capabilities[0].value.scalar).to.contain.keys('v_bool');

@@ -36,8 +36,8 @@ const expect = require('chai').expect;
 const parseConnectTimeout = require('../../../../../lib/DevAPI/Util/URIParser/parseConnectTimeout');
 
 describe('parseConnectTimeout', () => {
-    it('returns `10000` if no connection timeout value is provided', () => {
-        expect(parseConnectTimeout('?foo=bar&baz=qux')).to.deep.equal('10000');
+    it('returns 10000 if no connection timeout value is provided', () => {
+        expect(parseConnectTimeout('?foo=bar&baz=qux')).to.deep.equal(10000);
     });
 
     it('returns an empty string if the parameter does not contain a value', () => {
@@ -46,10 +46,14 @@ describe('parseConnectTimeout', () => {
         });
     });
 
-    it('returns the provided raw value', () => {
-        ['foo', '""', 20].forEach(raw => {
+    it('returns the provided raw value if it is not a positive integer', () => {
+        ['foo', '""'].forEach(raw => {
             expect(parseConnectTimeout(`?connect-timeout=${raw}`)).to.deep.equal(raw.toString());
         });
+    });
+
+    it('returns a number if it is a positive integer', () => {
+        expect(parseConnectTimeout('?connect-timeout=10')).to.equal(10);
     });
 
     it('throws an error for duplicate options', () => {

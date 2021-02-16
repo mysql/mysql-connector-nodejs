@@ -35,8 +35,11 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
+// subject under test needs to be reloaded with replacement fakes
+let collectionFind = require('../../../lib/DevAPI/CollectionFind');
+
 describe('CollectionFind', () => {
-    let collectionFind, preparing, toArray;
+    let preparing, toArray;
 
     beforeEach('create fakes', () => {
         preparing = td.function();
@@ -51,31 +54,81 @@ describe('CollectionFind', () => {
     });
 
     context('execute()', () => {
+        it('fails if the connection is not open', () => {
+            const getError = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(false);
+            td.when(getError()).thenReturn(error);
+
+            return collectionFind(connection).execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
+        it('fails if the connection is expired', () => {
+            const getError = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isIdle, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(true);
+            td.when(getError()).thenReturn(error);
+
+            return collectionFind(connection).execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
         it('wraps an operation without a cursor in a preparable instance', () => {
             const execute = td.function();
-            const session = 'foo';
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { isIdle, isOpen };
             const row = { toArray };
             const state = { results: [[row]] };
 
-            td.when(toArray()).thenReturn(['bar']);
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
+            td.when(toArray()).thenReturn(['foo']);
             td.when(execute(td.matchers.isA(Function), undefined)).thenResolve(state);
-            td.when(preparing({ session })).thenReturn({ execute });
+            td.when(preparing({ connection })).thenReturn({ execute });
 
-            return collectionFind(session).execute()
-                .then(actual => expect(actual.fetchOne()).to.equal('bar'));
+            return collectionFind(connection).execute()
+                .then(actual => {
+                    return expect(actual.fetchOne()).to.equal('foo');
+                });
         });
 
         it('wraps an operation with a cursor in a preparable instance', () => {
             const execute = td.function();
-            const session = 'foo';
-            const expected = ['bar'];
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { isIdle, isOpen };
+            const expected = ['foo'];
             const state = { warnings: expected };
 
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
             td.when(execute(td.matchers.isA(Function), td.matchers.isA(Function))).thenResolve(state);
-            td.when(preparing({ session })).thenReturn({ execute });
+            td.when(preparing({ connection })).thenReturn({ execute });
 
-            return collectionFind(session).execute(td.callback())
-                .then(actual => expect(actual.getWarnings()).to.deep.equal(expected));
+            return collectionFind(connection).execute(td.callback())
+                .then(actual => {
+                    return expect(actual.getWarnings()).to.deep.equal(expected);
+                });
         });
     });
 
@@ -95,26 +148,26 @@ describe('CollectionFind', () => {
         });
 
         it('sets projections provided as an array', () => {
-            const session = 'foo';
+            const connection = 'foo';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
             td.when(projecting()).thenReturn({ setProjections });
             td.when(parseFlexibleParamList([['foo', 'bar']])).thenReturn(['baz', 'qux']);
 
-            collectionFind(session).fields(['foo', 'bar']);
+            collectionFind(connection).fields(['foo', 'bar']);
 
             expect(td.explain(setProjections).callCount).to.equal(1);
             return expect(td.explain(setProjections).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
         });
 
         it('sets projections provided as multiple arguments', () => {
-            const session = 'foo';
+            const connection = 'foo';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
             td.when(projecting()).thenReturn({ setProjections });
             td.when(parseFlexibleParamList(['foo', 'bar'])).thenReturn(['baz', 'qux']);
 
-            collectionFind(session).fields('foo', 'bar');
+            collectionFind(connection).fields('foo', 'bar');
 
             expect(td.explain(setProjections).callCount).to.equal(1);
             return expect(td.explain(setProjections).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
@@ -129,39 +182,39 @@ describe('CollectionFind', () => {
         });
 
         it('mixes in Grouping with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionFind(session).groupBy('foo');
+            collectionFind(connection).groupBy('foo');
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = collectionFind(session).groupBy();
+            const query = collectionFind(connection).groupBy();
 
             expect(query.groupBy).to.be.a('function');
         });
 
         it('sets the grouping columns provided as an array', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const grouping = ['foo', 'bar'];
-            const query = collectionFind(session).groupBy(grouping);
+            const query = collectionFind(connection).groupBy(grouping);
 
             expect(query.getGroupings()).to.deep.equal(grouping);
         });
 
         it('sets the grouping columns provided as an array', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const grouping = ['foo', 'bar'];
-            const query = collectionFind(session).groupBy(grouping[0], grouping[1]);
+            const query = collectionFind(connection).groupBy(grouping[0], grouping[1]);
 
             expect(query.getGroupings()).to.deep.equal(grouping);
         });
@@ -175,28 +228,28 @@ describe('CollectionFind', () => {
         });
 
         it('mixes in Limiting with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            collectionFind(session).limit(1);
+            collectionFind(connection).limit(1);
 
             return expect(td.explain(forceReprepare).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            const query = collectionFind(session).limit(1);
+            const query = collectionFind(connection).limit(1);
 
             return expect(query.limit).to.be.a('function');
         });
 
         it('sets a default offset implicitely', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            const query = collectionFind(session).limit(1);
+            const query = collectionFind(connection).limit(1);
 
             return expect(query.getOffset()).to.equal(0);
         });
@@ -210,19 +263,19 @@ describe('CollectionFind', () => {
         });
 
         it('mixes in Locking with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionFind(session).lockShared();
+            collectionFind(connection).lockShared();
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = collectionFind(session).groupBy();
+            const query = collectionFind(connection).groupBy();
 
             expect(query.lockShared).to.be.a('function');
         });
@@ -236,19 +289,19 @@ describe('CollectionFind', () => {
         });
 
         it('mixes in Locking with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionFind(session).lockExclusive();
+            collectionFind(connection).lockExclusive();
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = collectionFind(session).groupBy();
+            const query = collectionFind(connection).groupBy();
 
             expect(query.lockExclusive).to.be.a('function');
         });
@@ -262,39 +315,39 @@ describe('CollectionFind', () => {
         });
 
         it('mixes in CollectionOrdering with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionFind(session).sort();
+            collectionFind(connection).sort();
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = collectionFind(session).sort();
+            const query = collectionFind(connection).sort();
 
             return expect(query.sort).to.be.a('function');
         });
 
         it('sets the order parameters provided as an array', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const parameters = ['foo desc', 'bar desc'];
-            const query = collectionFind(session).sort(parameters);
+            const query = collectionFind(connection).sort(parameters);
 
             return expect(query.getOrderings()).to.deep.equal(parameters);
         });
 
         it('sets the order parameters provided as multiple arguments', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const parameters = ['foo desc', 'bar desc'];
-            const query = collectionFind(session).sort(parameters[0], parameters[1]);
+            const query = collectionFind(connection).sort(parameters[0], parameters[1]);
 
             return expect(query.getOrderings()).to.deep.equal(parameters);
         });

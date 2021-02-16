@@ -37,19 +37,32 @@ const statement = require('../../../lib/DevAPI/Statement');
 const td = require('testdouble');
 
 describe('Table', () => {
-    let execute, sqlExecute, table;
+    let databaseObject, execute, sqlExecute, table;
 
     beforeEach('create fakes', () => {
+        databaseObject = td.function();
         execute = td.function();
         sqlExecute = td.function();
         sqlExecute.Namespace = statement.Type;
 
+        td.replace('../../../lib/DevAPI/DatabaseObject', databaseObject);
         td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
         table = require('../../../lib/DevAPI/Table');
     });
 
     afterEach('reset fakes', () => {
         td.reset();
+    });
+
+    context('mixins', () => {
+        it('mixes the DatabaseObject blueprint', () => {
+            const connection = 'foo';
+
+            table(connection);
+
+            expect(td.explain(databaseObject).callCount).to.equal(1);
+            return expect(td.explain(databaseObject).calls[0].args).to.deep.equal([connection]);
+        });
     });
 
     context('getName()', () => {
@@ -62,16 +75,14 @@ describe('Table', () => {
 
     context('getSchema()', () => {
         it('returns the instance of the table schema', () => {
-            const getSchema = td.function();
+            const connection = 'foo';
             const getName = td.function();
-            const session = { getSchema };
             const schema = { getName };
-            const coll = table(session, schema, 'bar');
+            const coll = table(connection, schema, 'bar');
 
-            td.when(getName()).thenReturn('foo');
-            td.when(getSchema('foo')).thenReturn(schema);
+            td.when(getName()).thenReturn('baz');
 
-            return expect(coll.getSchema().getName()).to.equal('foo');
+            return expect(coll.getSchema().getName()).to.equal('baz');
         });
     });
 
@@ -182,17 +193,17 @@ describe('Table', () => {
         });
 
         it('sets the projection parameters provided as an array', () => {
-            const session = { _statements: [] };
-            const expressions = ['foo', 'bar'];
-            const instance = table(session).select(expressions);
+            const connection = 'foo';
+            const expressions = ['bar', 'baz'];
+            const instance = table(connection).select(expressions);
 
             expect(instance.getProjections()).to.deep.equal(expressions);
         });
 
         it('sets the projection parameters provided as multiple arguments', () => {
-            const session = { _statements: [] };
-            const expressions = ['foo', 'bar'];
-            const instance = table(session).select(expressions[0], expressions[1]);
+            const connection = 'foo';
+            const expressions = ['bar', 'baz'];
+            const instance = table(connection).select(expressions[0], expressions[1]);
 
             expect(instance.getProjections()).to.deep.equal(expressions);
         });

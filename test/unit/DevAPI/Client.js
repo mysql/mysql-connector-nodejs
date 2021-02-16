@@ -33,94 +33,152 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const client = require('../../../lib/DevAPI/Client');
+const errors = require('../../../lib/constants/errors');
 const td = require('testdouble');
+const util = require('util');
+
+// subject under test needs to be reloaded with replacement fakes
+let client = require('../../../lib/DevAPI/Client');
 
 describe('DevAPI Client', () => {
     afterEach('reset fakes', () => {
         td.reset();
     });
 
-    context('factory', () => {
-        it('throws an error when unknown options are provided', () => {
-            expect(() => client({ foo: 'bar' })).to.throw('Client option \'foo\' is not recognized as valid.');
-        });
-
-        it('throws an error when invalid option values are provided', () => {
-            const nonObjects = [undefined, true, false, 1, 2.2, 'foo', [], () => {}];
-
-            nonObjects.forEach(invalid => {
-                expect(() => client({ pooling: invalid })).to.throw(`Client option 'pooling' does not support value '${invalid}'.`);
-            });
-        });
-    });
-
     context('getSession()', () => {
-        let acquire, destroy, start;
+        let connection, pool, session;
 
         beforeEach('create fakes', () => {
-            acquire = td.function();
-            destroy = td.function();
-            start = td.function();
+            connection = td.function();
+            pool = td.function();
+            session = td.function();
+
+            td.replace('../../../lib/DevAPI/Connection', connection);
+            td.replace('../../../lib/DevAPI/ConnectionPool', pool);
+            td.replace('../../../lib/DevAPI/Session', session);
+
+            client = require('../../../lib/DevAPI/Client');
         });
 
-        it('retrieves a connection from the pool', () => {
-            const options = { pool: { acquire, start }, uri: { name: 'foo' } };
-            const cli = client(options);
+        it('creates a session over a standalone connection if pooling is not enabled', () => {
+            const options = { foo: 'bar', pooling: { enabled: false } };
+            const open = td.function();
 
-            td.when(start(options.uri)).thenReturn();
-            td.when(acquire()).thenResolve('bar');
+            td.when(connection(options)).thenReturn({ open });
+            td.when(open()).thenResolve('baz');
+            td.when(session('baz')).thenReturn('qux');
 
-            return cli.getSession()
-                .then(actual => {
-                    expect(actual).to.equal('bar');
-                    expect(td.explain(start).callCount).to.equal(1);
-                    expect(td.explain(start).calls[0].args).to.deep.equal([options.uri]);
+            return client(options).getSession()
+                .then(res => {
+                    expect(res).to.equal('qux');
                 });
         });
 
-        it('fails if the pool has been destroyed', () => {
-            const pool = { destroy };
-            const cli = client({ pool });
-            const error = 'Cannot retrieve a connection from the pool. Maybe it has been destroyed already.';
+        it('creates a session over a connection retrieved from a connection pool if pooling is enabled', () => {
+            const options = { foo: 'bar', pooling: { enabled: true } };
+            const create = td.function();
+            const getConnection = td.function();
 
-            td.when(destroy()).thenResolve();
+            td.when(pool(options)).thenReturn({ create });
+            td.when(create()).thenReturn({ getConnection });
+            td.when(getConnection()).thenResolve('baz');
+            td.when(session('baz')).thenReturn('qux');
 
-            return cli.close()
-                .then(() => cli.getSession())
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.deep.equal(error));
+            return client(options).getSession()
+                .then(res => {
+                    expect(res).to.equal('qux');
+                });
         });
     });
 
     context('close()', () => {
-        let destroy;
+        let pool;
 
         beforeEach('create fakes', () => {
-            destroy = td.function();
+            pool = td.function();
+
+            td.replace('../../../lib/DevAPI/ConnectionPool', pool);
+
+            client = require('../../../lib/DevAPI/Client');
         });
 
-        it('destroys the existing pool reference', () => {
-            const pool = { destroy };
-            const cli = client({ pool });
+        it('destroys an existing pool reference', () => {
+            const destroy = td.function();
 
+            td.when(pool(), { ignoreExtraArgs: true }).thenReturn({ destroy });
             td.when(destroy()).thenResolve();
 
-            return cli.close()
-                .then(() => expect(td.explain(destroy).callCount).to.equal(1));
+            return client().close()
+                .then(() => {
+                    expect(td.explain(destroy).callCount).to.equal(1);
+                })
+                .then(() => {
+                    return client.getSession({ pool: { enabled: true } });
+                })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.deep.equal(errors.MESSAGES.ERR_POOL_CLOSED);
+                });
         });
 
-        it('fails if the pool has been destroyed', () => {
-            const pool = { destroy };
-            const cli = client({ pool });
-            const error = 'Cannot close the pool. Maybe it has been destroyed already.';
+        it('fails if the pool is not available', () => {
+            return client().close()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.deep.equal(errors.MESSAGES.ERR_POOL_CLOSED);
+                });
+        });
+    });
 
-            td.when(destroy()).thenResolve();
+    context('Client.validate()', () => {
+        let connection, pool;
 
-            return cli.close()
-                .then(() => cli.close())
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.deep.equal(error));
+        beforeEach('create fakes', () => {
+            connection = td.replace('../../../lib/DevAPI/Connection');
+            pool = td.replace('../../../lib/DevAPI/ConnectionPool');
+
+            client = require('../../../lib/DevAPI/Client');
+        });
+
+        it('fails when a connection option is badly specified', () => {
+            const options = { foo: 'bar' };
+            const error = new Error('foobar');
+
+            td.when(connection.validate(options)).thenThrow(error);
+
+            return expect(() => client.validate(options)).to.throw(error);
+        });
+
+        it('fails when an unknown client option is provided', () => {
+            const options = { foo: 'bar' };
+
+            td.when(connection.validate(), { ignoreExtraArgs: true }).thenReturn(true);
+
+            return expect(() => client.validate(options)).to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION, 'foo'));
+        });
+
+        it('fails when the pooling option is badly specified', () => {
+            const options = { pooling: 'foo' };
+
+            td.when(connection.validate(), { ignoreExtraArgs: true }).thenReturn(true);
+
+            return expect(() => client.validate(options)).to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE, 'pooling', 'foo'));
+        });
+
+        it('fails when a pooling option value is badly specified', () => {
+            const options = { pooling: { foo: 'bar' } };
+            const error = new Error('foobar');
+
+            td.when(connection.validate(), { ignoreExtraArgs: true }).thenReturn(true);
+            // In this case, the object will also contain default values for
+            // the valid pooling options.
+            td.when(pool.validate(td.matchers.contains(options.pooling))).thenThrow(error);
+
+            return expect(() => client.validate(options)).to.throw(error);
         });
     });
 });

@@ -200,7 +200,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.setCollation(63); // binary charset and collation
 
             const rowProto = new ResultsetStub.Row();
-            rowProto.addField(bytes.deserialize(binary).valueOf());
+            rowProto.addField(bytes.create(binary).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
 
@@ -208,7 +208,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.clearFlags(); // without right-padding
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(binary).valueOf());
+            rowProto.addField(bytes.create(binary).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
 
@@ -217,7 +217,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.setFlags(1);
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(binary).valueOf());
+            rowProto.addField(bytes.create(binary).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
 
@@ -226,7 +226,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.setFlags(1);
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(binary).valueOf());
+            rowProto.addField(bytes.create(binary).valueOf());
 
             // remove the additional `0x00` bytes
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()[0].slice(0, -2)).to.deep.equal(binary.slice(0, -1));
@@ -239,7 +239,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.setContentType(ResultsetStub.ContentType_BYTES.GEOMETRY);
 
             const rowProto = new ResultsetStub.Row();
-            rowProto.addField(bytes.deserialize(binary).valueOf());
+            rowProto.addField(bytes.create(binary).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
 
@@ -248,7 +248,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.clearFlags();
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(binary).valueOf());
+            rowProto.addField(bytes.create(binary).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
 
@@ -257,7 +257,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.setFlags(1);
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(binary).valueOf());
+            rowProto.addField(bytes.create(binary).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
 
@@ -266,7 +266,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.setFlags(1);
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(binary).valueOf());
+            rowProto.addField(bytes.create(binary).valueOf());
 
             // remove the additional `0x00` bytes
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()[0].slice(0, -2)).to.deep.equal(binary.slice(0, -1));
@@ -280,7 +280,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             const rowProto = new ResultsetStub.Row();
             // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.deserialize(new Buffer(`${JSON.stringify(obj)}\0`)).valueOf());
+            rowProto.addField(bytes.create(new Buffer(`${JSON.stringify(obj)}\0`)).valueOf());
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([obj]);
         });
 
@@ -292,7 +292,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             const rowProto = new ResultsetStub.Row();
             // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.deserialize(new Buffer(`${xml}\0`)).valueOf());
+            rowProto.addField(bytes.create(new Buffer(`${xml}\0`)).valueOf());
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([xml]);
         });
 
@@ -301,7 +301,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             const rowProto = new ResultsetStub.Row();
             // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.deserialize(new Buffer('foo\0')).valueOf());
+            rowProto.addField(bytes.create(new Buffer('foo\0')).valueOf());
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['foo']);
 
             // without right-padding
@@ -310,13 +310,13 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             rowProto.clearFieldList();
             // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.deserialize(new Buffer('foo\0')).valueOf());
+            rowProto.addField(bytes.create(new Buffer('foo\0')).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['foo']);
 
             rowProto.clearFieldList();
             // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.deserialize(new Buffer('\0')).valueOf());
+            rowProto.addField(bytes.create(new Buffer('\0')).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['']);
 
@@ -326,7 +326,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             rowProto.clearFieldList();
             // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.deserialize(new Buffer('foo\0')).valueOf());
+            rowProto.addField(bytes.create(new Buffer('foo\0')).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['foo']);
 
@@ -336,7 +336,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             rowProto.clearFieldList();
             // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.deserialize(new Buffer('foo\0')).valueOf());
+            rowProto.addField(bytes.create(new Buffer('foo\0')).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['foo  ']);
         });
@@ -355,7 +355,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             const rowProto = new ResultsetStub.Row();
             // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.deserialize(new Buffer('foo\0')).valueOf());
+            rowProto.addField(bytes.create(new Buffer('foo\0')).valueOf());
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['foo']);
         });
 
@@ -368,7 +368,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             time.writeUInt8(22, 1);
 
             const rowProto = new ResultsetStub.Row();
-            rowProto.addField(bytes.deserialize(time).valueOf());
+            rowProto.addField(bytes.create(time).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['+22:00:00.000000']);
 
@@ -378,7 +378,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             time.writeUInt8(5, 1);
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(time).valueOf());
+            rowProto.addField(bytes.create(time).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['-05:00:00.000000']);
 
@@ -389,7 +389,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             time.writeUInt8(47, 2);
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(time).valueOf());
+            rowProto.addField(bytes.create(time).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['-14:47:00.000000']);
 
@@ -401,7 +401,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             time.writeUInt8(8, 3);
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(time).valueOf());
+            rowProto.addField(bytes.create(time).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['+08:08:08.000000']);
 
@@ -418,7 +418,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             const useconds = new Buffer(writer.getResultBuffer().slice(1));
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(Buffer.concat([time, useconds], time.length + useconds.length)).valueOf());
+            rowProto.addField(bytes.create(Buffer.concat([time, useconds], time.length + useconds.length)).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['-20:17:54.999999']);
         });
@@ -439,7 +439,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             let datetime = Buffer.concat([year, dayAndMonth], year.length + dayAndMonth.length);
 
             const rowProto = new ResultsetStub.Row();
-            rowProto.addField(bytes.deserialize(datetime).valueOf());
+            rowProto.addField(bytes.create(datetime).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([new Date('9999-12-25')]);
 
@@ -463,7 +463,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             datetime = Buffer.concat([year, dayAndMonth, hourAndMinute], year.length + dayAndMonth.length + hourAndMinute.length);
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(datetime).valueOf());
+            rowProto.addField(bytes.create(datetime).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([new Date('2018-02-19T15:09:00.000Z')]);
         });
@@ -493,7 +493,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             const datetime = Buffer.concat([year, fromMonthToSeconds, useconds], year.length + fromMonthToSeconds.length + useconds.length);
 
             const rowProto = new ResultsetStub.Row();
-            rowProto.addField(bytes.deserialize(datetime).valueOf());
+            rowProto.addField(bytes.create(datetime).valueOf());
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([(new Date('2018-02-19T15:21:26.123Z')).getTime()]);
         });
 
@@ -504,7 +504,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             let decimal = new Buffer('04123401d0', 'hex');
 
             const rowProto = new ResultsetStub.Row();
-            rowProto.addField(bytes.deserialize(decimal).valueOf());
+            rowProto.addField(bytes.create(decimal).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([-12.3401]);
 
@@ -514,7 +514,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             decimal = new Buffer(`${scale}${overflow}${overflow}c0`, 'hex');
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(decimal).valueOf());
+            rowProto.addField(bytes.create(decimal).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([`+${overflow}.${overflow}`]);
         });
@@ -531,7 +531,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             let setDefinition = new Buffer('00', 'hex');
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(setDefinition).valueOf());
+            rowProto.addField(bytes.create(setDefinition).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([['']]);
 
@@ -539,7 +539,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             setDefinition = new Buffer('01', 'hex');
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(setDefinition).valueOf());
+            rowProto.addField(bytes.create(setDefinition).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([[]]);
 
@@ -547,7 +547,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             setDefinition = new Buffer('0100', 'hex');
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(setDefinition).valueOf());
+            rowProto.addField(bytes.create(setDefinition).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([['\0']]);
 
@@ -560,7 +560,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             setDefinition = new Buffer(`01${x}01${y}`, 'hex');
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(setDefinition).valueOf());
+            rowProto.addField(bytes.create(setDefinition).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([['x', 'y']]);
 
@@ -572,7 +572,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             setDefinition = new Buffer(`03${foo}03${bar}`, 'hex');
 
             rowProto.clearFieldList();
-            rowProto.addField(bytes.deserialize(setDefinition).valueOf());
+            rowProto.addField(bytes.create(setDefinition).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([['foo', 'bar']]);
         });

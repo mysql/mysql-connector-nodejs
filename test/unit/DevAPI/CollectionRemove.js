@@ -35,8 +35,11 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
+// subject under test needs to be reloaded with replacement fakes
+let collectionRemove = require('../../../lib/DevAPI/CollectionRemove');
+
 describe('CollectionRemove', () => {
-    let collectionRemove, preparing;
+    let preparing;
 
     beforeEach('create fakes', () => {
         preparing = td.function();
@@ -54,36 +57,90 @@ describe('CollectionRemove', () => {
             const query = collectionRemove();
 
             return query.execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with remove().'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal('An explicit criteria needs to be provided with remove().');
+                });
         });
 
         it('fails if a condition query is empty', () => {
             const query = collectionRemove(null, null, null, '');
 
             return query.execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with remove().'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal('An explicit criteria needs to be provided with remove().');
+                });
         });
 
         it('fails if the condition is not valid', () => {
             const query = collectionRemove(null, null, null, ' ');
 
             return query.execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided with remove().'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal('An explicit criteria needs to be provided with remove().');
+                });
+        });
+
+        it('fails if the connection is not open', () => {
+            const getError = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(false);
+            td.when(getError()).thenReturn(error);
+
+            return collectionRemove(connection, null, null, 'true').execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
+        it('fails if the connection is expired', () => {
+            const getError = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isIdle, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(true);
+            td.when(getError()).thenReturn(error);
+
+            return collectionRemove(connection, null, null, 'true').execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
         });
 
         it('wraps the operation in a preparable instance', () => {
             const execute = td.function();
-            const session = 'foo';
-            const expected = ['bar'];
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { isIdle, isOpen };
+            const expected = ['foo'];
             const state = { warnings: expected };
 
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
             td.when(execute(td.matchers.isA(Function))).thenResolve(state);
-            td.when(preparing({ session })).thenReturn({ execute });
+            td.when(preparing({ connection })).thenReturn({ execute });
 
-            return collectionRemove(session, null, null, 'true').execute()
+            return collectionRemove(connection, null, null, 'true').execute()
                 .then(actual => expect(actual.getWarnings()).to.deep.equal(expected));
         });
     });
@@ -96,19 +153,19 @@ describe('CollectionRemove', () => {
         });
 
         it('mixes in Limiting with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            collectionRemove(session).limit(1);
+            collectionRemove(connection).limit(1);
 
             return expect(td.explain(forceReprepare).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            const query = collectionRemove(session).limit(1);
+            const query = collectionRemove(connection).limit(1);
 
             return expect(query.limit).to.be.a('function');
         });
@@ -122,39 +179,39 @@ describe('CollectionRemove', () => {
         });
 
         it('mixes in CollectionOrdering with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            collectionRemove(session).sort();
+            collectionRemove(connection).sort();
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = collectionRemove(session).sort();
+            const query = collectionRemove(connection).sort();
 
             expect(query.sort).to.be.a('function');
         });
 
         it('sets the order parameters provided as an array', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const parameters = ['foo desc', 'bar desc'];
-            const query = collectionRemove(session).sort(parameters);
+            const query = collectionRemove(connection).sort(parameters);
 
             expect(query.getOrderings()).to.deep.equal(parameters);
         });
 
         it('sets the order parameters provided as multiple arguments', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const parameters = ['foo desc', 'bar desc'];
-            const query = collectionRemove(session).sort(parameters[0], parameters[1]);
+            const query = collectionRemove(connection).sort(parameters[0], parameters[1]);
 
             expect(query.getOrderings()).to.deep.equal(parameters);
         });

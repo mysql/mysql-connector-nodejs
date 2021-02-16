@@ -91,10 +91,20 @@ describe('autonomous prepared statements for tables without server support', () 
             const actual = [];
 
             const op = table.select('_id').where('name = :name');
-            const names = ['foo', 'bar', 'baz'];
 
-            return Promise.all(names.map(name => op.bind('name', name).execute(row => actual.push(row))))
-                .then(() => expect(actual).to.deep.equal(expected));
+            return op.bind('name', 'foo')
+                .execute(row => actual.push(row))
+                .then(() => {
+                    return op.bind('name', 'bar')
+                        .execute(row => actual.push(row));
+                })
+                .then(() => {
+                    return op.bind('name', 'baz')
+                        .execute(row => actual.push(row));
+                })
+                .then(() => {
+                    return expect(actual).to.deep.equal(expected);
+                });
         });
     });
 
@@ -106,11 +116,24 @@ describe('autonomous prepared statements for tables without server support', () 
             const actual = [];
 
             const op = table.update().where('name = :name').set('name', 'qux');
-            const names = ['foo', 'bar', 'baz'];
 
-            return Promise.all(names.map(name => op.bind('name', name).execute()))
-                .then(() => table.select().orderBy('_id').execute(row => actual.push(row)))
-                .then(() => expect(actual).to.deep.equal(expected));
+            return op.bind('name', 'foo')
+                .execute(row => actual.push(row))
+                .then(() => {
+                    return op.bind('name', 'bar')
+                        .execute(row => actual.push(row));
+                })
+                .then(() => {
+                    return op.bind('name', 'baz')
+                        .execute(row => actual.push(row));
+                })
+                .then(() => {
+                    return table.select().orderBy('_id')
+                        .execute(row => actual.push(row));
+                })
+                .then(() => {
+                    return expect(actual).to.deep.equal(expected);
+                });
         });
     });
 
@@ -119,11 +142,24 @@ describe('autonomous prepared statements for tables without server support', () 
             const actual = [];
 
             const op = table.delete().where('name = :name');
-            const names = ['foo', 'bar', 'baz'];
 
-            return Promise.all(names.map(name => op.bind('name', name).execute()))
-                .then(() => table.select().execute(doc => actual.push(doc)))
-                .then(() => expect(actual).to.be.empty);
+            return op.bind('name', 'foo')
+                .execute(row => actual.push(row))
+                .then(() => {
+                    return op.bind('name', 'bar')
+                        .execute(row => actual.push(row));
+                })
+                .then(() => {
+                    return op.bind('name', 'baz')
+                        .execute(row => actual.push(row));
+                })
+                .then(() => {
+                    return table.select()
+                        .execute(doc => actual.push(doc));
+                })
+                .then(() => {
+                    return expect(actual).to.be.empty;
+                });
         });
     });
 });

@@ -66,13 +66,13 @@ describe('parsePlainAddress', () => {
         });
     });
 
-    it('parses a valid pct-encoded local UNIX socket file', () => {
+    it('parses a valid pct-encoded local Unix socket file', () => {
         ['%2Fpath%2Fto%2Fsocket', '.%2Fpath%2Fto%2Fsocket', '..%2Fpath%2Fto%2Fsocket'].forEach(socket => {
             expect(parsePlainAddress(socket)).to.deep.equal({ host: undefined, port: undefined, socket: socket.replace(/%2F/g, '/') });
         });
     });
 
-    it('parses a valid custom-encoded local UNIX socket file', () => {
+    it('parses a valid custom-encoded local Unix socket file', () => {
         ['(/path/to/socket)', '(./path/to/socket)', '(../path/to/socket)'].forEach(socket => {
             expect(parsePlainAddress(socket)).to.deep.equal({ host: undefined, port: undefined, socket: socket.replace(/[()]/g, '') });
         });

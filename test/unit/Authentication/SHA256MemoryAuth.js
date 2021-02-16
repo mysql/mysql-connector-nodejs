@@ -37,10 +37,6 @@ const sha256MemoryAuth = require('../../../lib/Authentication/SHA256MemoryAuth')
 const td = require('testdouble');
 
 describe('SHA256MemoryAuth', () => {
-    it('throws an error if the username is not provided', () => {
-        expect(() => sha256MemoryAuth()).to.throw();
-    });
-
     it('mixes-in AuthPlugin', () => {
         expect(sha256MemoryAuth({ user: 'foo' }).getPassword).to.be.a('function');
         expect(sha256MemoryAuth({ user: 'foo' }).getSchema).to.be.a('function');

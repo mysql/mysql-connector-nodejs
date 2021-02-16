@@ -1,0 +1,30 @@
+{
+    "services": [{
+        "address": "172.16.238.101",
+        "id": "primary",
+        "name": "mysqlx",
+        "port": 33060,
+        "tags": ["primary"],
+        "weights": {
+            "passing": 10
+        }
+    }, {
+        "address": "172.16.238.102",
+        "id": "secondary1",
+        "name": "mysqlx",
+        "port": 33060,
+        "tags": ["secondary"],
+        "weights": {
+            "passing": 4
+        }
+    }, {
+        "address": "172.16.238.103",
+        "id": "secondary2",
+        "name": "mysqlx",
+        "port": 33060,
+        "tags": ["secondary"],
+        "weights": {
+            "passing": 3
+        }
+    }]
+}

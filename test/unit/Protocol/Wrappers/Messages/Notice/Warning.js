@@ -55,7 +55,7 @@ describe('Mysqlx.Notice.Warning wrapper', () => {
     context('class methods', () => {
         context('deserialize()', () => {
             it('returns a Mysqlx.Notice.Warning wrap instance based on raw protocol data from the network', () => {
-                td.when(bytes.deserialize('foo')).thenReturn({ valueOf: () => 'baz' });
+                td.when(bytes.deserialize('foo')).thenReturn('baz');
                 td.when(NoticeStub.Warning.deserializeBinary('baz')).thenReturn('qux');
                 td.when(wraps('qux')).thenReturn({ valueOf: () => 'bar' });
 

@@ -39,31 +39,934 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const os = require('os');
 const path = require('path');
+const qs = require('querystring');
 const sqlExecute = require('../../../../lib/DevAPI/SqlExecute');
+const tls = require('tls');
+const util = require('util');
 
 describe('connection failures', () => {
     const baseConfig = { schema: undefined };
 
-    context('while creating a session', () => {
-        // Although we can create a user without a name in the server via:
-        // CREATE USER ''@'%'
-        // It does not allow userless client connections
-        context('when a user is not provided', () => {
-            it('fails using a configuration object', () => {
-                const userlessConfig = Object.assign({}, config, baseConfig, { user: undefined });
+    context('while creating a new session', () => {
+        const failureConfig = { host: undefined, port: undefined, socket: undefined };
 
-                return mysqlx.getSession(userlessConfig)
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.match(/^Access denied for user ''/));
+        context('using a standalone connection', () => {
+            context('when the connection definition is not valid', () => {
+                it('fails using something other then an object or string', () => {
+                    return mysqlx.getSession(false)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.not.equal('expect.fail()');
+                        });
+                });
+
+                it('fails using a null configuration object', () => {
+                    return mysqlx.getSession(null)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.not.equal('expect.fail()');
+                        });
+                });
+
+                it('fails using an empty string', () => {
+                    return mysqlx.getSession('')
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.not.equal('expect.fail()');
+                        });
+                });
             });
 
-            it('fails using a connection string', () => {
-                const userlessConfig = Object.assign({}, config, baseConfig, { user: undefined });
-                const uri = `mysqlx://${userlessConfig.host}:${userlessConfig.port}`;
+            context('when the connection options are specified with a configuration object', () => {
+                it('fails when TLS is disabled and additional TLS options are provided', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { enabled: false, ca: '/path/to/ca.pem' } });
 
-                return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.match(/^Access denied for user ''/));
+                    return mysqlx.getSession(invalidTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+                        });
+                });
+
+                it('fails when the path to the CA file is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { ca: false } });
+
+                    return mysqlx.getSession(invalidTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+                        });
+                });
+
+                it('fails when the path to the CRL file is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { crl: false } });
+
+                    return mysqlx.getSession(invalidTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+                        });
+                });
+
+                it('fails when the list of TLS versions is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { versions: 'foo' } });
+
+                    return mysqlx.getSession(invalidTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, 'foo'));
+                        });
+                });
+
+                it('fails when unknown TLS versions are provided in the list', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { versions: ['foo', 'bar'] } });
+
+                    return mysqlx.getSession(invalidTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                        });
+                });
+
+                it('fails when all the TLS versions provided in the list are not supported', function () {
+                    // This test only makes sense on Node.js v10 (or lower).
+                    if (tls.DEFAULT_MAX_VERSION === 'TLSv1.3') {
+                        return this.skip();
+                    }
+
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { versions: ['TLSv1.3'] } });
+
+                    return mysqlx.getSession(invalidTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE);
+                        });
+                });
+
+                it('fails when the list of ciphersuites is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { ciphersuites: 'foo' } });
+
+                    return mysqlx.getSession(invalidTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'foo'));
+                        });
+                });
+
+                it('fails when the list of ciphersuites does not contain any valid one', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { ciphersuites: ['foo'] } });
+
+                    return mysqlx.getSession(invalidTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_NO_VALID_CIPHERSUITE_AVAILABLE);
+                        });
+                });
+
+                it('fails when the connection timeout is not a number above or equal to 0', () => {
+                    const invalidTimeoutConfig = Object.assign({}, config, baseConfig, failureConfig, { connectTimeout: 'foo1' });
+
+                    return mysqlx.getSession(invalidTimeoutConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                        });
+                });
+
+                it('fails when the connection attributes are null/empty', () => {
+                    const invalidAttributesConfig = Object.assign({}, config, baseConfig, failureConfig, { connectionAttributes: null });
+
+                    return mysqlx.getSession(invalidAttributesConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                        });
+                });
+
+                it('fails when the connection attributes are badly specified', () => {
+                    const invalidAttributesConfig = Object.assign({}, config, baseConfig, failureConfig, { connectionAttributes: ['foo', 'bar'] });
+
+                    return mysqlx.getSession(invalidAttributesConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                        });
+                });
+
+                it('fails when the name of any connection attribute starts with "_"', () => {
+                    const invalidAttributesConfig = Object.assign({}, config, baseConfig, failureConfig, { connectionAttributes: { _foo: 'bar' } });
+
+                    return mysqlx.getSession(invalidAttributesConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+                        });
+                });
+
+                it('fails when SRV resolution is badly configured', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, failureConfig, { resolveSrv: 'foo' });
+
+                    return mysqlx.getSession(invalidSRVConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_INVALID_OPTION);
+                        });
+                });
+
+                it('fails when enabling SRV resolution whilst specifying multiple hosts', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, failureConfig, { resolveSrv: true, endpoints: [{ host: 'foo' }, { host: 'bar' }] });
+
+                    return mysqlx.getSession(invalidSRVConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_MULTIPLE_ENDPOINTS);
+                        });
+                });
+
+                it('fails when enabling SRV resolution whilst specifying a port', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, failureConfig, { resolveSrv: true, port: 33061 });
+
+                    return mysqlx.getSession(invalidSRVConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                        });
+                });
+
+                it('fails when enabling SRV resolution whist specifying a port using the list of endpoints', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, failureConfig, { resolveSrv: true, endpoints: [{ host: 'foo', port: 33062 }] });
+
+                    return mysqlx.getSession(invalidSRVConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                        });
+                });
+
+                it('fails when enabling SRV resolution whilst specifying a socket', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, failureConfig, { resolveSrv: true, socket: '/path/to/socket' });
+
+                    return mysqlx.getSession(invalidSRVConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                        });
+                });
+
+                it('fails when enabling SRV resolution whilst specifying a socket using the list of endpoints', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, failureConfig, { resolveSrv: true, endpoints: [{ socket: '/path/to/socket' }] });
+
+                    return mysqlx.getSession(invalidSRVConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                        });
+                });
+
+                it('fails when the port is not a number between 0 and 65536', () => {
+                    const invalidPortConfig = Object.assign({}, config, baseConfig, failureConfig, { port: -1 });
+
+                    return mysqlx.getSession(invalidPortConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                        });
+                });
+
+                it('fails when a port in the list of endpoints is not a number between 0 and 65536', () => {
+                    const invalidPortConfig = Object.assign({}, config, baseConfig, failureConfig, { endpoints: [{ port: 33060 }, { port: -1 }] });
+
+                    return mysqlx.getSession(invalidPortConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                        });
+                });
+            });
+
+            context('when the connection options are specified with a connection string', () => {
+                it('fails when TLS is disabled and additional TLS options are provided', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, versions: ['TLSv1.2', 'TLSv1.3'] } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-mode=DISABLED&tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]}`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+                        });
+                });
+
+                it('fails when the path to the CA file is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { ca: false } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-ca=[]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+                        });
+                });
+
+                it('fails when the path to the CRL file is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { crl: false } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-crl={}`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+                        });
+                });
+
+                it('fails when the list of TLS versions is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: 'foo' } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=foo`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, 'foo'));
+                        });
+                });
+
+                it('fails when unknown TLS versions are provided in the list', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['foo', 'bar'] } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                        });
+                });
+
+                it('fails when all the TLS versions provided in the list are not supported', function () {
+                    // This test only makes sense on Node.js v10 (or lower).
+                    if (tls.DEFAULT_MAX_VERSION === 'TLSv1.3') {
+                        return this.skip();
+                    }
+
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['TLSv1.3'] } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE);
+                        });
+                });
+
+                it('fails when the list of ciphersuites is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { ciphersuites: 'foo' } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=${invalidTLSConfig.tls.ciphersuites}`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'foo'));
+                        });
+                });
+
+                it('fails when the list of ciphersuites does not contain any valid one', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { ciphersuites: ['foo'] } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=[${invalidTLSConfig.tls.ciphersuites.join(',')}]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_NO_VALID_CIPHERSUITE_AVAILABLE);
+                        });
+                });
+
+                it('fails when the connection timeout is not a number above or equal to 0', () => {
+                    const invalidTimeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: -1 });
+                    const uri = `mysqlx://${invalidTimeoutConfig.user}:${invalidTimeoutConfig.password}@${invalidTimeoutConfig.host}:${invalidTimeoutConfig.port}?connect-timeout=${invalidTimeoutConfig.connectTimeout}`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                        });
+                });
+
+                it('fails when the connection attributes are badly specified', () => {
+                    const invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: ['foo', 'bar'] });
+                    const uri = `mysqlx://${invalidAttributesConfig.user}:${invalidAttributesConfig.password}@${invalidAttributesConfig.host}:${invalidAttributesConfig.port}?connection-attributes=${invalidAttributesConfig.connectionAttributes.join(',')}`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                        });
+                });
+
+                it('fails when the name of any connection attribute starts with "_"', () => {
+                    const invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: { _foo: 'bar' } });
+                    const uri = `mysqlx://${invalidAttributesConfig.user}:${invalidAttributesConfig.password}@${invalidAttributesConfig.host}:${invalidAttributesConfig.port}?connection-attributes=[${qs.stringify(invalidAttributesConfig.connectionAttributes)}]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+                        });
+                });
+
+                it('fails when enabling SRV resolution whilst specifying multiple hosts', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, endpoints: [{ host: 'foo' }, { host: 'bar' }] });
+                    const uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@[${invalidSRVConfig.endpoints.map(e => e.host).join(',')}]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_MULTIPLE_ENDPOINTS);
+                        });
+                });
+
+                it('fails when enabling SRV resolution whilst specifying a port', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, port: 33061 });
+                    const uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@${invalidSRVConfig.host}:${invalidSRVConfig.port}`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                        });
+                });
+
+                it('fails when enabling SRV resolution whilst specifying a socket', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, socket: '/path/to/socket' });
+                    const uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@${encodeURIComponent(invalidSRVConfig.socket)}`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                        });
+                });
+
+                it('fails when the port is not a number between 0 and 65536', () => {
+                    const invalidPortConfig = Object.assign({}, config, baseConfig, { port: -1 });
+                    const uri = `mysqlx://${invalidPortConfig.user}:${invalidPortConfig.password}@${invalidPortConfig.host}:${invalidPortConfig.port}`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                        });
+                });
+
+                it('fails when a port in the list of endpoints is not a number between 0 and 65536', () => {
+                    const invalidPortConfig = Object.assign({}, config, baseConfig, failureConfig, { endpoints: [{ port: 33060 }, { port: -1 }] });
+                    const uri = `mysqlx://${invalidPortConfig.user}:${invalidPortConfig.password}@[${invalidPortConfig.endpoints.map(e => `${invalidPortConfig.host}:${e.port}`)}]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                        });
+                });
+            });
+        });
+
+        context('using a connection pool', () => {
+            it('throws an error when unknown client options are provided', () => {
+                const unknownClientOptions = { foo: 'bar' };
+
+                expect(() => mysqlx.getClient({}, unknownClientOptions))
+                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION, 'foo'));
+            });
+
+            it('throws an error when unknown pooling options are provided', () => {
+                const unknownPoolingOptions = { pooling: { foo: 'bar' } };
+
+                expect(() => mysqlx.getClient({}, unknownPoolingOptions))
+                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION, 'pooling.foo'));
+            });
+
+            it('throws an error when invalid pooling option values are provided', () => {
+                let unknownPoolingOptions = { pooling: { enabled: 'foo' } };
+
+                expect(() => mysqlx.getClient({}, unknownPoolingOptions))
+                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE, 'pooling.enabled', 'foo'));
+
+                unknownPoolingOptions = { pooling: { maxIdleTime: -1 } };
+
+                expect(() => mysqlx.getClient({}, unknownPoolingOptions))
+                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE, 'pooling.maxIdleTime', -1));
+
+                unknownPoolingOptions = { pooling: { maxSize: -1 } };
+
+                expect(() => mysqlx.getClient({}, unknownPoolingOptions))
+                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE, 'pooling.maxSize', -1));
+
+                unknownPoolingOptions = { pooling: { maxSize: -1 } };
+
+                expect(() => mysqlx.getClient({}, unknownPoolingOptions))
+                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE, 'pooling.maxSize', -1));
+            });
+
+            context('when the connection options are specified with a configuration object', () => {
+                it('throws an error when TLS is disabled and additional TLS options are provided', () => {
+                    let invalidTLSConfig = { tls: { enabled: false, versions: ['TLSv1.2', 'TLSv1.3'] } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+
+                    invalidTLSConfig = { tls: { enabled: false, ca: '/path/to/ca.pem' } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+                });
+
+                it('throws an error when the path to the CA file is badly specified', () => {
+                    let invalidTLSConfig = { tls: { ca: false } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+
+                    invalidTLSConfig = { tls: { ca: [] } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+                });
+
+                it('throws an error when the path to the CRL file is badly specified', () => {
+                    let invalidTLSConfig = { tls: { crl: {} } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+
+                    invalidTLSConfig = { tls: { crl: 2 } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+                });
+
+                it('throws an error when the list of TLS versions is badly specified', () => {
+                    let invalidTLSConfig = { tls: { versions: {} } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, '{}'));
+
+                    invalidTLSConfig = { tls: { versions: 'foo' } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, 'foo'));
+                });
+
+                it('throws an error when unknown TLS versions are provided in the list', () => {
+                    let invalidTLSConfig = { tls: { versions: ['foo', 'bar'] } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+
+                    invalidTLSConfig = { tls: { versions: ['TLSv1.2', 'bar'] } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'bar', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                });
+
+                it('throws an error when all the TLS versions provided in the list are not supported', function () {
+                    if (tls.DEFAULT_MAX_VERSION === 'TLSv1.3') {
+                        return this.skip();
+                    }
+
+                    const invalidTLSConfig = { tls: { versions: ['TLSv1.3'] } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE, 'TLSv1.3'));
+                });
+
+                it('throws an error when the list of ciphersuites is badly specified', () => {
+                    let invalidTLSConfig = { tls: { ciphersuites: 'foo' } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'foo'));
+
+                    invalidTLSConfig = { tls: { ciphersuites: {} } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, '{}'));
+
+                    invalidTLSConfig = { tls: { ciphersuites: false } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'false'));
+                });
+
+                it('throws an error when the list of ciphersuites does not contain any valid one', () => {
+                    const invalidTLSConfig = { tls: { ciphersuites: ['foo', 'bar'] } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(errors.MESSAGES.ERR_TLS_NO_VALID_CIPHERSUITE_AVAILABLE);
+                });
+
+                it('throws an error when the connection timeout is not a number above or equal to 0', () => {
+                    let invalidTimeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: 'foo1' });
+
+                    expect(() => mysqlx.getClient(invalidTimeoutConfig))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+
+                    invalidTimeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: -1 });
+
+                    expect(() => mysqlx.getClient(invalidTimeoutConfig))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                });
+
+                it('throws an error when the connection attributes are badly specified', () => {
+                    let invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: ['foo', 'bar'] });
+
+                    expect(() => mysqlx.getClient(invalidAttributesConfig))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+
+                    invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: 'foo' });
+
+                    expect(() => mysqlx.getClient(invalidAttributesConfig))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+
+                    invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: null });
+
+                    expect(() => mysqlx.getClient(invalidAttributesConfig))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                });
+
+                it('throws an error when the name of any connection attribute starts with "_"', () => {
+                    const invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: { _foo: 'bar' } });
+
+                    expect(() => mysqlx.getClient(invalidAttributesConfig))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+                });
+
+                it('throws an error when SRV resolution is badly configured', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: 'foo' });
+
+                    expect(() => mysqlx.getClient(invalidSRVConfig))
+                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_INVALID_OPTION);
+                });
+
+                it('throws an error when enabling SRV resolution whilst specifying multiple hosts', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, endpoints: [{ host: 'foo' }, { host: 'bar' }] });
+
+                    expect(() => mysqlx.getClient(invalidSRVConfig))
+                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_MULTIPLE_ENDPOINTS);
+                });
+
+                it('throws an error when enabling SRV resolution whilst specifying a port', () => {
+                    let invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, port: 33061 });
+
+                    expect(() => mysqlx.getClient(invalidSRVConfig))
+                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+
+                    invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, endpoints: [{ host: 'foo', port: 33062 }] });
+
+                    expect(() => mysqlx.getClient(invalidSRVConfig))
+                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                });
+
+                it('throws an error when enabling SRV resolution whilst specifying a socket', () => {
+                    let invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, socket: '/path/to/socket', port: undefined });
+
+                    expect(() => mysqlx.getClient(invalidSRVConfig))
+                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+
+                    invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, endpoints: [{ socket: '/path/to/socket' }] });
+
+                    expect(() => mysqlx.getClient(invalidSRVConfig))
+                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                });
+
+                it('throws an error when the port is not a number between 0 and 65536', () => {
+                    let invalidPortConfig = Object.assign({}, config, baseConfig, { port: -1 });
+
+                    expect(() => mysqlx.getClient(invalidPortConfig))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+
+                    invalidPortConfig = Object.assign({}, config, baseConfig, { port: 'foo' });
+
+                    expect(() => mysqlx.getClient(invalidPortConfig))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                });
+            });
+
+            context('when the connection options are specified with a connection string', () => {
+                it('throws an error when TLS is disabled and additional TLS options are provided', () => {
+                    let invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, versions: ['TLSv1.2', 'TLSv1.3'] } });
+                    let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-mode=DISABLED&tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+
+                    invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, ca: '/path/to/ca.pem' } });
+                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-mode=DISABLED&ssl-ca=${encodeURIComponent('/path/to/ca.pem')}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+                });
+
+                it('throws an error when the path to the CA file is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { ca: [] } });
+                    let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-ca=${JSON.stringify(invalidTLSConfig.tls.ca)}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+
+                    invalidTLSConfig.tls.ca = {};
+                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-ca=${JSON.stringify(invalidTLSConfig.tls.ca)}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+                });
+
+                it('throws an error when the path to the CRL file is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { crl: [] } });
+                    let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-crl=${JSON.stringify(invalidTLSConfig.tls.crl)}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+
+                    invalidTLSConfig.tls.crl = {};
+                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-crl=${JSON.stringify(invalidTLSConfig.tls.crl)}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+                });
+
+                it('throws an error when the list of TLS versions is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: {} } });
+                    let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=${JSON.stringify(invalidTLSConfig.tls.versions)}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, '{}'));
+
+                    invalidTLSConfig.tls.versions = 'foo';
+                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=${invalidTLSConfig.tls.versions}`;
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, 'foo'));
+                });
+
+                it('throws an error when unknown TLS versions are provided in the list', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['foo', 'bar'] } });
+                    let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+
+                    invalidTLSConfig.tls.versions = ['TLSv1.2', 'bar'];
+                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'bar', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                });
+
+                it('throws an error when all the TLS versions provided in the list are not supported', function () {
+                    if (tls.DEFAULT_MAX_VERSION === 'TLSv1.3') {
+                        return this.skip();
+                    }
+
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['TLSv1.3'] } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE, 'TLSv1.3'));
+                });
+
+                it('throws an error when the list of ciphersuites is badly specified', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { ciphersuites: 'foo' } });
+                    let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=${invalidTLSConfig.tls.ciphersuites}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'foo'));
+
+                    invalidTLSConfig.tls.ciphersuites = {};
+                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=${JSON.stringify(invalidTLSConfig.tls.ciphersuites)}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, '{}'));
+
+                    invalidTLSConfig.tls.ciphersuites = false;
+                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=${invalidTLSConfig.tls.ciphersuites}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'false'));
+                });
+
+                it('throws an error when the list of ciphersuites does not contain any valid one', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { ciphersuites: ['foo', 'bar'] } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=[${invalidTLSConfig.tls.ciphersuites.join(',')}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_TLS_NO_VALID_CIPHERSUITE_AVAILABLE);
+                });
+
+                it('throws an error when the connection timeout is not a number above or equal to 0', () => {
+                    const invalidTimeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: 'foo1' });
+                    let uri = `mysqlx://${invalidTimeoutConfig.user}:${invalidTimeoutConfig.password}@${invalidTimeoutConfig.host}:${invalidTimeoutConfig.port}?connect-timeout=${invalidTimeoutConfig.connectTimeout}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+
+                    invalidTimeoutConfig.connectTimeout = -1;
+                    uri = `mysqlx://${invalidTimeoutConfig.user}:${invalidTimeoutConfig.password}@${invalidTimeoutConfig.host}:${invalidTimeoutConfig.port}?connect-timeout=${invalidTimeoutConfig.connectTimeout}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                });
+
+                it('throws an error when the connection attributes are badly specified', () => {
+                    const invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: 'foo' });
+                    let uri = `mysqlx://${invalidAttributesConfig.user}:${invalidAttributesConfig.password}@${invalidAttributesConfig.host}:${invalidAttributesConfig.port}?connection-attributes=foo`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+
+                    invalidAttributesConfig.connectionAttributes = ['foo', 'bar'];
+                    uri = `mysqlx://${invalidAttributesConfig.user}:${invalidAttributesConfig.password}@${invalidAttributesConfig.host}:${invalidAttributesConfig.port}?connection-attributes=${invalidAttributesConfig.connectionAttributes.join(',')}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                });
+
+                it('throws an error when the name of any connection attribute starts with "_"', () => {
+                    const invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: { _foo: 'bar' } });
+                    const uri = `mysqlx://${invalidAttributesConfig.user}:${invalidAttributesConfig.password}@${invalidAttributesConfig.host}:${invalidAttributesConfig.port}?connection-attributes=[${qs.stringify(invalidAttributesConfig.connectionAttributes)}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+                });
+
+                it('throws an error when enabling SRV resolution whilst specifying multiple hosts', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, endpoints: [{ host: 'foo' }, { host: 'bar' }] });
+                    const uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@[${invalidSRVConfig.endpoints.map(e => e.host).join(',')}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_MULTIPLE_ENDPOINTS);
+                });
+
+                it('throws an error when enabling SRV resolution whilst specifying a port', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, port: 33061 });
+                    const uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@${invalidSRVConfig.host}:${invalidSRVConfig.port}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                });
+
+                it('throws an error when enabling SRV resolution whilst specifying a socket', () => {
+                    const invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, socket: '/path/to/socket' });
+                    let uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@${encodeURIComponent(invalidSRVConfig.socket)}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+
+                    uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@(${invalidSRVConfig.socket})`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                });
+
+                it('throws an error when the port is not a number between 0 and 65536', () => {
+                    let invalidPortConfig = Object.assign({}, config, baseConfig, { port: -1 });
+                    let uri = `mysqlx://${invalidPortConfig.user}:${invalidPortConfig.password}@${invalidPortConfig.host}:${invalidPortConfig.port}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+
+                    invalidPortConfig.port = 'foo';
+                    uri = `mysqlx://${invalidPortConfig.user}:${invalidPortConfig.password}@${invalidPortConfig.host}:${invalidPortConfig.port}`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+
+                    invalidPortConfig = Object.assign({}, config, baseConfig, { endpoints: [{ port: 33060 }, { port: -1 }], port: undefined });
+                    uri = `mysqlx://${invalidPortConfig.user}:${invalidPortConfig.password}@[${invalidPortConfig.endpoints.map(e => `${invalidPortConfig.host}:${e.port}`).join(',')}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+
+                    invalidPortConfig = Object.assign({}, config, baseConfig, { endpoints: [{ port: 33060 }, { port: 'foo' }], port: undefined });
+                    uri = `mysqlx://${invalidPortConfig.user}:${invalidPortConfig.password}@[${invalidPortConfig.endpoints.map(e => `${invalidPortConfig.host}:${e.port}`).join(',')}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                });
             });
         });
     });
@@ -75,7 +978,7 @@ describe('connection failures', () => {
         const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'idle.js');
 
         context('created with TCP and TLS', () => {
-            const tcpConfig = { socket: undefined, ssl: true };
+            const tcpConfig = { socket: undefined, tls: { enabled: true } };
 
             beforeEach('restrict the server connection timeout', () => {
                 const droppedConnectionConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -155,7 +1058,7 @@ describe('connection failures', () => {
         });
 
         context('created with regular TCP', () => {
-            const tcpConfig = { socket: undefined, ssl: false };
+            const tcpConfig = { socket: undefined, tls: { enabled: false } };
 
             beforeEach('restrict the server connection timeout', () => {
                 const droppedConnectionConfig = Object.assign({}, config, baseConfig, tcpConfig);
@@ -234,8 +1137,8 @@ describe('connection failures', () => {
             });
         });
 
-        context('created with a UNIX socket', () => {
-            const socketConfig = { host: undefined, port: undefined, ssl: false };
+        context('created with a Unix socket', () => {
+            const socketConfig = { host: undefined, port: undefined, tls: { enabled: false } };
 
             beforeEach('restrict the server connection timeout', function () {
                 const droppedConnectionConfig = Object.assign({}, config, baseConfig, socketConfig);
@@ -337,22 +1240,25 @@ describe('connection failures', () => {
         context('via the Admin API', () => {
             it('makes the session unusable for subsequent operations', function () {
                 const killedConnectionConfig = Object.assign({}, config, baseConfig, connectionConfig);
+                // The server does to send the notification immediately after
+                // the connection is killed. It takes around 1s. So, before
+                // attempting to re-use the connection, we should wait a bit
+                // for the notification to arrive, otherwise the server will
+                // close the socket without an error (2s should be enough).
+                const waitForServerNotification = 2000;
 
                 return mysqlx.getSession(killedConnectionConfig)
                     .then(session1 => {
                         return mysqlx.getSession(killedConnectionConfig)
                             .then(session2 => {
-                                return sqlExecute(session2, 'kill_client', [{ id: session1._connectionId }], sqlExecute.Namespace.X_PLUGIN)
+                                return sqlExecute(session2.getConnection_(), 'kill_client', [{ id: session1.getConnection_().getServerId() }], sqlExecute.Namespace.X_PLUGIN)
                                     .execute()
                                     .then(() => {
                                         return session2.close();
                                     });
                             })
                             .then(() => {
-                                // the server does to send the notification immediately after the connection is killed
-                                // if the connection is re-used in the meantime, the server will close it immediately
-                                // so, we need to wait a bit
-                                return new Promise(resolve => setTimeout(resolve, this.timeout() / 2));
+                                return new Promise(resolve => setTimeout(resolve, waitForServerNotification));
                             })
                             .then(() => {
                                 return session1.sql('SELECT 1')
@@ -398,7 +1304,7 @@ describe('connection failures', () => {
                 it('releases the connection even if maxIdleTime is not exceeded', () => {
                     return Promise.all([pool.getSession(), pool.getSession()])
                         .then(sessions => {
-                            return sqlExecute(sessions[1], 'kill_client', [{ id: sessions[0]._connectionId }], sqlExecute.Namespace.X_PLUGIN)
+                            return sqlExecute(sessions[1].getConnection_(), 'kill_client', [{ id: sessions[0].getConnection_().getServerId() }], sqlExecute.Namespace.X_PLUGIN)
                                 .execute();
                         })
                         .then(() => {
@@ -419,6 +1325,13 @@ describe('connection failures', () => {
         context('via SQL', () => {
             it('makes the session unusable for subsequent operations', function () {
                 const killedConnectionConfig = Object.assign({}, config, baseConfig, connectionConfig);
+                // The server does to send the notification immediately after
+                // the connection is killed. It takes around 1s. So, before
+                // attempting to re-use the connection, we should wait a bit
+                // for the notification to arrive, otherwise the server will
+                // return a "Query execution was interrupted" (2s should be
+                // enough).
+                const waitForServerNotification = 2000;
 
                 return mysqlx.getSession(killedConnectionConfig)
                     .then(session => {
@@ -436,10 +1349,7 @@ describe('connection failures', () => {
                                     });
                             })
                             .then(() => {
-                                // the server does to send the notification immediately after the connection is killed
-                                // if the connection is re-used in the meantime, the server will return a "Query execution was interrupted" error
-                                // so, we need to wait a bit
-                                return new Promise(resolve => setTimeout(resolve, this.timeout() / 2));
+                                return new Promise(resolve => setTimeout(resolve, waitForServerNotification));
                             })
                             .then(() => {
                                 return session.sql('SELECT 1')
@@ -506,6 +1416,20 @@ describe('connection failures', () => {
                         });
                 });
             });
+        });
+    });
+
+    context('when closing an existing session', () => {
+        it('does not fail if the session is being closed multiple times', () => {
+            const validConfig = Object.assign({}, config, baseConfig);
+
+            return mysqlx.getSession(validConfig)
+                .then(session => {
+                    return session.close()
+                        .then(() => {
+                            return session.close();
+                        });
+                });
         });
     });
 });

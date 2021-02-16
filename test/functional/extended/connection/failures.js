@@ -41,39 +41,119 @@ const path = require('path');
 
 describe('connection failures', () => {
     const baseConfig = { host: 'mysql-default', schema: undefined, socket: undefined };
-    const waitForEndpointToBecomeAvailable = 5000; // (ms)
-    const waitForEndpointToBecomeUnavailable = 2000; // (ms)
+    const waitForServerToBecomeAvailable = 5000; // (ms)
 
-    context('when the server goes away', () => {
+    context('when the endpoint becomes unavailable', () => {
+        // The server is abruptly killed with "docker kill", so we should not
+        // have to account for any kind of grace period. Even so, we will
+        // give it a second to complete.
+        const waitForServerToBecomeUnavailable = 1000; // (ms)
+
         afterEach('reset the service', function () {
-            this.timeout(this.timeout() + waitForEndpointToBecomeAvailable);
+            this.timeout(this.timeout() + waitForServerToBecomeAvailable);
 
             const serverShutdownConfig = Object.assign({}, config, baseConfig);
 
-            return fixtures.enableEndpoint(serverShutdownConfig.host, waitForEndpointToBecomeAvailable);
+            return fixtures.restartServer(serverShutdownConfig.host, waitForServerToBecomeAvailable);
+        });
+
+        it('throws the error in the scope of an ongoing operation', function () {
+            this.timeout(this.timeout() + waitForServerToBecomeAvailable);
+
+            const serverGoneConfig = Object.assign({}, config, baseConfig);
+
+            return mysqlx.getSession(serverGoneConfig)
+                .then(session => {
+                    return Promise.all([
+                        session.sql(`SELECT SLEEP(${waitForServerToBecomeUnavailable * 2})`).execute(),
+                        fixtures.killServer(serverGoneConfig.host, waitForServerToBecomeUnavailable)
+                    ]);
+                })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ERR_SERVER_GONE_AWAY);
+                });
         });
 
         it('makes the session unusable for subsequent operations', function () {
-            this.timeout(this.timeout() + waitForEndpointToBecomeUnavailable);
+            this.timeout(this.timeout() + waitForServerToBecomeUnavailable);
+
+            const serverGoneConfig = Object.assign({}, config, baseConfig);
+
+            return mysqlx.getSession(serverGoneConfig)
+                .then(session => {
+                    return fixtures.killServer(serverGoneConfig.host, waitForServerToBecomeUnavailable)
+                        .then(() => {
+                            return session.sql('SELECT 1').execute();
+                        });
+                })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ERR_CONNECTION_CLOSED);
+                });
+        });
+    });
+
+    context('when the server shuts down', () => {
+        // The server is gracefully stopped with "mysqladmin shutdow", and
+        // sends a notification when it starts the grace period, which, in
+        // this case, should not take more than 1 second, but we will give
+        // it 2 seconds to complete.
+        const waitForServerToShutDown = 2000; // (ms)
+
+        afterEach('restart the server', function () {
+            this.timeout(this.timeout() + waitForServerToBecomeAvailable);
+
+            const serverShutdownConfig = Object.assign({}, config, baseConfig);
+
+            return fixtures.restartServer(serverShutdownConfig.host, waitForServerToBecomeAvailable);
+        });
+
+        it('does not throw any error in the scope of an ongoing operation', function () {
+            this.timeout(this.timeout() + waitForServerToBecomeAvailable);
 
             const serverShutdownConfig = Object.assign({}, config, baseConfig);
 
             return mysqlx.getSession(serverShutdownConfig)
                 .then(session => {
-                    return fixtures.disableEndpoint(serverShutdownConfig.host, waitForEndpointToBecomeUnavailable)
-                        .then(() => session.sql('SELECT 1').execute());
+                    return Promise.all([
+                        session.sql(`SELECT SLEEP(${waitForServerToShutDown * 2})`).execute(),
+                        fixtures.stopServer(serverShutdownConfig.host, waitForServerToShutDown)
+                    ]);
+                });
+        });
+
+        it('makes the session unusable for subsequent operations', function () {
+            this.timeout(this.timeout() + waitForServerToShutDown);
+
+            const serverShutdownConfig = Object.assign({}, config, baseConfig);
+
+            return mysqlx.getSession(serverShutdownConfig)
+                .then(session => {
+                    return fixtures.stopServer(serverShutdownConfig.host, waitForServerToShutDown + 1000)
+                        .then(() => {
+                            return session.sql('SELECT 1').execute();
+                        });
                 })
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_SERVER_SHUTDOWN));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ERR_SERVER_SHUTDOWN);
+                });
         });
 
         it('logs the server shutdown notice', function () {
-            this.timeout(this.timeout() + waitForEndpointToBecomeUnavailable);
+            this.timeout(this.timeout() + waitForServerToShutDown);
 
             const serverShutdownConfig = Object.assign({}, config, baseConfig);
             const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'shutdown.js');
 
-            return fixtures.collectLogs('protocol:inbound:Mysqlx.Notice.Frame', script, [waitForEndpointToBecomeUnavailable], { config: serverShutdownConfig })
+            return fixtures.collectLogs('protocol:inbound:Mysqlx.Notice.Frame', script, [waitForServerToShutDown], { config: serverShutdownConfig })
                 .then(proc => {
                     // it should contain other notices
                     expect(proc.logs).to.be.an('array').and.have.length.above(0);
@@ -89,14 +169,14 @@ describe('connection failures', () => {
                 });
         });
 
-        context('on a connection pool', () => {
+        context('a connection pool', () => {
             let pool;
 
             beforeEach('create pool', () => {
                 const serverShutdownConfig = Object.assign({}, config, baseConfig);
 
                 // we expect the error to not be related to queueTimeout, so we want it to be a factor
-                pool = mysqlx.getClient(serverShutdownConfig, { pooling: { maxSize: 2, queueTimeout: waitForEndpointToBecomeAvailable } });
+                pool = mysqlx.getClient(serverShutdownConfig, { pooling: { maxSize: 2, queueTimeout: waitForServerToBecomeAvailable } });
             });
 
             afterEach('destroy pool', () => {
@@ -108,7 +188,7 @@ describe('connection failures', () => {
 
                 return Promise.all([pool.getSession(), pool.getSession()])
                     .then(() => {
-                        return fixtures.disableEndpoint(serverShutdownConfig.host, waitForEndpointToBecomeUnavailable);
+                        return fixtures.stopServer(serverShutdownConfig.host, waitForServerToShutDown);
                     })
                     .then(() => {
                         // by this point, the connections should have been released
@@ -118,23 +198,31 @@ describe('connection failures', () => {
                         return expect.fail();
                     })
                     .catch(err => {
-                        expect(err.code).to.equal('ECONNREFUSED');
-                        expect(err.address).to.equal(serverShutdownConfig.host);
-                        expect(err.port).to.equal(serverShutdownConfig.port);
+                        return fixtures.getIPv4Address(serverShutdownConfig.host)
+                            .then(address => {
+                                expect(err.code).to.equal('ECONNREFUSED');
+                                expect(err.address).to.equal(address);
+                                expect(err.port).to.equal(serverShutdownConfig.port);
+                            });
                     });
             });
         });
     });
 
     context('when the client cannot connect to the server', () => {
-        context('the connection pool', () => {
+        // The server is abruptly killed with "docker kill", so we should not
+        // have to account for any kind of grace period. Even so, we will
+        // give it a second to complete.
+        const waitForServerToBecomeUnavailable = 1000; // (ms)
+
+        context('a connection pool', () => {
             let pool;
 
             beforeEach('create pool', () => {
                 const connectionReleaseConfig = Object.assign({}, config, baseConfig);
 
                 // we expect the error to not be related to queueTimeout, so we want it to be a factor
-                pool = mysqlx.getClient(connectionReleaseConfig, { pooling: { maxSize: 2, queueTimeout: waitForEndpointToBecomeAvailable } });
+                pool = mysqlx.getClient(connectionReleaseConfig, { pooling: { maxSize: 2, queueTimeout: waitForServerToBecomeAvailable } });
             });
 
             afterEach('destroy pool', () => {
@@ -144,7 +232,7 @@ describe('connection failures', () => {
             it('releases the connection for subsequent attempts', () => {
                 const connectionReleaseConfig = Object.assign({}, config, baseConfig);
 
-                return fixtures.disableEndpoint(connectionReleaseConfig.host, waitForEndpointToBecomeUnavailable)
+                return fixtures.stopServer(connectionReleaseConfig.host, waitForServerToBecomeUnavailable)
                     .then(() => {
                         // the first attempt should fail
                         return pool.getSession();
@@ -153,7 +241,7 @@ describe('connection failures', () => {
                         return expect.fail();
                     })
                     .catch(() => {
-                        return fixtures.enableEndpoint(connectionReleaseConfig.host, waitForEndpointToBecomeAvailable)
+                        return fixtures.restartServer(connectionReleaseConfig.host, waitForServerToBecomeAvailable)
                             .then(() => {
                                 // the second attempt should be successful
                                 return pool.getSession();

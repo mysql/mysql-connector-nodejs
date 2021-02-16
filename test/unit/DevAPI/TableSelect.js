@@ -35,8 +35,11 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
+// subject under test needs to be reloaded with replacement fakes
+let tableSelect = require('../../../lib/DevAPI/TableSelect');
+
 describe('TableSelect', () => {
-    let preparing, tableSelect, toArray;
+    let preparing, toArray;
 
     beforeEach('create fakes', () => {
         preparing = td.function();
@@ -62,43 +65,99 @@ describe('TableSelect', () => {
             tableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
+        it('fails if the connection is not open', () => {
+            const getError = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(false);
+            td.when(getError()).thenReturn(error);
+
+            return tableSelect(connection).execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
+        it('fails if the connection is expired', () => {
+            const getError = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getError, isIdle, isOpen };
+            const error = new Error('foobar');
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(true);
+            td.when(getError()).thenReturn(error);
+
+            return tableSelect(connection).execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                });
+        });
+
         it('wraps an operation without a cursor in a preparable instance', () => {
-            const session = 'foo';
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { isIdle, isOpen };
             const row = { toArray };
             const state = { results: [[row]] };
 
-            td.when(toArray()).thenReturn(['bar']);
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
+            td.when(toArray()).thenReturn(['foo']);
             td.when(execute(td.matchers.isA(Function), undefined, undefined)).thenResolve(state);
-            td.when(preparing({ session })).thenReturn({ execute });
+            td.when(preparing({ connection })).thenReturn({ execute });
 
-            return tableSelect(session).execute()
-                .then(actual => expect(actual.fetchOne()).to.deep.equal(['bar']));
+            return tableSelect(connection).execute()
+                .then(actual => {
+                    return expect(actual.fetchOne()).to.deep.equal(['foo']);
+                });
         });
 
         it('wraps an operation with a data cursor in a preparable instance', () => {
-            const session = 'foo';
-            const expected = ['bar'];
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { isIdle, isOpen };
+            const expected = ['foo'];
             const state = { warnings: expected };
 
-            td.when(execute(td.matchers.isA(Function), 'foo', undefined)).thenResolve(state);
-            td.when(preparing({ session })).thenReturn({ execute });
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
+            td.when(execute(td.matchers.isA(Function), 'bar', undefined)).thenResolve(state);
+            td.when(preparing({ connection })).thenReturn({ execute });
 
-            return tableSelect(session).execute('foo')
-                .then(actual => expect(actual.getWarnings()).to.deep.equal(expected));
+            return tableSelect(connection).execute('bar')
+                .then(actual => {
+                    return expect(actual.getWarnings()).to.deep.equal(expected);
+                });
         });
 
         it('wraps an operation with both a data and metadata cursors in a preparable instance', () => {
-            const session = 'foo';
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { isIdle, isOpen };
             const expected = { getAlias };
             const state = { metadata: [[expected]] };
 
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
             td.when(getAlias()).thenReturn('qux');
             td.when(columnWrapper('bar')).thenReturn('baz');
             td.when(execute(td.matchers.isA(Function), 'foo', 'baz')).thenResolve(state);
-            td.when(preparing({ session })).thenReturn({ execute });
+            td.when(preparing({ connection })).thenReturn({ execute });
 
-            return tableSelect(session).execute('foo', 'bar')
-                .then(actual => expect(actual.getColumns()[0].getColumnLabel()).to.equal('qux'));
+            return tableSelect(connection).execute('foo', 'bar')
+                .then(actual => {
+                    return expect(actual.getColumns()[0].getColumnLabel()).to.equal('qux');
+                });
         });
     });
 
@@ -110,41 +169,39 @@ describe('TableSelect', () => {
         });
 
         it('mixes in Grouping with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            tableSelect(session).groupBy();
+            tableSelect(connection).groupBy();
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = tableSelect(session).groupBy();
+            const query = tableSelect(connection).groupBy();
 
             expect(query.groupBy).to.be.a('function');
         });
 
-        it('returns a Result instance containing the operation details');
-
         it('sets the grouping columns provided as an array', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const grouping = ['foo', 'bar'];
-            const query = tableSelect(session).groupBy(grouping);
+            const query = tableSelect(connection).groupBy(grouping);
 
             expect(query.getGroupings()).to.deep.equal(grouping);
         });
 
         it('sets the grouping columns provided as an array', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const grouping = ['foo', 'bar'];
-            const query = tableSelect(session).groupBy(grouping[0], grouping[1]);
+            const query = tableSelect(connection).groupBy(grouping[0], grouping[1]);
 
             expect(query.getGroupings()).to.deep.equal(grouping);
         });
@@ -158,28 +215,28 @@ describe('TableSelect', () => {
         });
 
         it('mixes in Limiting with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            tableSelect(session).limit(1);
+            tableSelect(connection).limit(1);
 
             return expect(td.explain(forceReprepare).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            const query = tableSelect(session).limit(1);
+            const query = tableSelect(connection).limit(1);
 
             return expect(query.limit).to.be.a('function');
         });
 
         it('sets a default offset implicitely', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceReprepare });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceReprepare });
 
-            const query = tableSelect(session).limit(1);
+            const query = tableSelect(connection).limit(1);
 
             return expect(query.getOffset()).to.equal(0);
         });
@@ -193,19 +250,19 @@ describe('TableSelect', () => {
         });
 
         it('mixes in Locking with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            tableSelect(session).lockShared();
+            tableSelect(connection).lockShared();
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = tableSelect(session).groupBy();
+            const query = tableSelect(connection).groupBy();
 
             expect(query.lockShared).to.be.a('function');
         });
@@ -219,19 +276,19 @@ describe('TableSelect', () => {
         });
 
         it('mixes in Locking with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            tableSelect(session).lockExclusive();
+            tableSelect(connection).lockExclusive();
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = tableSelect(session).groupBy();
+            const query = tableSelect(connection).groupBy();
 
             expect(query.lockExclusive).to.be.a('function');
         });
@@ -245,39 +302,39 @@ describe('TableSelect', () => {
         });
 
         it('mixes in TableOrdering with the proper state', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            tableSelect(session).orderBy();
+            tableSelect(connection).orderBy();
 
             return expect(td.explain(forceRestart).callCount).equal(1);
         });
 
         it('is fluent', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            const query = tableSelect(session).orderBy();
+            const query = tableSelect(connection).orderBy();
 
             expect(query.orderBy).to.be.a('function');
         });
 
         it('sets the order parameters provided as an array', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const parameters = ['foo desc', 'bar desc'];
-            const query = tableSelect(session).orderBy(parameters);
+            const query = tableSelect(connection).orderBy(parameters);
 
             expect(query.getOrderings()).to.deep.equal(parameters);
         });
 
         it('sets the order parameters provided as multiple arguments', () => {
-            const session = 'foo';
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            const connection = 'foo';
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
             const parameters = ['foo desc', 'bar desc'];
-            const query = tableSelect(session).orderBy(parameters[0], parameters[1]);
+            const query = tableSelect(connection).orderBy(parameters[0], parameters[1]);
 
             expect(query.getOrderings()).to.deep.equal(parameters);
         });
@@ -291,22 +348,22 @@ describe('TableSelect', () => {
         });
 
         it('mixes in TableFiltering with the proper state', () => {
-            const session = 'foo';
+            const connection = 'foo';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            tableSelect(session).where();
+            tableSelect(connection).where();
 
             expect(td.explain(forceRestart).callCount).to.equal(1);
         });
 
         it('sets the query criteria', () => {
-            const session = 'foo';
+            const connection = 'foo';
             const criteria = 'bar';
 
-            td.when(preparing({ session })).thenReturn({ forceRestart });
+            td.when(preparing({ connection })).thenReturn({ forceRestart });
 
-            expect(tableSelect(session).where(criteria).getCriteria()).to.equal(criteria);
+            expect(tableSelect(connection).where(criteria).getCriteria()).to.equal(criteria);
         });
     });
 });

@@ -31,6 +31,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../..');
 const tls = require('tls');
@@ -44,7 +45,7 @@ describe('connecting with specific TLS versions', () => {
 
             return mysqlx.getSession(tlsConfig)
                 .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Additional TLS options cannot be specified when TLS is disabled.'));
+                .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS));
         });
 
         it('fails if list of TLS versions is empty', () => {
@@ -52,7 +53,7 @@ describe('connecting with specific TLS versions', () => {
 
             return mysqlx.getSession(tlsConfig)
                 .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('No supported TLS protocol version found in the provided list.'));
+                .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE));
         });
 
         it('fails if some TLS version provided by the application is not valid', () => {

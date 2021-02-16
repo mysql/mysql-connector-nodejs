@@ -32,238 +32,381 @@
 
 /* eslint-env node, mocha */
 
-const connectionPool = require('../../../lib/DevAPI/ConnectionPool');
+const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const td = require('testdouble');
+const tk = require('timekeeper');
+const util = require('util');
 
-describe('DevAPI ConnectionPool', () => {
+// subject under test needs to be reloaded with replacement fakes
+let connectionPool = require('../../../lib/DevAPI/ConnectionPool');
+
+describe('ConnectionPool', () => {
     afterEach('reset fakes', () => {
         td.reset();
+        tk.reset();
     });
 
-    context('factory', () => {
-        it('throws an error when unknown options are provided', () => {
-            expect(() => connectionPool({ foo: 'bar' })).to.throw('Client option \'pooling.foo\' is not recognized as valid.');
-        });
+    context('create()', () => {
+        it('returns an initialized pool instance', () => {
+            let pool = connectionPool().create();
 
-        it('throws an error when invalid option values are provided', () => {
-            const nonBooleans = [undefined, null, 1, 2.2, 'foo', {}, [], () => {}];
-            const nonPositiveIntegers = [undefined, null, true, false, 2.2, -1, 'foo', {}, [], () => {}];
-            const nonZeroOrPositiveIntegers = nonPositiveIntegers.concat(0);
+            expect(pool.destroy).to.be.a('function');
+            expect(pool.getConnection).to.be.a('function');
+            expect(pool.isFull).to.be.a('function');
+            expect(pool.reset).to.be.a('function');
+            expect(pool.update).to.be.a('function');
 
-            nonBooleans.forEach(invalid => {
-                expect(() => connectionPool({ enabled: invalid })).to.throw(`Client option 'pooling.enabled' does not support value '${invalid}'.`);
-            });
+            pool = connectionPool().create({ foo: 'bar' });
 
-            nonPositiveIntegers.forEach(invalid => {
-                expect(() => connectionPool({ maxIdleTime: invalid })).to.throw(`Client option 'pooling.maxIdleTime' does not support value '${invalid}'.`);
-            });
-
-            nonZeroOrPositiveIntegers.forEach(invalid => {
-                expect(() => connectionPool({ maxSize: invalid })).to.throw(`Client option 'pooling.maxSize' does not support value '${invalid}'.`);
-            });
-
-            nonPositiveIntegers.forEach(invalid => {
-                expect(() => connectionPool({ queueTimeout: invalid })).to.throw(`Client option 'pooling.queueTimeout' does not support value '${invalid}'.`);
-            });
+            expect(pool.destroy).to.be.a('function');
+            expect(pool.getConnection).to.be.a('function');
+            expect(pool.isFull).to.be.a('function');
+            expect(pool.reset).to.be.a('function');
+            expect(pool.update).to.be.a('function');
         });
     });
 
-    context('acquire()', () => {
-        let connect, reset;
-
-        beforeEach('create fakes', () => {
-            connect = td.function();
-            reset = td.function();
-        });
-
-        it('picks a new connection and create the given session', () => {
-            const pool = connectionPool({ idle: [{ connect }, {}], maxIdleTime: 0, maxSize: 2 });
-
-            td.when(connect()).thenResolve('foo');
-
-            return pool.acquire()
-                .then(actual => expect(actual).to.equal('foo'));
-        });
-
-        it('picks and reset an idle connection', () => {
-            const pool = connectionPool({ idle: [{ _isOpen: true, reset }, {}], maxIdleTime: 0, maxSize: 2 });
-
-            td.when(reset()).thenResolve('foo');
-
-            return pool.acquire()
-                .then(actual => expect(actual).to.equal('foo'));
-        });
-
-        it('creates a new connection if it cannot reset the underlying session', () => {
-            const pool = connectionPool({ idle: [{ connect, reset }, { connect, reset }], maxIdleTime: 0, maxSize: 2 });
-
-            td.when(connect()).thenResolve('foo');
-            td.when(reset()).thenReject(new Error());
-
-            return pool.acquire()
-                .then(actual => expect(actual).to.equal('foo'));
-        });
-
-        it('waits for an idle connection before timing out', () => {
-            const active = [{ _isValid: true, _isOpen: true, reset, _properties: {} }, {}];
-            const pool = connectionPool({ active, queueTimeout: 0, maxSize: 2 });
-            const refresh = td.replace(pool, 'refresh');
-
-            td.when(refresh()).thenResolve();
-            td.when(reset()).thenResolve('foo');
-
-            setTimeout(() => pool.release(active[0]), 200);
-
-            return pool.acquire()
-                .then(actual => expect(actual).to.equal('foo'));
-        });
-
-        it('fails when the queue timeout is exceeded', () => {
-            const queueTimeout = 100;
-            const pool = connectionPool({ active: [{ reset }, { reset }], idle: [], maxSize: 2, queueTimeout });
-            const refresh = td.replace(pool, 'refresh');
-
-            const error = `Could not retrieve a connection from the pool. Timeout of ${queueTimeout} ms was exceeded.`;
-
-            td.when(refresh()).thenResolve();
-
-            return pool.acquire()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(error));
-        });
-    });
-
-    // TODO(Rui): after BUG#28471569 gets a fix, a Mysqlx.Connection.Close message should be sent.
     context('destroy()', () => {
-        let done;
+        let destroy;
 
-        beforeEach('create fakes', () => {
-            done = td.function();
+        before('create fakes', () => {
+            destroy = td.function();
         });
 
-        it('closes all connections and disconnect from the server', () => {
-            const maxSize = 4;
-            const connections = [{ done }, { done }, { done }];
-            const pool = connectionPool({ active: connections, idle: [{ done }], maxSize });
+        it('destroys all active and idle connections', () => {
+            const pool = connectionPool().create({ active: [{ destroy }, { destroy }], idle: [{ destroy }] });
 
-            td.when(done()).thenResolve();
+            td.when(destroy()).thenResolve();
 
             return pool.destroy()
                 .then(() => {
-                    expect(td.explain(done).callCount).to.equal(4); // active connections
+                    return expect(td.explain(destroy).callCount).to.equal(3);
                 });
         });
 
-        it('does not fail if there is an error closing a connection', () => {
-            const active = [{ done }, { done }];
-            const pool = connectionPool({ active, maxSize: active.length });
+        it('resets the pool state on success', () => {
+            const pool = connectionPool();
+            const reset = td.replace(pool, 'reset');
+
+            return pool.destroy()
+                .then(() => {
+                    return expect(td.explain(reset).callCount).to.equal(1);
+                });
+        });
+
+        it('resets the pool state on failure', () => {
             const error = new Error('foobar');
+            const pool = connectionPool().create({ active: [{ destroy }] });
+            const reset = td.replace(pool, 'reset');
 
-            td.when(done()).thenReject(error);
+            td.when(destroy()).thenReject(error);
 
             return pool.destroy()
                 .then(() => {
-                    expect(td.explain(done).callCount).to.equal(2); // actice connections
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
+                    return expect(td.explain(reset).callCount).to.equal(1);
                 });
         });
     });
 
-    context('pick()', () => {
-        let pool;
-
-        context('legacy connections', () => {
-            let disconnect;
-
-            beforeEach('create fakes', () => {
-                disconnect = td.function();
-
-                pool = connectionPool({ enabled: false, idle: [{ disconnect }] });
-            });
-
-            it('returns an idle legacy connection if pooling is not enabled', () => {
-                td.when(disconnect()).thenResolve();
-
-                return pool.pick().close()
-                    .then(() => expect(td.explain(disconnect).callCount).to.equal(1));
-            });
-
-            it('clears the pool if the connection is closed', () => {
-                const pool = connectionPool({ enabled: false, idle: [{ disconnect }] });
-                const clear = td.replace(pool, 'clear');
-
-                td.when(disconnect()).thenResolve();
-
-                return pool.pick().close()
-                    .then(() => expect(td.explain(clear).callCount).to.equal(1));
-            });
-        });
-
-        context('pooling connections', () => {
-            it('returns an idle pooled connection if pooling is enabled', () => {
-                const session = { foo: 'bar' };
-                const pool = connectionPool({ active: [{}, {}], enabled: true, idle: [session] });
-                const release = td.replace(pool, 'release');
-
-                td.when(release(session)).thenResolve('baz');
-
-                return pool.pick().close()
-                    .then(res => expect(res).to.equal('baz'));
-            });
-        });
-    });
-
-    context('refresh()', () => {
-        let close;
+    context('getConnection()', () => {
+        let acquire, connection, isExpired, isOpen, override;
 
         beforeEach('create fakes', () => {
-            close = td.function();
+            acquire = td.function();
+            connection = td.function();
+            isExpired = td.function();
+            isOpen = td.function();
+            override = td.function();
+
+            td.replace('../../../lib/DevAPI/PoolConnection', connection);
+
+            connectionPool = require('../../../lib/DevAPI/ConnectionPool');
         });
 
-        it('closes all active connections that are not open', () => {
-            const pool = connectionPool({ active: [{ _isOpen: false, close }, { _isOpen: false, close }, { _isOpen: true, close }], maxIdleTime: 50, maxSize: 3 });
+        it('fails if queueTimeout is exceeded', done => {
+            const queueTimeout = 5000;
+            const pool = connectionPool({ pooling: { maxSize: 3, queueTimeout } }).create({ active: ['foo', 'bar', 'baz'] });
+            const update = td.replace(pool, 'update');
 
-            const delay = () => new Promise((resolve, reject) => {
-                setTimeout(() => pool.refresh().then(resolve).catch(reject), 100);
-            });
+            td.when(update()).thenResolve();
 
-            return delay()
-                .then(() => expect(td.explain(close).callCount).to.equal(2));
+            // We need to travel in time only after calling
+            // pool.getConnection(), otherwise, Date.now() will also be in the
+            // future.
+            pool.getConnection()
+                .then(() => {
+                    done(expect.fail());
+                })
+                .catch(err => {
+                    expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_POOL_QUEUE_TIMEOUT, queueTimeout));
+                    done();
+                });
+
+            tk.travel(new Date(Date.now() + queueTimeout + 1));
         });
 
-        it('closes all idle connections where the maximum idle time was exceeded', () => {
-            const timestamp = Date.now();
-            const pool = connectionPool({ idle: [{ close, timestamp }, { close, timestamp }, { close, timestamp: timestamp + 200 }], maxIdleTime: 50, maxSize: 3 });
+        it('acquires and returns an idle connection if one exists and no expired ones exist', () => {
+            const poolConnection = { acquire, isExpired, isOpen, override };
+            const pool = connectionPool({ pooling: { maxSize: 3 } }).create({ active: ['foo'], idle: [poolConnection] });
+            const update = td.replace(pool, 'update');
 
-            const delay = () => new Promise((resolve, reject) => {
-                setTimeout(() => pool.refresh().then(resolve).catch(reject), 100);
-            });
+            td.when(update()).thenResolve();
+            td.when(isOpen()).thenReturn(true);
+            td.when(isExpired()).thenReturn(false);
+            td.when(override()).thenResolve(poolConnection);
 
-            return delay()
-                .then(() => expect(td.explain(close).callCount).to.equal(2));
+            return pool.getConnection()
+                .then(con => {
+                    expect(td.explain(acquire).callCount).to.equal(1);
+                    expect(pool.activeConnections()).to.deep.include(con);
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(pool.idleConnections()).to.be.an('array').and.be.empty;
+                    return expect(con).to.deep.equal(poolConnection);
+                });
         });
 
-        it('does not close idle connections if the maximum idle time time is infinite', () => {
-            const timestamp = Date.now();
-            const pool = connectionPool({ idle: [{ close, timestamp }, { close, timestamp }], maxIdleTime: 0, maxSize: 3 });
+        it('acquires and returns an idle connection if one exists and expired ones exist', () => {
+            const poolConnection = { acquire, isExpired, isOpen, override };
+            const pool = connectionPool({ pooling: { maxSize: 3 } }).create({ active: ['foo'], idle: [poolConnection], expired: ['bar'] });
+            const update = td.replace(pool, 'update');
 
-            const delay = () => new Promise((resolve, reject) => {
-                setTimeout(() => pool.refresh().then(resolve).catch(reject), 100);
-            });
+            td.when(update()).thenResolve();
+            td.when(isOpen()).thenReturn(true);
+            td.when(isExpired()).thenReturn(false);
+            td.when(override()).thenResolve(poolConnection);
 
-            return delay()
-                .then(() => expect(td.explain(close).callCount).to.equal(0));
+            return pool.getConnection()
+                .then(con => {
+                    expect(td.explain(acquire).callCount).to.equal(1);
+                    expect(pool.activeConnections()).to.deep.include(con);
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(pool.idleConnections()).to.be.an('array').and.be.empty;
+                    return expect(con).to.deep.equal(poolConnection);
+                });
+        });
+
+        it('acquires and returns a refurbished connection if one exists and no idle ones exist but expired ones exist', () => {
+            const open = td.function();
+            const expiredConnection = { isOpen, isExpired, open };
+            const options = { foo: 'bar', pooling: { maxSize: 3 } };
+            const pool = connectionPool(options).create({ active: ['baz'], idle: [], expired: [expiredConnection] });
+            const update = td.replace(pool, 'update');
+            const poolConnection = { acquire };
+
+            td.when(update()).thenResolve();
+            td.when(isOpen()).thenReturn(true);
+            td.when(isExpired()).thenReturn(true);
+            td.when(open()).thenResolve(poolConnection);
+
+            return pool.getConnection()
+                .then(con => {
+                    expect(td.explain(acquire).callCount).to.equal(1);
+                    expect(pool.activeConnections()).to.deep.include(con);
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(pool.expiredConnections()).to.be.an('array').and.be.empty;
+                    return expect(con).to.deep.equal(poolConnection);
+                });
+        });
+
+        it('acquires and returns a refurbished connection if all idle ones have expired', () => {
+            const open = td.function();
+            const expiredConnection = { isOpen, isExpired, open };
+            const options = { foo: 'bar', pooling: { maxSize: 3 } };
+            const pool = connectionPool(options).create({ active: ['baz'], idle: [expiredConnection] });
+            const update = td.replace(pool, 'update');
+            const poolConnection = { acquire };
+
+            td.when(update()).thenResolve();
+            td.when(isOpen()).thenReturn(true);
+            td.when(isExpired()).thenReturn(true);
+            td.when(open()).thenResolve(poolConnection);
+
+            return pool.getConnection()
+                .then(con => {
+                    expect(td.explain(acquire).callCount).to.equal(1);
+                    expect(pool.activeConnections()).to.deep.include(con);
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(pool.idleConnections()).to.be.an('array').and.be.empty;
+                    return expect(con).to.deep.equal(poolConnection);
+                });
+        });
+
+        it('acquires and returns a new connection if neither idle nor expired ones exist', () => {
+            const options = { foo: 'bar', pooling: { maxSize: 3 } };
+            const pool = connectionPool(options).create({ active: ['baz'], idle: [], expired: [] });
+            const update = td.replace(pool, 'update');
+            const open = td.function();
+            const poolConnection = { acquire };
+
+            td.when(update()).thenResolve();
+            td.when(connection(options)).thenReturn({ open });
+            td.when(open()).thenResolve(poolConnection);
+
+            return pool.getConnection()
+                .then(con => {
+                    expect(td.explain(acquire).callCount).to.equal(1);
+                    expect(pool.activeConnections()).to.deep.include(con);
+                    return expect(con).to.deep.equal(poolConnection);
+                });
         });
     });
 
-    context('release()', () => {
-        it('moves move a connection from active state into idle state', () => {
-            const active = [{ id: 'foo' }, { id: 'bar' }];
-            const pool = connectionPool({ active, idle: [], maxSize: 2 });
+    context('isFull()', () => {
+        it('checks if the pool is full', () => {
+            let pool = connectionPool({ pooling: { maxSize: 3 } }).create({ active: ['foo', 'bar', 'baz'] });
+            // eslint-disable-next-line no-unused-expressions
+            expect(pool.isFull()).to.be.true;
 
-            pool.release(active[1]);
+            pool = connectionPool({ pooling: { maxSize: 2 } }).create({ active: ['foo'] });
+            return expect(pool.isFull()).to.be.false;
+        });
+    });
 
-            return expect(pool.pick()).to.deep.include({ id: 'bar' });
+    context('reset()', () => {
+        it('clears the state of the pool by cleaning up the internal connection lists', () => {
+            const pool = connectionPool().create({ active: ['foo', 'bar'], idle: ['baz', 'qux'], expired: ['qux'] }).reset();
+
+            /* eslint-disable no-unused-expressions */
+            expect(pool.activeConnections()).to.be.an('array').and.be.empty;
+            expect(pool.idleConnections()).to.be.an('array').and.be.empty;
+            /* elint-enable no-unused-expressions */
+            return expect(pool.expiredConnections()).to.be.an('array').and.be.empty;
+        });
+    });
+
+    context('update()', () => {
+        let destroy, isExpired, isIdle, isOpen;
+
+        beforeEach('create fakes', () => {
+            destroy = td.function();
+            isExpired = td.function();
+            isIdle = td.function();
+            isOpen = td.function();
+        });
+
+        it('moves active connections that have been closed by the client into the list of idle connections', () => {
+            const connection = { isExpired, isIdle, isOpen };
+            const pool = connectionPool().create({ active: [connection] });
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isExpired()).thenReturn(false);
+            td.when(isIdle()).thenReturn(true);
+            td.when(destroy()).thenResolve();
+
+            return pool.update()
+                .then(() => {
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(pool.activeConnections()).to.be.an('array').and.be.empty;
+                    return expect(pool.idleConnections()).to.deep.include(connection);
+                });
+        });
+
+        it('moves active connections that have been closed by the server into the list of expired connections', () => {
+            const connection = { destroy, isOpen };
+            const pool = connectionPool().create({ active: [connection] });
+
+            td.when(isOpen()).thenReturn(false);
+            td.when(destroy()).thenResolve();
+
+            return pool.update()
+                .then(() => {
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(pool.activeConnections()).to.be.an('array').and.be.empty;
+                    return expect(pool.expiredConnections()).to.deep.include(connection);
+                });
+        });
+
+        it('moves idle connections that have expired into the list of expired connections', () => {
+            const connection = { destroy, isExpired, isOpen };
+            const pool = connectionPool().create({ idle: [connection] });
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isExpired()).thenReturn(true);
+            td.when(destroy()).thenResolve();
+
+            return pool.update()
+                .then(() => {
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(pool.idleConnections()).to.be.an('array').and.be.empty;
+                    return expect(pool.expiredConnections()).to.deep.include(connection);
+                });
+        });
+
+        it('destroys all connections that have expired or have been closed', () => {
+            const connection1 = { destroy };
+            const connection2 = { destroy };
+            const pool = connectionPool().create({ expired: [connection1, connection2] });
+
+            td.when(destroy()).thenResolve(connection2);
+            td.when(destroy(), { times: 1 }).thenResolve(connection1);
+
+            return pool.update()
+                .then(res => {
+                    expect(res).to.be.an('array').and.have.lengthOf(2);
+                    expect(res[0]).to.deep.equal(connection1);
+                    expect(res[1]).to.deep.equal(connection2);
+                });
+        });
+    });
+
+    context('ConnectionPool.validate()', () => {
+        it('fails when an unknown property is specified', () => {
+            return expect(() => connectionPool.validate({ foo: 'bar' })).to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION, 'pooling.foo'));
+        });
+
+        it('fails when the "enabled" property value is not a boolean', () => {
+            const error = errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE;
+            const path = 'pooling.enabled';
+
+            expect(() => connectionPool.validate({ enabled: 'foo' })).to.throw(util.format(error, path, 'foo'));
+            expect(() => connectionPool.validate({ enabled: 1 })).to.throw(util.format(error, path, 1));
+            expect(() => connectionPool.validate({ enabled: null })).to.throw(util.format(error, path, null));
+            expect(() => connectionPool.validate({ enabled: [] })).to.throw(util.format(error, path, []));
+            expect(() => connectionPool.validate({ enabled: {} })).to.throw(util.format(error, path, {}));
+        });
+
+        it('fails when the "maxIdleTime" property is not a positive integer (including 0)', () => {
+            const error = errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE;
+            const path = 'pooling.maxIdleTime';
+
+            expect(() => connectionPool.validate({ maxIdleTime: -1 })).to.throw(util.format(error, path, -1));
+            expect(() => connectionPool.validate({ maxIdleTime: 'foo' })).to.throw(util.format(error, path, 'foo'));
+            expect(() => connectionPool.validate({ maxIdleTime: true })).to.throw(util.format(error, path, true));
+            expect(() => connectionPool.validate({ maxIdleTime: false })).to.throw(util.format(error, path, false));
+            expect(() => connectionPool.validate({ maxIdleTime: null })).to.throw(util.format(error, path, null));
+            expect(() => connectionPool.validate({ maxIdleTime: [] })).to.throw(util.format(error, path, []));
+            expect(() => connectionPool.validate({ maxIdleTime: {} })).to.throw(util.format(error, path, {}));
+        });
+
+        it('fails when the "maxSize" property is not an integer above 1', () => {
+            const error = errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE;
+            const path = 'pooling.maxSize';
+
+            expect(() => connectionPool.validate({ maxSize: 0 })).to.throw(util.format(error, path, 0));
+            expect(() => connectionPool.validate({ maxSize: 'foo' })).to.throw(util.format(error, path, 'foo'));
+            expect(() => connectionPool.validate({ maxSize: true })).to.throw(util.format(error, path, true));
+            expect(() => connectionPool.validate({ maxSize: false })).to.throw(util.format(error, path, false));
+            expect(() => connectionPool.validate({ maxSize: null })).to.throw(util.format(error, path, null));
+            expect(() => connectionPool.validate({ maxSize: [] })).to.throw(util.format(error, path, []));
+            expect(() => connectionPool.validate({ maxSize: {} })).to.throw(util.format(error, path, {}));
+        });
+
+        it('fails when the "queueTimeout" property is not a positive integer (including 0)', () => {
+            const error = errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE;
+            const path = 'pooling.queueTimeout';
+
+            expect(() => connectionPool.validate({ queueTimeout: -1 })).to.throw(util.format(error, path, -1));
+            expect(() => connectionPool.validate({ queueTimeout: 'foo' })).to.throw(util.format(error, path, 'foo'));
+            expect(() => connectionPool.validate({ queueTimeout: true })).to.throw(util.format(error, path, true));
+            expect(() => connectionPool.validate({ queueTimeout: false })).to.throw(util.format(error, path, false));
+            expect(() => connectionPool.validate({ queueTimeout: null })).to.throw(util.format(error, path, null));
+            expect(() => connectionPool.validate({ queueTimeout: [] })).to.throw(util.format(error, path, []));
+            expect(() => connectionPool.validate({ queueTimeout: {} })).to.throw(util.format(error, path, {}));
         });
     });
 });

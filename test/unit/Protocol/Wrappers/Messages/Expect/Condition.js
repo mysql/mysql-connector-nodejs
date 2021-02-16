@@ -59,7 +59,7 @@ describe('Mysqlx.Expect.Condition wrapper', () => {
 
                 td.when(wraps(proto)).thenReturn({ valueOf: () => 'qux' });
                 // eslint-disable-next-line node/no-deprecated-api
-                td.when(bytes.deserialize(new Buffer('bar'))).thenReturn({ valueOf: () => 'quux' });
+                td.when(bytes.create(new Buffer('bar'))).thenReturn({ valueOf: () => 'quux' });
 
                 expect(condition.create({ key: 'foo', value: 'bar', condition: 'baz' }).valueOf()).to.equal('qux');
                 expect(td.explain(proto.setConditionKey).callCount).to.equal(1);

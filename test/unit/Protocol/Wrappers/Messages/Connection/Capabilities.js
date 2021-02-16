@@ -70,7 +70,7 @@ describe('Mysqlx.Connection.Capabilities wrapper', () => {
 
         context('deserialize()', () => {
             it('returns a wrapper instance based from the raw protocol message', () => {
-                td.when(bytes.deserialize('foo')).thenReturn({ valueOf: () => 'bar' });
+                td.when(bytes.deserialize('foo')).thenReturn('bar');
                 td.when(ConnectionStub.Capabilities.deserializeBinary('bar')).thenReturn('baz');
                 td.when(wraps('baz')).thenReturn({ valueOf: () => 'qux' });
 

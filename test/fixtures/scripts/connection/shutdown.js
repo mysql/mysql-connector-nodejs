@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -31,7 +31,7 @@
 'use strict';
 
 const mysqlx = require('../../../../');
-const disableEndpoint = require('../../disableEndpoint');
+const stopServer = require('../../stopServer');
 
 const config = JSON.parse(process.env.MYSQLX_CLIENT_CONFIG);
 
@@ -42,7 +42,7 @@ const baseConfig = Object.assign({}, config, { schema: undefined });
 
 mysqlx.getSession(baseConfig)
     .then(() => {
-        return disableEndpoint(config.host, timeout);
+        return stopServer(config.host, timeout);
     })
     .catch(err => {
         // errors in should be passed as JSON to the parent process via stderr

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -41,7 +41,7 @@ mysqlx.getSession(baseConfig)
     .then(session1 => {
         return mysqlx.getSession(baseConfig)
             .then(session2 => {
-                return sqlExecute(session2, 'kill_client', [{ id: session1._connectionId }], sqlExecute.Namespace.X_PLUGIN)
+                return sqlExecute(session2.getConnection_(), 'kill_client', [{ id: session1.getConnection_().getServerId() }], sqlExecute.Namespace.X_PLUGIN)
                     .execute()
                     .then(() => {
                         return session2.close();

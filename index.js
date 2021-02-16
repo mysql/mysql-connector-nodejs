@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -53,11 +53,19 @@ authenticationManager.registerPlugin(plainAuth);
 authenticationManager.registerPlugin(sha256MemoryAuth);
 
 /**
+ * String validation options.
+ * @private
+ * @typedef {Object} StringValidation
+ * @prop {boolean} [enforceJSON=false]
+ * @prop {boolean} [allowUndefined=false]
+ */
+
+/**
  * Parse a connection specification.
  * @private
- * @param {string|URI} input - connection specification
- * @param {Object} [options] - string validation options
- * @throws {Error} When the input is not a valid connection specification.
+ * @param {string|module:Connection~Properties} input - connection specification
+ * @param {StringValidation} [options] - string validation options
+ * @throws when the input is not a valid connection specification.
  * @returns {Promise.<module:Session>}
  */
 function parseConnectionSpec (input, options) {
@@ -86,8 +94,8 @@ function parseConnectionSpec (input, options) {
 }
 
 /**
- * Create a legacy X DevAPI connection.
- * @param {string|URI} connection - connection specification
+ * Create an X DevAPI session using a standalone connection.
+ * @param {string|module:Connection~Properties} connection - a connection string (URI) or a set of connection properties
  * @example
  * mysqlx.getSession({ user: 'root' })
  *   .then(session => {
@@ -95,37 +103,21 @@ function parseConnectionSpec (input, options) {
  *   })
  * @returns {Promise.<module:Session>}
  */
-exports.getSession = function (connection) {
-    connection = typeof connection === 'undefined' ? {} : connection;
-
+exports.getSession = function (connection = {}) {
     try {
-        connection = parseConnectionSpec(connection);
+        const config = Object.assign({}, parseConnectionSpec(connection), { pooling: { enabled: false } });
+        client.validate(config);
+        // { host: _, port: _, pooling: { enabled: false }, ... }
+        return client(config).getSession();
     } catch (err) {
         return Promise.reject(err);
     }
-
-    return client({ pooling: { enabled: false, maxSize: 1 }, uri: connection }).getSession();
 };
 
 /**
- * Connection pool options.
- * @typedef {Object} PoolOptions
- * @property {boolean} [enabled=true] - use a connection pool
- * @property {number} [maxSize=25] - maximum number of connections in the pool
- * @property {number} [maxIdleTime=0] - maximum number of milliseconds to allow a connection to be idle (0 - infinite)
- * @property {number} [queueTimeout=0] - maximum number of milliseconds to wait for a connection to become available (0 - infinite)
- */
-
-/**
- * Extended client options.
- * @typedef {Object} ClientOptions
- * @property {module:mysqlx~PoolOptions} [pooling] - pooling options
- */
-
-/**
  * Create a new X DevAPI connection pool.
- * @param {string|URI} connection - connection specification
- * @param {module:mysqlx~ClientOptions} [options] - client options
+ * @param {string|module:Connection~Properties} connection - a connection string (URI) or a set of connection properties
+ * @param {module:Client~Properties} [options] - extended client options
  * @example
  * const client = mysqlx.getClient({ user: 'root' }, { pooling: { enabled: true, maxSize: 3 } })
  *
@@ -135,17 +127,18 @@ exports.getSession = function (connection) {
  *   })
  * @returns {module:Client}
  */
-exports.getClient = function (connection, options) {
-    options = Object.assign({ pooling: { enabled: true } }, parseConnectionSpec(options || {}, { enforceJSON: true, allowUndefined: true }));
-    connection = parseConnectionSpec(connection);
+exports.getClient = function (connection = {}, options = {}) {
+    const config = Object.assign({}, parseConnectionSpec(connection), parseConnectionSpec(options, { enforceJSON: true, allowUndefined: true }));
+    client.validate(config);
 
-    return client(Object.assign(options, { uri: connection }));
+    // { host: _, port: _, pooling: { enabled: _, maxSize: _ }, ... }
+    return client(config);
 };
 
 /**
  * Additional parser options.
  * @typedef {Object} ParserOptions
- * @property {module:mysqlx~Mode} [mode] - the parsing mode
+ * @prop {module:mysqlx~Mode} [mode] - the parsing mode
  */
 
 /**

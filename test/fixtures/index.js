@@ -32,19 +32,27 @@
 
 module.exports = {
     collectLogs: require('./collectLogs'),
+    createExecutable: require('./createExecutable'),
+    createRecordServer: require('./createRecordServer'),
     createSession: require('./createSession'),
     createSchema: require('./createSchema'),
     createUser: require('./createUser'),
-    disableEndpoint: require('./disableEndpoint'),
+    deregisterService: require('./deregisterService'),
+    killServer: require('./killServer'),
     dropSchema: require('./dropSchema'),
     dropUser: require('./dropUser'),
-    enableEndpoint: require('./enableEndpoint'),
+    getIPv4Address: require('./getIPv4Address'),
     getIPv6Address: require('./getIPv6Address'),
     getTableIndex: require('./getTableIndex'),
     getPreparedStatement: require('./getPreparedStatement'),
     getPreparedStatements: require('./getPreparedStatements'),
+    stopServer: require('./stopServer'),
+    registerService: require('./registerService'),
     resetAuthenticationCache: require('./resetAuthenticationCache'),
+    restartServer: require('./restartServer'),
     savePasswordInAuthenticationCache: require('./savePasswordInAuthenticationCache'),
     setPromiseTimeout: require('./setPromiseTimeout'),
-    setServerGlobalVariable: require('./setServerGlobalVariable')
+    setServerGlobalVariable: require('./setServerGlobalVariable'),
+    sortServicesByWeight: require('./sortServicesByWeight'),
+    startExecutable: require('./startExecutable')
 };
