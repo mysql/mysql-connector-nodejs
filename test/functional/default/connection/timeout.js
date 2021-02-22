@@ -95,8 +95,17 @@ describe('connecting to unavailable servers with a timeout', () => {
             });
 
             afterEach('close fake server', done => {
-                server.emit('close');
+                // If the server is not listening, there is nothing to do.
+                if (!server.listening) {
+                    return done();
+                }
+
+                // Make sure the server does not accept any new connections.
                 server.close(done);
+                // The callback on "close" is only called after all
+                // connections are closed, so we need to make sure that
+                // happens.
+                server.emit('close');
             });
 
             context('using a UNIX socket', () => {
@@ -185,16 +194,40 @@ describe('connecting to unavailable servers with a timeout', () => {
             });
 
             afterEach('close fake servers', done => {
-                [primary, secondary].forEach(server => {
-                    server.emit('close');
-                });
+                // If the servers are not listening, there is nothing to do.
+                if (!secondary.listening && !primary.listening) {
+                    return done();
+                }
 
+                // If only the primary is listening.
+                if (!secondary.listening) {
+                    // We prevent it from accepting new connections.
+                    primary.close(done);
+                    // And close the existing ones.
+                    primary.emit('close');
+                    return;
+                }
+
+                // By this point both the primary and secondary should be
+                // listening.
                 secondary.close(err => {
-                    if (err) {
-                        return done(err);
+                    if (!err) {
+                        return primary.close(done);
                     }
 
-                    return primary.close(done);
+                    // Even if there is an error, we should try to close
+                    // the primary as well.
+                    return primary.close(err => {
+                        if (err) {
+                            return done(err);
+                        }
+
+                        return done(err);
+                    });
+                });
+
+                [primary, secondary].forEach(server => {
+                    server.emit('close');
                 });
             });
 
