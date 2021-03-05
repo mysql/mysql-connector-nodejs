@@ -153,7 +153,7 @@ describe('SqlResultHandler inbound handler', () => {
                 expect(td.explain(dataCallback).calls[0].args[0]).to.deep.equal(['qux']);
             });
 
-            it('calls the metadata callback if it is also available', () => {
+            it('calls the metadata callback if it is also available and has not been called before for the same result set', () => {
                 const dataCallback = td.function();
                 const metadataCallback = td.function();
 
@@ -173,6 +173,28 @@ describe('SqlResultHandler inbound handler', () => {
                 expect(td.explain(dataCallback).calls[0].args[0]).to.deep.equal(['qux']);
                 expect(td.explain(metadataCallback).callCount).to.equal(1);
                 expect(td.explain(metadataCallback).calls[0].args[0]).to.deep.equal(['bar']);
+            });
+
+            it('does not call the metadata callback if it is available but has been called before for the same result set', () => {
+                const dataCallback = td.function();
+                const metadataCallback = td.function();
+
+                const handler = new SqlResultHandler(dataCallback, metadataCallback);
+                handler._currentResultsetMetadata = ['baz'];
+
+                const setColumnMetadata = td.function();
+                const toArray = td.function();
+
+                td.when(row.deserialize('foo')).thenReturn({ setColumnMetadata });
+                td.when(row.deserialize('bar')).thenReturn({ setColumnMetadata });
+                td.when(setColumnMetadata(['baz'])).thenReturn({ toArray });
+                td.when(toArray()).thenReturn(['qux']);
+
+                handler[row.MESSAGE_ID]('foo');
+                handler[row.MESSAGE_ID]('bar');
+
+                expect(td.explain(dataCallback).callCount).to.equal(2);
+                expect(td.explain(metadataCallback).callCount).to.equal(1);
             });
         });
 

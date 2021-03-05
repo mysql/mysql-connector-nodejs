@@ -105,16 +105,24 @@ describe('relational table select', () => {
                     });
             });
 
-            it('returns the column metadata for each row', () => {
-                return table.select().execute(() => {}, columns => {
-                    expect(columns).to.have.lengthOf(3);
-                    expect(columns[0].getColumnName()).to.equal('id');
-                    expect(columns[0].getType()).to.equal('BIGINT');
-                    expect(columns[1].getColumnName()).to.equal('name');
-                    expect(columns[1].getType()).to.equal('STRING');
-                    expect(columns[2].getColumnName()).to.equal('age');
-                    expect(columns[2].getType()).to.equal('INT');
-                });
+            it('returns the column metadata once', () => {
+                let rowCount = 0;
+
+                return table.select()
+                    .execute(() => {}, columns => {
+                        rowCount += 1;
+
+                        expect(columns).to.have.lengthOf(3);
+                        expect(columns[0].getColumnName()).to.equal('id');
+                        expect(columns[0].getType()).to.equal('BIGINT');
+                        expect(columns[1].getColumnName()).to.equal('name');
+                        expect(columns[1].getType()).to.equal('STRING');
+                        expect(columns[2].getColumnName()).to.equal('age');
+                        expect(columns[2].getType()).to.equal('INT');
+                    })
+                    .then(() => {
+                        return expect(rowCount).to.equal(1);
+                    });
             });
         });
 

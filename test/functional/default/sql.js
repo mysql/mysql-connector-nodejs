@@ -66,6 +66,65 @@ describe('raw SQL', () => {
         });
     });
 
+    context('callback API', () => {
+        let session;
+
+        beforeEach('create session', () => {
+            return mysqlx.getSession(config)
+                .then(s => {
+                    session = s;
+                });
+        });
+
+        afterEach('close session', () => {
+            return session.close();
+        });
+
+        context('multiple result sets', () => {
+            beforeEach('create table', () => {
+                return session.sql('CREATE TABLE test (name VARCHAR(4), status ENUM("pending", "active", "blocked") NOT NULL)')
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql('INSERT INTO test (name) VALUES ("foo"), ("bar")')
+                    .execute();
+            });
+
+            beforeEach('create procedure', () => {
+                return session.sql(`
+                        CREATE PROCEDURE multi() BEGIN
+                            SELECT name AS s1_m1, status AS s2_m1 FROM test;
+                            SELECT "baz" AS s1_m2, "blocked" AS s2_m2;
+                            SELECT 1 AS s1_m3, 2.2 AS s2_m3;
+                        END`)
+                    .execute();
+            });
+
+            afterEach('drop procedure', () => {
+                return session.sql('DROP PROCEDURE multi')
+                    .execute();
+            });
+
+            it('executes the metadata handler once for each result set', () => {
+                const noop = () => {};
+                let resultSetCount = 0;
+
+                return session.sql('CALL multi()')
+                    .execute(noop, columns => {
+                        resultSetCount += 1;
+
+                        expect(columns).to.have.lengthOf(2);
+                        expect(columns[0].getColumnLabel()).to.equal(`s1_m${resultSetCount}`);
+                        expect(columns[1].getColumnLabel()).to.equal(`s2_m${resultSetCount}`);
+                    })
+                    .then(() => {
+                        return expect(resultSetCount).to.equal(3);
+                    });
+            });
+        });
+    });
+
     context('result set API', () => {
         let session;
 
@@ -165,7 +224,8 @@ describe('raw SQL', () => {
             });
 
             afterEach('drop procedure', () => {
-                return session.sql('DROP PROCEDURE multi');
+                return session.sql('DROP PROCEDURE multi')
+                    .execute();
             });
 
             it('retrieves the first record in the result set', () => {
@@ -361,7 +421,8 @@ describe('raw SQL', () => {
             });
 
             afterEach('drop procedure', () => {
-                return session.sql('DROP PROCEDURE multi');
+                return session.sql('DROP PROCEDURE multi')
+                    .execute();
             });
 
             it('correctly consumes empty result sets', () => {
