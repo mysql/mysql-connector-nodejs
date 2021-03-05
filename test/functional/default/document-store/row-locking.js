@@ -39,14 +39,18 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 
 describe('row locking in collection transactions', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let sessionA, sessionB, collectionFromA, collectionFromB;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create two sessions', () => {
-        return Promise.all([mysqlx.getSession(config), mysqlx.getSession(config)])
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return Promise.all([mysqlx.getSession(defaultConfig), mysqlx.getSession(defaultConfig)])
             .then(sessions => {
                 sessionA = sessions[0];
                 sessionB = sessions[1];
@@ -54,12 +58,12 @@ describe('row locking in collection transactions', () => {
     });
 
     beforeEach('create collection', () => {
-        return sessionA.getSchema(config.schema).createCollection('test');
+        return sessionA.getSchema(baseConfig.schema).createCollection('test');
     });
 
     beforeEach('assign collection instances', () => {
-        collectionFromA = sessionA.getSchema(config.schema).getCollection('test');
-        collectionFromB = sessionB.getSchema(config.schema).getCollection('test');
+        collectionFromA = sessionA.getSchema(baseConfig.schema).getCollection('test');
+        collectionFromB = sessionB.getSchema(baseConfig.schema).getCollection('test');
     });
 
     beforeEach('add fixtures', () => {
@@ -68,7 +72,7 @@ describe('row locking in collection transactions', () => {
     });
 
     afterEach('drop default schema', () => {
-        return Promise.all([sessionA.dropSchema(config.schema), sessionB.dropSchema(config.schema)]);
+        return Promise.all([sessionA.dropSchema(baseConfig.schema), sessionB.dropSchema(baseConfig.schema)]);
     });
 
     afterEach('close session', () => {

@@ -40,21 +40,25 @@ const mysqlx = require('../../../../');
 const path = require('path');
 
 describe('single document upsert', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let schema, session, collection;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create session using default schema', () => {
-        return mysqlx.getSession(config)
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaultConfig)
             .then(s => {
                 session = s;
             });
     });
 
     beforeEach('load default schema', () => {
-        schema = session.getSchema(config.schema);
+        schema = session.getDefaultSchema();
     });
 
     beforeEach('create collection', () => {
@@ -72,7 +76,7 @@ describe('single document upsert', () => {
     });
 
     afterEach('drop default schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close session', () => {
@@ -182,7 +186,7 @@ describe('single document upsert', () => {
     context('when the collection contains a unique key', () => {
         beforeEach('create unique key constraint', () => {
             return session
-                .sql(`ALTER TABLE ${schema.getName()}.${collection.getName()} ADD COLUMN name VARCHAR(3) GENERATED ALWAYS AS (JSON_UNQUOTE(JSON_EXTRACT(doc, '$.name'))) VIRTUAL UNIQUE KEY NOT NULL`)
+                .sql(`ALTER TABLE \`${schema.getName()}\`.\`${collection.getName()}\` ADD COLUMN name VARCHAR(3) GENERATED ALWAYS AS (JSON_UNQUOTE(JSON_EXTRACT(doc, '$.name'))) VIRTUAL UNIQUE KEY NOT NULL`)
                 .execute();
         });
 

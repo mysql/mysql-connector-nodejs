@@ -38,7 +38,7 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 
 describe('collation and charset names', () => {
-    const baseConfig = { schema: undefined };
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
     const defaultCharset = 'utf8mb4';
     const defaultCollation = 'utf8mb4_0900_ai_ci';
 
@@ -46,7 +46,9 @@ describe('collation and charset names', () => {
         let session;
 
         beforeEach('create session', () => {
-            return mysqlx.getSession(Object.assign({}, config, baseConfig))
+            const defaultConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+            return mysqlx.getSession(defaultConfig)
                 .then(s => { session = s; });
         });
 
@@ -71,27 +73,29 @@ describe('collation and charset names', () => {
         let session;
 
         beforeEach('create session', () => {
-            return mysqlx.getSession(Object.assign({}, config, baseConfig))
+            const defaultConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+            return mysqlx.getSession(defaultConfig)
                 .then(s => { session = s; });
         });
 
         beforeEach('create schema', () => {
-            return session.sql(`CREATE DATABASE ${config.schema}`)
+            return session.sql(`CREATE DATABASE \`${baseConfig.schema}\``)
                 .execute();
         });
 
         beforeEach('create table', () => {
-            return session.sql(`CREATE TABLE ${config.schema}.test (a_char CHAR(3))`)
+            return session.sql(`CREATE TABLE \`${baseConfig.schema}\`.test (a_char CHAR(3))`)
                 .execute();
         });
 
         beforeEach('add fixtures', () => {
-            return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+            return session.sql(`INSERT INTO \`${baseConfig.schema}\`.test VALUES ('foo')`)
                 .execute();
         });
 
         afterEach('drop schema', () => {
-            return session.sql(`DROP DATABASE ${config.schema}`)
+            return session.sql(`DROP DATABASE \`${baseConfig.schema}\``)
                 .execute();
         });
 
@@ -102,7 +106,7 @@ describe('collation and charset names', () => {
         it('metadata contains the default collation id', () => {
             let metadata = [];
 
-            return session.sql(`SELECT * FROM ${config.schema}.test`)
+            return session.sql(`SELECT * FROM \`${baseConfig.schema}\`.test`)
                 .execute(() => {}, meta => {
                     metadata = metadata.concat(meta);
                 })
@@ -126,27 +130,29 @@ describe('collation and charset names', () => {
             });
 
             beforeEach('refresh session', () => {
-                return mysqlx.getSession(Object.assign({}, config, baseConfig))
+                const defaultConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+                return mysqlx.getSession(defaultConfig)
                     .then(s => { session = s; });
             });
 
             beforeEach('create schema', () => {
-                return session.sql(`CREATE DATABASE ${config.schema}`)
+                return session.sql(`CREATE DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${config.schema}.test (a_char CHAR(3))`)
+                return session.sql(`CREATE TABLE \`${baseConfig.schema}\`.test (a_char CHAR(3))`)
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+                return session.sql(`INSERT INTO \`${baseConfig.schema}\`.test VALUES ('foo')`)
                     .execute();
             });
 
             afterEach('drop schema', () => {
-                return session.sql(`DROP DATABASE ${config.schema}`)
+                return session.sql(`DROP DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
@@ -162,7 +168,7 @@ describe('collation and charset names', () => {
             it('metadata contains the strict utf8mb4 collation id selected by the X Plugin', () => {
                 let metadata = [];
 
-                return session.sql(`SELECT * FROM ${config.schema}.test`)
+                return session.sql(`SELECT * FROM \`${baseConfig.schema}\`.test`)
                     .execute(() => {}, meta => {
                         metadata = metadata.concat(meta);
                     })
@@ -177,27 +183,29 @@ describe('collation and charset names', () => {
             let session;
 
             beforeEach('create session', () => {
-                return mysqlx.getSession(Object.assign({}, config, baseConfig))
+                const defaultConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+                return mysqlx.getSession(defaultConfig)
                     .then(s => { session = s; });
             });
 
             beforeEach('create schema with collation', () => {
-                return session.sql(`CREATE DATABASE ${config.schema} CHARACTER SET ${customCharset} COLLATE ${customCollation}`)
+                return session.sql(`CREATE DATABASE \`${baseConfig.schema}\` CHARACTER SET ${customCharset} COLLATE ${customCollation}`)
                     .execute();
             });
 
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${config.schema}.test (a_char CHAR(3))`)
+                return session.sql(`CREATE TABLE \`${baseConfig.schema}\`.test (a_char CHAR(3))`)
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+                return session.sql(`INSERT INTO \`${baseConfig.schema}\`.test VALUES ('foo')`)
                     .execute();
             });
 
             afterEach('drop schema', () => {
-                return session.sql(`DROP DATABASE ${config.schema}`)
+                return session.sql(`DROP DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
@@ -208,7 +216,7 @@ describe('collation and charset names', () => {
             it('metadata contains the strict utf8mb4 collation id selected by the X Plugin', () => {
                 let metadata = [];
 
-                return session.sql(`SELECT * FROM ${config.schema}.test`)
+                return session.sql(`SELECT * FROM \`${baseConfig.schema}\`.test`)
                     .execute(() => {}, meta => {
                         metadata = metadata.concat(meta);
                     })
@@ -223,27 +231,29 @@ describe('collation and charset names', () => {
             let session;
 
             beforeEach('create session', () => {
-                return mysqlx.getSession(Object.assign({}, config, baseConfig))
+                const defaultConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+                return mysqlx.getSession(defaultConfig)
                     .then(s => { session = s; });
             });
 
             beforeEach('create schema', () => {
-                return session.sql(`CREATE DATABASE ${config.schema}`)
+                return session.sql(`CREATE DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
             beforeEach('create table with collation', () => {
-                return session.sql(`CREATE TABLE ${config.schema}.test (a_char CHAR(3)) CHARACTER SET ${customCharset} COLLATE ${customCollation}`)
+                return session.sql(`CREATE TABLE \`${baseConfig.schema}\`.test (a_char CHAR(3)) CHARACTER SET ${customCharset} COLLATE ${customCollation}`)
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+                return session.sql(`INSERT INTO \`${baseConfig.schema}\`.test VALUES ('foo')`)
                     .execute();
             });
 
             afterEach('drop schema', () => {
-                return session.sql(`DROP DATABASE ${config.schema}`)
+                return session.sql(`DROP DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
@@ -254,7 +264,7 @@ describe('collation and charset names', () => {
             it('metadata contains the strict utf8mb4 collation id selected by the X Plugin', () => {
                 let metadata = [];
 
-                return session.sql(`SELECT * FROM ${config.schema}.test`)
+                return session.sql(`SELECT * FROM \`${baseConfig.schema}\`.test`)
                     .execute(() => {}, meta => {
                         metadata = metadata.concat(meta);
                     })
@@ -269,27 +279,29 @@ describe('collation and charset names', () => {
             let session;
 
             beforeEach('create session', () => {
-                return mysqlx.getSession(Object.assign({}, config, baseConfig))
+                const defaultConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+                return mysqlx.getSession(defaultConfig)
                     .then(s => { session = s; });
             });
 
             beforeEach('create schema', () => {
-                return session.sql(`CREATE DATABASE ${config.schema}`)
+                return session.sql(`CREATE DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
             beforeEach('create table with column collation', () => {
-                return session.sql(`CREATE TABLE ${config.schema}.test (a_char CHAR(3) CHARACTER SET ${customCharset} COLLATE ${customCollation})`)
+                return session.sql(`CREATE TABLE \`${baseConfig.schema}\`.test (a_char CHAR(3) CHARACTER SET ${customCharset} COLLATE ${customCollation})`)
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+                return session.sql(`INSERT INTO \`${baseConfig.schema}\`.test VALUES ('foo')`)
                     .execute();
             });
 
             afterEach('drop schema', () => {
-                return session.sql(`DROP DATABASE ${config.schema}`)
+                return session.sql(`DROP DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
@@ -300,7 +312,7 @@ describe('collation and charset names', () => {
             it('metadata contains the strict utf8mb4 collation id selected by the X Plugin', () => {
                 let metadata = [];
 
-                return session.sql(`SELECT * FROM ${config.schema}.test`)
+                return session.sql(`SELECT * FROM \`${baseConfig.schema}\`.test`)
                     .execute(() => {}, meta => {
                         metadata = metadata.concat(meta);
                     })
@@ -323,27 +335,29 @@ describe('collation and charset names', () => {
             });
 
             beforeEach('refresh session', () => {
-                return mysqlx.getSession(Object.assign({}, config, baseConfig))
+                const defaultConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+                return mysqlx.getSession(defaultConfig)
                     .then(s => { session = s; });
             });
 
             beforeEach('create schema', () => {
-                return session.sql(`CREATE DATABASE ${config.schema}`)
+                return session.sql(`CREATE DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${config.schema}.test (a_char CHAR(3))`)
+                return session.sql(`CREATE TABLE \`${baseConfig.schema}\`.test (a_char CHAR(3))`)
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+                return session.sql(`INSERT INTO \`${baseConfig.schema}\`.test VALUES ('foo')`)
                     .execute();
             });
 
             afterEach('drop schema', () => {
-                return session.sql(`DROP DATABASE ${config.schema}`)
+                return session.sql(`DROP DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
@@ -359,7 +373,7 @@ describe('collation and charset names', () => {
             it('metadata contains the custom collation id', () => {
                 let metadata = [];
 
-                return session.sql(`SELECT * FROM ${config.schema}.test`)
+                return session.sql(`SELECT * FROM \`${baseConfig.schema}\`.test`)
                     .execute(() => {}, meta => {
                         metadata = metadata.concat(meta);
                     })
@@ -374,27 +388,29 @@ describe('collation and charset names', () => {
             let session;
 
             beforeEach('create session', () => {
-                return mysqlx.getSession(Object.assign({}, config, baseConfig))
+                const defaultConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+                return mysqlx.getSession(defaultConfig)
                     .then(s => { session = s; });
             });
 
             beforeEach('create schema with collation', () => {
-                return session.sql(`CREATE DATABASE ${config.schema} CHARACTER SET ${defaultCharset} COLLATE ${customCollation}`)
+                return session.sql(`CREATE DATABASE \`${baseConfig.schema}\` CHARACTER SET ${defaultCharset} COLLATE ${customCollation}`)
                     .execute();
             });
 
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${config.schema}.test (a_char CHAR(3))`)
+                return session.sql(`CREATE TABLE \`${baseConfig.schema}\`.test (a_char CHAR(3))`)
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+                return session.sql(`INSERT INTO \`${baseConfig.schema}\`.test VALUES ('foo')`)
                     .execute();
             });
 
             afterEach('drop schema', () => {
-                return session.sql(`DROP DATABASE ${config.schema}`)
+                return session.sql(`DROP DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
@@ -405,7 +421,7 @@ describe('collation and charset names', () => {
             it('metadata contains the custom collation id', () => {
                 let metadata = [];
 
-                return session.sql(`SELECT * FROM ${config.schema}.test`)
+                return session.sql(`SELECT * FROM \`${baseConfig.schema}\`.test`)
                     .execute(() => {}, meta => {
                         metadata = metadata.concat(meta);
                     })
@@ -420,27 +436,29 @@ describe('collation and charset names', () => {
             let session;
 
             beforeEach('create session', () => {
-                return mysqlx.getSession(Object.assign({}, config, baseConfig))
+                const defaultConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+                return mysqlx.getSession(defaultConfig)
                     .then(s => { session = s; });
             });
 
             beforeEach('create schema', () => {
-                return session.sql(`CREATE DATABASE ${config.schema}`)
+                return session.sql(`CREATE DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
             beforeEach('create table with collation', () => {
-                return session.sql(`CREATE TABLE ${config.schema}.test (a_char CHAR(3)) CHARACTER SET ${defaultCharset} COLLATE ${customCollation}`)
+                return session.sql(`CREATE TABLE \`${baseConfig.schema}\`.test (a_char CHAR(3)) CHARACTER SET ${defaultCharset} COLLATE ${customCollation}`)
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+                return session.sql(`INSERT INTO \`${baseConfig.schema}\`.test VALUES ('foo')`)
                     .execute();
             });
 
             afterEach('drop schema', () => {
-                return session.sql(`DROP DATABASE ${config.schema}`)
+                return session.sql(`DROP DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
@@ -451,7 +469,7 @@ describe('collation and charset names', () => {
             it('metadata contains the custom collation id', () => {
                 let metadata = [];
 
-                return session.sql(`SELECT * FROM ${config.schema}.test`)
+                return session.sql(`SELECT * FROM \`${baseConfig.schema}\`.test`)
                     .execute(() => {}, meta => {
                         metadata = metadata.concat(meta);
                     })
@@ -466,27 +484,29 @@ describe('collation and charset names', () => {
             let session;
 
             beforeEach('create session', () => {
-                return mysqlx.getSession(Object.assign({}, config, baseConfig))
+                const defaultConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+                return mysqlx.getSession(defaultConfig)
                     .then(s => { session = s; });
             });
 
             beforeEach('create schema', () => {
-                return session.sql(`CREATE DATABASE ${config.schema}`)
+                return session.sql(`CREATE DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
             beforeEach('create table with column collation', () => {
-                return session.sql(`CREATE TABLE ${config.schema}.test (a_char CHAR(3) CHARACTER SET ${defaultCharset} COLLATE ${customCollation})`)
+                return session.sql(`CREATE TABLE \`${baseConfig.schema}\`.test (a_char CHAR(3) CHARACTER SET ${defaultCharset} COLLATE ${customCollation})`)
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+                return session.sql(`INSERT INTO \`${baseConfig.schema}\`.test VALUES ('foo')`)
                     .execute();
             });
 
             afterEach('drop schema', () => {
-                return session.sql(`DROP DATABASE ${config.schema}`)
+                return session.sql(`DROP DATABASE \`${baseConfig.schema}\``)
                     .execute();
             });
 
@@ -497,7 +517,7 @@ describe('collation and charset names', () => {
             it('metadata contains the custom collation id', () => {
                 let metadata = [];
 
-                return session.sql(`SELECT * FROM ${config.schema}.test`)
+                return session.sql(`SELECT * FROM \`${baseConfig.schema}\`.test`)
                     .execute(() => {}, meta => {
                         metadata = metadata.concat(meta);
                     })

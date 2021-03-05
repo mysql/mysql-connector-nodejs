@@ -41,7 +41,7 @@ const path = require('path');
 const warnings = require('../../../../lib/constants/warnings');
 
 describe('connecting with SSL/TLS', () => {
-    const baseConfig = { host: config.host, password: config.password, port: config.port, schema: undefined, socket: undefined, user: config.user };
+    const baseConfig = { host: config.host, password: config.password, port: config.port, schema: 'performance_schema', socket: undefined, user: config.user };
 
     context('using a configuration object', () => {
         it('succeeds and enables TLS by default', () => {
@@ -50,7 +50,16 @@ describe('connecting with SSL/TLS', () => {
             return mysqlx.getSession(tlsConfig)
                 .then(session => {
                     expect(session.inspect()).to.have.property('ssl', true);
-                    return session.close();
+
+                    return session.sql('SELECT variable_value FROM session_status WHERE variable_name = ?')
+                        .bind('Mysqlx_ssl_version')
+                        .execute()
+                        .then(res => {
+                            return expect(res.fetchOne()[0]).to.match(/^TLSv.+/);
+                        })
+                        .then(() => {
+                            return session.close();
+                        });
                 });
         });
 
@@ -60,7 +69,16 @@ describe('connecting with SSL/TLS', () => {
             return mysqlx.getSession(tlsConfig)
                 .then(session => {
                     expect(session.inspect()).to.have.property('ssl', false);
-                    return session.close();
+
+                    return session.sql('SELECT variable_value FROM session_status WHERE variable_name = ?')
+                        .bind('Mysqlx_ssl_version')
+                        .execute()
+                        .then(res => {
+                            return expect(res.fetchOne()[0]).to.be.a('string').and.be.empty;
+                        })
+                        .then(() => {
+                            return session.close();
+                        });
                 });
         });
     });
@@ -68,23 +86,39 @@ describe('connecting with SSL/TLS', () => {
     context('using a URI', () => {
         it('succeeds and enables TLS by default', () => {
             const tlsConfig = Object.assign({}, baseConfig);
-            const uri = `mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}`;
+            const uri = `mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}/${tlsConfig.schema}`;
 
             return mysqlx.getSession(uri)
                 .then(session => {
-                    expect(session.inspect()).to.have.property('ssl', true);
-                    return session.close();
+                    return session.sql('SELECT variable_value FROM session_status WHERE variable_name = ?')
+                        .bind('Mysqlx_ssl_version')
+                        .execute()
+                        .then(res => {
+                            return expect(res.fetchOne()[0]).to.match(/^TLSv.+/);
+                        })
+                        .then(() => {
+                            return session.close();
+                        });
                 });
         });
 
         it('succeeds with TLS explicitly disabled', () => {
             const tlsConfig = Object.assign({}, baseConfig);
-            const uri = `mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}?ssl-mode=DISABLED`;
+            const uri = `mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}/${tlsConfig.schema}?ssl-mode=DISABLED`;
 
             return mysqlx.getSession(uri)
                 .then(session => {
                     expect(session.inspect()).to.have.property('ssl', false);
-                    return session.close();
+
+                    return session.sql('SELECT variable_value FROM session_status WHERE variable_name = ?')
+                        .bind('Mysqlx_ssl_version')
+                        .execute()
+                        .then(res => {
+                            return expect(res.fetchOne()[0]).to.be.a('string').and.be.empty;
+                        })
+                        .then(() => {
+                            return session.close();
+                        });
                 });
         });
     });

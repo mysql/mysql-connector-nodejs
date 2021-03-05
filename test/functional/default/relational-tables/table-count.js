@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -33,14 +33,15 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../..');
 
-describe('handling X Protocol TCP fragments', () => {
+describe('counting rows in tables', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
-    let schema, session, collection;
+    let schema, session;
 
     beforeEach('create default schema', () => {
         return fixtures.createSchema(baseConfig.schema);
@@ -59,20 +60,6 @@ describe('handling X Protocol TCP fragments', () => {
         schema = session.getDefaultSchema();
     });
 
-    beforeEach('create collection', () => {
-        return schema.createCollection('test')
-            .then(c => {
-                collection = c;
-            });
-    });
-
-    beforeEach('add fixtures', () => {
-        // Make sure the content size exceeds V8's maximum buffer length (currently, 4096 bytes)
-        // by, at least, a factor of 2 (to make it simple, the size of the remaining content is ignored).
-        return collection.add({ content: 'x'.repeat(4096 * 2) })
-            .execute();
-    });
-
     afterEach('drop default schema', () => {
         return session.dropSchema(schema.getName());
     });
@@ -81,13 +68,54 @@ describe('handling X Protocol TCP fragments', () => {
         return session.close();
     });
 
-    context('BUG#27429429', () => {
-        it('decodes messages split into more than two fragments', () => {
-            const expected = 'x'.repeat(4096 * 2);
+    context('when the table exists in the schema', () => {
+        let table;
 
-            return collection.find()
-                .fields('content')
-                .execute(doc => expect(doc.content).to.equal(expected));
+        beforeEach('create table', () => {
+            return session.sql(`CREATE TABLE \`${schema.getName()}\`.test (name VARCHAR(3))`)
+                .execute()
+                .then(() => {
+                    table = schema.getTable('test');
+                });
         });
+
+        it('returns 0 if the table does not contain any rows', () => {
+            return table.count()
+                .then(res => {
+                    return expect(res).to.equal(0);
+                });
+        });
+
+        context('when the table is not empty', () => {
+            beforeEach('add fixtures', () => {
+                return table.insert('name')
+                    .values('foo')
+                    .values('bar')
+                    .execute();
+            });
+
+            it('returns the number of rows in the table', () => {
+                return table.count()
+                    .then(res => {
+                        return expect(res).to.equal(2);
+                    });
+            });
+        });
+    });
+
+    it('fails if the table does not exist in the schema', () => {
+        const nonExistingTable = schema.getTable('test');
+        const message = `Table '${schema.getName()}.${nonExistingTable.getName()}' doesn't exist`;
+
+        return nonExistingTable.count()
+            .then(() => {
+                return expect.fail();
+            })
+            .catch(err => {
+                expect(err.info).to.include.keys('code');
+                expect(err.info.code).to.equal(errors.ER_NO_SUCH_TABLE);
+                expect(err.info.msg).to.equal(message);
+                expect(err.message).to.equal(message);
+            });
     });
 });

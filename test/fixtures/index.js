@@ -38,7 +38,6 @@ module.exports = {
     createSchema: require('./createSchema'),
     createUser: require('./createUser'),
     deregisterService: require('./deregisterService'),
-    killServer: require('./killServer'),
     dropSchema: require('./dropSchema'),
     dropUser: require('./dropUser'),
     getIPv4Address: require('./getIPv4Address'),
@@ -46,13 +45,16 @@ module.exports = {
     getTableIndex: require('./getTableIndex'),
     getPreparedStatement: require('./getPreparedStatement'),
     getPreparedStatements: require('./getPreparedStatements'),
-    stopServer: require('./stopServer'),
+    grantPrivileges: require('./grantPrivileges'),
+    killServer: require('./killServer'),
     registerService: require('./registerService'),
-    resetAuthenticationCache: require('./resetAuthenticationCache'),
     restartServer: require('./restartServer'),
+    resetAuthenticationCache: require('./resetAuthenticationCache'),
+    revokePrivileges: require('./revokePrivileges'),
     savePasswordInAuthenticationCache: require('./savePasswordInAuthenticationCache'),
     setPromiseTimeout: require('./setPromiseTimeout'),
     setServerGlobalVariable: require('./setServerGlobalVariable'),
     sortServicesByWeight: require('./sortServicesByWeight'),
-    startExecutable: require('./startExecutable')
+    startExecutable: require('./startExecutable'),
+    stopServer: require('./stopServer')
 };

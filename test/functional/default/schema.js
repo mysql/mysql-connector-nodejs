@@ -33,30 +33,35 @@
 /* eslint-env node, mocha */
 
 const config = require('../../config');
+const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../fixtures');
 const mysqlx = require('../../..');
 
 describe('session schema', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let session, schema;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create session using default schema', () => {
-        return mysqlx.getSession(config)
+        const defaulConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaulConfig)
             .then(s => {
                 session = s;
             });
     });
 
     beforeEach('load default schema', () => {
-        schema = session.getSchema(config.schema);
+        schema = session.getDefaultSchema();
     });
 
     afterEach('drop default schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close session', () => {
@@ -64,22 +69,50 @@ describe('session schema', () => {
     });
 
     context('creating collections', () => {
-        it('allows to create collections', () => {
-            const collections = ['test1', 'test2'];
+        context('when the collections do not exist', () => {
+            it('allows to create those collections', () => {
+                const collections = ['test1', 'test2'];
 
-            return Promise
-                .all([
-                    schema.createCollection(collections[0]),
-                    schema.createCollection(collections[1])
-                ])
-                .then(() => {
-                    return schema.getCollections();
-                })
-                .then(result => {
-                    expect(result).to.have.lengthOf(2);
-                    expect(result[0].getName()).to.deep.equal(collections[0]);
-                    expect(result[1].getName()).to.deep.equal(collections[1]);
-                });
+                return Promise
+                    .all([
+                        schema.createCollection(collections[0]),
+                        schema.createCollection(collections[1])
+                    ])
+                    .then(() => {
+                        return schema.getCollections();
+                    })
+                    .then(result => {
+                        expect(result).to.have.lengthOf(2);
+                        expect(result[0].getName()).to.deep.equal(collections[0]);
+                        expect(result[1].getName()).to.deep.equal(collections[1]);
+                    });
+            });
+        });
+
+        context('when a collection already exists', () => {
+            it('fails to create a collection with the same name', () => {
+                return schema.createCollection('test1')
+                    .then(() => {
+                        return schema.createCollection('test1');
+                    })
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_TABLE_EXISTS_ERROR);
+                    });
+            });
+
+            it('does not fail with an hint to re-use an existing collection', () => {
+                return schema.createCollection('test1')
+                    .then(() => {
+                        return schema.createCollection('test1', { reuseExisting: true });
+                    })
+                    .then(collection => {
+                        expect(collection.getName()).to.equal('test1');
+                    });
+            });
         });
     });
 
@@ -142,7 +175,7 @@ describe('session schema', () => {
 
     context('fetching tables', () => {
         it('allows to retrieve a single table', () => {
-            return session.sql(`CREATE TABLE ${schema.getName()}.foo (_id SERIAL)`)
+            return session.sql('CREATE TABLE foo (_id SERIAL)')
                 .execute()
                 .then(() => {
                     expect(schema.getTable('foo').getName()).to.equal('foo');
@@ -150,7 +183,7 @@ describe('session schema', () => {
         });
 
         it('allows to retrieve the list of existing tables', () => {
-            return session.sql(`CREATE TABLE ${schema.getName()}.foo (_id SERIAL)`)
+            return session.sql('CREATE TABLE foo (_id SERIAL)')
                 .execute()
                 .then(() => {
                     return schema.getTables();
@@ -193,7 +226,7 @@ describe('session schema', () => {
         });
 
         it('returns the list of existing collections in the precense of regular tables', () => {
-            return session.sql(`CREATE TABLE ${config.schema}.foo (_id SERIAL)`)
+            return session.sql('CREATE TABLE foo (_id SERIAL)')
                 .execute()
                 .then(() => {
                     return schema.createCollection('bar');
@@ -210,7 +243,7 @@ describe('session schema', () => {
 
     it('available tables', () => {
         it('returns the list of existing collections in the precense of regular tables', () => {
-            return session.sql(`CREATE TABLE ${config.schema}.foo (_id SERIAL)`)
+            return session.sql('CREATE TABLE foo (_id SERIAL)')
                 .execute()
                 .then(() => {
                     return schema.createCollection('bar');

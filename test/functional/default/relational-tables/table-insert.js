@@ -40,21 +40,25 @@ const mysqlx = require('../../../../');
 const path = require('path');
 
 describe('inserting data into a table', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let session, schema, table;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create session using default schema', () => {
-        return mysqlx.getSession(config)
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaultConfig)
             .then(s => {
                 session = s;
             });
     });
 
     beforeEach('load default schema', () => {
-        schema = session.getSchema(config.schema);
+        schema = session.getDefaultSchema();
     });
 
     beforeEach('create table', () => {
@@ -68,7 +72,7 @@ describe('inserting data into a table', () => {
     });
 
     afterEach('drop default schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close session', () => {
@@ -262,6 +266,46 @@ describe('inserting data into a table', () => {
                 .then(res => {
                     expect(res.getColumns()[0].getType()).to.equal('DECIMAL');
                     expect(res.fetchOne()).to.deep.equal([-56565656.56]);
+                });
+        });
+    });
+
+    // https://dev.mysql.com/doc/x-devapi-userguide/en/working-with-auto-increment-values.html
+    context('AUTO INCREMENT columns', () => {
+        beforeEach('create table', () => {
+            return session.sql('CREATE TABLE auto (id INT AUTO_INCREMENT NOT NULL PRIMARY KEY, name VARCHAR(3))')
+                .execute();
+        });
+
+        beforeEach('load table', () => {
+            table = schema.getTable('auto');
+        });
+
+        it('returns the first automatically generated value for a column', () => {
+            return table.insert('name')
+                .values('foo')
+                .values('bar')
+                .execute()
+                .then(res => {
+                    expect(res.getAutoIncrementValue()).to.equal(1);
+                })
+                .then(() => {
+                    return table.insert('name')
+                        .values('baz')
+                        .execute();
+                })
+                .then(res => {
+                    expect(res.getAutoIncrementValue()).to.equal(3);
+                });
+        });
+
+        it('returns the last manually provided value for a column', () => {
+            return table.insert('id', 'name')
+                .values(5, 'foo')
+                .values(6, 'bar')
+                .execute()
+                .then(res => {
+                    expect(res.getAutoIncrementValue()).to.equal(6);
                 });
         });
     });

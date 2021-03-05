@@ -39,14 +39,18 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 
 describe('row locking in table transactions', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let sessionA, sessionB, tableFromA, tableFromB;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create two sessions', () => {
-        return Promise.all([mysqlx.getSession(config), mysqlx.getSession(config)])
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return Promise.all([mysqlx.getSession(defaultConfig), mysqlx.getSession(defaultConfig)])
             .then(sessions => {
                 sessionA = sessions[0];
                 sessionB = sessions[1];
@@ -59,8 +63,8 @@ describe('row locking in table transactions', () => {
     });
 
     beforeEach('assign collection instances', () => {
-        tableFromA = sessionA.getSchema(config.schema).getTable('test');
-        tableFromB = sessionB.getSchema(config.schema).getTable('test');
+        tableFromA = sessionA.getSchema(baseConfig.schema).getTable('test');
+        tableFromB = sessionB.getSchema(baseConfig.schema).getTable('test');
     });
 
     beforeEach('add fixtures', () => {
@@ -72,7 +76,7 @@ describe('row locking in table transactions', () => {
     });
 
     afterEach('drop default schema', () => {
-        return Promise.all([sessionA.dropSchema(config.schema), sessionB.dropSchema(config.schema)]);
+        return Promise.all([sessionA.dropSchema(baseConfig.schema), sessionB.dropSchema(baseConfig.schema)]);
     });
 
     afterEach('close session', () => {

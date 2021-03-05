@@ -31,16 +31,14 @@
 'use strict';
 
 const config = require('../config');
-const mysqlx = require('../../');
+const mysqlx = require('../..');
 
-module.exports = function (name, options) {
-    options = Object.assign({}, config, options, { auth: 'PLAIN', schema: undefined, tls: { enabled: true } });
-
-    return mysqlx.getSession(options)
+module.exports = function ({ schema = config.schema || 'mysql-connector-nodejs_test' } = {}) {
+    return mysqlx.getSession(config)
         .then(session => {
-            return session.dropSchema(name)
+            return session.dropSchema(schema)
                 .then(() => {
-                    return session.createSchema(name);
+                    return session.createSchema(schema);
                 })
                 .then(() => {
                     return session.close();

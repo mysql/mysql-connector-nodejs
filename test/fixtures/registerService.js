@@ -50,9 +50,9 @@ module.exports = function (definition) {
         request.on('response', response => {
             response.setEncoding('utf8');
 
-            response.on('data', data => {
-                console.log(data);
-            });
+            // the response does not have any content, so the 'data'
+            // handler should be a noop
+            response.on('data', () => {});
 
             response.on('end', () => {
                 if (response.statusCode === 200) {

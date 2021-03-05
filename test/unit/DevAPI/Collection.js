@@ -152,23 +152,9 @@ describe('Collection', () => {
             const getName = td.function();
             const schema = { getName };
             const instance = collection('foo', schema, 'baz');
-            const error = new Error('foobar');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback([1]))).thenReject(error);
-            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
-
-            return instance.count()
-                .then(() => expect.fail('must fail'))
-                .catch(err => expect(err).to.deep.equal(error));
-        });
-
-        // TODO(Rui): Maybe this will become the job of the plugin at some point.
-        it('replaces "Table" by "Collection" on server error messages', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = collection('foo', schema, 'baz');
-            const error = new Error("Table 'bar.baz' doesn't exist.");
+            const message = 'foobar';
+            const error = new Error(message);
+            error.info = { msg: message };
 
             td.when(getName()).thenReturn('bar');
             td.when(execute(td.callback([1]))).thenReject(error);
@@ -179,7 +165,30 @@ describe('Collection', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal("Collection 'bar.baz' doesn't exist.");
+                    return expect(err).to.deep.equal(error);
+                });
+        });
+
+        // TODO(Rui): Maybe this will become the job of the plugin at some point.
+        it('replaces "Table" by "Collection" on server error messages', () => {
+            const getName = td.function();
+            const schema = { getName };
+            const instance = collection('foo', schema, 'baz');
+            const message = "Table 'bar.baz' doesn't exist.";
+            const error = new Error(message);
+            error.info = { msg: message };
+
+            td.when(getName()).thenReturn('bar');
+            td.when(execute(td.callback([1]))).thenReject(error);
+            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
+
+            return instance.count()
+                .then(() => {
+                    expect.fail();
+                })
+                .catch(err => {
+                    expect(err.message).to.equal("Collection 'bar.baz' doesn't exist.");
+                    return expect(err.info.msg).to.equal(err.message);
                 });
         });
     });

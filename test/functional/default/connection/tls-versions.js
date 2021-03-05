@@ -401,6 +401,9 @@ describe('connecting with specific TLS versions', () => {
                 });
 
                 process.once('unhandledRejection', err => {
+                    // We need to remove any dangling event listener.
+                    process.removeAllListeners('warning');
+
                     if (err.message !== errors.MESSAGES.ER_DEVAPI_TLS_VERSION_NEGOTIATION_FAILED) {
                         return done(err);
                     }
@@ -493,6 +496,9 @@ describe('connecting with specific TLS versions', () => {
                     });
 
                     process.once('unhandledRejection', err => {
+                        // We need to remove any dangling event listener.
+                        process.removeAllListeners('warning');
+
                         if (err.message !== errors.MESSAGES.ER_DEVAPI_TLS_VERSION_NEGOTIATION_FAILED) {
                             return done(err);
                         }
@@ -544,6 +550,9 @@ describe('connecting with specific TLS versions', () => {
                     });
 
                     process.once('unhandledRejection', err => {
+                        // We need to remove any dangling event listener.
+                        process.removeAllListeners('warning');
+
                         if (err.message !== errors.MESSAGES.ER_DEVAPI_TLS_VERSION_NEGOTIATION_FAILED) {
                             return done(err);
                         }

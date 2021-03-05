@@ -31,14 +31,12 @@
 'use strict';
 
 const config = require('../config');
-const mysqlx = require('../../');
+const mysqlx = require('../..');
 
-module.exports = function (user, options) {
-    options = Object.assign({}, config, options, { auth: 'PLAIN', password: '', schema: undefined, tls: { enabled: true }, user: 'root' });
-
-    return mysqlx.getSession(options)
+module.exports = function ({ user = config.user, host = '%' } = {}) {
+    return mysqlx.getSession(config)
         .then(session => {
-            return session.sql(`DROP USER IF EXISTS '${user}'@'%'`)
+            return session.sql(`DROP USER IF EXISTS '${user}'@'${host}'`)
                 .execute()
                 .then(() => {
                     return session.close();

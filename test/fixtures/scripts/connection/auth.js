@@ -30,9 +30,8 @@
 
 'use strict';
 
+const config = require('../../../config');
 const mysqlx = require('../../../../');
-
-const config = JSON.parse(process.env.MYSQLX_CLIENT_CONFIG);
 
 // required arguments
 const user = process.argv[2];

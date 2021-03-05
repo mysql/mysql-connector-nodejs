@@ -39,21 +39,25 @@ const mysqlx = require('../../../../');
 const path = require('path');
 
 describe('relational table select', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let session, schema, table;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create session using default schema', () => {
-        return mysqlx.getSession(config)
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaultConfig)
             .then(s => {
                 session = s;
             });
     });
 
     beforeEach('load default schema', () => {
-        schema = session.getSchema(config.schema);
+        schema = session.getDefaultSchema();
     });
 
     beforeEach('create table', () => {
@@ -68,7 +72,7 @@ describe('relational table select', () => {
     });
 
     afterEach('drop default schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close session', () => {
@@ -392,7 +396,7 @@ describe('relational table select', () => {
 
     context('BUG#32687374 rounding for DECIMAL fields', () => {
         beforeEach('add a DECIMAL column to the existing table', () => {
-            return session.sql(`ALTER TABLE ${schema.getName()}.${table.getName()} ADD COLUMN fpn DECIMAL (16,2)`)
+            return session.sql(`ALTER TABLE \`${schema.getName()}\`.\`${table.getName()}\` ADD COLUMN fpn DECIMAL (16,2)`)
                 .execute();
         });
 

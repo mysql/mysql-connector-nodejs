@@ -32,17 +32,20 @@
 
 /* eslint-env node, mocha */
 
+const config = require('../../../config');
 const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 
 describe('schema management', () => {
-    let session;
-
     const baseConfig = { schema: undefined };
 
+    let session;
+
     beforeEach('create default session', () => {
-        return fixtures.createSession(baseConfig)
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return fixtures.createSession(defaultConfig)
             .then(newSession => {
                 session = newSession;
             });

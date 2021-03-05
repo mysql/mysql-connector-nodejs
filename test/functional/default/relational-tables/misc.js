@@ -39,25 +39,29 @@ const mysqlx = require('../../../../');
 
 // TODO(Rui): extract tests into proper self-contained suites.
 describe('relational miscellaneous tests', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let schema, session;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create session using default schema', () => {
-        return mysqlx.getSession(config)
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaultConfig)
             .then(s => {
                 session = s;
             });
     });
 
     beforeEach('load default schema', () => {
-        schema = session.getSchema(config.schema);
+        schema = session.getDefaultSchema();
     });
 
     afterEach('drop default schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close session', () => {
@@ -121,7 +125,7 @@ describe('relational miscellaneous tests', () => {
 
         context('placeholder binding', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                return session.sql(`CREATE TABLE test (
                         name VARCHAR(5),
                         age TINYINT)`)
                     .execute();
@@ -131,13 +135,13 @@ describe('relational miscellaneous tests', () => {
                 const rows = [];
                 const expected = [['foo'], ['baz']];
 
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (?, ?), (?, ?), (?, ?)`)
+                return session.sql('INSERT INTO test VALUES (?, ?), (?, ?), (?, ?)')
                     .bind('foo', 23, 'bar')
                     .bind([42, 'baz', 23])
                     .execute()
                     .then(() => {
                         return session
-                            .sql(`SELECT name FROM ${schema.getName()}.test WHERE age < ?`)
+                            .sql('SELECT name FROM test WHERE age < ?')
                             .bind(40)
                             .execute(row => rows.push(row))
                             .then(() => expect(rows).to.deep.equal(expected));
@@ -149,7 +153,7 @@ describe('relational miscellaneous tests', () => {
     context('column type decoding', () => {
         context('values encoded as SINT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                return session.sql(`CREATE TABLE test (
                         tiny_signed_int_1 TINYINT,
                         tiny_signed_int_2 TINYINT,
                         small_signed_int_1 SMALLINT,
@@ -164,7 +168,7 @@ describe('relational miscellaneous tests', () => {
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (
+                return session.sql(`INSERT INTO test VALUES (
                         -128, 127, -32768, 32767, -8388608, 8388607, -2147483648, 2147483647, -9223372036854775808, 9223372036854775807)`)
                     .execute();
             });
@@ -181,12 +185,12 @@ describe('relational miscellaneous tests', () => {
 
         context('BUG# non BIGINT values store in BIGINT columns', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (not_big_int BIGINT)`)
+                return session.sql('CREATE TABLE test (not_big_int BIGINT)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (4294967295)`)
+                return session.sql('INSERT INTO test VALUES (4294967295)')
                     .execute();
             });
 
@@ -201,7 +205,7 @@ describe('relational miscellaneous tests', () => {
 
         context('values encoded as UINT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                return session.sql(`CREATE TABLE test (
                         tiny_unsigned_int_1 TINYINT UNSIGNED,
                         tiny_unsigned_int_2 TINYINT UNSIGNED,
                         small_unsigned_int_1 SMALLINT UNSIGNED,
@@ -216,7 +220,7 @@ describe('relational miscellaneous tests', () => {
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (
+                return session.sql(`INSERT INTO test VALUES (
                         0, 255, 0, 65535, 0, 16777215, 0, 16777215, 0, 18446744073709551615)`)
                     .execute();
             });
@@ -233,12 +237,12 @@ describe('relational miscellaneous tests', () => {
 
         context('values encoded as BIT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (bit_1 BIT, bit_2 BIT(3))`)
+                return session.sql('CREATE TABLE test (bit_1 BIT, bit_2 BIT(3))')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (b'1', b'111')`)
+                return session.sql('INSERT INTO test VALUES (b\'1\', b\'111\')')
                     .execute();
             });
 
@@ -254,7 +258,7 @@ describe('relational miscellaneous tests', () => {
 
         context('values encoded as DOUBLE and FLOAT', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                return session.sql(`CREATE TABLE test (
                         double_1 DOUBLE,
                         double_2 DOUBLE PRECISION (5, 4),
                         float_1 FLOAT(3, 2))`)
@@ -262,7 +266,7 @@ describe('relational miscellaneous tests', () => {
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (
+                return session.sql(`INSERT INTO test VALUES (
                         1.2345678910111213141516171819202, 1.23456789, 1.23456789)`)
                     .execute();
             });
@@ -276,12 +280,24 @@ describe('relational miscellaneous tests', () => {
                     .execute(row => row && row.length && actual.push(row))
                     .then(() => expect(actual).to.deep.equal(expected));
             });
+
+            it('decodes the column metadata correctly', () => {
+                return schema.getTable('test').select()
+                    .execute()
+                    .then(res => {
+                        const columns = res.getColumns();
+
+                        expect(columns[0].getFractionalDigits()).to.equal(31);
+                        expect(columns[1].getFractionalDigits()).to.equal(4);
+                        expect(columns[2].getFractionalDigits()).to.equal(2);
+                    });
+            });
         });
 
         context('values encoded as BYTES', () => {
             context('BLOB columns', () => {
                 beforeEach('create table', () => {
-                    return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                    return session.sql(`CREATE TABLE test (
                             a_tiny_blob TINYBLOB,
                             a_blob BLOB(5),
                             a_medium_blob MEDIUMBLOB,
@@ -290,7 +306,7 @@ describe('relational miscellaneous tests', () => {
                 });
 
                 beforeEach('add fixtures', () => {
-                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ("foo", "bar", "baz", "qux")`)
+                    return session.sql('INSERT INTO test VALUES ("foo", "bar", "baz", "qux")')
                         .execute();
                 });
 
@@ -306,7 +322,7 @@ describe('relational miscellaneous tests', () => {
 
             context('TEXT columns', () => {
                 beforeEach('create table', () => {
-                    return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                    return session.sql(`CREATE TABLE test (
                             a_tiny_text TINYTEXT,
                             a_text TEXT(5),
                             a_medium_text MEDIUMTEXT,
@@ -315,7 +331,7 @@ describe('relational miscellaneous tests', () => {
                 });
 
                 beforeEach('add fixtures', () => {
-                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ("foo", "bar", "baz", "qux")`)
+                    return session.sql('INSERT INTO test VALUES ("foo", "bar", "baz", "qux")')
                         .execute();
                 });
 
@@ -331,14 +347,14 @@ describe('relational miscellaneous tests', () => {
 
             context('variable and fixed size BINARY columns', () => {
                 beforeEach('create table', () => {
-                    return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                    return session.sql(`CREATE TABLE test (
                             a_varbinary VARBINARY(5),
                             a_binary BINARY(5))`)
                         .execute();
                 });
 
                 beforeEach('add fixtures', () => {
-                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ("foo", "bar")`)
+                    return session.sql('INSERT INTO test VALUES ("foo", "bar")')
                         .execute();
                 });
 
@@ -355,14 +371,14 @@ describe('relational miscellaneous tests', () => {
 
             context('variable and fixed size CHAR columns', () => {
                 beforeEach('create table', () => {
-                    return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                    return session.sql(`CREATE TABLE test (
                             a_varchar VARCHAR(5),
                             a_char CHAR(5))`)
                         .execute();
                 });
 
                 beforeEach('add fixtures', () => {
-                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ("foo", "bar")`)
+                    return session.sql('INSERT INTO test VALUES ("foo", "bar")')
                         .execute();
                 });
 
@@ -379,14 +395,14 @@ describe('relational miscellaneous tests', () => {
 
             context('BUG#30030159', () => {
                 beforeEach('create table', () => {
-                    return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                    return session.sql(`CREATE TABLE test (
                             a_char CHAR(4),
                             a_binary BINARY(4))`)
                         .execute();
                 });
 
                 beforeEach('add fixtures', () => {
-                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ("0", "0")`)
+                    return session.sql('INSERT INTO test VALUES ("0", "0")')
                         .execute();
                 });
 
@@ -404,12 +420,12 @@ describe('relational miscellaneous tests', () => {
 
             context('ENUM columns', () => {
                 beforeEach('create table', () => {
-                    return session.sql(`CREATE TABLE ${schema.getName()}.test (a_enum ENUM('foo', 'bar', 'baz'))`)
+                    return session.sql('CREATE TABLE test (a_enum ENUM(\'foo\', \'bar\', \'baz\'))')
                         .execute();
                 });
 
                 beforeEach('add fixtures', () => {
-                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ("foo")`)
+                    return session.sql('INSERT INTO test VALUES ("foo")')
                         .execute();
                 });
 
@@ -425,12 +441,12 @@ describe('relational miscellaneous tests', () => {
 
             context('GEOMETRY columns', () => {
                 beforeEach('create table', () => {
-                    return session.sql(`CREATE TABLE ${schema.getName()}.test (a_geo GEOMETRY)`)
+                    return session.sql('CREATE TABLE test (a_geo GEOMETRY)')
                         .execute();
                 });
 
                 beforeEach('add fixtures', () => {
-                    return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (ST_GeomFromText('POINT(1 1)'))`)
+                    return session.sql('INSERT INTO test VALUES (ST_GeomFromText(\'POINT(1 1)\'))')
                         .execute();
                 });
 
@@ -446,12 +462,12 @@ describe('relational miscellaneous tests', () => {
 
         context('values encoded as TIME', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (a_time TIME(6))`)
+                return session.sql('CREATE TABLE test (a_time TIME(6))')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ('11 12:13:14'),  ('-12:13:14'), ('12:13:14.123456'),
+                return session.sql(`INSERT INTO test VALUES ('11 12:13:14'),  ('-12:13:14'), ('12:13:14.123456'),
                         ('21 22:03'), ('-22:03'), ('22:03'), ('1 02'), ('-02'), ('02'), ('101112'), ('-101112'), (101112), (-101112), (8), (-8)`)
                     .execute();
             });
@@ -484,7 +500,7 @@ describe('relational miscellaneous tests', () => {
 
         context('values encoded as DATE, DATETIME or TIMESTAMP', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                return session.sql(`CREATE TABLE test (
                         a_date DATE,
                         a_datetime DATETIME,
                         a_timestamp TIMESTAMP)`)
@@ -492,7 +508,7 @@ describe('relational miscellaneous tests', () => {
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ('2018-02-18', '2018-02-18 12:33:17', '2018-02-18 12:33:17.123456')`)
+                return session.sql('INSERT INTO test VALUES (\'2018-02-18\', \'2018-02-18 12:33:17\', \'2018-02-18 12:33:17.123456\')')
                     .execute();
             });
 
@@ -508,7 +524,7 @@ describe('relational miscellaneous tests', () => {
 
         context('values encoded as DECIMAL', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                return session.sql(`CREATE TABLE test (
                         decimal_1 DECIMAL,
                         decimal_2 DECIMAL(3),
                         decimal_3 DECIMAL(3,2))`)
@@ -516,7 +532,7 @@ describe('relational miscellaneous tests', () => {
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (-999.99, 999, 9.99)`)
+                return session.sql('INSERT INTO test VALUES (-999.99, 999, 9.99)')
                     .execute();
             });
 
@@ -528,16 +544,28 @@ describe('relational miscellaneous tests', () => {
                     .execute(row => row && row.length && actual.push(row))
                     .then(() => expect(actual).to.deep.equal(expected));
             });
+
+            it('decodes the column metadata correctly', () => {
+                return schema.getTable('test').select()
+                    .execute()
+                    .then(res => {
+                        const columns = res.getColumns();
+
+                        expect(columns[0].getFractionalDigits()).to.equal(0);
+                        expect(columns[1].getFractionalDigits()).to.equal(0);
+                        expect(columns[2].getFractionalDigits()).to.equal(2);
+                    });
+            });
         });
 
         context('values encoded as SET', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (a_set SET('foo', 'bar'))`)
+                return session.sql('CREATE TABLE test (a_set SET(\'foo\', \'bar\'))')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ('foo,bar'), ('foo'), ('')`)
+                return session.sql('INSERT INTO test VALUES (\'foo,bar\'), (\'foo\'), (\'\')')
                     .execute();
             });
 
@@ -553,12 +581,12 @@ describe('relational miscellaneous tests', () => {
 
         context('BUG#31654667 single-character SET values', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (a_set SET('S', 'M', 'L'))`)
+                return session.sql('CREATE TABLE test (a_set SET(\'S\', \'M\', \'L\'))')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ('S,M,L'), ('S,L'), ('L')`)
+                return session.sql('INSERT INTO test VALUES (\'S,M,L\'), (\'S,L\'), (\'L\')')
                     .execute();
             });
 
@@ -574,7 +602,7 @@ describe('relational miscellaneous tests', () => {
 
         context('NULL values', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (
+                return session.sql(`CREATE TABLE test (
                         null_01 TINYINT,
                         null_02 TINYINT UNSIGNED,
                         null_03 SMALLINT,
@@ -604,7 +632,7 @@ describe('relational miscellaneous tests', () => {
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                return session.sql(`INSERT INTO test VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                         NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)`)
                     .execute();
             });
@@ -627,19 +655,19 @@ describe('relational miscellaneous tests', () => {
     context('column metadata', () => {
         context('signed and unsigned values', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (sint INT, uint INT UNSIGNED)`)
+                return session.sql('CREATE TABLE test (sint INT, uint INT UNSIGNED)')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES (1, 1)`)
+                return session.sql('INSERT INTO test VALUES (1, 1)')
                     .execute();
             });
 
             it('allows to determine if a field is signed or not', () => {
                 let metadata = [];
 
-                return session.sql(`SELECT * FROM ${schema.getName()}.test`)
+                return session.sql('SELECT * FROM test')
                     .execute(() => {}, meta => {
                         metadata = metadata.concat(meta);
                     })
@@ -654,19 +682,19 @@ describe('relational miscellaneous tests', () => {
 
         context('padded values', () => {
             beforeEach('create table', () => {
-                return session.sql(`CREATE TABLE ${schema.getName()}.test (rchar CHAR(5), vchar VARCHAR(5))`)
+                return session.sql('CREATE TABLE test (rchar CHAR(5), vchar VARCHAR(5))')
                     .execute();
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql(`INSERT INTO ${schema.getName()}.test VALUES ('foo', 'bar')`)
+                return session.sql('INSERT INTO test VALUES (\'foo\', \'bar\')')
                     .execute();
             });
 
             it('allows to determine if a field is padded or not', () => {
                 let metadata = [];
 
-                return session.sql(`SELECT * FROM ${schema.getName()}.test`)
+                return session.sql('SELECT * FROM test')
                     .execute(() => {}, meta => {
                         metadata = metadata.concat(meta);
                     })
@@ -678,40 +706,33 @@ describe('relational miscellaneous tests', () => {
                     });
             });
         });
-    });
 
-    context('table size', () => {
-        beforeEach('ensure non-existing table', () => {
-            return session.sql('DROP TABLE IF EXISTS test.noop')
-                .execute();
-        });
+        context('table metadata', () => {
+            beforeEach('create table', () => {
+                return session.sql('CREATE TABLE test (vchar VARCHAR(3))')
+                    .execute();
+            });
 
-        beforeEach('create table', () => {
-            return session.sql(`CREATE TABLE ${schema.getName()}.test (name VARCHAR(4))`)
-                .execute();
-        });
+            beforeEach('add fixtures', () => {
+                return session.sql("INSERT INTO test VALUES ('foo')")
+                    .execute();
+            });
 
-        beforeEach('add fixtures', () => {
-            return schema.getTable('test').insert('name')
-                .values('foo')
-                .values('bar')
-                .values('baz')
-                .execute();
-        });
+            it('decodes the table name in the column metadata', () => {
+                return session.sql('SELECT * FROM test')
+                    .execute()
+                    .then(res => {
+                        return expect(res.getColumns()[0].getTableName()).to.equal('test');
+                    });
+            });
 
-        it('retrieves the total number of documents in a table', () => {
-            return schema.getTable('test').count()
-                .then(actual => expect(actual).to.equal(3));
-        });
-
-        it('fails if the table does not exist in the given schema', () => {
-            return schema.getTable('noop').count()
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(`Table '${schema.getName()}.noop' doesn't exist`);
-                });
+            it('decodes the schema name in the column metadata', () => {
+                return session.sql('SELECT * FROM test')
+                    .execute()
+                    .then(res => {
+                        return expect(res.getColumns()[0].getSchemaName()).to.equal(schema.getName());
+                    });
+            });
         });
     });
 
@@ -734,6 +755,37 @@ describe('relational miscellaneous tests', () => {
                 .execute()
                 .then(() => schema.getCollection('foo').existsInDatabase())
                 .then(exists => expect(exists).to.be.false);
+        });
+    });
+
+    context('table views', () => {
+        const tableName = 'test';
+        const viewName = 'v_test';
+
+        beforeEach('create a table', () => {
+            return session.sql(`CREATE TABLE ${tableName} (quantity INT, price INT)`)
+                .execute();
+        });
+
+        beforeEach('create a view on the table', () => {
+            return session.sql(`CREATE VIEW ${viewName} AS SELECT quantity, price, quantity*price AS VALUE FROM ${tableName}`)
+                .execute();
+        });
+
+        it('checks if a table is not a view', () => {
+            return session.getSchema(schema.getName()).getTable(tableName)
+                .isView()
+                .then(res => {
+                    return expect(res).to.be.false;
+                });
+        });
+
+        it('checks if a table is a view', () => {
+            return session.getSchema(schema.getName()).getTable(viewName)
+                .isView()
+                .then(res => {
+                    return expect(res).to.be.true;
+                });
         });
     });
 });

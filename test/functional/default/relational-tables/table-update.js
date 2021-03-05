@@ -40,21 +40,25 @@ const mysqlx = require('../../../../');
 const path = require('path');
 
 describe('updating data in a table', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let session, schema, table;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create session using default schema', () => {
-        return mysqlx.getSession(config)
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaultConfig)
             .then(s => {
                 session = s;
             });
     });
 
     beforeEach('load default schema', () => {
-        schema = session.getSchema(config.schema);
+        schema = session.getDefaultSchema();
     });
 
     beforeEach('create table', () => {
@@ -77,7 +81,7 @@ describe('updating data in a table', () => {
     });
 
     afterEach('drop default schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close session', () => {
@@ -106,6 +110,22 @@ describe('updating data in a table', () => {
             .execute()
             .then(() => table.select().orderBy('age ASC').execute(row => actual.push(row)))
             .then(() => expect(actual).to.deep.equal(expected));
+    });
+
+    it('updates a row using a value computed from some data in the table', () => {
+        const expected = [['bar', 23], ['baz', 42], ['foo', 52]];
+
+        return table.update().where('name = :name')
+            .set('age', mysqlx.expr('age + 10', { mode: mysqlx.Mode.TABLE }))
+            .bind('name', 'foo')
+            .execute()
+            .then(() => {
+                return table.select().orderBy('name ASC')
+                    .execute();
+            })
+            .then(res => {
+                return expect(res.fetchAll()).to.deep.equal(expected);
+            });
     });
 
     it('fails to update any row if no filtering criteria is provided with `where()`', () => {
@@ -240,7 +260,7 @@ describe('updating data in a table', () => {
 
     context('BUG#32687374 rounding for decimal fields', () => {
         beforeEach('add a DECIMAL column to the existing table', () => {
-            return session.sql(`ALTER TABLE ${schema.getName()}.${table.getName()} ADD COLUMN fpn DECIMAL (16,2)`)
+            return session.sql(`ALTER TABLE \`${schema.getName()}\`.\`${table.getName()}\` ADD COLUMN fpn DECIMAL (16,2)`)
                 .execute();
         });
 

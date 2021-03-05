@@ -37,28 +37,34 @@ const fixtures = require('../../../fixtures');
 const expect = require('chai').expect;
 
 describe('transaction support', () => {
-    let session;
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
-    const baseConfig = { schema: undefined };
+    let schema, session;
+
+    beforeEach('create temporary schema', () => {
+        return fixtures.createSchema(baseConfig.schema);
+    });
 
     beforeEach('create default session', () => {
-        return fixtures.createSession(baseConfig)
+        const defaultConfig = Object.assign({}, baseConfig);
+
+        return fixtures.createSession(defaultConfig)
             .then(newSession => {
                 session = newSession;
             });
     });
 
-    beforeEach('create temporary schema', () => {
-        return fixtures.createSchema(config.schema);
+    beforeEach('load default schema', () => {
+        schema = session.getDefaultSchema();
     });
 
     beforeEach('create temporary table', () => {
-        return session.sql(`CREATE TABLE ${config.schema}.test (name VARCHAR(4))`)
+        return session.sql('CREATE TABLE test (name VARCHAR(4))')
             .execute();
     });
 
     afterEach('delete temporary schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close default session', () => {
@@ -69,14 +75,14 @@ describe('transaction support', () => {
         it('executes the work in the scope of an ongoing transaction', () => {
             return session.startTransaction()
                 .then(() => {
-                    return session.sql(`INSERT INTO ${config.schema}.test VALUES ('bar')`)
+                    return session.sql('INSERT INTO test VALUES (\'bar\')')
                         .execute();
                 })
                 .then(() => {
                     return session.commit();
                 })
                 .then(() => {
-                    return session.sql(`SELECT COUNT(*) FROM ${config.schema}.test`)
+                    return session.sql('SELECT COUNT(*) FROM test')
                         .execute();
                 })
                 .then(res => {
@@ -89,14 +95,14 @@ describe('transaction support', () => {
         it('discards the work in the scope of an ongoing transaction', () => {
             return session.startTransaction()
                 .then(() => {
-                    return session.sql(`INSERT INTO ${config.schema}.test VALUES ('bar')`)
+                    return session.sql('INSERT INTO test VALUES (\'bar\')')
                         .execute();
                 })
                 .then(() => {
                     return session.rollback();
                 })
                 .then(() => {
-                    return session.sql(`SELECT COUNT(*) FROM ${config.schema}.test`)
+                    return session.sql('SELECT COUNT(*) FROM test')
                         .execute();
                 })
                 .then(res => {

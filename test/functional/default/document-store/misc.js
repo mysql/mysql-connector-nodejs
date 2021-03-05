@@ -43,21 +43,25 @@ const path = require('path');
 
 // TODO(rui.quelhas): extract tests into proper self-contained suites.
 describe('collection miscellaneous tests', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let schema, session;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create session using default schema', () => {
-        return mysqlx.getSession(config)
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaultConfig)
             .then(s => {
                 session = s;
             });
     });
 
     beforeEach('load default schema', () => {
-        schema = session.getSchema(config.schema);
+        schema = session.getDefaultSchema();
     });
 
     beforeEach('create collection', () => {
@@ -65,7 +69,7 @@ describe('collection miscellaneous tests', () => {
     });
 
     afterEach('drop default schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close session', () => {
@@ -168,39 +172,10 @@ describe('collection miscellaneous tests', () => {
         return schema.getCollection('test').add({ name: 'foo' })
             .execute()
             .then(() => {
-                return session.sql(`SELECT _id FROM ${schema.getName()}.test`)
+                return session.sql('SELECT _id FROM test')
                     .execute(row => ids.push(row[0]));
             })
             .then(() => ids.forEach(id => expect(id).to.have.lengthOf(28)));
-    });
-
-    context('collection size', () => {
-        beforeEach('ensure non-existing collection', () => {
-            return schema.dropCollection('noop');
-        });
-
-        beforeEach('add fixtures', () => {
-            return schema.getCollection('test')
-                .add({ name: 'foo' })
-                .add({ name: 'bar' })
-                .add({ name: 'baz' })
-                .execute();
-        });
-
-        it('retrieves the total number of documents in a collection', () => {
-            return schema.getCollection('test').count()
-                .then(actual => expect(actual).to.equal(3));
-        });
-
-        it('fails if the collection does not exist in the given schema', () => {
-            return schema.getCollection('noop').count()
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(`Collection '${schema.getName()}.noop' doesn't exist`);
-                });
-        });
     });
 
     context('collections in the schema', () => {

@@ -31,12 +31,10 @@
 'use strict';
 
 const config = require('../config');
-const mysqlx = require('../../');
+const mysqlx = require('../..');
 
-module.exports = function (options) {
-    options = Object.assign({}, config, options, { auth: 'PLAIN', schema: undefined, tls: { enabled: !options.socket ? true : options.socket } });
-
-    return mysqlx.getSession(options)
+module.exports = function () {
+    return mysqlx.getSession(config)
         .then(session => {
             return session.sql('FLUSH PRIVILEGES')
                 .execute()

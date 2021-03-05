@@ -63,7 +63,7 @@ module.exports = function (id, waitFor) {
                     return setTimeout(() => resolve(), waitFor);
                 }
 
-                reject(new Error('Unable to restart server.'));
+                reject(new Error('Unable to restart the MySQL server.'));
             });
         });
 

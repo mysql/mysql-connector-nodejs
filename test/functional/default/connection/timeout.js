@@ -40,11 +40,11 @@ const net = require('net');
 const os = require('os');
 const path = require('path');
 
-describe('connecting to unavailable servers with a timeout', () => {
+describe('connecting to servers with a given timeout', () => {
     context('when the timeout value is not valid', () => {
         const baseConfig = { schema: undefined, socket: undefined };
 
-        it('fails using a configuration object', () => {
+        it('fails to connect with a configuration object', () => {
             const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: -1 });
 
             return mysqlx.getSession(timeoutConfig)
@@ -56,7 +56,7 @@ describe('connecting to unavailable servers with a timeout', () => {
                 });
         });
 
-        it('fails using a URI', () => {
+        it('fails to connect with a connection string', () => {
             const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: -1 });
             const uri = `mysqlx://${timeoutConfig.user}:${timeoutConfig.password}@(${timeoutConfig.socket})?connect-timeout=${timeoutConfig.connectTimeout}`;
 
@@ -85,48 +85,48 @@ describe('connecting to unavailable servers with a timeout', () => {
         });
     });
 
-    context('when the timeout value is exceeded', () => {
+    context('when there is only one target endpoint', () => {
         // The dummy TCP server is created in the host where the tests are running.
         const baseConfig = { host: 'localhost', schema: undefined, socket: undefined };
 
-        context('with a single target host', () => {
-            let server;
+        let server;
 
-            beforeEach('create fake server', () => {
-                server = net.createServer();
+        beforeEach('create fake server', () => {
+            server = net.createServer();
 
-                server.on('connection', socket => {
-                    server.on('close', () => socket.destroy());
-                    socket.pause();
-                });
+            server.on('connection', socket => {
+                server.on('close', () => socket.destroy());
+                socket.pause();
             });
+        });
 
-            afterEach('close fake server', done => {
-                // If the server is not listening, there is nothing to do.
-                if (!server.listening) {
-                    return done();
+        afterEach('close fake server', done => {
+            // If the server is not listening, there is nothing to do.
+            if (!server.listening) {
+                return done();
+            }
+
+            // Make sure the server does not accept any new connections.
+            server.close(done);
+            // The callback on "close" is only called after all
+            // connections are closed, so we need to make sure that
+            // happens.
+            server.emit('close');
+        });
+
+        context('using a Unix socket', () => {
+            const socket = path.join(os.tmpdir(), 'dummy.sock');
+
+            beforeEach('start fake server', function (done) {
+                if (os.platform() === 'win32') {
+                    return this.skip();
                 }
 
-                // Make sure the server does not accept any new connections.
-                server.close(done);
-                // The callback on "close" is only called after all
-                // connections are closed, so we need to make sure that
-                // happens.
-                server.emit('close');
+                server.listen(socket, done).on('error', done);
             });
 
-            context('using a Unix socket', () => {
-                const socket = path.join(os.tmpdir(), 'dummy.sock');
-
-                beforeEach('start fake server', function (done) {
-                    if (os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    server.listen(socket, done).on('error', done);
-                });
-
-                it('fails using a configuration object', function () {
+            context('when the timeout is exceeded', () => {
+                it('fails to connect with a configuration object', function () {
                     if (os.platform() === 'win32') {
                         return this.skip();
                     }
@@ -139,7 +139,7 @@ describe('connecting to unavailable servers with a timeout', () => {
                         .catch(err => expect(err.message).to.equal(error));
                 });
 
-                it('fails using a URI', function () {
+                it('fails to connect with a connection string', function () {
                     if (os.platform() === 'win32') {
                         return this.skip();
                     }
@@ -154,17 +154,52 @@ describe('connecting to unavailable servers with a timeout', () => {
                 });
             });
 
-            context('using TCP', () => {
-                let port;
+            context('when the timeout is not exceeded', function () {
+                // assuming a default value of 10s for the "mocha" timeout
+                // 2s should be enough to ensure the test is actually waiting
+                const connectTimeout = this.timeout() / 5;
 
-                beforeEach('start fake server', done => {
-                    server.listen(0, () => {
-                        port = server.address().port;
-                        return done();
-                    });
+                it('waits until the server is available with a configuration object', function () {
+                    if (os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, socket });
+                    // the test should exit before the timeout kicks in
+                    const testChecker = new Promise(resolve => setTimeout(() => resolve(true), connectTimeout - 100));
+
+                    return Promise.race([mysqlx.getSession(timeoutConfig), testChecker])
+                        .then(res => expect(res).to.be.true);
                 });
 
-                it('fails using a configuration object', () => {
+                it('waits until the server is available with a connection string', function () {
+                    if (os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, socket });
+                    const uri = `mysqlx://${timeoutConfig.user}:${timeoutConfig.password}@(${timeoutConfig.socket})?connect-timeout=${timeoutConfig.connectTimeout}`;
+                    // the test should exit before the timeout kicks in
+                    const testChecker = new Promise(resolve => setTimeout(() => resolve(true), connectTimeout - 100));
+
+                    return Promise.race([mysqlx.getSession(uri), testChecker])
+                        .then(res => expect(res).to.be.true);
+                });
+            });
+        });
+
+        context('using TCP', () => {
+            let port;
+
+            beforeEach('start fake server', done => {
+                server.listen(0, () => {
+                    port = server.address().port;
+                    return done();
+                });
+            });
+
+            context('when the timeout is exceeded', () => {
+                it('fails to connect with a configuration object', () => {
                     const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: 100, port });
                     const error = `Connection attempt to the server was aborted. Timeout of ${timeoutConfig.connectTimeout} ms was exceeded.`;
 
@@ -173,7 +208,7 @@ describe('connecting to unavailable servers with a timeout', () => {
                         .catch(err => expect(err.message).to.equal(error));
                 });
 
-                it('fails using a URI', () => {
+                it('fails to connect with a connection string', () => {
                     const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: 100, port });
                     const uri = `mysqlx://${timeoutConfig.user}:${timeoutConfig.password}@${timeoutConfig.host}:${timeoutConfig.port}?connect-timeout=${timeoutConfig.connectTimeout}`;
                     const error = `Connection attempt to the server was aborted. Timeout of ${timeoutConfig.connectTimeout} ms was exceeded.`;
@@ -183,131 +218,257 @@ describe('connecting to unavailable servers with a timeout', () => {
                         .catch(err => expect(err.message).to.equal(error));
                 });
             });
+
+            context('when the timeout is not exceeded', function () {
+                // assuming a default value of 10s for the "mocha" timeout
+                // 2s should be enough to ensure the test is actually waiting
+                const connectTimeout = this.timeout() / 5;
+
+                it('waits until the server is available with a configuration object', () => {
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, port });
+                    // the test should exit before the timeout kicks in
+                    const testChecker = new Promise(resolve => setTimeout(() => resolve(true), connectTimeout - 100));
+
+                    return Promise.race([mysqlx.getSession(timeoutConfig), testChecker])
+                        .then(res => expect(res).to.be.true);
+                });
+
+                it('waits until the server is available with a connection string', () => {
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, port });
+                    const uri = `mysqlx://${timeoutConfig.user}:${timeoutConfig.password}@${timeoutConfig.host}:${timeoutConfig.port}?connect-timeout=${timeoutConfig.connectTimeout}`;
+                    // the test should exit before the timeout kicks in
+                    const testChecker = new Promise(resolve => setTimeout(() => resolve(true), connectTimeout - 100));
+
+                    return Promise.race([mysqlx.getSession(uri), testChecker])
+                        .then(res => expect(res).to.be.true);
+                });
+            });
+        });
+    });
+
+    context('when there are multiple target hosts', () => {
+        // The dummy TCP server is created in the host where the tests are running.
+        const baseConfig = { host: 'localhost', schema: undefined, socket: undefined };
+
+        let primary, secondary;
+
+        beforeEach('create fake servers', () => {
+            primary = net.createServer();
+            secondary = net.createServer();
+
+            [primary, secondary].forEach(server => {
+                server.on('connection', socket => {
+                    primary.on('close', () => socket.destroy());
+                    socket.pause();
+                });
+            });
         });
 
-        context('with multiple target hosts', () => {
-            let primary, secondary;
+        afterEach('close fake servers', done => {
+            // If the servers are not listening, there is nothing to do.
+            if (!secondary.listening && !primary.listening) {
+                return done();
+            }
 
-            beforeEach('create fake servers', () => {
-                primary = net.createServer();
-                secondary = net.createServer();
+            // If only the primary is listening.
+            if (!secondary.listening) {
+                // We prevent it from accepting new connections.
+                primary.close(done);
+                // And close the existing ones.
+                primary.emit('close');
+                return;
+            }
 
-                [primary, secondary].forEach(server => {
-                    server.on('connection', socket => {
-                        primary.on('close', () => socket.destroy());
-                        socket.pause();
-                    });
-                });
-            });
-
-            afterEach('close fake servers', done => {
-                // If the servers are not listening, there is nothing to do.
-                if (!secondary.listening && !primary.listening) {
-                    return done();
+            // By this point both the primary and secondary should be
+            // listening.
+            secondary.close(err => {
+                if (!err) {
+                    return primary.close(done);
                 }
 
-                // If only the primary is listening.
-                if (!secondary.listening) {
-                    // We prevent it from accepting new connections.
-                    primary.close(done);
-                    // And close the existing ones.
-                    primary.emit('close');
-                    return;
-                }
-
-                // By this point both the primary and secondary should be
-                // listening.
-                secondary.close(err => {
-                    if (!err) {
-                        return primary.close(done);
-                    }
-
-                    // Even if there is an error, we should try to close
-                    // the primary as well.
-                    return primary.close(err => {
-                        if (err) {
-                            return done(err);
-                        }
-
+                // Even if there is an error, we should try to close
+                // the primary as well.
+                return primary.close(err => {
+                    if (err) {
                         return done(err);
-                    });
-                });
+                    }
 
-                [primary, secondary].forEach(server => {
-                    server.emit('close');
+                    return done(err);
                 });
             });
 
-            context('using a Unix socket', () => {
-                const primarysocket = path.join(os.tmpdir(), 'dummy-primary.sock');
-                const secondarySocket = path.join(os.tmpdir(), 'dummy-secondary.sock');
+            [primary, secondary].forEach(server => {
+                server.emit('close');
+            });
+        });
 
-                beforeEach('start fake server', function (done) {
+        context('using a Unix socket', () => {
+            const primarysocket = path.join(os.tmpdir(), 'dummy-primary.sock');
+            const secondarySocket = path.join(os.tmpdir(), 'dummy-secondary.sock');
+
+            beforeEach('start fake server', function (done) {
+                if (os.platform() === 'win32') {
+                    return this.skip();
+                }
+
+                primary.listen(primarysocket, () => secondary.listen(secondarySocket, done));
+            });
+
+            context('when the timeout is exceeded', () => {
+                it('fails to connect with a configuration object', function () {
                     if (os.platform() === 'win32') {
                         return this.skip();
                     }
 
-                    primary.listen(primarysocket, () => secondary.listen(secondarySocket, done));
-                });
-
-                it('fails using a configuration object', function () {
-                    if (os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: 100, endpoints: [{ socket: primarysocket }, { socket: secondarySocket }] });
+                    const connectTimeout = 100;
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, endpoints: [{ socket: primarysocket }, { socket: secondarySocket }] });
                     const error = `All server connection attempts were aborted. Timeout of ${timeoutConfig.connectTimeout} ms was exceeded for each selected server.`;
+                    // Track test start time.
+                    const beforeTest = Date.now();
 
                     return mysqlx.getSession(timeoutConfig)
-                        .then(() => expect.fail())
-                        .catch(err => expect(err.message).to.equal(error));
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            // The timeout check restarts for each endpoint.
+                            expect(Date.now()).to.be.at.least(beforeTest + connectTimeout * 2);
+                            return expect(err.message).to.equal(error);
+                        });
                 });
 
-                it('fails using a URI', function () {
+                it('fails to connect with a connection string', function () {
                     if (os.platform() === 'win32') {
                         return this.skip();
                     }
 
-                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: 100, endpoints: [{ socket: primarysocket }, { socket: secondarySocket }] });
+                    const connectTimeout = 100;
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, endpoints: [{ socket: primarysocket }, { socket: secondarySocket }] });
                     const uri = `mysqlx://${timeoutConfig.user}:${timeoutConfig.password}@[${timeoutConfig.endpoints.map(e => encodeURIComponent(e.socket)).join(',')}]?connect-timeout=${timeoutConfig.connectTimeout}`;
                     const error = `All server connection attempts were aborted. Timeout of ${timeoutConfig.connectTimeout} ms was exceeded for each selected server.`;
+                    // Track test start time.
+                    const beforeTest = Date.now();
 
                     return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => expect(err.message).to.equal(error));
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            // The timeout check restarts for each endpoint.
+                            expect(Date.now()).to.be.at.least(beforeTest + connectTimeout * 2);
+                            return expect(err.message).to.equal(error);
+                        });
                 });
             });
 
-            context('using TCP', () => {
-                let primaryPort, secondaryPort;
+            context('when the timeout is not exceeded', function () {
+                // assuming a default value of 10s for the "mocha" timeout
+                // 2s should be enough to ensure the test is actually waiting
+                const connectTimeout = this.timeout() / 5;
 
-                beforeEach('start fake server', done => {
-                    primary.listen(0, () => {
-                        primaryPort = primary.address().port;
-                        secondary.listen(0, () => {
-                            secondaryPort = secondary.address().port;
-                            return done();
-                        });
+                it('waits until the server is available with a configuration object', function () {
+                    if (os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, endpoints: [{ socket: primarysocket }, { socket: secondarySocket }] });
+                    // the test should exit before the timeout kicks in
+                    const testChecker = new Promise(resolve => setTimeout(() => resolve(true), connectTimeout - 100));
+
+                    return Promise.race([mysqlx.getSession(timeoutConfig), testChecker])
+                        .then(res => expect(res).to.be.true);
+                });
+
+                it('waits until the server is available with a connection string', function () {
+                    if (os.platform() === 'win32') {
+                        return this.skip();
+                    }
+
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, endpoints: [{ socket: primarysocket }, { socket: secondarySocket }] });
+                    const uri = `mysqlx://${timeoutConfig.user}:${timeoutConfig.password}@[${timeoutConfig.endpoints.map(e => encodeURIComponent(e.socket)).join(',')}]?connect-timeout=${timeoutConfig.connectTimeout}`;
+                    // the test should exit before the timeout kicks in
+                    const testChecker = new Promise(resolve => setTimeout(() => resolve(true), connectTimeout - 100));
+
+                    return Promise.race([mysqlx.getSession(uri), testChecker])
+                        .then(res => expect(res).to.be.true);
+                });
+            });
+        });
+
+        context('using TCP', () => {
+            let primaryPort, secondaryPort;
+
+            beforeEach('start fake server', done => {
+                primary.listen(0, () => {
+                    primaryPort = primary.address().port;
+                    secondary.listen(0, () => {
+                        secondaryPort = secondary.address().port;
+                        return done();
                     });
                 });
+            });
 
-                it('fails using a configuration object', () => {
-                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: 100, endpoints: [{ port: primaryPort }, { port: secondaryPort }] });
+            context('when the timeout is exceeded', () => {
+                it('fails to connect with a configuration object', () => {
+                    const connectTimeout = 100;
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, endpoints: [{ port: primaryPort }, { port: secondaryPort }] });
                     const error = `All server connection attempts were aborted. Timeout of ${timeoutConfig.connectTimeout} ms was exceeded for each selected server.`;
+                    // Track test start time.
+                    const beforeTest = Date.now();
 
                     return mysqlx.getSession(timeoutConfig)
-                        .then(() => expect.fail())
-                        .catch(err => expect(err.message).to.equal(error));
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            // The timeout check restarts for each endpoint.
+                            expect(Date.now()).to.be.at.least(beforeTest + connectTimeout * 2);
+                            return expect(err.message).to.equal(error);
+                        });
                 });
 
-                it('fails using a URI', () => {
-                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: 100, endpoints: [{ host: baseConfig.host, port: primaryPort }, { host: baseConfig.host, port: secondaryPort }] });
+                it('fails to connect with a connection string', () => {
+                    const connectTimeout = 100;
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, endpoints: [{ host: baseConfig.host, port: primaryPort }, { host: baseConfig.host, port: secondaryPort }] });
                     const uri = `mysqlx://${timeoutConfig.user}:${timeoutConfig.password}@[${timeoutConfig.endpoints.map(e => `${e.host}:${e.port}`).join(',')}]?connect-timeout=${timeoutConfig.connectTimeout}`;
                     const error = `All server connection attempts were aborted. Timeout of ${timeoutConfig.connectTimeout} ms was exceeded for each selected server.`;
+                    // Track test start time.
+                    const beforeTest = Date.now();
 
                     return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => expect(err.message).to.equal(error));
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            // The timeout check restarts for each endpoint.
+                            expect(Date.now()).to.be.at.least(beforeTest + connectTimeout * 2);
+                            return expect(err.message).to.equal(error);
+                        });
+                });
+            });
+
+            context('when the timeout is not exceeded', function () {
+                // assuming a default value of 10s for the "mocha" timeout
+                // 2s should be enough to ensure the test is actually waiting
+                const connectTimeout = this.timeout() / 5;
+
+                it('waits until the server is available with a configuration object', () => {
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, endpoints: [{ port: primaryPort }, { port: secondaryPort }] });
+                    // the test should exit before the timeout kicks in
+                    const testChecker = new Promise(resolve => setTimeout(() => resolve(true), connectTimeout - 100));
+
+                    return Promise.race([mysqlx.getSession(timeoutConfig), testChecker])
+                        .then(res => expect(res).to.be.true);
+                });
+
+                it('waits until the server is available with a connection string', () => {
+                    const timeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout, endpoints: [{ host: baseConfig.host, port: primaryPort }, { host: baseConfig.host, port: secondaryPort }] });
+                    const uri = `mysqlx://${timeoutConfig.user}:${timeoutConfig.password}@[${timeoutConfig.endpoints.map(e => `${e.host}:${e.port}`).join(',')}]?connect-timeout=${timeoutConfig.connectTimeout}`;
+                    // the test should exit before the timeout kicks in
+                    const testChecker = new Promise(resolve => setTimeout(() => resolve(true), connectTimeout - 100));
+
+                    return Promise.race([mysqlx.getSession(uri), testChecker])
+                        .then(res => expect(res).to.be.true);
                 });
             });
         });

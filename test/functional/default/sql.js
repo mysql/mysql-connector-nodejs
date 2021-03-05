@@ -39,12 +39,33 @@ const mysqlx = require('../../../');
 const path = require('path');
 
 describe('raw SQL', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
+    let session, schema;
+
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
+    });
+
+    beforeEach('create session using default schema', () => {
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaultConfig)
+            .then(s => {
+                session = s;
+            });
+    });
+
+    beforeEach('load default schema', () => {
+        schema = session.getDefaultSchema();
     });
 
     afterEach('delete default schema', () => {
-        return fixtures.dropSchema(config.schema);
+        return fixtures.dropSchema({ schema: schema.getName() });
+    });
+
+    afterEach('close session', () => {
+        return session.close();
     });
 
     context('BUG#30162858', () => {
@@ -53,15 +74,12 @@ describe('raw SQL', () => {
             const expected = [[bin]];
             const actual = [];
 
-            return mysqlx.getSession(config)
-                .then(session => {
-                    return session.sql('CREATE TABLE test (bin BLOB)')
-                        .execute()
-                        .then(() => session.sql(`INSERT INTO test (bin) VALUES (x'${bin.toString('hex')}')`).execute())
-                        .then(() => session.sql('SELECT * FROM test').execute(row => actual.push(row)))
-                        .then(() => expect(actual).to.deep.equal(expected))
-                        .then(() => session.close());
-                });
+            return session.sql('CREATE TABLE test (bin BLOB)')
+                .execute()
+                .then(() => session.sql(`INSERT INTO test (bin) VALUES (x'${bin.toString('hex')}')`).execute())
+                .then(() => session.sql('SELECT * FROM test').execute(row => actual.push(row)))
+                .then(() => expect(actual).to.deep.equal(expected))
+                .then(() => session.close());
         });
     });
 
@@ -69,7 +87,9 @@ describe('raw SQL', () => {
         let session;
 
         beforeEach('create session', () => {
-            return mysqlx.getSession(config)
+            const defaultConfig = Object.assign({}, config, baseConfig);
+
+            return mysqlx.getSession(defaultConfig)
                 .then(s => {
                     session = s;
                 });
@@ -125,19 +145,6 @@ describe('raw SQL', () => {
     });
 
     context('result set API', () => {
-        let session;
-
-        beforeEach('create session', () => {
-            return mysqlx.getSession(config)
-                .then(s => {
-                    session = s;
-                });
-        });
-
-        afterEach('close session', () => {
-            return session.close();
-        });
-
         context('operation outcomes', () => {
             it('checks if the result set contains additional data', () => {
                 return session.sql('SELECT 1 AS s1_m1, 2.2 AS s1_m2')
@@ -451,36 +458,20 @@ describe('raw SQL', () => {
             const expected = [[bin2]];
             const actual = [];
 
-            return mysqlx.getSession(config)
-                .then(session => {
-                    return session.sql('CREATE TABLE test (bin BLOB)')
-                        .execute()
-                        .then(() => session.sql(`INSERT INTO test (bin) VALUES (x'${bin1.toString('hex')}')`).execute())
-                        .then(() => session.sql('UPDATE test SET bin = ?').bind(bin2).execute())
-                        .then(() => session.sql('SELECT * FROM test').execute(row => actual.push(row)))
-                        .then(() => expect(actual).to.deep.equal(expected))
-                        .then(() => session.close());
-                });
+            return session.sql('CREATE TABLE test (bin BLOB)')
+                .execute()
+                .then(() => session.sql(`INSERT INTO test (bin) VALUES (x'${bin1.toString('hex')}')`).execute())
+                .then(() => session.sql('UPDATE test SET bin = ?').bind(bin2).execute())
+                .then(() => session.sql('SELECT * FROM test').execute(row => actual.push(row)))
+                .then(() => expect(actual).to.deep.equal(expected))
+                .then(() => session.close());
         });
     });
 
     context('BUG#30401962 affected items', () => {
-        let session;
-
-        beforeEach('create session in the default database', () => {
-            return mysqlx.getSession(config)
-                .then(s => {
-                    session = s;
-                });
-        });
-
         beforeEach('create table', () => {
             return session.sql('CREATE TABLE test (name VARCHAR(4))')
                 .execute();
-        });
-
-        afterEach('close session', () => {
-            return session.close();
         });
 
         context('INSERT', () => {
@@ -546,19 +537,6 @@ describe('raw SQL', () => {
     });
 
     context('BUG#30922711 column types', () => {
-        let session;
-
-        beforeEach('create session', () => {
-            return mysqlx.getSession(config)
-                .then(s => {
-                    session = s;
-                });
-        });
-
-        afterEach('close session', () => {
-            return session.close();
-        });
-
         context('BIT', () => {
             beforeEach('create table', () => {
                 return session.sql('CREATE TABLE test (value BIT)')
@@ -1127,31 +1105,39 @@ describe('raw SQL', () => {
         });
     });
 
-    context('when debug mode is enabled', () => {
-        const script = path.join(__dirname, '..', '..', 'fixtures', 'scripts', 'sql-statement.js');
-        const statement = `SELECT name AS col FROM ${config.schema}.test`;
-
-        let session;
-
-        beforeEach('create session', () => {
-            return mysqlx.getSession(config)
-                .then(s => {
-                    session = s;
-                });
+    context('warnings', () => {
+        beforeEach('create table', () => {
+            return session.sql('CREATE TABLE test (a TINYINT NOT NULL, b VARCHAR(3))')
+                .execute();
         });
 
+        it('returns any warning generated by the server for a given operation', () => {
+            return session.sql("INSERT IGNORE INTO test VALUES (10, 'foo'), (NULL, 'bar')")
+                .execute()
+                .then(res => {
+                    expect(res.getWarningsCount()).to.equal(1);
+
+                    const warnings = res.getWarnings();
+                    expect(warnings).to.have.lengthOf(1);
+                    expect(warnings[0].level).to.equal(2);
+                    expect(warnings[0].code).to.equal(1048);
+                    expect(warnings[0].msg).to.equal("Column 'a' cannot be null");
+                });
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        const script = path.join(__dirname, '..', '..', 'fixtures', 'scripts', 'sql-statement.js');
+        const statement = `SELECT name AS col FROM \`${baseConfig.schema}\`.test`;
+
         beforeEach('create a table', () => {
-            return session.sql(`CREATE TABLE ${config.schema}.test (name VARCHAR(3))`)
+            return session.sql(`CREATE TABLE \`${baseConfig.schema}\`.test (name VARCHAR(3))`)
                 .execute();
         });
 
         beforeEach('add table data', () => {
-            return session.sql(`INSERT INTO ${config.schema}.test VALUES ('foo')`)
+            return session.sql(`INSERT INTO \`${baseConfig.schema}\`.test VALUES ('foo')`)
                 .execute();
-        });
-
-        afterEach('close session', () => {
-            return session.close();
         });
 
         it('logs the statement data sent to the server', () => {
@@ -1177,7 +1163,7 @@ describe('raw SQL', () => {
                     expect(columnMetadata.original_name).to.equal('name');
                     expect(columnMetadata.table).to.equal('test');
                     expect(columnMetadata.original_table).to.equal('test');
-                    expect(columnMetadata.schema).to.equal(config.schema);
+                    expect(columnMetadata.schema).to.equal(baseConfig.schema);
                     expect(columnMetadata.catalog).to.equal('def'); // always "def"
                     expect(columnMetadata.collation).to.equal(255); // always "255"
                     expect(columnMetadata.fractional_digits).to.equal(0);

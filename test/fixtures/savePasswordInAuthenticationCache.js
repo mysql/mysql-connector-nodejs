@@ -31,11 +31,12 @@
 'use strict';
 
 const config = require('../config');
-const mysqlx = require('../../');
+const mysqlx = require('../..');
 
-module.exports = function (options) {
-    // Subsequent sha2 hashes require the password to be saved as plain text in the cache
-    options = Object.assign({}, config, options, { auth: 'PLAIN', schema: undefined, tls: { enabled: !options.socket ? true : options.ssl } });
+module.exports = function ({ user = config.user, password = config.password } = {}) {
+    // the easiest way to save the password in the cache is to simply
+    // connect using TLS and a plain-text password
+    const options = Object.assign({}, config, { auth: 'PLAIN', user, password, tls: { enabled: true } });
 
     return mysqlx.getSession(options)
         .then(session => session.close());

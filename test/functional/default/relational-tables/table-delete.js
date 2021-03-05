@@ -39,21 +39,25 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 
 describe('deleting data from a table', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let session, schema, table;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create session using default schema', () => {
-        return mysqlx.getSession(config)
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaultConfig)
             .then(s => {
                 session = s;
             });
     });
 
     beforeEach('load default schema', () => {
-        schema = session.getSchema(config.schema);
+        schema = session.getDefaultSchema();
     });
 
     beforeEach('create table', () => {
@@ -77,7 +81,7 @@ describe('deleting data from a table', () => {
     });
 
     afterEach('drop default schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close session', () => {
@@ -88,8 +92,7 @@ describe('deleting data from a table', () => {
         it('removes all rows from a table without using `where()`', () => {
             const actual = [];
 
-            return table.delete()
-                .where('true')
+            return table.delete('true')
                 .execute()
                 .then(() => table.select().execute(row => actual.push(row)))
                 .then(() => expect(actual).to.be.empty);
@@ -150,13 +153,27 @@ describe('deleting data from a table', () => {
             const expected = [['bar', 23], ['baz', 42]];
             const actual = [];
 
-            return table.delete()
-                .where('name = :name AND age = :age')
+            return table.delete('name = :name AND age = :age')
                 .bind('age', 42)
                 .bind('name', 'foo')
                 .execute()
                 .then(() => table.select().orderBy('name').execute(row => actual.push(row)))
                 .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('always uses any filtering criteria defined by `where()`', () => {
+            const expected = [['foo', 42], ['bar', 23], ['baz', 42]];
+
+            return table.delete('name = foo')
+                .where('false')
+                .execute()
+                .then(() => {
+                    return table.select()
+                        .execute();
+                })
+                .then(res => {
+                    return expect(res.fetchAll()).to.deep.equal(expected);
+                });
         });
 
         it('removes the rows from a table that match a bindable criteria with `where()`', () => {

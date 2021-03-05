@@ -33,7 +33,6 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
-const crypto = require('crypto');
 const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../../');
@@ -43,7 +42,7 @@ describe('connecting with a list of MySQL servers', () => {
 
     context('with pseudorandom-based selection', () => {
         it('succeeds to connect to the first available server', () => {
-            const failoverConfig = Object.assign({}, config, baseConfig, { endpoints: [{ host: `${config.host}-${crypto.randomBytes(4).toString('hex')}`, port: config.port }, { host: config.host, port: config.port }] });
+            const failoverConfig = Object.assign({}, config, baseConfig, { endpoints: [{ host: config.host, port: config.port + 1 }, { host: config.host, port: config.port }] });
             const uri = `mysqlx://${failoverConfig.user}:${failoverConfig.password}@[${failoverConfig.endpoints.map(e => `${e.host}:${e.port}`).join(', ')}]`;
 
             return mysqlx.getSession(uri)
@@ -54,8 +53,8 @@ describe('connecting with a list of MySQL servers', () => {
         });
 
         it('fails if there is no server available', () => {
-            const failoverConfig = Object.assign({}, config, baseConfig, { endpoints: [{ host: `${config.host}-${crypto.randomBytes(4).toString('hex')}` }, { host: `${config.host}-${crypto.randomBytes(4).toString('hex')}` }] });
-            const uri = `mysqlx://${failoverConfig.user}:${failoverConfig.password}@[${failoverConfig.endpoints.map(e => e.host).join(', ')}]`;
+            const failoverConfig = Object.assign({}, config, baseConfig, { endpoints: [{ host: config.host, port: config.port + 1 }, { host: config.host, port: config.port + 2 }] });
+            const uri = `mysqlx://${failoverConfig.user}:${failoverConfig.password}@[${failoverConfig.endpoints.map(e => `${e.host}:${e.port}`).join(', ')}]`;
 
             return mysqlx.getSession(uri)
                 .then(() => expect.fail())
@@ -67,7 +66,7 @@ describe('connecting with a list of MySQL servers', () => {
 
     context('with priority-based selection', () => {
         it('succeeds to connect to the first available server', () => {
-            const failoverConfig = Object.assign({}, config, baseConfig, { endpoints: [{ host: config.host, port: config.port, priority: 99 }, { host: `${config.host}-${crypto.randomBytes(4).toString('hex')}`, port: config.port, priority: 98 }] });
+            const failoverConfig = Object.assign({}, config, baseConfig, { endpoints: [{ host: config.host, port: config.port, priority: 99 }, { host: config.host, port: config.port + 1, priority: 98 }] });
             const uri = `mysqlx://${failoverConfig.user}:${failoverConfig.password}@[${failoverConfig.endpoints.map(e => `(address=${e.host}:${e.port}, priority=${e.priority})`).join(', ')}]`;
 
             return mysqlx.getSession(uri)
@@ -78,8 +77,8 @@ describe('connecting with a list of MySQL servers', () => {
         });
 
         it('fails if there is no server available', () => {
-            const failoverConfig = Object.assign({}, config, baseConfig, { endpoints: [{ host: `${config.host}-${crypto.randomBytes(4).toString('hex')}`, priority: 99 }, { host: `${config.host}-${crypto.randomBytes(4).toString('hex')}`, priority: 98 }] });
-            const uri = `mysqlx://${failoverConfig.user}:${failoverConfig.password}@[${failoverConfig.endpoints.map(e => `(address=${e.host}, priority=${e.priority})`).join(', ')}]`;
+            const failoverConfig = Object.assign({}, config, baseConfig, { endpoints: [{ host: config.host, port: config.port + 1, priority: 99 }, { host: config.host, port: config.port + 2, priority: 98 }] });
+            const uri = `mysqlx://${failoverConfig.user}:${failoverConfig.password}@[${failoverConfig.endpoints.map(e => `(address=${e.host}:${e.port}, priority=${e.priority})`).join(', ')}]`;
 
             return mysqlx.getSession(uri)
                 .then(() => expect.fail())

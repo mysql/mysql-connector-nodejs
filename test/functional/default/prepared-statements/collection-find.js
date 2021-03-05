@@ -39,21 +39,25 @@ const mysqlx = require('../../../..');
 const path = require('path');
 
 describe('prepared statements for CollectionFind', () => {
+    const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
+
     let collection, schema, session;
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema);
+        return fixtures.createSchema(baseConfig.schema);
     });
 
     beforeEach('create session using default schema', () => {
-        return mysqlx.getSession(config)
+        const defaultConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaultConfig)
             .then(s => {
                 session = s;
             });
     });
 
     beforeEach('load default schema', () => {
-        schema = session.getSchema(config.schema);
+        schema = session.getDefaultSchema();
     });
 
     beforeEach('create collection', () => {
@@ -73,7 +77,7 @@ describe('prepared statements for CollectionFind', () => {
     });
 
     afterEach('drop default schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close session', () => {
@@ -173,7 +177,7 @@ describe('prepared statements for CollectionFind', () => {
         const actual = [];
 
         const op = collection.find();
-        const sql = 'SELECT doc FROM `nodejsmysqlxtest`.`test` LIMIT ?, ?';
+        const sql = `SELECT doc FROM \`${schema.getName()}\`.\`test\` LIMIT ?, ?`;
 
         return op.execute()
             .then(() => op.execute())
@@ -190,7 +194,7 @@ describe('prepared statements for CollectionFind', () => {
         const actual = [];
 
         const op = collection.find();
-        const sql = 'SELECT doc FROM `nodejsmysqlxtest`.`test` LIMIT ?, ?';
+        const sql = `SELECT doc FROM \`${schema.getName()}\`.\`test\` LIMIT ?, ?`;
 
         return op.execute()
             .then(() => op.limit(1).execute(doc => actual.push(doc)))
@@ -208,7 +212,7 @@ describe('prepared statements for CollectionFind', () => {
         const actual = [];
 
         const op = collection.find();
-        const sql = 'SELECT doc FROM `nodejsmysqlxtest`.`test` LIMIT ?, ?';
+        const sql = `SELECT doc FROM \`${schema.getName()}\`.\`test\` LIMIT ?, ?`;
 
         return op.execute()
             .then(() => op.limit(1).offset(1).execute(doc => actual.push(doc)))

@@ -170,9 +170,18 @@ describe('connecting to the MySQL server using DNS SRV', () => {
         });
     });
 
-    // These tests are a bit flaky. We need to make sure we are in control of
-    // the DNS server as well.
     context('when there is no DNS server available', () => {
+        let originalServers;
+
+        beforeEach('remove DNS servers', () => {
+            originalServers = dns.getServers();
+            dns.setServers([]);
+        });
+
+        afterEach('restore original list of DNS servers', () => {
+            dns.setServers(originalServers);
+        });
+
         it('fails to connect using a configuration object', () => {
             const srvConfig = Object.assign({}, config, baseConfig, { socket: undefined });
 

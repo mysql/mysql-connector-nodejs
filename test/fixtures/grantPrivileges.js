@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -33,10 +33,10 @@
 const config = require('../config');
 const mysqlx = require('../..');
 
-module.exports = function ({ user = config.user, host = '%', plugin = 'caching_sha2_password', password = config.password } = {}) {
+module.exports = function ({ schema = config.schema || '*', table = '*', user = config.user, host = '%' } = {}) {
     return mysqlx.getSession(config)
         .then(session => {
-            return session.sql(`CREATE USER IF NOT EXISTS '${user}'@'${host}' IDENTIFIED WITH ${plugin} BY '${password}'`)
+            return session.sql(`GRANT ALL ON ${schema}.${table} TO '${user}'@'${host}'`)
                 .execute()
                 .then(() => {
                     return session.close();

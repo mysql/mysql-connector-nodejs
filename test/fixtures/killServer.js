@@ -59,7 +59,7 @@ module.exports = function (id, waitFor) {
             response.on('end', () => {
                 // The operation should idempotent. We do not care if it fails
                 // because the container is not running.
-                if (response.statusCode === 204 || response.statusCode === 304 || response.statusCode === 409) {
+                if (response.statusCode === 204 || response.statusCode === 409) {
                     return setTimeout(() => resolve(), waitFor);
                 }
 
