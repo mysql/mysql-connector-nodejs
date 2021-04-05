@@ -33,12 +33,40 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const result = require('../../../lib/DevAPI/Result');
+const td = require('testdouble');
+const warnings = require('../../../lib/constants/warnings');
+
+// subject under test needs to be reloaded with replacement fakes
+let result = require('../../../lib/DevAPI/Result');
 
 describe('Result', () => {
+    let warning;
+
+    beforeEach('create fakes', () => {
+        warning = td.function();
+
+        const logger = td.replace('../../../lib/logger');
+        td.when(logger('api:result')).thenReturn({ warning });
+
+        result = require('../../../lib/DevAPI/Result');
+    });
+
     context('getAffectedItemsCount()', () => {
-        it('returns the same result as getAffectedRowsCount()', () => {
+        it('returns the number of rows affected by the operation', () => {
             expect(result({ rowsAffected: 3 }).getAffectedItemsCount()).to.equal(3);
+        });
+    });
+
+    context('getAffectedRowsCount()', () => {
+        it('returns the number of rows affected by the operation', () => {
+            expect(result({ rowsAffected: 3 }).getAffectedRowsCount()).to.equal(3);
+        });
+
+        it('generates a warning message', () => {
+            result().getAffectedRowsCount();
+
+            expect(td.explain(warning).callCount).to.equal(1);
+            return expect(td.explain(warning).calls[0].args).to.deep.equal(['getAffectedRowsCount', warnings.MESSAGES.WARN_DEPRECATED_RESULT_GET_AFFECTED_ROWS_COUNT, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
         });
     });
 

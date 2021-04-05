@@ -33,10 +33,24 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const limiting = require('../../../lib/DevAPI/Limiting');
 const td = require('testdouble');
+const warnings = require('../../../lib/constants/warnings');
+
+// subject under test needs to be reloaded with replacement fakes
+let limiting = require('../../../lib/DevAPI/Limiting');
 
 describe('Limiting', () => {
+    let warning;
+
+    beforeEach('create fakes', () => {
+        const logger = td.replace('../../../lib/logger');
+
+        warning = td.function();
+        td.when(logger('api')).thenReturn({ warning });
+
+        limiting = require('../../../lib/DevAPI/Limiting');
+    });
+
     afterEach('reset fakes', () => {
         td.reset();
     });
@@ -67,24 +81,33 @@ describe('Limiting', () => {
 
         context('when there is support for an offset', () => {
             it('forces a default value for the offset to streamline prepared statement support', () => {
-                const query = limiting();
-                query.offset = td.function();
+                const statement = limiting();
+                statement.offset = td.function();
 
-                query.limit(2);
+                statement.limit(2);
 
-                expect(td.explain(query.offset).callCount).to.equal(1);
-                return expect(td.explain(query.offset).calls[0].args[0]).to.equal(0);
+                expect(td.explain(statement.offset).callCount).to.equal(1);
+                return expect(td.explain(statement.offset).calls[0].args[0]).to.equal(0);
             });
 
-            // deprecated
             it('sets any provided value for the offset', () => {
-                const query = limiting();
-                query.offset = td.function();
+                const statement = limiting();
+                statement.offset = td.function();
 
-                query.limit(2, 3);
+                statement.limit(2, 3);
 
-                expect(td.explain(query.offset).callCount).to.equal(1);
-                return expect(td.explain(query.offset).calls[0].args[0]).to.equal(3);
+                expect(td.explain(statement.offset).callCount).to.equal(1);
+                return expect(td.explain(statement.offset).calls[0].args[0]).to.equal(3);
+            });
+
+            it('generates a deprecation warning', () => {
+                const statement = limiting();
+                statement.offset = td.function();
+
+                statement.limit(2, 3);
+
+                expect(td.explain(warning).callCount).to.equal(1);
+                return expect(td.explain(warning).calls[0].args).to.deep.equal(['limit', warnings.MESSAGES.WARN_DEPRECATED_LIMIT_WITH_OFFSET, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
             });
         });
     });

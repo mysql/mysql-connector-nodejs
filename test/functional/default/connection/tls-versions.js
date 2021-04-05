@@ -30,6 +30,7 @@
 
 /* eslint-env node, mocha */
 
+const Level = require('../../../../lib/logger').Level;
 const config = require('../../../config');
 const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
@@ -48,24 +49,36 @@ describe('connecting with specific TLS versions', () => {
             const tlsConfig = Object.assign({}, config, baseConfig, { ssl: false, tls: { versions: ['TLSv1.1', 'TLSv1.2'] } });
 
             return mysqlx.getSession(tlsConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
+                });
         });
 
         it('fails if list of TLS versions is empty', () => {
             const tlsConfig = Object.assign({}, config, baseConfig, { tls: { versions: [] } });
 
             return mysqlx.getSession(tlsConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
+                });
         });
 
         it('fails if some TLS version provided by the application is not valid', () => {
             const tlsConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['TLSv1.2', 'foo'] } });
 
             return mysqlx.getSession(tlsConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('"foo" is not a valid TLS protocol version. Should be one of TLSv1, TLSv1.1, TLSv1.2, TLSv1.3.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', ['TLSv1', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3'].join(', ')));
+                });
         });
 
         it('fails if none of the TLS versions provided by the application are supported by the client', function () {
@@ -77,8 +90,12 @@ describe('connecting with specific TLS versions', () => {
             const tlsConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['TLSv1.2'] } });
 
             return mysqlx.getSession(tlsConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('No supported TLS protocol version found in the provided list.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
+                });
         });
 
         it('picks highest supported version in the client that the server also supports if none is provided', function () {
@@ -126,24 +143,36 @@ describe('connecting with specific TLS versions', () => {
             const tlsConfig = Object.assign({}, config, baseConfig);
 
             return mysqlx.getSession(`mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}?ssl-mode=DISABLED&tls-versions=[TLSv1.1,TLSv1.2]`)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Additional TLS options cannot be specified when TLS is disabled.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
+                });
         });
 
         it('fails if the list of TLS versions is empty', () => {
             const tlsConfig = Object.assign({}, config, baseConfig);
 
             return mysqlx.getSession(`mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}?tls-versions=[]`)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('No supported TLS protocol version found in the provided list.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
+                });
         });
 
         it('fails if some TLS version provided by the application is not valid', () => {
             const tlsConfig = Object.assign({}, config, baseConfig);
 
             return mysqlx.getSession(`mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}?tls-versions=[TLSv1.2,foo]`)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('"foo" is not a valid TLS protocol version. Should be one of TLSv1, TLSv1.1, TLSv1.2, TLSv1.3.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', ['TLSv1', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3'].join(', ')));
+                });
         });
 
         it('fails if none of the TLS versions provided by the application are supported by the client', function () {
@@ -155,8 +184,12 @@ describe('connecting with specific TLS versions', () => {
             }
 
             return mysqlx.getSession(`mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}?tls-versions=[TLSv1.3]`)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('No supported TLS protocol version found in the provided list.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
+                });
         });
 
         it('picks the highest client-supported version that the server also supports if none is provided', function () {
@@ -185,7 +218,7 @@ describe('connecting with specific TLS versions', () => {
                 const scriptConfig = Object.assign({}, config, baseConfig, { socket: null, tls: { versions: ['TLSv1.2'] } });
                 const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
 
-                return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                     .then(proc => {
                         expect(proc.logs).to.have.lengthOf(0);
                     });
@@ -196,11 +229,11 @@ describe('connecting with specific TLS versions', () => {
                 const warningMessages = [];
 
                 process.on('warning', warning => {
-                    if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                    if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                         warningMessages.push(warning.message);
                     }
 
-                    if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                    if (warning.name && warning.name === 'NoWarning') {
                         process.removeAllListeners('warning');
                         // eslint-disable-next-line no-unused-expressions
                         expect(warningMessages).to.be.empty;
@@ -213,7 +246,7 @@ describe('connecting with specific TLS versions', () => {
                         return sessions.map(session => session.close());
                     })
                     .then(() => {
-                        return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                        return process.emitWarning('No more warnings.', 'NoWarning');
                     });
             });
         });
@@ -224,7 +257,7 @@ describe('connecting with specific TLS versions', () => {
                     const scriptConfig = Object.assign({}, config, baseConfig, { socket: null }, { tls: { versions: ['TLSv1.2'] } });
                     const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-new.js');
 
-                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                         .then(proc => {
                             return expect(proc.logs).to.have.lengthOf(0);
                         });
@@ -234,7 +267,7 @@ describe('connecting with specific TLS versions', () => {
                     const scriptConfig = Object.assign({}, config, baseConfig, { socket: null }, { tls: { versions: ['TLSv1.2'] } });
                     const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-reset.js');
 
-                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                         .then(proc => {
                             return expect(proc.logs).to.have.lengthOf(0);
                         });
@@ -248,11 +281,11 @@ describe('connecting with specific TLS versions', () => {
                     const warningMessages = [];
 
                     process.on('warning', warning => {
-                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                             warningMessages.push(warning.message);
                         }
 
-                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.name === 'NoWarning') {
                             process.removeAllListeners('warning');
                             // eslint-disable-next-line no-unused-expressions
                             expect(warningMessages).to.be.empty;
@@ -276,7 +309,7 @@ describe('connecting with specific TLS versions', () => {
                             return pool.close();
                         })
                         .then(() => {
-                            return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                            return process.emitWarning('No more warnings.', 'NoWarning');
                         });
                 });
 
@@ -285,11 +318,11 @@ describe('connecting with specific TLS versions', () => {
                     const warningMessages = [];
 
                     process.on('warning', warning => {
-                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                             warningMessages.push(warning.message);
                         }
 
-                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.name === 'NoWarning') {
                             process.removeAllListeners('warning');
                             // eslint-disable-next-line no-unused-expressions
                             expect(warningMessages).to.be.empty;
@@ -308,7 +341,7 @@ describe('connecting with specific TLS versions', () => {
                             return pool.close();
                         })
                         .then(() => {
-                            return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                            return process.emitWarning('No more warnings.', 'NoWarning');
                         });
                 });
             });
@@ -322,20 +355,20 @@ describe('connecting with specific TLS versions', () => {
                 const scriptConfig = { socket: null, tls: { versions: [deprecatedVersion] } };
                 const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
 
-                return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                     .then(proc => {
                         expect(proc.logs).to.have.lengthOf(1);
                         return expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, deprecatedVersion));
                     })
                     .then(() => {
-                        return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)]);
+                        return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING });
                     })
                     .then(proc => {
                         expect(proc.logs).to.have.lengthOf(1);
                         expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, deprecatedVersion));
                     })
                     .catch(err => {
-                        if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                        if (err.message !== errors.MESSAGES.ER_DEVAPI_TLS_VERSION_NEGOTIATION_FAILED) {
                             throw err;
                         }
 
@@ -352,11 +385,11 @@ describe('connecting with specific TLS versions', () => {
                 const warningMessages = [];
 
                 process.on('warning', warning => {
-                    if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                    if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                         warningMessages.push(warning.message);
                     }
 
-                    if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                    if (warning.name && warning.name === 'NoWarning') {
                         process.removeAllListeners('warning');
 
                         expect(warningMessages).to.have.lengthOf(2);
@@ -368,7 +401,7 @@ describe('connecting with specific TLS versions', () => {
                 });
 
                 process.once('unhandledRejection', err => {
-                    if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                    if (err.message !== errors.MESSAGES.ER_DEVAPI_TLS_VERSION_NEGOTIATION_FAILED) {
                         return done(err);
                     }
 
@@ -383,7 +416,7 @@ describe('connecting with specific TLS versions', () => {
                         return sessions.map(session => session.close());
                     })
                     .then(() => {
-                        return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                        return process.emitWarning('No more warnings.', 'NoWarning');
                     });
             });
         });
@@ -395,14 +428,14 @@ describe('connecting with specific TLS versions', () => {
                     const scriptConfig = { socket: null, tls: { versions: [deprecatedVersion] } };
                     const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-new.js');
 
-                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                         .then(proc => {
                             expect(proc.logs).to.have.lengthOf(2);
                             expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, deprecatedVersion));
                             return expect(proc.logs[1]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, deprecatedVersion));
                         })
                         .catch(err => {
-                            if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                            if (err.message !== errors.MESSAGES.ER_DEVAPI_TLS_VERSION_NEGOTIATION_FAILED) {
                                 throw err;
                             }
 
@@ -418,13 +451,13 @@ describe('connecting with specific TLS versions', () => {
                     const scriptConfig = { socket: null, tls: { versions: [deprecatedVersion] } };
                     const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-reset.js');
 
-                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                         .then(proc => {
                             expect(proc.logs).to.have.lengthOf(1);
                             return expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, deprecatedVersion));
                         })
                         .catch(err => {
-                            if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                            if (err.message !== errors.MESSAGES.ER_DEVAPI_TLS_VERSION_NEGOTIATION_FAILED) {
                                 throw err;
                             }
 
@@ -444,11 +477,11 @@ describe('connecting with specific TLS versions', () => {
                     const warningMessages = [];
 
                     process.on('warning', warning => {
-                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                             warningMessages.push(warning.message);
                         }
 
-                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.name === 'NoWarning') {
                             process.removeAllListeners('warning');
 
                             expect(warningMessages).to.have.lengthOf(2);
@@ -460,7 +493,7 @@ describe('connecting with specific TLS versions', () => {
                     });
 
                     process.once('unhandledRejection', err => {
-                        if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                        if (err.message !== errors.MESSAGES.ER_DEVAPI_TLS_VERSION_NEGOTIATION_FAILED) {
                             return done(err);
                         }
 
@@ -486,7 +519,7 @@ describe('connecting with specific TLS versions', () => {
                             return pool.close();
                         })
                         .then(() => {
-                            return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                            return process.emitWarning('No more warnings.', 'NoWarning');
                         });
                 });
 
@@ -496,11 +529,11 @@ describe('connecting with specific TLS versions', () => {
                     const warningMessages = [];
 
                     process.on('warning', warning => {
-                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                             warningMessages.push(warning.message);
                         }
 
-                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.name === 'NoWarning') {
                             process.removeAllListeners('warning');
 
                             expect(warningMessages).to.have.lengthOf(1);
@@ -511,7 +544,7 @@ describe('connecting with specific TLS versions', () => {
                     });
 
                     process.once('unhandledRejection', err => {
-                        if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                        if (err.message !== errors.MESSAGES.ER_DEVAPI_TLS_VERSION_NEGOTIATION_FAILED) {
                             return done(err);
                         }
 
@@ -532,7 +565,7 @@ describe('connecting with specific TLS versions', () => {
                             return pool.close();
                         })
                         .then(() => {
-                            return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                            return process.emitWarning('No more warnings.', 'NoWarning');
                         });
                 });
             });

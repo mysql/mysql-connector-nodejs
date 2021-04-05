@@ -144,7 +144,7 @@ describe('single document upsert', () => {
                     return expect.fail();
                 })
                 .catch((err) => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
                 });
         });
 
@@ -154,7 +154,7 @@ describe('single document upsert', () => {
                     return expect.fail();
                 })
                 .catch((err) => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
                 });
         });
 
@@ -164,7 +164,7 @@ describe('single document upsert', () => {
                     return expect.fail();
                 })
                 .catch((err) => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
                 });
         });
 
@@ -174,7 +174,7 @@ describe('single document upsert', () => {
                     return expect.fail();
                 })
                 .catch((err) => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
                 });
         });
     });
@@ -193,7 +193,7 @@ describe('single document upsert', () => {
                 })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    return expect(err.info.code).to.equal(5116);
+                    return expect(err.info.code).to.equal(errors.ER_X_DUPLICATE_ENTRY);
                 });
         });
 
@@ -204,7 +204,7 @@ describe('single document upsert', () => {
                 })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    return expect(err.info.code).to.equal(5116);
+                    return expect(err.info.code).to.equal(errors.ER_X_DUPLICATE_ENTRY);
                 });
         });
 

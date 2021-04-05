@@ -32,25 +32,28 @@
 
 /* eslint-env node, mocha */
 
+const Level = require('../../../../lib/logger').Level;
 const config = require('../../../config');
 const expect = require('chai').expect;
+const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../..');
 const path = require('path');
+const warnings = require('../../../../lib/constants/warnings');
 
 describe('TLS certificate negotiation', () => {
     // container name as defined in docker-compose.yml
     const baseConfig = { host: 'mysql-with-key-and-cert', schema: undefined, socket: undefined };
     // Provide fake servername to avoid CN mismatch.
     const servername = 'MySQL_Server_nodejsmysqlxtest_Auto_Generated_Server_Certificate';
-    // Fixtures base path
-    const fixtures = path.join(__dirname, '..', '..', '..', 'fixtures', 'ssl', 'client');
+    // Certificate base directory.
+    const certificates = path.join(__dirname, '..', '..', '..', 'fixtures', 'ssl', 'client');
 
     // TODO(Rui): this test is validating a certificate signed by a Root CA using the Root CA itself.
     // The main reason is that there are some issues with CRLs not signed by the Root CA.
     // This is not really a common practice, so, in the near future, the test must be changed to use
     // a certificate signed by an intermediate CA using the CA chain.
     it('connects to the server if the server certificate was issued by the given authority', () => {
-        const ca = path.join(fixtures, 'ca.pem');
+        const ca = path.join(certificates, 'ca.pem');
         const secureConfig = Object.assign({}, config, baseConfig, { tls: { enabled: true, ca, servername } });
 
         return mysqlx.getSession(secureConfig)
@@ -65,7 +68,7 @@ describe('TLS certificate negotiation', () => {
     // make sure it uses a certificate signed by an intermediate CA (a different one maybe), which will
     // result in the expected error.
     it('fails to connect if the server certificate was not issued by the given authority', () => {
-        const ca = path.join(fixtures, 'non-authoritative-ca.pem');
+        const ca = path.join(certificates, 'non-authoritative-ca.pem');
         const secureConfig = Object.assign({}, config, baseConfig, { tls: { enabled: true, ca, servername } });
 
         return mysqlx.getSession(secureConfig)
@@ -77,8 +80,8 @@ describe('TLS certificate negotiation', () => {
     });
 
     it('connects to the server if the server certificate is not revoked', () => {
-        const ca = path.join(fixtures, 'ca.pem');
-        const crl = path.join(fixtures, 'empty-crl.pem');
+        const ca = path.join(certificates, 'ca.pem');
+        const crl = path.join(certificates, 'empty-crl.pem');
         const secureConfig = Object.assign({}, config, baseConfig, { tls: { enabled: true, ca, crl, servername } });
 
         return mysqlx.getSession(secureConfig)
@@ -89,8 +92,8 @@ describe('TLS certificate negotiation', () => {
     });
 
     it('fails to connect if the server certificate is revoked', () => {
-        const ca = path.join(fixtures, 'ca.pem');
-        const crl = path.join(fixtures, 'crl.pem');
+        const ca = path.join(certificates, 'ca.pem');
+        const crl = path.join(certificates, 'crl.pem');
         const secureConfig = Object.assign({}, config, baseConfig, { tls: { enabled: true, ca, crl, servername } });
 
         return mysqlx.getSession(secureConfig)
@@ -98,5 +101,49 @@ describe('TLS certificate negotiation', () => {
             .catch(err => {
                 expect(err.code).to.equal('CERT_REVOKED');
             });
+    });
+
+    context('when deprecated TLS connection properties are used', () => {
+        it('writes a deprecation warning to the log when debug mode is enabled', () => {
+            // TLS is only available over TCP connections
+            // The socket should be null since JSON.stringify() removes undefined properties
+            const ca = path.join(certificates, 'ca.pem');
+            const scriptConfig = Object.assign({}, config, baseConfig, { sslOptions: { ca, servername } });
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
+
+            return fixtures.collectLogs('connection:options.sslOptions', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+                    expect(proc.logs[0]).to.equal(warnings.MESSAGES.WARN_DEPRECATED_SSL_ADDITIONAL_OPTIONS);
+                });
+        });
+
+        it('writes a deprecation warning to stdout when debug mode is not enabled', done => {
+            const tlsConfig = Object.assign({}, config, baseConfig, { ssl: true });
+            const warningMessages = [];
+
+            process.on('warning', warning => {
+                if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
+                    warningMessages.push(warning.message);
+                }
+
+                if (warning.name && warning.name === 'NoWarning') {
+                    process.removeAllListeners('warning');
+
+                    expect(warningMessages).to.have.lengthOf(1);
+                    expect(warningMessages[0]).to.equal(warnings.MESSAGES.WARN_DEPRECATED_SSL_OPTION);
+
+                    return done();
+                }
+            });
+
+            mysqlx.getSession(tlsConfig)
+                .then(session => {
+                    return session.close();
+                })
+                .then(() => {
+                    return process.emitWarning('No more warnings.', 'NoWarning');
+                });
+        });
     });
 });

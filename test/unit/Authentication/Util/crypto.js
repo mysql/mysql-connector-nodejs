@@ -92,7 +92,7 @@ describe('crypto', () => {
 
     context('xor()', () => {
         it('throws an error if the given buffers have different sizes', () => {
-            expect(() => crypto.xor(Buffer.from('x'), Buffer.from('yy'))).to.throw(errors.MESSAGES.ERR_XOR_NON_MATCHING_BUFFER_SIZE);
+            expect(() => crypto.xor(Buffer.from('x'), Buffer.from('yy'))).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_AUTH_SCRAMBLE_BUFFER_SIZE);
         });
 
         it('applies a bitwise xor to the given buffers', () => {

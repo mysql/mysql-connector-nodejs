@@ -706,8 +706,12 @@ describe('relational miscellaneous tests', () => {
 
         it('fails if the table does not exist in the given schema', () => {
             return schema.getTable('noop').count()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(`Table '${schema.getName()}.noop' doesn't exist`));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(`Table '${schema.getName()}.noop' doesn't exist`);
+                });
         });
     });
 

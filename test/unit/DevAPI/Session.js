@@ -33,15 +33,15 @@
 /* eslint-env node, mocha */
 
 const errors = require('../../../lib/constants/errors');
-const warnings = require('../../../lib/constants/warnings');
 const expect = require('chai').expect;
 const td = require('testdouble');
+const warnings = require('../../../lib/constants/warnings');
 
 // subject under test needs to be reloaded with replacement fakes
 let session = require('../../../lib/DevAPI/Session');
 
 describe('X DevAPI Session', () => {
-    let connection, escapeIdentifier, schema, sqlExecute;
+    let connection, schema, sqlExecute, table, warning;
 
     beforeEach('create fakes', () => {
         connection = {
@@ -56,13 +56,14 @@ describe('X DevAPI Session', () => {
             isSecure: td.function()
         };
 
-        escapeIdentifier = td.function();
-        schema = td.function();
-        sqlExecute = td.function();
+        warning = td.function();
 
-        td.replace('../../../lib/DevAPI/Table', { escapeIdentifier });
-        td.replace('../../../lib/DevAPI/Schema', schema);
-        td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
+        table = td.replace('../../../lib/DevAPI/Table');
+        schema = td.replace('../../../lib/DevAPI/Schema');
+        sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+
+        const logger = td.replace('../../../lib/logger');
+        td.when(logger('api:session')).thenReturn({ warning });
 
         session = require('../../../lib/DevAPI/Session');
     });
@@ -148,7 +149,7 @@ describe('X DevAPI Session', () => {
             const sql = td.replace(dbSession, 'sql');
             const getShema = td.replace(dbSession, 'getSchema');
 
-            td.when(escapeIdentifier(name)).thenReturn('bar');
+            td.when(table.escapeIdentifier(name)).thenReturn('bar');
             td.when(sql('CREATE DATABASE bar')).thenReturn({ execute });
             td.when(execute()).thenResolve();
             td.when(getShema(name)).thenReturn('baz');
@@ -165,7 +166,7 @@ describe('X DevAPI Session', () => {
             const sql = td.replace(dbSession, 'sql');
             const error = new Error('bar');
 
-            td.when(escapeIdentifier(name)).thenReturn('baz');
+            td.when(table.escapeIdentifier(name)).thenReturn('baz');
             td.when(sql('CREATE DATABASE baz')).thenReturn({ execute });
             td.when(execute()).thenReject(error);
 
@@ -191,7 +192,7 @@ describe('X DevAPI Session', () => {
             const dbSession = session(connection);
             const sql = td.replace(dbSession, 'sql');
 
-            td.when(escapeIdentifier(name)).thenReturn('bar');
+            td.when(table.escapeIdentifier(name)).thenReturn('bar');
             td.when(sql('DROP DATABASE bar')).thenReturn({ execute });
             td.when(execute()).thenResolve();
 
@@ -206,9 +207,9 @@ describe('X DevAPI Session', () => {
             const dbSession = session(connection);
             const sql = td.replace(dbSession, 'sql');
             const error = new Error();
-            error.info = { code: errors.ERR_DATABASE_DOES_NOT_EXIST };
+            error.info = { code: errors.ER_DB_DROP_EXISTS };
 
-            td.when(escapeIdentifier(name)).thenReturn('bar');
+            td.when(table.escapeIdentifier(name)).thenReturn('bar');
             td.when(sql('DROP DATABASE bar')).thenReturn({ execute });
             td.when(execute()).thenReject(error);
 
@@ -224,7 +225,7 @@ describe('X DevAPI Session', () => {
             const sql = td.replace(dbSession, 'sql');
             const error = new Error('bar');
 
-            td.when(escapeIdentifier(name)).thenReturn('baz');
+            td.when(table.escapeIdentifier(name)).thenReturn('baz');
             td.when(sql('DROP DATABASE baz')).thenReturn({ execute });
             td.when(execute()).thenReject(error);
 
@@ -248,18 +249,14 @@ describe('X DevAPI Session', () => {
             return expect(dbSession.executeSql('foo')).to.equal('bar');
         });
 
-        it('logs a deprecation warning', done => {
+        it('generates a deprecation warning', () => {
             const dbSession = session(connection);
-            const sql = td.replace(dbSession, 'sql');
-
-            td.when(sql('foo')).thenReturn('bar');
-
-            process.once('warning', warning => {
-                expect(warning.message).to.equal(warnings.MESSAGES.WARN_DEPRECATED_EXECUTE_SQL);
-                done();
-            });
+            td.replace(dbSession, 'sql');
 
             dbSession.executeSql('foo');
+
+            expect(td.explain(warning).callCount).to.equal(1);
+            return expect(td.explain(warning).calls[0].args).to.deep.equal(['executeSql', warnings.MESSAGES.WARN_DEPRECATED_EXECUTE_SQL, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
         });
     });
 
@@ -341,34 +338,18 @@ describe('X DevAPI Session', () => {
             });
         });
 
-        it('logs a deprecation warning for deprecated properties', done => {
+        it('generates a deprecation warning for deprecated properties', () => {
             td.when(connection.getUser()).thenReturn('foo');
             td.when(connection.isSecure()).thenReturn('bar');
 
             const details = session(connection).inspect();
 
-            let warningCounter = 0;
-
-            process.on('warning', warning => {
-                warningCounter += 1;
-
-                // The first warning should be about "dbUser".
-                if (warningCounter === 1) {
-                    return expect(warning.message).to.equal(warnings.MESSAGES.WARN_DEPRECATED_DB_USER);
-                }
-
-                // The next warning should be about "ssl".
-                expect(warning.message).to.equal(warnings.MESSAGES.WARN_DEPRECATED_SSL_OPTION);
-
-                // We should remove all listeners to avoid conflicts with
-                // other tests.
-                process.removeAllListeners('warning');
-
-                return done();
-            });
-
             expect(details.dbUser).to.equal('foo');
             expect(details.ssl).to.equal('bar');
+
+            expect(td.explain(warning).callCount).to.equal(2);
+            expect(td.explain(warning).calls[0].args).to.deep.equal(['inspect', warnings.MESSAGES.WARN_DEPRECATED_DB_USER, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
+            return expect(td.explain(warning).calls[1].args).to.deep.equal(['inspect', warnings.MESSAGES.WARN_DEPRECATED_SSL_OPTION, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
         });
     });
 
@@ -383,7 +364,7 @@ describe('X DevAPI Session', () => {
             const dbSession = session(connection);
             const sql = td.replace(dbSession, 'sql');
 
-            td.when(escapeIdentifier('foo')).thenReturn('bar');
+            td.when(table.escapeIdentifier('foo')).thenReturn('bar');
             td.when(sql('RELEASE SAVEPOINT bar')).thenReturn({ execute });
             td.when(execute()).thenResolve();
 
@@ -399,7 +380,7 @@ describe('X DevAPI Session', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_SAVEPOINT_NAME);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SAVEPOINT_NAME);
                 });
         });
 
@@ -409,7 +390,7 @@ describe('X DevAPI Session', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_SAVEPOINT_NAME);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SAVEPOINT_NAME);
                 });
         });
 
@@ -418,7 +399,7 @@ describe('X DevAPI Session', () => {
             const sql = td.replace(dbSession, 'sql');
             const error = new Error('foobar');
 
-            td.when(escapeIdentifier('foo')).thenReturn('bar');
+            td.when(table.escapeIdentifier('foo')).thenReturn('bar');
             td.when(sql('RELEASE SAVEPOINT bar')).thenReturn({ execute });
             td.when(execute()).thenReject(error);
 
@@ -481,7 +462,7 @@ describe('X DevAPI Session', () => {
             const dbSession = session(connection);
             const sql = td.replace(dbSession, 'sql');
 
-            td.when(escapeIdentifier('foo')).thenReturn('bar');
+            td.when(table.escapeIdentifier('foo')).thenReturn('bar');
             td.when(sql('ROLLBACK TO SAVEPOINT bar')).thenReturn({ execute });
             td.when(execute()).thenResolve();
 
@@ -497,7 +478,7 @@ describe('X DevAPI Session', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_SAVEPOINT_NAME);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SAVEPOINT_NAME);
                 });
         });
 
@@ -507,7 +488,7 @@ describe('X DevAPI Session', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_SAVEPOINT_NAME);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SAVEPOINT_NAME);
                 });
         });
 
@@ -516,7 +497,7 @@ describe('X DevAPI Session', () => {
             const sql = td.replace(dbSession, 'sql');
             const error = new Error('foobar');
 
-            td.when(escapeIdentifier('foo')).thenReturn('bar');
+            td.when(table.escapeIdentifier('foo')).thenReturn('bar');
             td.when(sql('ROLLBACK TO SAVEPOINT bar')).thenReturn({ execute });
             td.when(execute()).thenReject(error);
 
@@ -541,7 +522,7 @@ describe('X DevAPI Session', () => {
             const dbSession = session(connection);
             const sql = td.replace(dbSession, 'sql');
 
-            td.when(escapeIdentifier('foo')).thenReturn('bar');
+            td.when(table.escapeIdentifier('foo')).thenReturn('bar');
             td.when(sql('SAVEPOINT bar')).thenReturn({ execute });
             td.when(execute()).thenResolve();
 
@@ -556,7 +537,7 @@ describe('X DevAPI Session', () => {
             const sql = td.replace(dbSession, 'sql');
             const regexp = /^connector-nodejs-[0-9a-f]{32}$/;
 
-            td.when(escapeIdentifier(td.matchers.contains(regexp))).thenReturn('foo');
+            td.when(table.escapeIdentifier(td.matchers.contains(regexp))).thenReturn('foo');
             td.when(sql('SAVEPOINT foo')).thenReturn({ execute });
             td.when(execute()).thenResolve();
 
@@ -573,7 +554,7 @@ describe('X DevAPI Session', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_SAVEPOINT_NAME);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SAVEPOINT_NAME);
                 });
         });
 
@@ -583,7 +564,7 @@ describe('X DevAPI Session', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_SAVEPOINT_NAME);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SAVEPOINT_NAME);
                 });
         });
 
@@ -592,7 +573,7 @@ describe('X DevAPI Session', () => {
             const sql = td.replace(dbSession, 'sql');
             const error = new Error('foobar');
 
-            td.when(escapeIdentifier('foo')).thenReturn('bar');
+            td.when(table.escapeIdentifier('foo')).thenReturn('bar');
             td.when(sql('SAVEPOINT bar')).thenReturn({ execute });
             td.when(execute()).thenReject(error);
 

@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -71,9 +72,11 @@ describe('connecting with a list of MySQL servers', () => {
                     .then(session1 => {
                         expect(session1.inspect().host).to.equal('mysql-single-x-plugin-connection');
                         return mysqlx.getSession(uri)
-                            .then(() => expect.fail())
+                            .then(() => {
+                                return expect.fail();
+                            })
                             .catch(err => {
-                                expect(err.message).to.equal('Unable to connect to any of the target hosts.');
+                                expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MULTI_HOST_CONNECTION_FAILED);
                                 return session1.close();
                             });
                     });
@@ -158,9 +161,11 @@ describe('connecting with a list of MySQL servers', () => {
                     .then(session1 => {
                         expect(session1.inspect().host).to.equal('mysql-single-connection');
                         return mysqlx.getSession(uri)
-                            .then(() => expect.fail())
+                            .then(() => {
+                                return expect.fail();
+                            })
                             .catch(err => {
-                                expect(err.message).to.equal('Unable to connect to any of the target hosts.');
+                                expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MULTI_HOST_CONNECTION_FAILED);
                                 return session1.close();
                             });
                     });

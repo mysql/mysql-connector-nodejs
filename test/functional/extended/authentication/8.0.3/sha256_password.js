@@ -33,9 +33,11 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../../config');
+const errors = require('../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../../..');
 const path = require('path');
+const util = require('util');
 
 describe('sha256_password authentication plugin on MySQL 8.0.3', () => {
     // server container (defined in docker.compose.yml)
@@ -59,10 +61,12 @@ describe('sha256_password authentication plugin on MySQL 8.0.3', () => {
             const authConfig = Object.assign({}, config, baseConfig, { socket: undefined, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1045);
+                    return expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                 });
         });
 
@@ -84,10 +88,12 @@ describe('sha256_password authentication plugin on MySQL 8.0.3', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: true } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1045);
+                    return expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                 });
         });
 
@@ -95,10 +101,12 @@ describe('sha256_password authentication plugin on MySQL 8.0.3', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1045);
+                    return expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                 });
         });
 
@@ -106,10 +114,12 @@ describe('sha256_password authentication plugin on MySQL 8.0.3', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1045);
+                    return expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                 });
         });
     });
@@ -131,10 +141,12 @@ describe('sha256_password authentication plugin on MySQL 8.0.3', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1251);
+                    return expect(err.info.code).to.equal(errors.ER_NOT_SUPPORTED_AUTH_MODE);
                 });
         });
 
@@ -156,24 +168,30 @@ describe('sha256_password authentication plugin on MySQL 8.0.3', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: true } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('SHA256_MEMORY authentication is not supported by the server.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY')));
         });
 
         it('fails over regular TLS', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('SHA256_MEMORY authentication is not supported by the server.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY')));
         });
 
         it('fails over a Unix socket', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('SHA256_MEMORY authentication is not supported by the server.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY')));
         });
     });
 });

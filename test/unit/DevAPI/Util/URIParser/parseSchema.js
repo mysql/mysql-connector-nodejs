@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const parseSchema = require('../../../../../lib/DevAPI/Util/URIParser/parseSchema');
 
@@ -52,7 +53,7 @@ describe('parseSchema', () => {
 
     it('throws na error if the schema name is not valid', () => {
         ['/foo/bar', '/foo#bar', '/foo[bar', '/foo]bar'].forEach(schema => {
-            expect(() => parseSchema(schema)).to.throw('Invalid schema name');
+            expect(() => parseSchema(schema)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_SCHEMA_NAME);
         });
     });
 });

@@ -52,7 +52,7 @@ describe('connecting to unavailable servers with a timeout', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
                 });
         });
 
@@ -65,7 +65,7 @@ describe('connecting to unavailable servers with a timeout', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
                 });
         });
     });

@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../config');
+const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../fixtures');
 const mysqlx = require('../../../');
@@ -71,8 +72,12 @@ describe('schema validation behavior on older servers', () => {
         const options = { validation: { schema: jsonSchema, level: mysqlx.Schema.ValidationLevel.STRICT } };
 
         return schema.createCollection('test', options)
-            .then(() => expect.fail())
-            .catch(err => expect(err.message).to.equal('Your MySQL server does not support the requested operation. Please update to MySQL 8.0.19 or a later version.'));
+            .then(() => {
+                return expect.fail();
+            })
+            .catch(err => {
+                return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_COLLECTION_OPTIONS_NOT_SUPPORTED);
+            });
     });
 
     it('re-uses an existing collection without a schema', () => {
@@ -87,7 +92,11 @@ describe('schema validation behavior on older servers', () => {
         const options = { validation: { schema: jsonSchema, level: mysqlx.Schema.ValidationLevel.STRICT } };
 
         return schema.modifyCollection('test', options)
-            .then(() => expect.fail())
-            .catch(err => expect(err.message).to.equal('Your MySQL server does not support the requested operation. Please update to MySQL 8.0.19 or a later version.'));
+            .then(() => {
+                return expect.fail();
+            })
+            .catch(err => {
+                return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_COLLECTION_OPTIONS_NOT_SUPPORTED);
+            });
     });
 });

@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const parseUri = require('../../../../../../lib/DevAPI/Util/URIParser');
 
@@ -39,16 +40,16 @@ describe('parsing the authority component', () => {
     context('when a connection string does not contain the required details', () => {
         it('fails to parse', () => {
             let connectionString = '';
-            expect(() => parseUri(connectionString)).throw('Invalid URI');
+            expect(() => parseUri(connectionString)).throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_FORMAT);
 
             connectionString = ' ';
-            expect(() => parseUri(connectionString)).throw('Invalid URI');
+            expect(() => parseUri(connectionString)).throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_FORMAT);
         });
     });
 
     context('when a connection string contains an invalid host', () => {
         it('fails to parse', () => {
-            expect(() => parseUri('mysql#x')).to.throw(Error, 'Invalid URI');
+            expect(() => parseUri('mysql#x')).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_HOST);
         });
     });
 

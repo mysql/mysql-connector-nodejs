@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const skipping = require('../../../lib/DevAPI/Skipping');
 const td = require('testdouble');
@@ -54,7 +55,7 @@ describe('Skipping', () => {
         });
 
         it('throws an error if the value is not valid', () => {
-            return expect(() => skipping().offset(-10)).to.throw('The offset value must be a non-negative integer.');
+            return expect(() => skipping().offset(-10)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_OFFSET_INPUT);
         });
     });
 
@@ -79,7 +80,7 @@ describe('Skipping', () => {
         });
 
         it('throws an error if the limit offset is not valid', () => {
-            return expect(() => skipping().limit(10, -10)).to.throw('The offset value must be a non-negative integer.');
+            return expect(() => skipping().limit(10, -10)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_OFFSET_INPUT);
         });
     });
 });

@@ -34,6 +34,7 @@
 
 const config = require('../../../config');
 const crypto = require('crypto');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -160,7 +161,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -248,7 +249,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -363,7 +364,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -451,7 +452,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -614,7 +615,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -737,7 +738,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -840,7 +841,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -928,7 +929,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -1061,7 +1062,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -1183,7 +1184,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -1296,7 +1297,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -1384,7 +1385,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -1493,7 +1494,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -1581,7 +1582,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -1734,7 +1735,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -1857,7 +1858,7 @@ describe('connecting to a default schema', () => {
                             .then(() => expect.fail())
                             .catch(err => {
                                 expect(err.info).to.include.keys('code');
-                                expect(err.info.code).to.equal(1049);
+                                expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                             });
                     });
                 });
@@ -2035,7 +2036,7 @@ describe('connecting to a default schema', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1049);
+                        expect(err.info.code).to.equal(errors.ER_BAD_DB_ERROR);
                     });
             });
         });

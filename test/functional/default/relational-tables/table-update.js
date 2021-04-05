@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -112,8 +113,12 @@ describe('updating data in a table', () => {
             .where()
             .set('name', 'foo')
             .execute()
-            .then(() => expect.fail())
-            .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
+            .then(() => {
+                return expect.fail();
+            })
+            .catch(err => {
+                return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA);
+            });
     });
 
     it('updates a given number of rows', () => {
@@ -151,7 +156,7 @@ describe('updating data in a table', () => {
                 .then(() => expect.fail())
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5152);
+                    expect(err.info.code).to.equal(errors.ER_X_EXPR_MISSING_ARG);
                 });
         });
     });

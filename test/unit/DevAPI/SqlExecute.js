@@ -34,21 +34,24 @@
 
 const expect = require('chai').expect;
 const td = require('testdouble');
+const warnings = require('../../../lib/constants/warnings');
 
 // subject under test needs to be reloaded with replacement fakes
 let sqlExecute = require('../../../lib/DevAPI/SqlExecute');
 
 describe('SqlExecute', () => {
-    let deprecated, getAlias, result, sqlStmtExecute;
+    let getAlias, result, sqlStmtExecute, warning;
 
     beforeEach('create fakes', () => {
-        deprecated = td.function();
         getAlias = td.function();
-        result = td.function();
         sqlStmtExecute = td.function();
+        warning = td.function();
 
-        td.replace('../../../lib/DevAPI/Util/deprecated', deprecated);
-        td.replace('../../../lib/DevAPI/SqlResult', result);
+        const logger = td.replace('../../../lib/logger');
+        td.when(logger('api:session:sql')).thenReturn({ warning });
+
+        result = td.replace('../../../lib/DevAPI/SqlResult');
+
         sqlExecute = require('../../../lib/DevAPI/SqlExecute');
     });
 
@@ -116,7 +119,7 @@ describe('SqlExecute', () => {
                 });
         });
 
-        it('calls a result handler provided as an `execute` argument', () => {
+        it('calls a result handler provided as an argument', () => {
             const getClient = td.function();
             const isIdle = td.function();
             const isOpen = td.function();
@@ -133,7 +136,7 @@ describe('SqlExecute', () => {
             });
         });
 
-        it('calls a metadata handler provided as an `execute` argument', () => {
+        it('calls a metadata handler provided as an argument', () => {
             const getClient = td.function();
             const isIdle = td.function();
             const isOpen = td.function();
@@ -153,8 +156,7 @@ describe('SqlExecute', () => {
             });
         });
 
-        // Deprecated since release 8.0.22
-        it('calls a handlers provided as an `execute` object argument', () => {
+        it('generates a deprecation warning whilst calling handlers provided as an object argument', () => {
             const getClient = td.function();
             const isIdle = td.function();
             const isOpen = td.function();
@@ -177,7 +179,8 @@ describe('SqlExecute', () => {
                     expect(actual[0].getColumnLabel()).to.equal('bar');
                 }
             }).then(() => {
-                return expect(td.explain(deprecated).callCount).to.equal(1);
+                expect(td.explain(warning).callCount).to.equal(1);
+                return expect(td.explain(warning).calls[0].args).to.deep.equal(['execute', warnings.MESSAGES.WARN_DEPRECATED_EXECUTE_CURSOR_OBJECT, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
             });
         });
 

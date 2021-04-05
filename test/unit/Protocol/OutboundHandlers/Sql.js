@@ -43,7 +43,7 @@ describe('Mysqlx.Sql outbound handler', () => {
 
     beforeEach('create fakes', () => {
         stmtExecute = td.replace('../../../../lib/Protocol/Wrappers/Messages/Sql/StmtExecute');
-        logger = td.replace('../../../../lib/tool/log');
+        logger = td.replace('../../../../lib/logger');
 
         info = td.function();
         td.when(logger('protocol:outbound:Mysqlx.Sql')).thenReturn({ info });

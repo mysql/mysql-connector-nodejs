@@ -175,8 +175,12 @@ describe('Collection', () => {
             td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
 
             return instance.count()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal("Collection 'bar.baz' doesn't exist."));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal("Collection 'bar.baz' doesn't exist.");
+                });
         });
     });
 
@@ -392,7 +396,7 @@ describe('Collection', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
                 });
         });
 
@@ -470,7 +474,7 @@ describe('Collection', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
                 });
         });
 
@@ -485,8 +489,12 @@ describe('Collection', () => {
             td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
             return instance.addOrReplaceOne('foo', { name: 'bar' })
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
     });
 
@@ -589,16 +597,24 @@ describe('Collection', () => {
             td.when(collectionRemove('bar', 'baz', 'qux', criteria)).thenReturn({ execute });
 
             return instance.removeOne(documentId)
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
     });
 
     context('dropIndex()', () => {
         it('does not accept an invalid index name', () => {
             return collection().dropIndex()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Invalid index name.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_NAME);
+                });
         });
 
         it('accepts valid index name', () => {
@@ -642,8 +658,12 @@ describe('Collection', () => {
             td.when(sqlExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
 
             return instance.dropIndex('index')
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(error.message));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(error.message);
+                });
         });
     });
 
@@ -714,20 +734,32 @@ describe('Collection', () => {
         context('fails with', () => {
             it('an invalid index name', () => {
                 return collection().createIndex()
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Invalid index name.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_NAME);
+                    });
             });
 
             it('an index definition without a valid field list', () => {
                 return collection().createIndex('index', {})
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Invalid index definition.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+                    });
             });
 
             it('an index definition with an empty field list', () => {
                 return collection().createIndex('index', { fields: [] })
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Invalid index definition.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+                    });
             });
 
             it('an index definition with an invalid field definition', () => {
@@ -739,8 +771,12 @@ describe('Collection', () => {
                 };
 
                 return collection().createIndex('index', index)
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Invalid index definition.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+                    });
             });
 
             it('an index definition with any of the field definitions missing the document field', () => {
@@ -751,8 +787,12 @@ describe('Collection', () => {
                 };
 
                 return collection().createIndex('index', index)
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Invalid index definition.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+                    });
             });
 
             it('an index definition with any of the field definitions missing its type', () => {
@@ -763,8 +803,12 @@ describe('Collection', () => {
                 };
 
                 return collection().createIndex('index', index)
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Invalid index definition.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+                    });
             });
 
             it('an index definition enabling uniqueness', () => {
@@ -777,8 +821,12 @@ describe('Collection', () => {
                 };
 
                 return collection().createIndex('index', index)
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Unique indexes are currently not supported.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_UNIQUE_INDEX);
+                    });
             });
         });
     });

@@ -45,7 +45,7 @@ describe('Mysqlx.Prepare outbound handler', () => {
         deallocate = td.replace('../../../../lib/Protocol/Wrappers/Messages/Prepare/Deallocate');
         execute = td.replace('../../../../lib/Protocol/Wrappers/Messages/Prepare/Execute');
         prepare = td.replace('../../../../lib/Protocol/Wrappers/Messages/Prepare/Prepare');
-        logger = td.replace('../../../../lib/tool/log');
+        logger = td.replace('../../../../lib/logger');
 
         info = td.function();
         td.when(logger('protocol:outbound:Mysqlx.Prepare')).thenReturn({ info });

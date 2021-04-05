@@ -123,7 +123,7 @@ describe('X DevAPI Connection', () => {
             const allowsAuthenticationWith = td.replace(con, 'allowsAuthenticationWith');
             const authenticateWith = td.replace(con, 'authenticateWith');
             const error = new Error();
-            error.info = { code: errors.ERR_AUTHENTICATION_FAILED };
+            error.info = { code: errors.ER_ACCESS_DENIED_ERROR };
 
             td.when(getAuth()).thenReturn('foo');
             td.when(allowsAuthenticationRetry()).thenReturn(true);
@@ -150,7 +150,7 @@ describe('X DevAPI Connection', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_AUTH_UNSUPPORTED_SERVER, 'foo'));
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'foo'));
                 });
         });
 
@@ -182,7 +182,7 @@ describe('X DevAPI Connection', () => {
             const allowsAuthenticationWith = td.replace(con, 'allowsAuthenticationWith');
             const authenticateWith = td.replace(con, 'authenticateWith');
             const error = new Error();
-            error.info = { code: errors.ERR_AUTHENTICATION_FAILED };
+            error.info = { code: errors.ER_ACCESS_DENIED_ERROR };
 
             td.when(getAuth()).thenReturn('foo');
             td.when(allowsAuthenticationRetry()).thenReturn(false);
@@ -205,7 +205,7 @@ describe('X DevAPI Connection', () => {
             const allowsAuthenticationWith = td.replace(con, 'allowsAuthenticationWith');
             const authenticateWith = td.replace(con, 'authenticateWith');
             const authenticationError = new Error();
-            authenticationError.info = { code: errors.ERR_AUTHENTICATION_FAILED };
+            authenticationError.info = { code: errors.ER_ACCESS_DENIED_ERROR };
 
             td.when(getAuth()).thenReturn('foo');
             td.when(allowsAuthenticationRetry()).thenReturn(true);
@@ -217,7 +217,7 @@ describe('X DevAPI Connection', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_AUTH_UNSUPPORTED_SERVER, 'foo'));
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'foo'));
                 });
         });
 
@@ -228,7 +228,7 @@ describe('X DevAPI Connection', () => {
             const allowsAuthenticationWith = td.replace(con, 'allowsAuthenticationWith');
             const authenticateWith = td.replace(con, 'authenticateWith');
             const authenticationError = new Error();
-            authenticationError.info = { code: errors.ERR_AUTHENTICATION_FAILED };
+            authenticationError.info = { code: errors.ER_ACCESS_DENIED_ERROR };
             const unexpectedError = new Error();
             unexpectedError.info = { code: -1 };
 
@@ -254,7 +254,7 @@ describe('X DevAPI Connection', () => {
             const allowsAuthenticationRetry = td.replace(con, 'allowsAuthenticationRetry');
             const authenticateWith = td.replace(con, 'authenticateWith');
             const error = new Error();
-            error.info = { code: errors.ERR_AUTHENTICATION_FAILED };
+            error.info = { code: errors.ER_ACCESS_DENIED_ERROR };
 
             td.when(getAuth()).thenReturn('foo');
             td.when(allowsAuthenticationRetry()).thenReturn(true);
@@ -266,7 +266,7 @@ describe('X DevAPI Connection', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_AUTH_MORE_INFO);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_AUTH_MORE_INFO);
                 });
         });
     });
@@ -486,7 +486,7 @@ describe('X DevAPI Connection', () => {
             const destroy = td.function();
             const con = connection({ connectionAttributes: false }).setClient(new Client());
             const unknownCapabilityError = new Error(`Capability '${capability}' doesn't exist`);
-            unknownCapabilityError.info = { code: errors.ERR_UNKNOWN_CAPABILITY };
+            unknownCapabilityError.info = { code: errors.ER_X_CAPABILITY_NOT_FOUND };
 
             td.when(Client.prototype.capabilitiesSet(), { ignoreExtraArgs: true }).thenReject(unknownCapabilityError);
             td.when(Client.prototype.getConnection()).thenReturn({ destroy });
@@ -506,7 +506,7 @@ describe('X DevAPI Connection', () => {
 
         it('fails when the X Plugin does not allow to enable TLS', () => {
             const tlsError = new Error("Capability prepare failed for 'tls'");
-            tlsError.info = { code: errors.ERR_CAPABILITY_PREPARE_FAILED };
+            tlsError.info = { code: errors.ER_X_CAPABILITIES_PREPARE_FAILED };
 
             td.when(Client.prototype.capabilitiesSet(), { ignoreExtraArgs: true }).thenReject(tlsError);
 
@@ -515,14 +515,14 @@ describe('X DevAPI Connection', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_DISABLED_IN_SERVER);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SERVER_TLS);
                 });
         });
 
         it('fails when the X Plugin fails to prepare a capability not related to TLS', () => {
             const message = "Capability prepare failed for 'foo'";
             const capabilityPrepareError = new Error(message);
-            capabilityPrepareError.info = { code: errors.ERR_CAPABILITY_PREPARE_FAILED };
+            capabilityPrepareError.info = { code: errors.ER_X_CAPABILITIES_PREPARE_FAILED };
 
             td.when(Client.prototype.capabilitiesSet(), { ignoreExtraArgs: true }).thenReject(capabilityPrepareError);
 
@@ -733,7 +733,7 @@ describe('X DevAPI Connection', () => {
 
                 return con.connect()
                     .catch(err => {
-                        return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_SINGLE_HOST_CONNECTION_TIMEOUT, connectTimeout));
+                        return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_CONNECTION_TIMEOUT, connectTimeout));
                     });
             });
         });
@@ -823,7 +823,7 @@ describe('X DevAPI Connection', () => {
                         return expect.fail();
                     })
                     .catch(err => {
-                        expect(err.message).to.equal(errors.MESSAGES.ERR_MULTI_HOST_CONNECTION_FAILURE);
+                        expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MULTI_HOST_CONNECTION_FAILED);
                     });
             });
 
@@ -841,7 +841,7 @@ describe('X DevAPI Connection', () => {
 
                 return con.connect()
                     .catch(err => {
-                        return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_MULTI_HOST_CONNECTION_TIMEOUT, connectTimeout));
+                        return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_MULTI_HOST_CONNECTION_TIMEOUT, connectTimeout));
                     });
             });
         });
@@ -981,7 +981,7 @@ describe('X DevAPI Connection', () => {
             const hasMoreEndpointsAvailable = td.replace(con, 'hasMoreEndpointsAvailable');
             // example of a non-fatal error
             const nonFatalError = new Error("Capability 'foo' doesn't exist");
-            nonFatalError.info = { code: errors.ERR_UNKNOWN_CAPABILITY };
+            nonFatalError.info = { code: errors.ER_X_CAPABILITY_NOT_FOUND };
 
             // The connection using the refurbished socket should be
             // effectively open.
@@ -1113,7 +1113,7 @@ describe('X DevAPI Connection', () => {
             socket.getProtocol = td.function();
 
             Client = td.replace('../../../lib/Protocol/Client');
-            log = td.replace('../../../lib/tool/log');
+            log = td.replace('../../../lib/logger');
             secureContext = td.replace('../../../lib/tls/secure-context');
             tlsVersions = td.replace('../../../lib/tls/versions');
             tls = td.replace('tls');
@@ -1167,7 +1167,7 @@ describe('X DevAPI Connection', () => {
                     expect(td.explain(warning).calls[0].args).to.be.an('array').and.have.lengthOf(3);
                     expect(td.explain(warning).calls[0].args[0]).to.equal('version');
                     expect(td.explain(warning).calls[0].args[1]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'qux'));
-                    return expect(td.explain(warning).calls[0].args[2]).to.deep.equal({ type: 'DeprecationWarning' });
+                    return expect(td.explain(warning).calls[0].args[2]).to.deep.equal({ type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION });
                 });
         });
 
@@ -1607,70 +1607,59 @@ describe('X DevAPI Connection', () => {
     });
 
     context('Connection.validate()', () => {
-        let secureContext, srv;
+        let logger, secureContext, srv;
 
         beforeEach('create fakes', () => {
+            logger = td.replace('../../../lib/logger');
             secureContext = td.replace('../../../lib/tls/secure-context');
             srv = td.replace('../../../lib/topology/dns-srv');
 
             connection = require('../../../lib/DevAPI/Connection');
         });
 
-        it('displays a deprecation warning for each deprecated property', done => {
+        it('generates a deprecation warning for each deprecated property', () => {
             const options = { dbPassword: 'foo', dbUser: 'bar', ssl: 'baz', sslOptions: 'qux' };
-            const totalWarnings = Object.keys(options).length;
-            const warningMessages = [];
+            const warning = td.function();
 
-            let warningCount = 0;
+            td.when(logger('connection:options')).thenReturn({ warning });
 
-            process.on('warning', warning => {
-                warningCount += 1;
+            connection.validate(options);
 
-                if (warningCount < totalWarnings) {
-                    return warningMessages.push(warning.message);
-                }
-
-                process.removeAllListeners('warning');
-
-                expect(warningMessages).to.have.not.ordered.members([
-                    warnings.MESSAGES.WARN_DEPRECATED_DB_PASSWORD,
-                    warnings.MESSAGES.WARN_DEPRECATED_DB_USER,
-                    warnings.MESSAGES.WARN_DEPRECATED_SSL_OPTION,
-                    warnings.MESSAGES.WARN_DEPRECATED_SSL_ADDITIONAL_OPTIONS
-                ]);
-
-                return done();
-            });
-
-            return connection.validate(options);
+            expect(td.explain(warning).callCount).to.equal(4);
+            expect(td.explain(warning).calls[0].args).to.deep.equal(['dbPassword', warnings.MESSAGES.WARN_DEPRECATED_DB_PASSWORD, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
+            expect(td.explain(warning).calls[1].args).to.deep.equal(['dbUser', warnings.MESSAGES.WARN_DEPRECATED_DB_USER, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
+            expect(td.explain(warning).calls[2].args).to.deep.equal(['ssl', warnings.MESSAGES.WARN_DEPRECATED_SSL_OPTION, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
+            expect(td.explain(warning).calls[3].args).to.deep.equal(['sslOptions', warnings.MESSAGES.WARN_DEPRECATED_SSL_ADDITIONAL_OPTIONS, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
         });
 
         it('fails if some TLS option is badly specified', () => {
             const tlsOptions = { tls: 'foo', ssl: 'bar', sslOptions: 'baz' };
             const error = new Error('foobar');
+            const warning = td.function();
 
+            td.when(logger('connection:options')).thenReturn({ warning });
             td.when(secureContext.validate(tlsOptions)).thenThrow(error);
 
             return expect(() => connection.validate(tlsOptions)).to.throw(error);
         });
 
         it('fails if the connection timeout is badly specified', () => {
-            expect(() => connection.validate({ connectTimeout: -1 })).to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
-            expect(() => connection.validate({ connectTimeout: 'foo' })).to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
-            expect(() => connection.validate({ connectTimeout: false })).to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
-            expect(() => connection.validate({ connectTimeout: [] })).to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
-            return expect(() => connection.validate({ connectTimeout: {} })).to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+            expect(() => connection.validate({ connectTimeout: -1 })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
+            expect(() => connection.validate({ connectTimeout: 'foo' })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
+            expect(() => connection.validate({ connectTimeout: false })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
+            expect(() => connection.validate({ connectTimeout: [] })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
+            return expect(() => connection.validate({ connectTimeout: {} })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
         });
 
         it('fails if the connection attributes are badly specified', () => {
-            expect(() => connection.validate({ connectionAttributes: -1 })).to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
-            expect(() => connection.validate({ connectionAttributes: 'foo' })).to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
-            expect(() => connection.validate({ connectionAttributes: null })).to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
-            return expect(() => connection.validate({ connectionAttributes: [] })).to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+            expect(() => connection.validate({ connectionAttributes: -1 })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
+            expect(() => connection.validate({ connectionAttributes: 'foo' })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
+            expect(() => connection.validate({ connectionAttributes: null })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
+            return expect(() => connection.validate({ connectionAttributes: [] })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
         });
 
         it('fails if a connection attribute name starts with "_"', () => {
-            return expect(() => connection.validate({ connectionAttributes: { _foo: 'bar' } })).to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+            return expect(() => connection.validate({ connectionAttributes: { _foo: 'bar' } })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTE_NAME);
         });
 
         it('fails if the SRV setup is badly specified', () => {
@@ -1683,13 +1672,13 @@ describe('X DevAPI Connection', () => {
         });
 
         it('fails if the port is not in the valid range', () => {
-            expect(() => connection.validate({ port: 'foo' })).to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
-            expect(() => connection.validate({ port: -1 })).to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
-            expect(() => connection.validate({ port: 65537 })).to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+            expect(() => connection.validate({ port: 'foo' })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
+            expect(() => connection.validate({ port: -1 })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
+            expect(() => connection.validate({ port: 65537 })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
 
-            expect(() => connection.validate({ endpoints: [{ port: 8080 }, { port: 'foo' }] })).to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
-            expect(() => connection.validate({ endpoints: [{ port: 8080 }, { port: -1 }] })).to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
-            return expect(() => connection.validate({ endpoints: [{ port: 8080 }, { port: 65537 }] })).to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+            expect(() => connection.validate({ endpoints: [{ port: 8080 }, { port: 'foo' }] })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
+            expect(() => connection.validate({ endpoints: [{ port: 8080 }, { port: -1 }] })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
+            return expect(() => connection.validate({ endpoints: [{ port: 8080 }, { port: 65537 }] })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
         });
     });
 });

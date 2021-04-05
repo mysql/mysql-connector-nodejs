@@ -32,20 +32,27 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const td = require('testdouble');
 const updating = require('../../../lib/DevAPI/Updating');
+const warnings = require('../../../lib/constants/warnings');
+const util = require('util');
 
 // subject under test needs to be reloaded with replacement fakes
 let collectionModify = require('../../../lib/DevAPI/CollectionModify');
 
 describe('CollectionModify', () => {
-    let preparing;
+    let preparing, warning;
 
     beforeEach('create fakes', () => {
-        preparing = td.function();
+        warning = td.function();
 
-        td.replace('../../../lib/DevAPI/Preparing', preparing);
+        preparing = td.replace('../../../lib/DevAPI/Preparing');
+
+        const logger = td.replace('../../../lib/logger');
+        td.when(logger('api:collection:modify')).thenReturn({ warning });
+
         collectionModify = require('../../../lib/DevAPI/CollectionModify');
     });
 
@@ -89,6 +96,28 @@ describe('CollectionModify', () => {
             const query = collectionModify(connection);
 
             return expect(query.setOperations(existing).arrayAppend('bar', 'baz').getOperations()).to.deep.equal(expected);
+        });
+    });
+
+    context('arrayDelete()', () => {
+        it('unsets an item from an array', () => {
+            const statement = collectionModify();
+            const unset = td.replace(statement, 'unset');
+
+            statement.arrayDelete('foo');
+
+            expect(td.explain(unset).callCount).to.equal(1);
+            return expect(td.explain(unset).calls[0].args).to.deep.equal(['foo']);
+        });
+
+        it('generates a deprecation warning', () => {
+            const statement = collectionModify();
+            td.replace(statement, 'unset');
+
+            statement.arrayDelete('foo');
+
+            expect(td.explain(warning).callCount).to.equal(1);
+            return expect(td.explain(warning).calls[0].args).to.deep.equal(['arrayDelete', warnings.MESSAGES.WARN_DEPRECATED_ARRAY_DELETE, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
         });
     });
 
@@ -138,7 +167,7 @@ describe('CollectionModify', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal('An explicit criteria needs to be provided with modify().');
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_MISSING_DOCUMENT_CRITERIA, 'modify()'));
                 });
         });
 
@@ -148,7 +177,7 @@ describe('CollectionModify', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal('An explicit criteria needs to be provided with modify().');
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_MISSING_DOCUMENT_CRITERIA, 'modify()'));
                 });
         });
 
@@ -158,7 +187,7 @@ describe('CollectionModify', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal('An explicit criteria needs to be provided with modify().');
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_MISSING_DOCUMENT_CRITERIA, 'modify()'));
                 });
         });
 

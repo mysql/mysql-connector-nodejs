@@ -46,7 +46,7 @@ describe('Mysqlx.Crud outbound handler', () => {
         crudFind = td.replace('../../../../lib/Protocol/Wrappers/Messages/Crud/Find');
         crudInsert = td.replace('../../../../lib/Protocol/Wrappers/Messages/Crud/Insert');
         crudUpdate = td.replace('../../../../lib/Protocol/Wrappers/Messages/Crud/Update');
-        logger = td.replace('../../../../lib/tool/log');
+        logger = td.replace('../../../../lib/logger');
 
         info = td.function();
         td.when(logger('protocol:outbound:Mysqlx.Crud')).thenReturn({ info });

@@ -46,7 +46,7 @@ describe('Mysqlx.Session outbound handler', () => {
         authenticateContinue = td.replace('../../../../lib/Protocol/Wrappers/Messages/Session/AuthenticateContinue');
         close = td.replace('../../../../lib/Protocol/Wrappers/Messages/Session/Close');
         reset = td.replace('../../../../lib/Protocol/Wrappers/Messages/Session/Reset');
-        logger = td.replace('../../../../lib/tool/log');
+        logger = td.replace('../../../../lib/logger');
 
         info = td.function();
         td.when(logger('protocol:outbound:Mysqlx.Session')).thenReturn({ info });

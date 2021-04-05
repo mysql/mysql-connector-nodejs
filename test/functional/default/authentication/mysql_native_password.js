@@ -34,6 +34,7 @@
 
 const config = require('../../../config');
 const crypto = require('crypto');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -96,7 +97,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
 
@@ -108,7 +109,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
         });
@@ -162,7 +163,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
 
@@ -174,7 +175,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
         });
@@ -253,7 +254,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
 
@@ -270,7 +271,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
         });
@@ -328,7 +329,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
 
@@ -340,7 +341,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
         });
@@ -394,7 +395,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
 
@@ -406,7 +407,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
         });
@@ -485,7 +486,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
 
@@ -502,7 +503,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
         });
@@ -607,7 +608,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
 
@@ -619,7 +620,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
         });
@@ -652,7 +653,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1251);
+                        expect(err.info.code).to.equal(errors.ER_NOT_SUPPORTED_AUTH_MODE);
                     });
             });
 
@@ -664,7 +665,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1251);
+                        expect(err.info.code).to.equal(errors.ER_NOT_SUPPORTED_AUTH_MODE);
                     });
             });
         });
@@ -743,7 +744,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
 
@@ -760,7 +761,7 @@ describe('mysql_native_password authentication plugin', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                     });
             });
         });
@@ -798,7 +799,7 @@ describe('mysql_native_password authentication plugin', () => {
                         .then(() => expect.fail())
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                         });
                 });
 
@@ -810,7 +811,7 @@ describe('mysql_native_password authentication plugin', () => {
                         .then(() => expect.fail())
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                         });
                 });
             });
@@ -843,7 +844,7 @@ describe('mysql_native_password authentication plugin', () => {
                         .then(() => expect.fail())
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                         });
                 });
 
@@ -855,7 +856,7 @@ describe('mysql_native_password authentication plugin', () => {
                         .then(() => expect.fail())
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                         });
                 });
             });
@@ -904,7 +905,7 @@ describe('mysql_native_password authentication plugin', () => {
                         .then(() => expect.fail())
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                         });
                 });
 
@@ -921,7 +922,7 @@ describe('mysql_native_password authentication plugin', () => {
                         .then(() => expect.fail())
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                         });
                 });
             });

@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../../config');
+const errors = require('../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../../..');
 const path = require('path');
@@ -52,10 +53,12 @@ describe('sha256_password authentication plugin on MySQL 8.0.15', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: true } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1045);
+                    return expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                 });
         });
 
@@ -63,10 +66,12 @@ describe('sha256_password authentication plugin on MySQL 8.0.15', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1045);
+                    return expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                 });
         });
 
@@ -74,10 +79,12 @@ describe('sha256_password authentication plugin on MySQL 8.0.15', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1045);
+                    return expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
                 });
         });
     });

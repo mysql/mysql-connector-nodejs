@@ -92,7 +92,7 @@ describe('Client', () => {
             const client = new Client();
             const classicServerGreeting = Buffer.from('010000000a', 'hex');
 
-            expect(() => client.decodeMessage(classicServerGreeting)).to.throw(errors.MESSAGES.ERR_WIRE_PROTOCOL_HEADER);
+            expect(() => client.decodeMessage(classicServerGreeting)).to.throw(errors.MESSAGES.ER_CLIENT_NO_X_PROTOCOL);
         });
 
         it('throws an error if the server sends an incomplete protocol message', () => {
@@ -102,7 +102,7 @@ describe('Client', () => {
 
             td.when(decodeMessageHeader(message)).thenReturn({ packetLength: 11 });
 
-            expect(() => client.decodeMessage(message)).to.throw(errors.MESSAGES.ERR_INCOMPLETE_PROTOCOL_MESSAGE);
+            expect(() => client.decodeMessage(message)).to.throw(errors.MESSAGES.ER_DEVAPI_INCOMPLETE_PROTOCOL_MESSAGE);
         });
     });
 
@@ -125,7 +125,7 @@ describe('Client', () => {
             const client = new Client();
             const emptyMessage = Buffer.alloc(0);
 
-            expect(() => client.decodeMessageHeader(emptyMessage)).to.throw(errors.MESSAGES.ERR_UNKNOWN_PROTOCOL_HEADER);
+            expect(() => client.decodeMessageHeader(emptyMessage)).to.throw(errors.MESSAGES.ER_X_CLIENT_UNKNOWN_PROTOCOL_HEADER);
         });
     });
 

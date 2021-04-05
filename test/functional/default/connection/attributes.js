@@ -302,7 +302,7 @@ describe('connection attributes', () => {
                         return expect.fail();
                     })
                     .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
                     });
             });
 
@@ -315,7 +315,7 @@ describe('connection attributes', () => {
                         return expect.fail();
                     })
                     .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTE_NAME);
                     });
             });
         });
@@ -393,7 +393,7 @@ describe('connection attributes', () => {
                         return expect.fail();
                     })
                     .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
                     });
             });
 
@@ -407,7 +407,7 @@ describe('connection attributes', () => {
                         return expect.fail();
                     })
                     .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTE_NAME);
                     });
             });
         });

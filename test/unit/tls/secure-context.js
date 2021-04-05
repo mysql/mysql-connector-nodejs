@@ -187,7 +187,7 @@ describe('TLS secure context utilities', () => {
 
     context('validate()', () => {
         it('fails when TLS is disabled but defines additional options', () => {
-            const error = errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS;
+            const error = errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS;
 
             expect(() => secureContext.validate({ tls: { enabled: false, ca: 'foo' } })).to.throw(error);
             expect(() => secureContext.validate({ ssl: false, sslOptions: { ca: 'foo' } })).to.throw(error);
@@ -196,7 +196,7 @@ describe('TLS secure context utilities', () => {
         });
 
         it('fails a path to the CA chain PEM file is not valid', () => {
-            const error = errors.MESSAGES.ERR_TLS_INVALID_CA_PATH;
+            const error = errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH;
 
             expect(() => secureContext.validate({ tls: { enabled: true, ca: null } })).to.throw(error);
             expect(() => secureContext.validate({ ssl: true, sslOptions: { ca: null } })).to.throw(error);
@@ -213,7 +213,7 @@ describe('TLS secure context utilities', () => {
         });
 
         it('fails a path to the CA chain PEM file is not valid', () => {
-            const error = errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH;
+            const error = errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH;
 
             expect(() => secureContext.validate({ tls: { enabled: true, crl: null } })).to.throw(error);
             expect(() => secureContext.validate({ ssl: true, sslOptions: { crl: null } })).to.throw(error);
@@ -230,7 +230,7 @@ describe('TLS secure context utilities', () => {
         });
 
         it('fails when the list of TLS versions is badly specified', () => {
-            const error = errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION;
+            const error = errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST;
 
             expect(() => secureContext.validate({ tls: { enabled: true, versions: null } })).to.throw(util.format(error, null));
             expect(() => secureContext.validate({ ssl: true, tls: { versions: null } })).to.throw(util.format(error, null));
@@ -249,18 +249,18 @@ describe('TLS secure context utilities', () => {
         it('fails when the list of TLS versions contains invalid values', () => {
             td.when(tlsVersions.allowed()).thenReturn(['foo', 'bar']);
 
-            return expect(() => secureContext.validate({ tls: { versions: ['foo', 'bar', 'baz'] } })).to.throw(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'baz', 'foo, bar'));
+            return expect(() => secureContext.validate({ tls: { versions: ['foo', 'bar', 'baz'] } })).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'baz', 'foo, bar'));
         });
 
         it('fails when none of the TLS versions in the list are supported', () => {
             td.when(tlsVersions.allowed()).thenReturn(['foo', 'bar', 'baz', 'qux']);
             td.when(tlsVersions.supported()).thenReturn(['foo', 'bar']);
 
-            return expect(() => secureContext.validate({ tls: { versions: ['baz', 'qux'] } })).to.throw(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE);
+            return expect(() => secureContext.validate({ tls: { versions: ['baz', 'qux'] } })).to.throw(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
         });
 
         it('fails when the list of ciphersuites is badly specified', () => {
-            const error = errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION;
+            const error = errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST;
 
             // We need to allow and support at least one version.
             td.when(tlsVersions.allowed()).thenReturn(['foo']);
@@ -289,7 +289,7 @@ describe('TLS secure context utilities', () => {
 
             td.when(tlsCiphers.overlaps(ciphersuites)).thenReturn([]);
 
-            return expect(() => secureContext.validate({ tls: { enabled: true, ciphersuites } })).to.throw(errors.MESSAGES.ERR_TLS_NO_VALID_CIPHERSUITE_AVAILABLE);
+            return expect(() => secureContext.validate({ tls: { enabled: true, ciphersuites } })).to.throw(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_CIPHERSUITE);
         });
     });
 });

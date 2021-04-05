@@ -45,7 +45,7 @@ describe('OkHandler inbound handler', () => {
         info = td.function();
 
         ok = td.replace('../../../../lib/Protocol/Wrappers/Messages/Ok');
-        logger = td.replace('../../../../lib/tool/log');
+        logger = td.replace('../../../../lib/logger');
 
         td.when(logger('protocol:inbound:Mysqlx')).thenReturn({ info });
 

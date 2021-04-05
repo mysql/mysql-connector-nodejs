@@ -73,7 +73,7 @@ describe('connection failures', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_SERVER_GONE_AWAY);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SERVER_GONE_AWAY);
                 });
         });
 
@@ -93,7 +93,7 @@ describe('connection failures', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_CONNECTION_CLOSED);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_CONNECTION_CLOSED);
                 });
         });
     });
@@ -143,7 +143,7 @@ describe('connection failures', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ERR_SERVER_SHUTDOWN);
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_SERVER_SHUTDOWN);
                 });
         });
 

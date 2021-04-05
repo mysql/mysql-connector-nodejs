@@ -32,6 +32,7 @@
 
 const authenticationManager = require('./lib/Authentication/AuthenticationManager');
 const client = require('./lib/DevAPI/Client');
+const errors = require('./lib/constants/errors');
 const expr = require('./lib/Protocol/Wrappers/Messages/Expr/Expr');
 const locking = require('./lib/DevAPI/Locking');
 const mysql41Auth = require('./lib/Authentication/MySQL41Auth');
@@ -75,7 +76,7 @@ function parseConnectionSpec (input, options) {
     const isString = typeof input === 'string';
 
     if (!isPlainObject && !isString) {
-        throw new Error('Invalid parameter. `getSession()` expects a plain JavaScript object, JSON or a connection string');
+        throw new Error(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_DEFINITION);
     }
 
     if (isPlainObject) {

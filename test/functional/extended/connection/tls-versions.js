@@ -30,6 +30,7 @@
 
 /* eslint-env node, mocha */
 
+const Level = require('../../../../lib/logger').Level;
 const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
@@ -99,7 +100,7 @@ describe('TLS version negotiation', () => {
                 const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
                 const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
 
-                return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                     .then(proc => {
                         expect(proc.logs).to.have.lengthOf(0);
                     });
@@ -110,11 +111,11 @@ describe('TLS version negotiation', () => {
                 const warningMessages = [];
 
                 process.on('warning', warning => {
-                    if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                    if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                         warningMessages.push(warning.message);
                     }
 
-                    if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                    if (warning.name && warning.name === 'NoWarning') {
                         process.removeAllListeners('warning');
                         // eslint-disable-next-line no-unused-expressions
                         expect(warningMessages).to.be.empty;
@@ -127,7 +128,7 @@ describe('TLS version negotiation', () => {
                         return sessions.map(session => session.close());
                     })
                     .then(() => {
-                        return process.emitWarning('There are no warnings.', 'NoWarning', 'MYCONNNJS');
+                        return process.emitWarning('There are no warnings.', 'NoWarning');
                     });
             });
         });
@@ -138,7 +139,7 @@ describe('TLS version negotiation', () => {
                     const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
                     const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-new.js');
 
-                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                         .then(proc => {
                             return expect(proc.logs).to.have.lengthOf(0);
                         });
@@ -148,7 +149,7 @@ describe('TLS version negotiation', () => {
                     const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
                     const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-reset.js');
 
-                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                         .then(proc => {
                             return expect(proc.logs).to.have.lengthOf(0);
                         });
@@ -162,11 +163,11 @@ describe('TLS version negotiation', () => {
                     const warningMessages = [];
 
                     process.on('warning', warning => {
-                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                             warningMessages.push(warning.message);
                         }
 
-                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.name === 'NoWarning') {
                             process.removeAllListeners('warning');
                             // eslint-disable-next-line no-unused-expressions
                             expect(warningMessages).to.be.empty;
@@ -190,7 +191,7 @@ describe('TLS version negotiation', () => {
                             return pool.close();
                         })
                         .then(() => {
-                            return process.emitWarning('There are no warnings.', 'NoWarning', 'MYCONNNJS');
+                            return process.emitWarning('There are no warnings.', 'NoWarning');
                         });
                 });
 
@@ -199,11 +200,11 @@ describe('TLS version negotiation', () => {
                     const warningMessages = [];
 
                     process.on('warning', warning => {
-                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                             warningMessages.push(warning.message);
                         }
 
-                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.name === 'NoWarning') {
                             process.removeAllListeners('warning');
                             // eslint-disable-next-line no-unused-expressions
                             expect(warningMessages).to.be.empty;
@@ -222,7 +223,7 @@ describe('TLS version negotiation', () => {
                             return pool.close();
                         })
                         .then(() => {
-                            return process.emitWarning('There are no warnings.', 'NoWarning', 'MYCONNNJS');
+                            return process.emitWarning('There are no warnings.', 'NoWarning');
                         });
                 });
             });
@@ -317,13 +318,13 @@ describe('TLS version negotiation', () => {
                 const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
                 const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
 
-                return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                     .then(proc => {
                         expect(proc.logs).to.have.lengthOf(1);
                         return expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
                     })
                     .then(() => {
-                        return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)]);
+                        return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING });
                     })
                     .then(proc => {
                         expect(proc.logs).to.have.lengthOf(1);
@@ -336,11 +337,11 @@ describe('TLS version negotiation', () => {
                 const warningMessages = [];
 
                 process.on('warning', warning => {
-                    if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                    if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                         warningMessages.push(warning.message);
                     }
 
-                    if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                    if (warning.name && warning.name === 'NoWarning') {
                         process.removeAllListeners('warning');
 
                         expect(warningMessages).to.have.lengthOf(2);
@@ -356,7 +357,7 @@ describe('TLS version negotiation', () => {
                         return sessions.map(session => session.close());
                     })
                     .then(() => {
-                        return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                        return process.emitWarning('No more warnings.', 'NoWarning');
                     });
             });
         });
@@ -367,7 +368,7 @@ describe('TLS version negotiation', () => {
                     const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
                     const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-new.js');
 
-                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                         .then(proc => {
                             expect(proc.logs).to.have.lengthOf(2);
                             expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
@@ -379,7 +380,7 @@ describe('TLS version negotiation', () => {
                     const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
                     const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-reset.js');
 
-                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
                         .then(proc => {
                             expect(proc.logs).to.have.lengthOf(1);
                             return expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
@@ -394,11 +395,11 @@ describe('TLS version negotiation', () => {
                     const warningMessages = [];
 
                     process.on('warning', warning => {
-                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                             warningMessages.push(warning.message);
                         }
 
-                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.name === 'NoWarning') {
                             process.removeAllListeners('warning');
 
                             expect(warningMessages).to.have.lengthOf(2);
@@ -425,7 +426,7 @@ describe('TLS version negotiation', () => {
                             return pool.close();
                         })
                         .then(() => {
-                            return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                            return process.emitWarning('No more warnings.', 'NoWarning');
                         });
                 });
 
@@ -434,11 +435,11 @@ describe('TLS version negotiation', () => {
                     const warningMessages = [];
 
                     process.on('warning', warning => {
-                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
                             warningMessages.push(warning.message);
                         }
 
-                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                        if (warning.name && warning.name === 'NoWarning') {
                             process.removeAllListeners('warning');
 
                             expect(warningMessages).to.have.lengthOf(1);
@@ -459,7 +460,7 @@ describe('TLS version negotiation', () => {
                             return pool.close();
                         })
                         .then(() => {
-                            return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                            return process.emitWarning('No more warnings.', 'NoWarning');
                         });
                 });
             });

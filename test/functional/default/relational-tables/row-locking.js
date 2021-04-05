@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -156,7 +157,7 @@ describe('row locking in table transactions', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(3572);
+                        expect(err.info.code).to.equal(errors.ER_LOCK_NOWAIT);
 
                         return Promise.all([sessionA.commit(), sessionB.commit()]);
                     });
@@ -309,7 +310,7 @@ describe('row locking in table transactions', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1213);
+                        expect(err.info.code).to.equal(errors.ER_LOCK_DEADLOCK);
 
                         return Promise.all([sessionA.commit(), sessionB.commit()]);
                     });
@@ -342,7 +343,7 @@ describe('row locking in table transactions', () => {
                     .then(() => expect.fail())
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(3572);
+                        expect(err.info.code).to.equal(errors.ER_LOCK_NOWAIT);
 
                         return Promise.all([sessionA.commit(), sessionB.commit()]);
                     });

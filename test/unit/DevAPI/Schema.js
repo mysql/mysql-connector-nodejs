@@ -32,21 +32,27 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
-const statement = require('../../../lib/DevAPI/Statement');
 const td = require('testdouble');
+const warnings = require('../../../lib/constants/warnings');
+
+// subject under test needs to be reloaded with replacement fakes
+let schema = require('../../../lib/DevAPI/Schema');
 
 describe('Schema', () => {
-    let databaseObject, execute, schema, sqlExecute;
+    let databaseObject, execute, sqlExecute, warning;
 
     beforeEach('create fakes', () => {
-        databaseObject = td.function();
         execute = td.function();
-        sqlExecute = td.function();
-        sqlExecute.Namespace = statement.Type;
+        warning = td.function();
 
-        td.replace('../../../lib/DevAPI/DatabaseObject', databaseObject);
-        td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
+        databaseObject = td.replace('../../../lib/DevAPI/DatabaseObject');
+        sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+
+        const logger = td.replace('../../../lib/logger');
+        td.when(logger('api:schema')).thenReturn({ warning });
+
         schema = require('../../../lib/DevAPI/Schema');
     });
 
@@ -148,8 +154,12 @@ describe('Schema', () => {
             td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return instance.createCollection('baz')
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
 
         it('returns the instance of a new collection if the option to re-use is enabled', () => {
@@ -180,10 +190,6 @@ describe('Schema', () => {
         });
 
         it('deprecates the "ReuseExistingObject" option', () => {
-            const deprecated = td.function();
-            td.replace('../../../lib/DevAPI/Util/deprecated', deprecated);
-            schema = require('../../../lib/DevAPI/Schema');
-
             const instance = schema('foo', 'bar');
 
             td.when(execute()).thenResolve();
@@ -191,7 +197,8 @@ describe('Schema', () => {
 
             return instance.createCollection('baz', { ReuseExistingObject: true })
                 .then(() => {
-                    expect(td.explain(deprecated).callCount).to.equal(1);
+                    expect(td.explain(warning).callCount).to.equal(1);
+                    return expect(td.explain(warning).calls[0].args).to.deep.equal(['createCollection', warnings.MESSAGES.WARN_DEPRECATED_CREATE_COLLECTION_REUSE_EXISTING, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
                 });
         });
 
@@ -204,8 +211,12 @@ describe('Schema', () => {
             td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return instance.createCollection('baz')
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
 
         it('fails if some unexpected error is thrown even if the option to re-use is enabled', () => {
@@ -217,8 +228,12 @@ describe('Schema', () => {
             td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return instance.createCollection('baz', { reuseExisting: true })
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
 
         it('fails if some unexpected error is thrown even if the option to re-use is enabled alongside additional options', () => {
@@ -231,8 +246,12 @@ describe('Schema', () => {
             td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz', options }], 'mysqlx')).thenReturn({ execute });
 
             return instance.createCollection('baz', { reuseExisting: true, validation: true })
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
 
         it('fails with a custom message if the server does not support schema validation', () => {
@@ -245,8 +264,12 @@ describe('Schema', () => {
             td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz', options }], 'mysqlx')).thenReturn({ execute });
 
             return instance.createCollection('baz', { validation: true })
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Your MySQL server does not support the requested operation. Please update to MySQL 8.0.19 or a later version.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_COLLECTION_OPTIONS_NOT_SUPPORTED);
+                });
         });
 
         it('fails with a custom message if the server does not support schema validation if the option to re-use is enabled', () => {
@@ -259,8 +282,12 @@ describe('Schema', () => {
             td.when(sqlExecute('foo', 'create_collection', [{ schema: 'bar', name: 'baz', options }], 'mysqlx')).thenReturn({ execute });
 
             return instance.createCollection('baz', { reuseExisting: true, validation: true })
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Your MySQL server does not support the requested operation. Please update to MySQL 8.0.19 or a later version.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_COLLECTION_OPTIONS_NOT_SUPPORTED);
+                });
         });
     });
 
@@ -295,8 +322,12 @@ describe('Schema', () => {
             td.when(sqlExecute('foo', 'drop_collection', [{ schema: 'bar', name: 'baz' }], 'mysqlx')).thenReturn({ execute });
 
             return instance.dropCollection('baz')
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
     });
 
@@ -356,8 +387,12 @@ describe('Schema', () => {
             td.when(sqlExecute('foo', 'modify_collection_options', [{ schema: 'bar', name: 'baz', options: { qux: 'quux' } }], 'mysqlx')).thenReturn({ execute });
 
             return instance.modifyCollection('baz', { qux: 'quux' })
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
 
         it('returns the corresponding collection instance if the operation suceeds', () => {
@@ -383,8 +418,12 @@ describe('Schema', () => {
             td.when(sqlExecute('foo', 'modify_collection_options', [{ schema: 'bar', name: 'baz', options: { qux: 'quux' } }], 'mysqlx')).thenReturn({ execute });
 
             return instance.modifyCollection('baz', { qux: 'quux' })
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Your MySQL server does not support the requested operation. Please update to MySQL 8.0.19 or a later version.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_COLLECTION_OPTIONS_NOT_SUPPORTED);
+                });
         });
     });
 });

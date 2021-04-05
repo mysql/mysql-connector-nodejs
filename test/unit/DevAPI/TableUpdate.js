@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const td = require('testdouble');
 const updating = require('../../../lib/DevAPI/Updating');
@@ -60,7 +61,7 @@ describe('TableUpdate', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal('An explicit criteria needs to be provided using where().');
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA);
                 });
         });
 
@@ -70,7 +71,7 @@ describe('TableUpdate', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal('An explicit criteria needs to be provided using where().');
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA);
                 });
         });
 
@@ -80,7 +81,7 @@ describe('TableUpdate', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal('An explicit criteria needs to be provided using where().');
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA);
                 });
         });
 
@@ -95,7 +96,7 @@ describe('TableUpdate', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal('An explicit criteria needs to be provided using where().');
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA);
                 });
         });
 

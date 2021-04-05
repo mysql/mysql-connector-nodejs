@@ -32,11 +32,13 @@
 
 /* eslint-env node, mocha */
 
+const Level = require('../../../../lib/logger').Level;
 const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const path = require('path');
+const warnings = require('../../../../lib/constants/warnings');
 
 describe('connecting with SSL/TLS', () => {
     const baseConfig = { host: config.host, password: config.password, port: config.port, schema: undefined, socket: undefined, user: config.user };
@@ -82,6 +84,41 @@ describe('connecting with SSL/TLS', () => {
             return mysqlx.getSession(uri)
                 .then(session => {
                     expect(session.inspect()).to.have.property('ssl', false);
+                    return session.close();
+                });
+        });
+    });
+
+    context('when deprecated TLS connection properties are used', () => {
+        it('writes a deprecation warning to the log when debug mode is enabled', () => {
+            // TLS is only available over TCP connections
+            // The socket should be null since JSON.stringify() removes undefined properties
+            const scriptConfig = Object.assign({}, config, baseConfig, { ssl: true, socket: null });
+            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
+
+            return fixtures.collectLogs('connection:options.ssl', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
+                .then(proc => {
+                    expect(proc.logs).to.have.lengthOf(1);
+                    expect(proc.logs[0]).to.equal(warnings.MESSAGES.WARN_DEPRECATED_SSL_OPTION);
+                });
+        });
+
+        it('writes a deprecation warning to stdout when debug mode is not enabled', done => {
+            const tlsConfig = Object.assign({}, config, baseConfig, { ssl: true });
+
+            process.on('warning', warning => {
+                if ((!warning.name || warning.name !== warnings.TYPES.DEPRECATION) || (!warning.code || !warning.code.startsWith(warnings.CODES.DEPRECATION))) {
+                    return;
+                }
+
+                process.removeAllListeners('warning');
+                expect(warning.message).to.equal(warnings.MESSAGES.WARN_DEPRECATED_SSL_OPTION);
+
+                return done();
+            });
+
+            mysqlx.getSession(tlsConfig)
+                .then(session => {
                     return session.close();
                 });
         });

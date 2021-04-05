@@ -34,6 +34,7 @@
 
 const config = require('../../../config');
 const crypto = require('crypto');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../../');
 
@@ -59,7 +60,7 @@ describe('connecting with a list of MySQL servers', () => {
             return mysqlx.getSession(uri)
                 .then(() => expect.fail())
                 .catch(err => {
-                    expect(err.message).to.equal('Unable to connect to any of the target hosts.');
+                    expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MULTI_HOST_CONNECTION_FAILED);
                 });
         });
     });
@@ -83,7 +84,7 @@ describe('connecting with a list of MySQL servers', () => {
             return mysqlx.getSession(uri)
                 .then(() => expect.fail())
                 .catch(err => {
-                    expect(err.message).to.equal('Unable to connect to any of the target hosts.');
+                    expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MULTI_HOST_CONNECTION_FAILED);
                 });
         });
 
@@ -94,8 +95,7 @@ describe('connecting with a list of MySQL servers', () => {
             return mysqlx.getSession(uri)
                 .then(() => expect.fail())
                 .catch(err => {
-                    expect(err.message).to.equal('You must either assign no priority to any of the routers or give a priority for every router');
-                    expect(err.errno).to.equal(4000);
+                    expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MIXED_CONNECTION_ENDPOINT_PRIORITY);
                 });
         });
 
@@ -106,8 +106,7 @@ describe('connecting with a list of MySQL servers', () => {
             return mysqlx.getSession(uri)
                 .then(() => expect.fail())
                 .catch(err => {
-                    expect(err.message).to.equal('The priorities must be between 0 and 100');
-                    expect(err.errno).to.equal(4007);
+                    expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_ENDPOINT_PRIORITY_RANGE);
                 });
         });
     });

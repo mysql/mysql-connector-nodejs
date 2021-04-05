@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -70,10 +71,12 @@ describe('schema validation', () => {
 
             return schema.createCollection('test', options)
                 .then(collection => collection.add({ name: 1 }).execute())
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5180);
+                    return expect(err.info.code).to.equal(errors.ER_X_DOCUMENT_DOESNT_MATCH_EXPECTED_SCHEMA);
                 });
         });
 
@@ -85,10 +88,12 @@ describe('schema validation', () => {
                 .then(collection => collection.add({ name: 'foo' }).execute())
                 .then(res => expect(res.getAffectedItemsCount()).to.equal(1))
                 .then(() => schema.getCollection('test').modify('name = :name').bind('name', 'foo').set('name', 1).execute())
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5180);
+                    return expect(err.info.code).to.equal(errors.ER_X_DOCUMENT_DOESNT_MATCH_EXPECTED_SCHEMA);
                 });
         });
 
@@ -98,10 +103,12 @@ describe('schema validation', () => {
 
             return schema.createCollection('test', options)
                 .then(collection => collection.add({ name: 1 }).execute())
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5180);
+                    return expect(err.info.code).to.equal(errors.ER_X_DOCUMENT_DOESNT_MATCH_EXPECTED_SCHEMA);
                 });
         });
 
@@ -120,10 +127,12 @@ describe('schema validation', () => {
 
         it('fails with unknown protocol options', () => {
             return schema.createCollection('test', { foo: 'bar' })
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5021);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_INVALID_ARGUMENT);
                 });
         });
 
@@ -134,19 +143,23 @@ describe('schema validation', () => {
 
         it('fails with invalid validation type', () => {
             return schema.createCollection('test', { validation: null })
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5016);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_ARGUMENT_TYPE);
                 });
         });
 
         it('fails with unknown validation options', () => {
             return schema.createCollection('test', { validation: { foo: 'bar' } })
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5021);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_INVALID_ARGUMENT);
                 });
         });
 
@@ -168,10 +181,12 @@ describe('schema validation', () => {
             const options = { validation: { schema: 'foo' } };
 
             return schema.createCollection('test', options)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5182);
+                    return expect(err.info.code).to.equal(errors.ER_X_INVALID_VALIDATION_SCHEMA);
                 });
         });
 
@@ -179,10 +194,12 @@ describe('schema validation', () => {
             const options = { validation: { schema: { type: 'foo' } } };
 
             return schema.createCollection('test', options)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5182);
+                    return expect(err.info.code).to.equal(errors.ER_X_INVALID_VALIDATION_SCHEMA);
                 });
         });
 
@@ -191,10 +208,12 @@ describe('schema validation', () => {
             const options = { validation: { schema: jsonSchema, level: 'foo' } };
 
             return schema.createCollection('test', options)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5017);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_ARGUMENT_VALUE);
                 });
         });
 
@@ -203,10 +222,12 @@ describe('schema validation', () => {
             const options = { validation: { schema: jsonSchema, foo: 'bar' } };
 
             return schema.createCollection('test', options)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5021);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_INVALID_ARGUMENT);
                 });
         });
 
@@ -226,10 +247,12 @@ describe('schema validation', () => {
             return schema.createCollection('test', options)
                 .then(() => schema.createCollection('test', { reuseExisting: true }))
                 .then(collection => collection.add({ name: 1 }).execute())
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.not.equal(5080);
+                    return expect(err.info.code).to.equal(errors.ER_X_DOCUMENT_DOESNT_MATCH_EXPECTED_SCHEMA);
                 });
         });
 
@@ -240,10 +263,12 @@ describe('schema validation', () => {
             return schema.createCollection('test', options)
                 .then(() => schema.createCollection('test', { reuseExisting: true, validation: { level: mysqlx.Schema.ValidationLevel.OFF } }))
                 .then(collection => collection.add({ name: 1 }).execute())
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.not.equal(5080);
+                    return expect(err.info.code).to.equal(errors.ER_X_DOCUMENT_DOESNT_MATCH_EXPECTED_SCHEMA);
                 });
         });
     });
@@ -251,45 +276,56 @@ describe('schema validation', () => {
     context('modifying the collection schema', () => {
         it('fails with an empty option block', () => {
             return schema.modifyCollection('test', {})
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5020);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_ARGUMENT_OBJECT_EMPTY);
                 });
         });
 
         it('fails with unknown protocol options', () => {
             return schema.modifyCollection('test', { foo: 'bar' })
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5021);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_INVALID_ARGUMENT);
                 });
         });
 
         it('fails with missing validation options', () => {
             return schema.modifyCollection('test', { validation: {} })
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5020);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_ARGUMENT_OBJECT_EMPTY);
                 });
         });
 
         it('fails with invalid validation type', () => {
             return schema.modifyCollection('test', { validation: null })
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5016);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_ARGUMENT_TYPE);
                 });
         });
 
         it('fails with unknown validation options', () => {
             return schema.modifyCollection('test', { validation: { foo: 'bar' } })
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5021);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_INVALID_ARGUMENT);
                 });
         });
 
@@ -297,10 +333,12 @@ describe('schema validation', () => {
             const options = { validation: { schema: 'foo' } };
 
             return schema.modifyCollection('test', options)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5182);
+                    return expect(err.info.code).to.equal(errors.ER_X_INVALID_VALIDATION_SCHEMA);
                 });
         });
 
@@ -308,10 +346,12 @@ describe('schema validation', () => {
             const options = { validation: { schema: { type: 'foo' } } };
 
             return schema.modifyCollection('test', options)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5182);
+                    return expect(err.info.code).to.equal(errors.ER_X_INVALID_VALIDATION_SCHEMA);
                 });
         });
 
@@ -320,10 +360,12 @@ describe('schema validation', () => {
             const options = { validation: { schema: jsonSchema, level: 'foo' } };
 
             return schema.modifyCollection('test', options)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5017);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_ARGUMENT_VALUE);
                 });
         });
 
@@ -332,10 +374,12 @@ describe('schema validation', () => {
             const options = { validation: { schema: jsonSchema, foo: 'bar' } };
 
             return schema.modifyCollection('test', options)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5021);
+                    return expect(err.info.code).to.equal(errors.ER_X_CMD_INVALID_ARGUMENT);
                 });
         });
 
@@ -343,10 +387,12 @@ describe('schema validation', () => {
             const options = { validation: { level: mysqlx.Schema.ValidationLevel.STRICT } };
 
             return schema.modifyCollection('test', options)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1146);
+                    expect(err.info.code).to.equal(errors.ER_NO_SUCH_TABLE);
                 });
         });
 
@@ -357,10 +403,12 @@ describe('schema validation', () => {
             return schema.createCollection('test')
                 .then(() => schema.modifyCollection('test', options))
                 .then(collection => collection.add({ name: 1 }).execute())
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5180);
+                    return expect(err.info.code).to.equal(errors.ER_X_DOCUMENT_DOESNT_MATCH_EXPECTED_SCHEMA);
                 });
         });
 
@@ -380,10 +428,12 @@ describe('schema validation', () => {
             return schema.createCollection('test', options)
                 .then(() => schema.modifyCollection('test', { validation: { level: mysqlx.Schema.ValidationLevel.STRICT } }))
                 .then(collection => collection.add({ name: 1 }).execute())
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5180);
+                    return expect(err.info.code).to.equal(errors.ER_X_DOCUMENT_DOESNT_MATCH_EXPECTED_SCHEMA);
                 });
         });
 
@@ -394,10 +444,12 @@ describe('schema validation', () => {
             return schema.createCollection('test', options)
                 .then(() => schema.modifyCollection('test', { validation: { schema: jsonSchema } }))
                 .then(collection => collection.add({ name: 1 }).execute())
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5180);
+                    return expect(err.info.code).to.equal(errors.ER_X_DOCUMENT_DOESNT_MATCH_EXPECTED_SCHEMA);
                 });
         });
 
@@ -410,10 +462,12 @@ describe('schema validation', () => {
                 .then(res => expect(res.getAffectedItemsCount()).to.equal(1))
                 .then(() => schema.modifyCollection('test', options))
                 .then(() => schema.getCollection('test').modify('name = :name').bind('name', 'foo').set('name', 1).execute())
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5180);
+                    return expect(err.info.code).to.equal(errors.ER_X_DOCUMENT_DOESNT_MATCH_EXPECTED_SCHEMA);
                 });
         });
     });

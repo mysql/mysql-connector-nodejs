@@ -75,7 +75,7 @@ describe('DNS SRV utilities', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_SRV_RECORDS_NOT_AVAILABLE, 'foobar'));
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_SRV_RECORDS_NOT_AVAILABLE, 'foobar'));
                 });
         });
     });
@@ -197,24 +197,24 @@ describe('DNS SRV utilities', () => {
 
     context('validate()', () => {
         it('fails when the "resolveSRV" property is badly specified', () => {
-            expect(() => srv.validate({ resolveSrv: 'foo' })).to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_INVALID_OPTION);
-            expect(() => srv.validate({ resolveSrv: 1 })).to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_INVALID_OPTION);
-            expect(() => srv.validate({ resolveSrv: {} })).to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_INVALID_OPTION);
-            return expect(() => srv.validate({ resolveSrv: [] })).to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_INVALID_OPTION);
+            expect(() => srv.validate({ resolveSrv: 'foo' })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SRV_LOOKUP_OPTION);
+            expect(() => srv.validate({ resolveSrv: 1 })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SRV_LOOKUP_OPTION);
+            expect(() => srv.validate({ resolveSrv: {} })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SRV_LOOKUP_OPTION);
+            return expect(() => srv.validate({ resolveSrv: [] })).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SRV_LOOKUP_OPTION);
         });
 
         it('fails when there are multiple possible service definition references', () => {
-            return expect(() => srv.validate({ endpoints: [{ host: 'foo' }, { host: 'bar' }], resolveSrv: true })).to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_MULTIPLE_ENDPOINTS);
+            return expect(() => srv.validate({ endpoints: [{ host: 'foo' }, { host: 'bar' }], resolveSrv: true })).to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_MULTIPLE_ENDPOINTS);
         });
 
         it('fails when the service definition contains a port', () => {
-            expect(() => srv.validate({ endpoints: [{ port: 'foo' }], resolveSrv: true })).to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
-            return expect(() => srv.validate({ port: 'foo', resolveSrv: true })).to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+            expect(() => srv.validate({ endpoints: [{ port: 'foo' }], resolveSrv: true })).to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_PORT);
+            return expect(() => srv.validate({ port: 'foo', resolveSrv: true })).to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_PORT);
         });
 
         it('fails when the service definition is a path to a local Unix socket file', () => {
-            expect(() => srv.validate({ endpoints: [{ socket: 'foo' }], resolveSrv: true })).to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
-            return expect(() => srv.validate({ resolveSrv: true, socket: 'foo' })).to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+            expect(() => srv.validate({ endpoints: [{ socket: 'foo' }], resolveSrv: true })).to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
+            return expect(() => srv.validate({ resolveSrv: true, socket: 'foo' })).to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
         });
     });
 });

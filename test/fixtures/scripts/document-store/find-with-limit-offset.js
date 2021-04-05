@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,26 +30,31 @@
 
 'use strict';
 
-const util = require('util');
+const mysqlx = require('../../../../');
 
-function Log (section) {
-    return {
-        info (component, content) {
-            if (!process.env.NODE_DEBUG) {
-                return;
-            }
+const config = JSON.parse(process.env.MYSQLX_CLIENT_CONFIG);
 
-            return util.debuglog(`${section}.${component}`)(JSON.stringify(content, null, 2));
-        },
+// required arguments
+const schema = process.argv[2];
+const collection = process.argv[3];
+// limit should be a number
+const limit = parseInt(process.argv[4], 10);
+// offset should be a number
+const offset = parseInt(process.argv[5], 10);
 
-        warning (component, content, { type = 'Warning', code = 'MYCONNNJS' } = {}) {
-            if (!process.env.NODE_DEBUG) {
-                return process.emitWarning(content, type, code);
-            }
+const baseConfig = Object.assign({}, config, { schema });
 
-            return this.info(component, content);
-        }
-    };
-}
-
-module.exports = Log;
+mysqlx.getSession(baseConfig)
+    .then(session => {
+        return session.getDefaultSchema().getCollection(collection).find()
+            .limit(limit, offset)
+            .execute()
+            .then(() => {
+                return session.close();
+            });
+    })
+    .catch(err => {
+        // errors in should be passed as JSON to the parent process via stderr
+        console.error(JSON.stringify({ message: err.message, stack: err.stack }));
+        process.exit(1);
+    });

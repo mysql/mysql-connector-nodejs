@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -34,15 +34,17 @@
 
 const expect = require('chai').expect;
 const td = require('testdouble');
+const warnings = require('../../lib/constants/warnings');
 
-let logger = require('../../../lib/tool/log');
+// subject under test needs to be reloaded with replacement fakes
+let logger = require('../../lib/logger');
 
-describe('log tools', () => {
+describe('Logger', () => {
     let util;
 
     beforeEach('create fakes', () => {
         util = td.replace('util');
-        logger = require('../../../lib/tool/log');
+        logger = require('../../lib/logger');
     });
 
     afterEach('reset fakes', () => {
@@ -71,7 +73,7 @@ describe('log tools', () => {
                 const log = logger('foo');
                 const debug = td.function();
 
-                td.when(debug('"baz"')).thenReturn('qux');
+                td.when(debug('[INFO] "baz"')).thenReturn('qux');
                 td.when(util.debuglog('foo.bar')).thenReturn(debug);
 
                 expect(log.info('bar', 'baz')).to.equal('qux');
@@ -81,24 +83,24 @@ describe('log tools', () => {
 
     context('warning()', () => {
         context('when debug mode is disabled', () => {
-            it('emits a general warning event using the MYCONNNJS code by default', () => {
+            it('emits a generic warning event by default', () => {
                 const log = logger('foo');
                 const emitWarning = td.replace(process, 'emitWarning');
 
                 log.warning('bar', 'baz');
 
                 expect(td.explain(emitWarning).callCount).to.equal(1);
-                return expect(td.explain(emitWarning).calls[0].args).to.deep.equal(['baz', 'Warning', 'MYCONNNJS']);
+                return expect(td.explain(emitWarning).calls[0].args).to.deep.equal(['baz', warnings.TYPES.GENERIC, warnings.CODES.GENERIC]);
             });
 
-            it('emits a general warning event with a given code', () => {
+            it('emits a generic warning event with a given code', () => {
                 const log = logger('foo');
                 const emitWarning = td.replace(process, 'emitWarning');
 
                 log.warning('bar', 'baz', { code: 'qux' });
 
                 expect(td.explain(emitWarning).callCount).to.equal(1);
-                return expect(td.explain(emitWarning).calls[0].args).to.deep.equal(['baz', 'Warning', 'qux']);
+                return expect(td.explain(emitWarning).calls[0].args).to.deep.equal(['baz', warnings.TYPES.GENERIC, 'qux']);
             });
 
             it('emits a warning event of a given type and code', () => {
@@ -124,15 +126,19 @@ describe('log tools', () => {
         });
 
         context('when debug mode is enabled', () => {
+            let debug;
+
             beforeEach('enable debug mode', () => {
+                debug = td.function();
+
                 td.replace(process, 'env', { NODE_DEBUG: true });
             });
 
             it('writes the message to the system debug log', () => {
                 const log = logger('foo');
-                const info = td.replace(log, 'info');
 
-                td.when(info('bar', 'baz')).thenReturn('qux');
+                td.when(debug('[WARNING] "baz"')).thenReturn('qux');
+                td.when(util.debuglog('foo.bar')).thenReturn(debug);
 
                 expect(log.warning('bar', 'baz')).to.equal('qux');
             });
@@ -140,7 +146,7 @@ describe('log tools', () => {
             it("does not emit any 'warning' event", () => {
                 const log = logger('foo');
 
-                td.replace(log, 'info');
+                td.when(util.debuglog('foo.bar')).thenReturn(debug);
 
                 const emitWarning = td.replace(process, 'emitWarning');
 

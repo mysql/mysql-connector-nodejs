@@ -32,8 +32,10 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const td = require('testdouble');
+const util = require('util');
 
 // subject under test needs to be reloaded with replacement fakes
 let collectionRemove = require('../../../lib/DevAPI/CollectionRemove');
@@ -61,7 +63,7 @@ describe('CollectionRemove', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal('An explicit criteria needs to be provided with remove().');
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_MISSING_DOCUMENT_CRITERIA, 'remove()'));
                 });
         });
 
@@ -73,7 +75,7 @@ describe('CollectionRemove', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal('An explicit criteria needs to be provided with remove().');
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_MISSING_DOCUMENT_CRITERIA, 'remove()'));
                 });
         });
 
@@ -85,7 +87,7 @@ describe('CollectionRemove', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal('An explicit criteria needs to be provided with remove().');
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_MISSING_DOCUMENT_CRITERIA, 'remove()'));
                 });
         });
 

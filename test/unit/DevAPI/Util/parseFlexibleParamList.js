@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const parseFlexibleParamList = require('../../../../lib/DevAPI/Util/parseFlexibleParamList');
 
@@ -49,7 +50,7 @@ describe('parseFlexibleParamList', () => {
     });
 
     it('throws an error if an expression is not valid', () => {
-        expect(function () { parseFlexibleParamList([() => {}]); }).to.throw(Error, 'invalid input expression');
+        expect(function () { parseFlexibleParamList([() => {}]); }).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_FLEXIBLE_PARAMETER_EXPRESSION);
     });
 
     it('allows falsy values', () => {

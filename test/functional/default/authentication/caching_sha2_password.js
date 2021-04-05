@@ -34,6 +34,7 @@
 
 const config = require('../../../config');
 const crypto = require('crypto');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -94,11 +95,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig, { user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
 
                     return mysqlx.getSession(authConfig)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Access denied for user/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Access denied for user/);
                         });
                 });
 
@@ -107,11 +110,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}`;
 
                     return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Access denied for user/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Access denied for user/);
                         });
                 });
             });
@@ -141,11 +146,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig, { user, password });
 
                     return mysqlx.getSession(authConfig)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Authentication failed using "MYSQL41" and "SHA256_MEMORY"/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Authentication failed using "MYSQL41" and "SHA256_MEMORY"/);
                         });
                 });
 
@@ -154,11 +161,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED`;
 
                     return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Authentication failed using "MYSQL41" and "SHA256_MEMORY"/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Authentication failed using "MYSQL41" and "SHA256_MEMORY"/);
                         });
                 });
             });
@@ -234,11 +243,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     }
 
                     return mysqlx.getSession(authConfig)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Access denied for user/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Access denied for user/);
                         });
                 });
 
@@ -252,11 +263,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})`;
 
                     return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Access denied for user/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Access denied for user/);
                         });
                 });
             });
@@ -501,11 +514,13 @@ describe('caching_sha2_password authentication plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig, { user, password });
 
                 return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
-                        expect(err.message).to.match(/Access denied for user/);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        return expect(err.message).to.match(/Access denied for user/);
                     });
             });
 
@@ -514,11 +529,13 @@ describe('caching_sha2_password authentication plugin', () => {
                 const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${auth}`;
 
                 return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
-                        expect(err.message).to.match(/Access denied for user/);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        return expect(err.message).to.match(/Access denied for user/);
                     });
             });
         });
@@ -548,11 +565,13 @@ describe('caching_sha2_password authentication plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig, { user, password });
 
                 return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
-                        expect(err.message).to.match(/Access denied for user/);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        return expect(err.message).to.match(/Access denied for user/);
                     });
             });
 
@@ -561,11 +580,13 @@ describe('caching_sha2_password authentication plugin', () => {
                 const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${auth}`;
 
                 return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
-                        expect(err.message).to.match(/Access denied for user/);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        return expect(err.message).to.match(/Access denied for user/);
                     });
             });
         });
@@ -611,11 +632,13 @@ describe('caching_sha2_password authentication plugin', () => {
                 }
 
                 return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
-                        expect(err.message).to.match(/Access denied for user/);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        return expect(err.message).to.match(/Access denied for user/);
                     });
             });
 
@@ -629,11 +652,13 @@ describe('caching_sha2_password authentication plugin', () => {
                 const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
 
                 return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
-                        expect(err.message).to.match(/Access denied for user/);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        return expect(err.message).to.match(/Access denied for user/);
                     });
             });
         });
@@ -688,11 +713,13 @@ describe('caching_sha2_password authentication plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig, { user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
 
                 return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
-                        expect(err.message).to.match(/Access denied for user/);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        return expect(err.message).to.match(/Access denied for user/);
                     });
             });
 
@@ -701,11 +728,13 @@ describe('caching_sha2_password authentication plugin', () => {
                 const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${auth}`;
 
                 return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
-                        expect(err.message).to.match(/Access denied for user/);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        return expect(err.message).to.match(/Access denied for user/);
                     });
             });
         });
@@ -735,10 +764,12 @@ describe('caching_sha2_password authentication plugin', () => {
                 const authConfig = Object.assign({}, config, baseConfig, tcpConfig, { user, password });
 
                 return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1251);
+                        return expect(err.info.code).to.equal(errors.ER_NOT_SUPPORTED_AUTH_MODE);
                     });
             });
 
@@ -747,10 +778,12 @@ describe('caching_sha2_password authentication plugin', () => {
                 const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${auth}`;
 
                 return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1251);
+                        return expect(err.info.code).to.equal(errors.ER_NOT_SUPPORTED_AUTH_MODE);
                     });
             });
         });
@@ -826,11 +859,13 @@ describe('caching_sha2_password authentication plugin', () => {
                 }
 
                 return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
-                        expect(err.message).to.match(/Access denied for user/);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        return expect(err.message).to.match(/Access denied for user/);
                     });
             });
 
@@ -844,11 +879,13 @@ describe('caching_sha2_password authentication plugin', () => {
                 const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
 
                 return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(1045);
-                        expect(err.message).to.match(/Access denied for user/);
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        return expect(err.message).to.match(/Access denied for user/);
                     });
             });
         });
@@ -919,11 +956,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig, { user, password });
 
                     return mysqlx.getSession(authConfig)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Access denied for user/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Access denied for user/);
                         });
                 });
 
@@ -932,11 +971,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${auth}`;
 
                     return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Access denied for user/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Access denied for user/);
                         });
                 });
             });
@@ -966,11 +1007,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     const authConfig = Object.assign({}, config, baseConfig, tcpConfig, { user, password });
 
                     return mysqlx.getSession(authConfig)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Access denied for user/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Access denied for user/);
                         });
                 });
 
@@ -979,11 +1022,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${auth}`;
 
                     return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Access denied for user/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Access denied for user/);
                         });
                 });
             });
@@ -1029,11 +1074,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     }
 
                     return mysqlx.getSession(authConfig)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Access denied for user/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Access denied for user/);
                         });
                 });
 
@@ -1047,11 +1094,13 @@ describe('caching_sha2_password authentication plugin', () => {
                     const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
 
                     return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
+                        .then(() => {
+                            return expect.fail();
+                        })
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1045);
-                            expect(err.message).to.match(/Access denied for user/);
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                            return expect(err.message).to.match(/Access denied for user/);
                         });
                 });
             });

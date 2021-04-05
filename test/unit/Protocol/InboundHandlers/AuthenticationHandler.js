@@ -47,7 +47,7 @@ describe('AuthenticationHandler inbound handler', () => {
         authenticateContinue = td.replace('../../../../lib/Protocol/Wrappers/Messages/Session/AuthenticateContinue');
         authenticateOk = td.replace('../../../../lib/Protocol/Wrappers/Messages/Session/AuthenticateOk');
         notice = td.replace('../../../../lib/Protocol/Wrappers/Messages/Notice/Frame');
-        logger = td.replace('../../../../lib/tool/log');
+        logger = td.replace('../../../../lib/logger');
         sessionStateChanged = td.replace('../../../../lib/Protocol/Wrappers/Messages/Notice/SessionStateChanged');
 
         td.when(logger('protocol:inbound:Mysqlx')).thenReturn({ info });

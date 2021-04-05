@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -178,7 +179,7 @@ describe('inserting data into a table', () => {
                 .then(() => expect.fail())
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(5014);
+                    expect(err.info.code).to.equal(errors.ER_X_BAD_INSERT_DATA);
                 });
         });
     });

@@ -34,10 +34,12 @@
 
 const config = require('../../../config');
 const dns = require('dns');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const os = require('os');
+const util = require('util');
 
 describe('connecting to the MySQL server using DNS SRV', () => {
     const baseConfig = { host: '_mysqlx._tcp.example.com', port: undefined, resolveSrv: true, schema: undefined };
@@ -46,8 +48,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
         const srvConfig = Object.assign({}, config, baseConfig, { resolveSrv: 'foo' });
 
         return mysqlx.getSession(srvConfig)
-            .then(() => expect.fail())
-            .catch(err => expect(err.message).to.equal('SRV resolution can only be toggled using a boolean value (true or false).'));
+            .then(() => {
+                return expect.fail();
+            })
+            .catch(err => {
+                return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SRV_LOOKUP_OPTION);
+            });
     });
 
     context('when there are DNS SRV records for the given service definition', () => {
@@ -142,8 +148,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
             const srvConfig = Object.assign({}, config, baseConfig, { socket: undefined });
 
             return mysqlx.getSession(srvConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(`Unable to locate any hosts for ${srvConfig.host}.`));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_SRV_RECORDS_NOT_AVAILABLE, srvConfig.host));
+                });
         });
 
         it('fails to connect using a connection string', () => {
@@ -151,8 +161,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
             const uri = `mysqlx+srv://${srvConfig.user}:${srvConfig.password}@${srvConfig.host}`;
 
             return mysqlx.getSession(uri)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(`Unable to locate any hosts for ${srvConfig.host}.`));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_SRV_RECORDS_NOT_AVAILABLE, srvConfig.host));
+                });
         });
     });
 
@@ -163,8 +177,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
             const srvConfig = Object.assign({}, config, baseConfig, { socket: undefined });
 
             return mysqlx.getSession(srvConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(`Unable to locate any hosts for ${srvConfig.host}.`));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_SRV_RECORDS_NOT_AVAILABLE, srvConfig.host));
+                });
         });
 
         it('fails to connect using a connection string', () => {
@@ -172,8 +190,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
             const uri = `mysqlx+srv://${srvConfig.user}:${srvConfig.password}@${srvConfig.host}`;
 
             return mysqlx.getSession(uri)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(`Unable to locate any hosts for ${srvConfig.host}.`));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_SRV_RECORDS_NOT_AVAILABLE, srvConfig.host));
+                });
         });
     });
 
@@ -182,8 +204,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
             const srvConfig = Object.assign({}, config, baseConfig, { port: 33060, socket: undefined });
 
             return mysqlx.getSession(srvConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Specifying a port number with DNS SRV lookup is not allowed.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_PORT);
+                });
         });
 
         it('fails to connect using a connection string', () => {
@@ -191,8 +217,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
             const uri = `mysqlx+srv://${srvConfig.user}:${srvConfig.password}@${srvConfig.host}:${srvConfig.port}`;
 
             return mysqlx.getSession(uri)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Specifying a port number with DNS SRV lookup is not allowed.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_PORT);
+                });
         });
     });
 
@@ -205,8 +235,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
             }
 
             return mysqlx.getSession(srvConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Using Unix domain sockets with DNS SRV lookup is not allowed.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
+                });
         });
 
         it('fails to connect using a connection string', function () {
@@ -219,8 +253,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
             const uri = `mysqlx+srv://${srvConfig.user}:${srvConfig.password}@(${srvConfig.socket})`;
 
             return mysqlx.getSession(uri)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Using Unix domain sockets with DNS SRV lookup is not allowed.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
+                });
         });
     });
 
@@ -230,8 +268,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
                 const srvConfig = Object.assign({}, config, baseConfig, { endpoints: [{ host: baseConfig.host, port: 33060, priority: 99 }, { host: baseConfig.host, port: 33061, priority: 100 }] });
 
                 return mysqlx.getSession(srvConfig)
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Specifying multiple hostnames with DNS SRV lookup is not allowed.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_MULTIPLE_ENDPOINTS);
+                    });
             });
 
             it('fails to connect using a connection string', () => {
@@ -240,8 +282,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
                 const uri = `mysqlx+srv://${srvConfig.user}:${srvConfig.password}@[${hosts.join(', ')}]`;
 
                 return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Specifying multiple hostnames with DNS SRV lookup is not allowed.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_MULTIPLE_ENDPOINTS);
+                    });
             });
         });
 
@@ -250,8 +296,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
                 const srvConfig = Object.assign({}, config, baseConfig, { endpoints: [{ host: baseConfig.host, port: 33060 }, { host: baseConfig.host, port: 33061 }] });
 
                 return mysqlx.getSession(srvConfig)
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Specifying multiple hostnames with DNS SRV lookup is not allowed.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_MULTIPLE_ENDPOINTS);
+                    });
             });
 
             it('fails to connect using a connection string', () => {
@@ -260,8 +310,12 @@ describe('connecting to the MySQL server using DNS SRV', () => {
                 const uri = `mysqlx+srv://${srvConfig.user}:${srvConfig.password}@[${hosts.join(', ')}]`;
 
                 return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal('Specifying multiple hostnames with DNS SRV lookup is not allowed.'));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_MULTIPLE_ENDPOINTS);
+                    });
             });
         });
     });

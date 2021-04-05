@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -28,8 +28,27 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-const util = require('util');
+'use strict';
 
-module.exports = function (message) {
-    return util.deprecate(() => {}, message)();
-};
+const mysqlx = require('../../../../');
+
+const config = JSON.parse(process.env.MYSQLX_CLIENT_CONFIG);
+
+// required arguments
+const schema = process.argv[2];
+const collection = process.argv[3];
+
+const baseConfig = Object.assign({}, config, { schema });
+
+mysqlx.getSession(baseConfig)
+    .then(session => {
+        return session.getDefaultSchema().createCollection(collection, { ReuseExistingObject: true })
+            .then(() => {
+                return session.close();
+            });
+    })
+    .catch(err => {
+        // errors in should be passed as JSON to the parent process via stderr
+        console.error(JSON.stringify({ message: err.message, stack: err.stack }));
+        process.exit(1);
+    });

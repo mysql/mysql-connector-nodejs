@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -170,10 +171,12 @@ describe('collection contains', () => {
 
     it('fails if the left-side operand is not castable to JSON', () => {
         return collection.find('(1+2) in [1, 2, 3]').execute()
-            .then(() => expect.fail())
+            .then(() => {
+                return expect.fail();
+            })
             .catch(err => {
                 expect(err.info).to.include.keys('code');
-                expect(err.info.code).to.equal(5154);
+                return expect(err.info.code).to.equal(errors.ER_X_EXPR_BAD_VALUE);
             });
     });
 });

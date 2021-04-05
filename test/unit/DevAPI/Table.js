@@ -33,20 +33,22 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const statement = require('../../../lib/DevAPI/Statement');
 const td = require('testdouble');
+const warnings = require('../../../lib/constants/warnings');
 
 describe('Table', () => {
-    let databaseObject, execute, sqlExecute, table;
+    let databaseObject, execute, sqlExecute, table, warning;
 
     beforeEach('create fakes', () => {
-        databaseObject = td.function();
         execute = td.function();
-        sqlExecute = td.function();
-        sqlExecute.Namespace = statement.Type;
+        warning = td.function();
 
-        td.replace('../../../lib/DevAPI/DatabaseObject', databaseObject);
-        td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
+        databaseObject = td.replace('../../../lib/DevAPI/DatabaseObject');
+        sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+
+        const logger = td.replace('../../../lib/logger');
+        td.when(logger('api:table')).thenReturn({ warning });
+
         table = require('../../../lib/DevAPI/Table');
     });
 
@@ -250,11 +252,13 @@ describe('Table', () => {
             expect(instance.getColumns()).to.deep.equal(expressions);
         });
 
-        it('sets column names provided as object keys', () => {
+        it('generates a deprecation message while setting column names provided as object keys', () => {
             const expressions = ['foo', 'bar'];
             const instance = table().insert({ foo: 'baz', bar: 'qux' });
 
             expect(instance.getColumns()).to.deep.equal(expressions);
+            expect(td.explain(warning).callCount).to.equal(1);
+            return expect(td.explain(warning).calls[0].args).to.deep.equal(['insert', warnings.MESSAGES.WARN_DEPRECATED_TABLE_INSERT_OBJECT_ARGUMENT, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
         });
 
         it('throws an error if the columns are invalid', () => {
@@ -337,6 +341,13 @@ describe('Table', () => {
 
             /* eslint-disable no-unused-expressions */
         });
+
+        it('generates a deprecation message if an argument is provided', () => {
+            table().delete('foo');
+
+            expect(td.explain(warning).callCount).to.equal(1);
+            return expect(td.explain(warning).calls[0].args).to.deep.equal(['delete', warnings.MESSAGES.WARN_DEPRECATED_TABLE_DELETE_EXPR_ARGUMENT, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
+        });
     });
 
     context('update()', () => {
@@ -365,6 +376,13 @@ describe('Table', () => {
             expect(query.values).to.not.exist;
 
             /* eslint-disable no-unused-expressions */
+        });
+
+        it('generates a deprecation message if an argument is provided', () => {
+            table().update('foo');
+
+            expect(td.explain(warning).callCount).to.equal(1);
+            return expect(td.explain(warning).calls[0].args).to.deep.equal(['update', warnings.MESSAGES.WARN_DEPRECATED_TABLE_UPDATE_EXPR_ARGUMENT, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
         });
     });
 

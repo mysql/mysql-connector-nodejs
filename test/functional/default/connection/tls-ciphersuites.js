@@ -31,6 +31,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../..');
 
@@ -103,16 +104,24 @@ describe('connecting with a list of ciphersuites', () => {
             const tlsConfig = Object.assign({}, config, baseConfig, { tls: { ciphersuites: ['TLS_ECDHE_RSA_WITH_NULL_SHA', 'TLS_ECDHE_ECDSA_WITH_NULL_SHA'] } });
 
             return mysqlx.getSession(tlsConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('No valid ciphersuite found in the provided list.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_CIPHERSUITE);
+                });
         });
 
         it('fails if the connection is not using TLS', () => {
             const tlsConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, ciphersuites: ['foo', 'bar'] } });
 
             return mysqlx.getSession(tlsConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Additional TLS options cannot be specified when TLS is disabled.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
+                });
         });
     });
 
@@ -169,16 +178,24 @@ describe('connecting with a list of ciphersuites', () => {
             const tlsConfig = Object.assign({}, config, baseConfig, { tls: { ciphersuites: ['TLS_ECDHE_RSA_WITH_NULL_SHA', 'TLS_ECDHE_ECDSA_WITH_NULL_SHA'] } });
 
             return mysqlx.getSession(`mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}/${tlsConfig.schema}?tls-ciphersuites=[${tlsConfig.tls.ciphersuites.join(',')}]`)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('No valid ciphersuite found in the provided list.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_CIPHERSUITE);
+                });
         });
 
         it('fails if the connection is not using TLS', () => {
             const tlsConfig = Object.assign({}, config, baseConfig, { tls: { ciphersuites: ['foo', 'bar'] } });
 
             return mysqlx.getSession(`mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}/${tlsConfig.schema}?ssl-mode=DISABLED&tls-ciphersuites=[${tlsConfig.tls.ciphersuites.join(',')}]`)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('Additional TLS options cannot be specified when TLS is disabled.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
+                });
         });
     });
 });

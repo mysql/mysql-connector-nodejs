@@ -32,11 +32,13 @@
 
 /* eslint-env node, mocha */
 
+const Level = require('../../../../lib/logger').Level;
 const config = require('../../../config');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../..');
 const path = require('path');
+const warnings = require('../../../../lib/constants/warnings');
 
 describe('finding documents in collections', () => {
     let schema, session, collection;
@@ -297,6 +299,54 @@ describe('finding documents in collections', () => {
                 .offset(2)
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        context('when an offset is provided using the limit() method', () => {
+            it('writes a deprecation warning to the log when debug mode is enabled', () => {
+                const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find-with-limit-offset.js');
+
+                return fixtures.collectLogs('api.limit', script, [schema.getName(), collection.getName(), 1, 1], { level: Level.WARNING })
+                    .then(proc => {
+                        expect(proc.logs).to.have.lengthOf(1);
+                        return expect(proc.logs[0]).to.equal(warnings.MESSAGES.WARN_DEPRECATED_LIMIT_WITH_OFFSET);
+                    });
+            });
+
+            it('writes a deprecation warning to stdout when debug mode is not enabled', done => {
+                process.on('warning', warning => {
+                    if ((!warning.name || warning.name !== warnings.TYPES.DEPRECATION) || (!warning.code || !warning.code.startsWith(warnings.CODES.DEPRECATION))) {
+                        return;
+                    }
+
+                    process.removeAllListeners('warning');
+                    expect(warning.message).to.equal(warnings.MESSAGES.WARN_DEPRECATED_LIMIT_WITH_OFFSET);
+
+                    return done();
+                });
+
+                collection.find()
+                    .limit(2, 3)
+                    .execute();
+            });
+        });
+
+        context('when the setCount() method is used', () => {
+            it('writes a deprecation warning to stdout', done => {
+                process.on('warning', warning => {
+                    if ((!warning.name || warning.name !== warnings.TYPES.DEPRECATION) || (!warning.code || !warning.code.startsWith(warnings.CODES.DEPRECATION))) {
+                        return;
+                    }
+
+                    process.removeAllListeners('warning');
+                    expect(warning.message).to.equal(warnings.MESSAGES.WARN_DEPRECATED_LIMIT_SET_COUNT);
+
+                    return done();
+                });
+
+                collection.find()
+                    .setCount(1)
+                    .execute();
+            });
         });
     });
 

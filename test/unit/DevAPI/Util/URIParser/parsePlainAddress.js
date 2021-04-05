@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const parsePlainAddress = require('../../../../../lib/DevAPI/Util/URIParser/parsePlainAddress');
 
@@ -62,7 +63,7 @@ describe('parsePlainAddress', () => {
 
     it('throws an error if the address is not valid', () => {
         ['prod 01.example.com', '[01:23:45:67:89:ab]'].forEach(invalid => {
-            expect(() => parsePlainAddress(invalid)).to.throw('Invalid URI');
+            expect(() => parsePlainAddress(invalid)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_HOST);
         });
     });
 

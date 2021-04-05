@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const parseUri = require('../../../../../../lib/DevAPI/Util/URIParser');
 
@@ -100,10 +101,10 @@ describe('parsing the path', () => {
 
     it('fails if the path contains multiple segments', () => {
         let connectionString = 'user@hostname/foo/bar';
-        expect(() => parseUri(connectionString)).to.throw('Invalid schema name');
+        expect(() => parseUri(connectionString)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_SCHEMA_NAME);
 
         connectionString = `mysqlx://${connectionString}`;
-        expect(() => parseUri(connectionString)).to.throw('Invalid schema name');
+        expect(() => parseUri(connectionString)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_SCHEMA_NAME);
     });
 
     it('uses the first path segment as the schema name', () => {
@@ -170,9 +171,9 @@ describe('parsing the path', () => {
 
     it('fails if the value is not valid', () => {
         let connectionString = 'user@hostname/^';
-        expect(() => parseUri(connectionString)).to.throw('Invalid schema name');
+        expect(() => parseUri(connectionString)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_SCHEMA_NAME);
 
         connectionString = `mysqlx://${connectionString}`;
-        expect(() => parseUri(connectionString)).to.throw('Invalid schema name');
+        expect(() => parseUri(connectionString)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_SCHEMA_NAME);
     });
 });

@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 
@@ -66,8 +67,12 @@ describe('savepoints within transactions', () => {
     it('does not create a savepoint with empty string', () => {
         return session.startTransaction()
             .then(() => session.setSavepoint(''))
-            .then(() => expect.fail())
-            .catch(err => expect(err.message).to.equal('Invalid Savepoint name.'));
+            .then(() => {
+                expect.fail();
+            })
+            .catch(err => {
+                return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SAVEPOINT_NAME);
+            });
     });
 
     it('releases a valid savepoint', () => {
@@ -80,18 +85,24 @@ describe('savepoints within transactions', () => {
         return session.startTransaction()
             .then(() => session.setSavepoint('foo'))
             .then(() => session.releaseSavepoint(''))
-            .then(() => expect.fail())
-            .catch(err => expect(err.message).to.equal('Invalid Savepoint name.'));
+            .then(() => {
+                expect.fail();
+            })
+            .catch(err => {
+                return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SAVEPOINT_NAME);
+            });
     });
 
     it('fails to release an non-matching savepoint', () => {
         return session.startTransaction()
             .then(() => session.setSavepoint('foo'))
             .then(() => session.releaseSavepoint('s'))
-            .then(() => expect.fail())
+            .then(() => {
+                expect.fail();
+            })
             .catch(err => {
                 expect(err.info).to.include.keys('code');
-                expect(err.info.code).to.equal(1305);
+                return expect(err.info.code).to.equal(errors.ER_SP_DOES_NOT_EXIST);
             });
     });
 
@@ -105,18 +116,24 @@ describe('savepoints within transactions', () => {
         return session.startTransaction()
             .then(() => session.setSavepoint('foo'))
             .then(() => session.rollbackTo(''))
-            .then(() => expect.fail())
-            .catch(err => expect(err.message).to.equal('Invalid Savepoint name.'));
+            .then(() => {
+                expect.fail();
+            })
+            .catch(err => {
+                return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SAVEPOINT_NAME);
+            });
     });
 
     it('fails to rollback to a non-matching savepoint', () => {
         return session.startTransaction()
             .then(() => session.setSavepoint('foo'))
             .then(() => session.rollbackTo('s'))
-            .then(() => expect.fail())
+            .then(() => {
+                expect.fail();
+            })
             .catch(err => {
                 expect(err.info).to.include.keys('code');
-                expect(err.info.code).to.equal(1305);
+                return expect(err.info.code).to.equal(errors.ER_SP_DOES_NOT_EXIST);
             });
     });
 });

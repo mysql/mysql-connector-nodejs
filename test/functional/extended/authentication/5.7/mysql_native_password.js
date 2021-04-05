@@ -33,9 +33,11 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../../config');
+const errors = require('../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../../../');
 const path = require('path');
+const util = require('util');
 
 describe('mysql_native_password authentication plugin on MySQL 5.7', () => {
     // server container (defined in docker.compose.yml)
@@ -125,10 +127,12 @@ describe('mysql_native_password authentication plugin on MySQL 5.7', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1251);
+                    return expect(err.info.code).to.equal(errors.ER_NOT_SUPPORTED_AUTH_MODE);
                 });
         });
 
@@ -150,24 +154,36 @@ describe('mysql_native_password authentication plugin on MySQL 5.7', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: true } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('SHA256_MEMORY authentication is not supported by the server.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY'));
+                });
         });
 
         it('fails over regular TCP', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('SHA256_MEMORY authentication is not supported by the server.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY'));
+                });
         });
 
         it('fails over a Unix socket', () => {
             const authConfig = Object.assign({}, config, baseConfig, { auth, socket, tls: { enabled: false } });
 
             return mysqlx.getSession(authConfig)
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('SHA256_MEMORY authentication is not supported by the server.'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY'));
+                });
         });
     });
 });

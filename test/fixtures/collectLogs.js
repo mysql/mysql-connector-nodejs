@@ -30,6 +30,7 @@
 
 'use strict';
 
+const Level = require('../../lib/logger').Level;
 const cp = require('child_process');
 const config = require('../config');
 
@@ -46,14 +47,15 @@ const config = require('../config');
  * @private
  * @function
  * @param {Object} options
- * @param {string} options.str - the raw log content
+ * @param {string} options.log - the raw log content
  * @param {string} options.section - the relevant log section
  * @param {number} options.pid - the associated child process id
+ * @param {string} [options.level] - the log level
  * @returns {string}
  */
-function extractJSON (log, section, pid) {
+function extractJSON ({ log, section, pid, level } = {}) {
     // We want to skip the log label which uses a given pattern.
-    const pattern = new RegExp(`${section.toUpperCase()} ${pid}: `);
+    const pattern = new RegExp(`${section.toUpperCase()} ${pid}: \\[${level}\\]`);
     const match = log.match(pattern);
 
     if (!match) {
@@ -62,7 +64,7 @@ function extractJSON (log, section, pid) {
 
     const remainder = log.slice(0, match.index).concat(',').concat(log.slice(match.index + match[0].length));
 
-    return extractJSON(remainder, section, pid);
+    return extractJSON({ log: remainder, section, pid, level });
 }
 
 /**
@@ -79,7 +81,7 @@ module.exports = function (section, path, args, options) {
     args = args || [];
     // A custom connection configuration can be provided via the options
     // object.
-    options = Object.assign({ config }, options);
+    options = Object.assign({ config, level: Level.INFO }, options);
 
     return new Promise((resolve, reject) => {
         // The connection configuration is made available to each script via
@@ -129,7 +131,7 @@ module.exports = function (section, path, args, options) {
         child.on('close', () => {
             // The logs property will contain an array where each item is a
             // proper log entry represented by a plain JavaScript object.
-            proc.logs = proc.logs.concat(JSON.parse(extractJSON(log, section, child.pid)));
+            proc.logs = proc.logs.concat(JSON.parse(extractJSON({ log, section, pid: child.pid, level: options.level })));
 
             resolve(proc);
         });

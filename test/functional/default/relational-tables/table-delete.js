@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -108,8 +109,12 @@ describe('deleting data from a table', () => {
             return table.delete()
                 .where()
                 .execute()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal('An explicit criteria needs to be provided using where().'));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA);
+                });
         });
     });
 

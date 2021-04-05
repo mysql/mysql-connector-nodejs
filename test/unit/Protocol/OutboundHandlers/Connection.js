@@ -45,7 +45,7 @@ describe('Mysqlx.Connection outbound handler', () => {
         capabilitiesGet = td.replace('../../../../lib/Protocol/Wrappers/Messages/Connection/CapabilitiesGet');
         capabilitiesSet = td.replace('../../../../lib/Protocol/Wrappers/Messages/Connection/CapabilitiesSet');
         close = td.replace('../../../../lib/Protocol/Wrappers/Messages/Connection/Close');
-        logger = td.replace('../../../../lib/tool/log');
+        logger = td.replace('../../../../lib/logger');
 
         info = td.function();
         td.when(logger('protocol:outbound:Mysqlx.Connection')).thenReturn({ info });

@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 
@@ -52,47 +53,49 @@ describe('schema management', () => {
     });
 
     context('creating a new schema', () => {
-        it('succeeds when a schema with the given name does not exist yet', () => {
+        context('when the schema name is valid', () => {
             const schemaName = 'foo';
 
-            return session.createSchema(schemaName)
-                .then(() => {
-                    return session.sql('SHOW DATABASES')
-                        .execute();
-                })
-                .then(res => {
-                    return expect(res.fetchAll().map(row => row[0])).to.deep.include(schemaName);
-                })
-                .then(() => {
-                    return session.sql(`DROP DATABASE IF EXISTS ${schemaName}`)
-                        .execute();
-                });
-        });
+            afterEach('delete the schema', () => {
+                return session.sql(`DROP DATABASE IF EXISTS ${schemaName}`)
+                    .execute();
+            });
 
-        it('fails when the schema with a given name already exists', () => {
-            const schemaName = 'foo';
+            it('succeeds when a schema with the given name does not exist yet', () => {
+                return session.createSchema(schemaName)
+                    .then(() => {
+                        return session.sql('SHOW DATABASES')
+                            .execute();
+                    })
+                    .then(res => {
+                        return expect(res.fetchAll().map(row => row[0])).to.deep.include(schemaName);
+                    });
+            });
 
-            // try creating the same schema twice
-            return session.createSchema(schemaName)
-                .then(() => session.createSchema(schemaName))
-                .then(() => expect.fail())
-                .catch(err => {
-                    expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1007);
-
-                    return session.sql(`DROP DATABASE IF EXISTS ${schemaName}`)
-                        .execute();
-                });
+            it('fails when the schema with a given name already exists', () => {
+                // try creating the same schema twice
+                return session.createSchema(schemaName)
+                    .then(() => session.createSchema(schemaName))
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_DB_CREATE_EXISTS);
+                    });
+            });
         });
 
         it('fails when the schema name is not valid', () => {
             const schemaName = '';
 
             return session.createSchema(schemaName)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1102);
+                    expect(err.info.code).to.equal(errors.ER_WRONG_DB_NAME);
                 });
         });
     });
@@ -135,20 +138,13 @@ describe('schema management', () => {
             const schemaName = '';
 
             return session.dropSchema(schemaName)
-                .then(() => expect.fail())
+                .then(() => {
+                    return expect.fail();
+                })
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
-                    expect(err.info.code).to.equal(1102);
+                    expect(err.info.code).to.equal(errors.ER_WRONG_DB_NAME);
                 });
         });
     });
-
-    // it('allows to create a new session using an existing default schema', () => {
-    //     return session.createSchema(config.schema)
-    //         .then(() => mysqlx.getSession(config))
-    //         .then(session => {
-    //             expect(session.getDefaultSchema().getName()).to.equal(config.schema);
-    //             return session.close();
-    //         });
-    // });
 });

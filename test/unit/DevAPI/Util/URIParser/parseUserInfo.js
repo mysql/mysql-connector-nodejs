@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const parseUserInfo = require('../../../../../lib/DevAPI/Util/URIParser/parseUserInfo');
 
@@ -69,7 +70,7 @@ describe('parseUserInfo', () => {
             'foo[bar:baz',
             'foo]bar:baz'
         ].forEach(userinfo => {
-            expect(() => parseUserInfo(userinfo)).to.throw('Invalid userinfo segment');
+            expect(() => parseUserInfo(userinfo)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_USER_INFO);
         });
     });
 
@@ -81,7 +82,7 @@ describe('parseUserInfo', () => {
             'foo:bar[baz',
             'foo:bar]baz'
         ].forEach(userinfo => {
-            expect(() => parseUserInfo(userinfo)).to.throw('Invalid userinfo segment');
+            expect(() => parseUserInfo(userinfo)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_STRING_USER_INFO);
         });
     });
 });

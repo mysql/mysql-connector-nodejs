@@ -143,7 +143,7 @@ describe('ConnectionPool', () => {
                     done(expect.fail());
                 })
                 .catch(err => {
-                    expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_POOL_QUEUE_TIMEOUT, queueTimeout));
+                    expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_POOL_QUEUE_TIMEOUT, queueTimeout));
                     done();
                 });
 
@@ -356,11 +356,11 @@ describe('ConnectionPool', () => {
 
     context('ConnectionPool.validate()', () => {
         it('fails when an unknown property is specified', () => {
-            return expect(() => connectionPool.validate({ foo: 'bar' })).to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION, 'pooling.foo'));
+            return expect(() => connectionPool.validate({ foo: 'bar' })).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION, 'pooling.foo'));
         });
 
         it('fails when the "enabled" property value is not a boolean', () => {
-            const error = errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE;
+            const error = errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION_VALUE;
             const path = 'pooling.enabled';
 
             expect(() => connectionPool.validate({ enabled: 'foo' })).to.throw(util.format(error, path, 'foo'));
@@ -371,7 +371,7 @@ describe('ConnectionPool', () => {
         });
 
         it('fails when the "maxIdleTime" property is not a positive integer (including 0)', () => {
-            const error = errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE;
+            const error = errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION_VALUE;
             const path = 'pooling.maxIdleTime';
 
             expect(() => connectionPool.validate({ maxIdleTime: -1 })).to.throw(util.format(error, path, -1));
@@ -384,7 +384,7 @@ describe('ConnectionPool', () => {
         });
 
         it('fails when the "maxSize" property is not an integer above 1', () => {
-            const error = errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE;
+            const error = errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION_VALUE;
             const path = 'pooling.maxSize';
 
             expect(() => connectionPool.validate({ maxSize: 0 })).to.throw(util.format(error, path, 0));
@@ -397,7 +397,7 @@ describe('ConnectionPool', () => {
         });
 
         it('fails when the "queueTimeout" property is not a positive integer (including 0)', () => {
-            const error = errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE;
+            const error = errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION_VALUE;
             const path = 'pooling.queueTimeout';
 
             expect(() => connectionPool.validate({ queueTimeout: -1 })).to.throw(util.format(error, path, -1));

@@ -45,7 +45,7 @@ describe('CapabilitiesGetHandler inbound handler', () => {
         info = td.function();
 
         capabilities = td.replace('../../../../lib/Protocol/Wrappers/Messages/Connection/Capabilities');
-        logger = td.replace('../../../../lib/tool/log');
+        logger = td.replace('../../../../lib/logger');
 
         td.when(logger('protocol:inbound:Mysqlx.Connection')).thenReturn({ info });
 

@@ -32,10 +32,14 @@
 
 /* eslint-env node, mocha */
 
+const Level = require('../../../../lib/logger').Level;
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
+const warnings = require('../../../../lib/constants/warnings');
+const path = require('path');
 
 // TODO(rui.quelhas): extract tests into proper self-contained suites.
 describe('collection miscellaneous tests', () => {
@@ -81,14 +85,81 @@ describe('collection miscellaneous tests', () => {
             .then(result => expect(result).to.be.false);
     });
 
-    it('creates a collection with the given name', () => {
-        return schema.createCollection('foobar')
-            .then(collection => expect(collection.getName()).to.equal('foobar'));
-    });
+    context('creating a collection', () => {
+        context('when one does not exist', () => {
+            it('creates a new collection in the associated schema', () => {
+                return schema.createCollection('foobar')
+                    .then(collection => {
+                        expect(collection.getName()).to.equal('foobar');
+                        return expect(collection.getSchema().getName()).to.deep.equal(schema.getName());
+                    });
+            });
+        });
 
-    it('creates a collection within the appropriate schema', () => {
-        return schema.createCollection('foobar')
-            .then(collection => expect(collection.getSchema().getName()).to.deep.equal(schema.getName()));
+        context('when one already exists', () => {
+            let schemaName;
+
+            beforeEach('create the schema', () => {
+                schemaName = 'foobar';
+
+                return schema.createCollection(schemaName);
+            });
+
+            it('returns the existing schema when it is allowed', () => {
+                return schema.createCollection(schemaName, { reuseExisting: true })
+                    .then(collection => {
+                        expect(collection.getName()).to.equal('foobar');
+                        return expect(collection.getSchema().getName()).to.deep.equal(schema.getName());
+                    });
+            });
+
+            context('when using a deprecation option to allow re-using the existing schema', () => {
+                it('writes a deprecation message to the debug log when debug mode is enabled', () => {
+                    const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'create-collection-deprecated.js');
+
+                    return fixtures.collectLogs('api:schema.createCollection', script, [schema.getName(), 'foobar'], { level: Level.WARNING })
+                        .then(proc => {
+                            expect(proc.logs).to.have.lengthOf(1);
+                            return expect(proc.logs[0]).to.equal(warnings.MESSAGES.WARN_DEPRECATED_CREATE_COLLECTION_REUSE_EXISTING);
+                        });
+                });
+
+                it('writes a deprecation message to stdout when debug mode is not enabled', done => {
+                    const warningMessages = [];
+
+                    process.on('warning', warning => {
+                        if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
+                            warningMessages.push(warning.message);
+                        }
+
+                        if (warning.name && warning.name === 'NoWarning') {
+                            process.removeAllListeners('warning');
+
+                            expect(warningMessages).to.have.lengthOf(1);
+                            expect(warningMessages[0]).to.equal(warnings.MESSAGES.WARN_DEPRECATED_CREATE_COLLECTION_REUSE_EXISTING);
+
+                            return done();
+                        }
+                    });
+
+                    schema.createCollection(schemaName, { ReuseExistingObject: true })
+                        .then(() => {
+                            process.emitWarning('No more warnings.', 'NoWarning');
+                        });
+                });
+            });
+
+            it('fails if its not allowed to re-use the existing schema', () => {
+                return schema.createCollection(schemaName)
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        expect(err.info).to.include.keys('code');
+                        return expect(err.info.code).to.equal(errors.ER_TABLE_EXISTS_ERROR);
+                    });
+            });
+        });
     });
 
     it('@regression does not apply padding when retrieving server-side auto-generated _id values using SQL', () => {
@@ -123,8 +194,12 @@ describe('collection miscellaneous tests', () => {
 
         it('fails if the collection does not exist in the given schema', () => {
             return schema.getCollection('noop').count()
-                .then(() => expect.fail())
-                .catch(err => expect(err.message).to.equal(`Collection '${schema.getName()}.noop' doesn't exist`));
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(`Collection '${schema.getName()}.noop' doesn't exist`);
+                });
         });
     });
 

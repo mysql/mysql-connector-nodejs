@@ -119,7 +119,7 @@ describe('DevAPI Client', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.deep.equal(errors.MESSAGES.ERR_POOL_CLOSED);
+                    return expect(err.message).to.deep.equal(errors.MESSAGES.ER_DEVAPI_POOL_CLOSED);
                 });
         });
 
@@ -129,7 +129,7 @@ describe('DevAPI Client', () => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.deep.equal(errors.MESSAGES.ERR_POOL_CLOSED);
+                    return expect(err.message).to.deep.equal(errors.MESSAGES.ER_DEVAPI_POOL_CLOSED);
                 });
         });
     });
@@ -158,7 +158,7 @@ describe('DevAPI Client', () => {
 
             td.when(connection.validate(), { ignoreExtraArgs: true }).thenReturn(true);
 
-            return expect(() => client.validate(options)).to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION, 'foo'));
+            return expect(() => client.validate(options)).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION, 'foo'));
         });
 
         it('fails when the pooling option is badly specified', () => {
@@ -166,7 +166,7 @@ describe('DevAPI Client', () => {
 
             td.when(connection.validate(), { ignoreExtraArgs: true }).thenReturn(true);
 
-            return expect(() => client.validate(options)).to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE, 'pooling', 'foo'));
+            return expect(() => client.validate(options)).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION_VALUE, 'pooling', 'foo'));
         });
 
         it('fails when a pooling option value is badly specified', () => {

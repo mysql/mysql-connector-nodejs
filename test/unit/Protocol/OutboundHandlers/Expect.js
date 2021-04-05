@@ -43,7 +43,7 @@ describe('Mysqlx.Expect outbound handler', () => {
 
     beforeEach('create fakes', () => {
         close = td.replace('../../../../lib/Protocol/Wrappers/Messages/Expect/Close');
-        logger = td.replace('../../../../lib/tool/log');
+        logger = td.replace('../../../../lib/logger');
         open = td.replace('../../../../lib/Protocol/Wrappers/Messages/Expect/Open');
 
         info = td.function();

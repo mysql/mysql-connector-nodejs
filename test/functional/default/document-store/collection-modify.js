@@ -137,6 +137,32 @@ describe('modifying documents in a collection', () => {
         });
     });
 
+    context('removing items in array properties', () => {
+        beforeEach('add fixtures', () => {
+            return collection
+                .add({ _id: '1', names: ['foo', 'bar'] })
+                .add({ _id: '2', names: ['baz', 'qux'] })
+                .execute();
+        });
+
+        it('removes the item in the given array index on a property of all matching documents', () => {
+            const expected = [{ _id: '1', names: ['foo'] }, { _id: '2', names: ['baz'] }];
+
+            return collection.modify('true')
+                // TODO(Rui): arrayDelete is deprecated. Once the deprecation
+                // period finishes, we should use "unset()" instead.
+                .arrayDelete('names[1]')
+                .execute()
+                .then(() => {
+                    return collection.find()
+                        .execute();
+                })
+                .then(res => {
+                    return expect(res.fetchAll()).to.deep.equal(expected);
+                });
+        });
+    });
+
     context('with limit', () => {
         beforeEach('add fixtures', () => {
             return collection
@@ -238,7 +264,7 @@ describe('modifying documents in a collection', () => {
                         return expect.fail();
                     })
                     .catch((err) => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
                     });
             });
 
@@ -248,7 +274,7 @@ describe('modifying documents in a collection', () => {
                         return expect.fail();
                     })
                     .catch((err) => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
                     });
             });
 
@@ -258,7 +284,7 @@ describe('modifying documents in a collection', () => {
                         return expect.fail();
                     })
                     .catch((err) => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
                     });
             });
 
@@ -268,7 +294,7 @@ describe('modifying documents in a collection', () => {
                         return expect.fail();
                     })
                     .catch((err) => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
                     });
             });
         });

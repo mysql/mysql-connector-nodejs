@@ -412,7 +412,7 @@ describe('connection pool', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            expect(err.message).to.equal(errors.MESSAGES.ERR_CONNECTION_CLOSED);
+                            expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_CONNECTION_CLOSED);
                             return pool.close();
                         });
                 });
@@ -437,7 +437,7 @@ describe('connection pool', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            expect(err.message).to.equal(errors.MESSAGES.ERR_CONNECTION_CLOSED);
+                            expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_CONNECTION_CLOSED);
                             return pool.close();
                         });
                 });

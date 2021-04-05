@@ -92,7 +92,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
                         });
                 });
 
@@ -104,7 +104,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH);
                         });
                 });
 
@@ -116,7 +116,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH);
                         });
                 });
 
@@ -128,7 +128,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, 'foo'));
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, 'foo'));
                         });
                 });
 
@@ -140,7 +140,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
                         });
                 });
 
@@ -157,7 +157,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
                         });
                 });
 
@@ -169,7 +169,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'foo'));
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, 'foo'));
                         });
                 });
 
@@ -181,7 +181,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_NO_VALID_CIPHERSUITE_AVAILABLE);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_CIPHERSUITE);
                         });
                 });
 
@@ -193,7 +193,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
                         });
                 });
 
@@ -205,7 +205,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
                         });
                 });
 
@@ -217,7 +217,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
                         });
                 });
 
@@ -229,7 +229,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTE_NAME);
                         });
                 });
 
@@ -241,7 +241,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_INVALID_OPTION);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SRV_LOOKUP_OPTION);
                         });
                 });
 
@@ -253,7 +253,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_MULTIPLE_ENDPOINTS);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_MULTIPLE_ENDPOINTS);
                         });
                 });
 
@@ -265,7 +265,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_PORT);
                         });
                 });
 
@@ -277,7 +277,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_PORT);
                         });
                 });
 
@@ -289,7 +289,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
                         });
                 });
 
@@ -301,7 +301,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
                         });
                 });
 
@@ -313,7 +313,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
                         });
                 });
 
@@ -325,7 +325,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
                         });
                 });
             });
@@ -340,7 +340,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+                            expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
                         });
                 });
 
@@ -353,7 +353,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH);
                         });
                 });
 
@@ -366,7 +366,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH);
                         });
                 });
 
@@ -379,7 +379,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, 'foo'));
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, 'foo'));
                         });
                 });
 
@@ -392,7 +392,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
                         });
                 });
 
@@ -410,7 +410,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
                         });
                 });
 
@@ -423,7 +423,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'foo'));
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, 'foo'));
                         });
                 });
 
@@ -436,7 +436,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_TLS_NO_VALID_CIPHERSUITE_AVAILABLE);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_CIPHERSUITE);
                         });
                 });
 
@@ -449,7 +449,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
                         });
                 });
 
@@ -462,7 +462,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
                         });
                 });
 
@@ -475,7 +475,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTE_NAME);
                         });
                 });
 
@@ -488,7 +488,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_MULTIPLE_ENDPOINTS);
+                            expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_MULTIPLE_ENDPOINTS);
                         });
                 });
 
@@ -501,7 +501,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                            expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_PORT);
                         });
                 });
 
@@ -514,7 +514,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            expect(err.message).to.equal(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                            expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
                         });
                 });
 
@@ -527,7 +527,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                            expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
                         });
                 });
 
@@ -540,7 +540,7 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
                         });
                 });
             });
@@ -551,36 +551,36 @@ describe('connection failures', () => {
                 const unknownClientOptions = { foo: 'bar' };
 
                 expect(() => mysqlx.getClient({}, unknownClientOptions))
-                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION, 'foo'));
+                    .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION, 'foo'));
             });
 
             it('throws an error when unknown pooling options are provided', () => {
                 const unknownPoolingOptions = { pooling: { foo: 'bar' } };
 
                 expect(() => mysqlx.getClient({}, unknownPoolingOptions))
-                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION, 'pooling.foo'));
+                    .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION, 'pooling.foo'));
             });
 
             it('throws an error when invalid pooling option values are provided', () => {
                 let unknownPoolingOptions = { pooling: { enabled: 'foo' } };
 
                 expect(() => mysqlx.getClient({}, unknownPoolingOptions))
-                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE, 'pooling.enabled', 'foo'));
+                    .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION_VALUE, 'pooling.enabled', 'foo'));
 
                 unknownPoolingOptions = { pooling: { maxIdleTime: -1 } };
 
                 expect(() => mysqlx.getClient({}, unknownPoolingOptions))
-                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE, 'pooling.maxIdleTime', -1));
+                    .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION_VALUE, 'pooling.maxIdleTime', -1));
 
                 unknownPoolingOptions = { pooling: { maxSize: -1 } };
 
                 expect(() => mysqlx.getClient({}, unknownPoolingOptions))
-                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE, 'pooling.maxSize', -1));
+                    .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION_VALUE, 'pooling.maxSize', -1));
 
                 unknownPoolingOptions = { pooling: { maxSize: -1 } };
 
                 expect(() => mysqlx.getClient({}, unknownPoolingOptions))
-                    .to.throw(util.format(errors.MESSAGES.ERR_CLIENT_INVALID_OPTION_VALUE, 'pooling.maxSize', -1));
+                    .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_CLIENT_OPTION_VALUE, 'pooling.maxSize', -1));
             });
 
             context('when the connection options are specified with a configuration object', () => {
@@ -588,60 +588,60 @@ describe('connection failures', () => {
                     let invalidTLSConfig = { tls: { enabled: false, versions: ['TLSv1.2', 'TLSv1.3'] } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
 
                     invalidTLSConfig = { tls: { enabled: false, ca: '/path/to/ca.pem' } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
                 });
 
                 it('throws an error when the path to the CA file is badly specified', () => {
                     let invalidTLSConfig = { tls: { ca: false } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH);
 
                     invalidTLSConfig = { tls: { ca: [] } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH);
                 });
 
                 it('throws an error when the path to the CRL file is badly specified', () => {
                     let invalidTLSConfig = { tls: { crl: {} } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH);
 
                     invalidTLSConfig = { tls: { crl: 2 } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH);
                 });
 
                 it('throws an error when the list of TLS versions is badly specified', () => {
                     let invalidTLSConfig = { tls: { versions: {} } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, '{}'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, '{}'));
 
                     invalidTLSConfig = { tls: { versions: 'foo' } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, 'foo'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, 'foo'));
                 });
 
                 it('throws an error when unknown TLS versions are provided in the list', () => {
                     let invalidTLSConfig = { tls: { versions: ['foo', 'bar'] } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
 
                     invalidTLSConfig = { tls: { versions: ['TLSv1.2', 'bar'] } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'bar', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'bar', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
                 });
 
                 it('throws an error when all the TLS versions provided in the list are not supported', function () {
@@ -652,117 +652,117 @@ describe('connection failures', () => {
                     const invalidTLSConfig = { tls: { versions: ['TLSv1.3'] } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE, 'TLSv1.3'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION, 'TLSv1.3'));
                 });
 
                 it('throws an error when the list of ciphersuites is badly specified', () => {
                     let invalidTLSConfig = { tls: { ciphersuites: 'foo' } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'foo'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, 'foo'));
 
                     invalidTLSConfig = { tls: { ciphersuites: {} } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, '{}'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, '{}'));
 
                     invalidTLSConfig = { tls: { ciphersuites: false } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'false'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, 'false'));
                 });
 
                 it('throws an error when the list of ciphersuites does not contain any valid one', () => {
                     const invalidTLSConfig = { tls: { ciphersuites: ['foo', 'bar'] } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(errors.MESSAGES.ERR_TLS_NO_VALID_CIPHERSUITE_AVAILABLE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_CIPHERSUITE);
                 });
 
                 it('throws an error when the connection timeout is not a number above or equal to 0', () => {
                     let invalidTimeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: 'foo1' });
 
                     expect(() => mysqlx.getClient(invalidTimeoutConfig))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
 
                     invalidTimeoutConfig = Object.assign({}, config, baseConfig, { connectTimeout: -1 });
 
                     expect(() => mysqlx.getClient(invalidTimeoutConfig))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
                 });
 
                 it('throws an error when the connection attributes are badly specified', () => {
                     let invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: ['foo', 'bar'] });
 
                     expect(() => mysqlx.getClient(invalidAttributesConfig))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
 
                     invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: 'foo' });
 
                     expect(() => mysqlx.getClient(invalidAttributesConfig))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
 
                     invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: null });
 
                     expect(() => mysqlx.getClient(invalidAttributesConfig))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
                 });
 
                 it('throws an error when the name of any connection attribute starts with "_"', () => {
                     const invalidAttributesConfig = Object.assign({}, config, baseConfig, { connectionAttributes: { _foo: 'bar' } });
 
                     expect(() => mysqlx.getClient(invalidAttributesConfig))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTE_NAME);
                 });
 
                 it('throws an error when SRV resolution is badly configured', () => {
                     const invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: 'foo' });
 
                     expect(() => mysqlx.getClient(invalidSRVConfig))
-                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_INVALID_OPTION);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SRV_LOOKUP_OPTION);
                 });
 
                 it('throws an error when enabling SRV resolution whilst specifying multiple hosts', () => {
                     const invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, endpoints: [{ host: 'foo' }, { host: 'bar' }] });
 
                     expect(() => mysqlx.getClient(invalidSRVConfig))
-                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_MULTIPLE_ENDPOINTS);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_MULTIPLE_ENDPOINTS);
                 });
 
                 it('throws an error when enabling SRV resolution whilst specifying a port', () => {
                     let invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, port: 33061 });
 
                     expect(() => mysqlx.getClient(invalidSRVConfig))
-                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_PORT);
 
                     invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, endpoints: [{ host: 'foo', port: 33062 }] });
 
                     expect(() => mysqlx.getClient(invalidSRVConfig))
-                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_PORT);
                 });
 
                 it('throws an error when enabling SRV resolution whilst specifying a socket', () => {
                     let invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, socket: '/path/to/socket', port: undefined });
 
                     expect(() => mysqlx.getClient(invalidSRVConfig))
-                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
 
                     invalidSRVConfig = Object.assign({}, config, baseConfig, { resolveSrv: true, endpoints: [{ socket: '/path/to/socket' }] });
 
                     expect(() => mysqlx.getClient(invalidSRVConfig))
-                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
                 });
 
                 it('throws an error when the port is not a number between 0 and 65536', () => {
                     let invalidPortConfig = Object.assign({}, config, baseConfig, { port: -1 });
 
                     expect(() => mysqlx.getClient(invalidPortConfig))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
 
                     invalidPortConfig = Object.assign({}, config, baseConfig, { port: 'foo' });
 
                     expect(() => mysqlx.getClient(invalidPortConfig))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
                 });
             });
 
@@ -772,13 +772,13 @@ describe('connection failures', () => {
                     let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-mode=DISABLED&tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
 
                     invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, ca: '/path/to/ca.pem' } });
                     uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-mode=DISABLED&ssl-ca=${encodeURIComponent('/path/to/ca.pem')}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_TLS_DISABLED_WITH_OPTIONS);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
                 });
 
                 it('throws an error when the path to the CA file is badly specified', () => {
@@ -786,13 +786,13 @@ describe('connection failures', () => {
                     let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-ca=${JSON.stringify(invalidTLSConfig.tls.ca)}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH);
 
                     invalidTLSConfig.tls.ca = {};
                     uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-ca=${JSON.stringify(invalidTLSConfig.tls.ca)}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CA_PATH);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH);
                 });
 
                 it('throws an error when the path to the CRL file is badly specified', () => {
@@ -800,13 +800,13 @@ describe('connection failures', () => {
                     let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-crl=${JSON.stringify(invalidTLSConfig.tls.crl)}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH);
 
                     invalidTLSConfig.tls.crl = {};
                     uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-crl=${JSON.stringify(invalidTLSConfig.tls.crl)}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_TLS_INVALID_CRL_PATH);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH);
                 });
 
                 it('throws an error when the list of TLS versions is badly specified', () => {
@@ -814,13 +814,13 @@ describe('connection failures', () => {
                     let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=${JSON.stringify(invalidTLSConfig.tls.versions)}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, '{}'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, '{}'));
 
                     invalidTLSConfig.tls.versions = 'foo';
                     uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=${invalidTLSConfig.tls.versions}`;
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_VERSION_LIST_DEFINITION, 'foo'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, 'foo'));
                 });
 
                 it('throws an error when unknown TLS versions are provided in the list', () => {
@@ -828,13 +828,13 @@ describe('connection failures', () => {
                     let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
 
                     invalidTLSConfig.tls.versions = ['TLSv1.2', 'bar'];
                     uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_LIST_CONTAINS_INVALID_VERSION, 'bar', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'bar', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
                 });
 
                 it('throws an error when all the TLS versions provided in the list are not supported', function () {
@@ -846,7 +846,7 @@ describe('connection failures', () => {
                     const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_NO_SUPPORTED_VERSION_AVAILABLE, 'TLSv1.3'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION, 'TLSv1.3'));
                 });
 
                 it('throws an error when the list of ciphersuites is badly specified', () => {
@@ -854,19 +854,19 @@ describe('connection failures', () => {
                     let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=${invalidTLSConfig.tls.ciphersuites}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'foo'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, 'foo'));
 
                     invalidTLSConfig.tls.ciphersuites = {};
                     uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=${JSON.stringify(invalidTLSConfig.tls.ciphersuites)}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, '{}'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, '{}'));
 
                     invalidTLSConfig.tls.ciphersuites = false;
                     uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=${invalidTLSConfig.tls.ciphersuites}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ERR_TLS_INVALID_CIPHERSUITE_LIST_DEFINITION, 'false'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, 'false'));
                 });
 
                 it('throws an error when the list of ciphersuites does not contain any valid one', () => {
@@ -874,7 +874,7 @@ describe('connection failures', () => {
                     const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=[${invalidTLSConfig.tls.ciphersuites.join(',')}]`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_TLS_NO_VALID_CIPHERSUITE_AVAILABLE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_CIPHERSUITE);
                 });
 
                 it('throws an error when the connection timeout is not a number above or equal to 0', () => {
@@ -882,13 +882,13 @@ describe('connection failures', () => {
                     let uri = `mysqlx://${invalidTimeoutConfig.user}:${invalidTimeoutConfig.password}@${invalidTimeoutConfig.host}:${invalidTimeoutConfig.port}?connect-timeout=${invalidTimeoutConfig.connectTimeout}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
 
                     invalidTimeoutConfig.connectTimeout = -1;
                     uri = `mysqlx://${invalidTimeoutConfig.user}:${invalidTimeoutConfig.password}@${invalidTimeoutConfig.host}:${invalidTimeoutConfig.port}?connect-timeout=${invalidTimeoutConfig.connectTimeout}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_TIMEOUT_VALUE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_TIMEOUT);
                 });
 
                 it('throws an error when the connection attributes are badly specified', () => {
@@ -896,13 +896,13 @@ describe('connection failures', () => {
                     let uri = `mysqlx://${invalidAttributesConfig.user}:${invalidAttributesConfig.password}@${invalidAttributesConfig.host}:${invalidAttributesConfig.port}?connection-attributes=foo`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
 
                     invalidAttributesConfig.connectionAttributes = ['foo', 'bar'];
                     uri = `mysqlx://${invalidAttributesConfig.user}:${invalidAttributesConfig.password}@${invalidAttributesConfig.host}:${invalidAttributesConfig.port}?connection-attributes=${invalidAttributesConfig.connectionAttributes.join(',')}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_DEFINITION);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTES_DEFINITION);
                 });
 
                 it('throws an error when the name of any connection attribute starts with "_"', () => {
@@ -910,7 +910,7 @@ describe('connection failures', () => {
                     const uri = `mysqlx://${invalidAttributesConfig.user}:${invalidAttributesConfig.password}@${invalidAttributesConfig.host}:${invalidAttributesConfig.port}?connection-attributes=[${qs.stringify(invalidAttributesConfig.connectionAttributes)}]`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_CONNECTION_ATTRIBUTES_CONVENTION);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_SESSION_ATTRIBUTE_NAME);
                 });
 
                 it('throws an error when enabling SRV resolution whilst specifying multiple hosts', () => {
@@ -918,7 +918,7 @@ describe('connection failures', () => {
                     const uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@[${invalidSRVConfig.endpoints.map(e => e.host).join(',')}]`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_MULTIPLE_ENDPOINTS);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_MULTIPLE_ENDPOINTS);
                 });
 
                 it('throws an error when enabling SRV resolution whilst specifying a port', () => {
@@ -926,7 +926,7 @@ describe('connection failures', () => {
                     const uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@${invalidSRVConfig.host}:${invalidSRVConfig.port}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_PORT);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_PORT);
                 });
 
                 it('throws an error when enabling SRV resolution whilst specifying a socket', () => {
@@ -934,12 +934,12 @@ describe('connection failures', () => {
                     let uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@${encodeURIComponent(invalidSRVConfig.socket)}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
 
                     uri = `mysqlx+srv://${invalidSRVConfig.user}:${invalidSRVConfig.password}@(${invalidSRVConfig.socket})`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_SRV_LOOKUP_WITH_LOCAL_SOCKET);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_SRV_LOOKUP_NO_UNIX_SOCKET);
                 });
 
                 it('throws an error when the port is not a number between 0 and 65536', () => {
@@ -947,25 +947,25 @@ describe('connection failures', () => {
                     let uri = `mysqlx://${invalidPortConfig.user}:${invalidPortConfig.password}@${invalidPortConfig.host}:${invalidPortConfig.port}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
 
                     invalidPortConfig.port = 'foo';
                     uri = `mysqlx://${invalidPortConfig.user}:${invalidPortConfig.password}@${invalidPortConfig.host}:${invalidPortConfig.port}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
 
                     invalidPortConfig = Object.assign({}, config, baseConfig, { endpoints: [{ port: 33060 }, { port: -1 }], port: undefined });
                     uri = `mysqlx://${invalidPortConfig.user}:${invalidPortConfig.password}@[${invalidPortConfig.endpoints.map(e => `${invalidPortConfig.host}:${e.port}`).join(',')}]`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
 
                     invalidPortConfig = Object.assign({}, config, baseConfig, { endpoints: [{ port: 33060 }, { port: 'foo' }], port: undefined });
                     uri = `mysqlx://${invalidPortConfig.user}:${invalidPortConfig.password}@[${invalidPortConfig.endpoints.map(e => `${invalidPortConfig.host}:${e.port}`).join(',')}]`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ERR_INVALID_PORT_RANGE);
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_CONNECTION_PORT_RANGE);
                 });
             });
         });
@@ -1000,8 +1000,12 @@ describe('connection failures', () => {
                         return new Promise(resolve => setTimeout(resolve, waitTimeout))
                             .then(() => session.sql('SELECT 1').execute());
                     })
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_CONNECTION_IDLE_FOR_TOO_LONG));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_IO_READ_ERROR);
+                    });
             });
 
             it('logs the server message sent when the connection is killed', () => {
@@ -1080,8 +1084,12 @@ describe('connection failures', () => {
                         return new Promise(resolve => setTimeout(resolve, testTimeout * 1000 * 2))
                             .then(() => session.sql('SELECT 1').execute());
                     })
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_CONNECTION_IDLE_FOR_TOO_LONG));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_IO_READ_ERROR);
+                    });
             });
 
             it('logs the server message sent when the connection is killed', () => {
@@ -1172,8 +1180,12 @@ describe('connection failures', () => {
                         return new Promise(resolve => setTimeout(resolve, waitTimeout))
                             .then(() => session.sql('SELECT 1').execute());
                     })
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_CONNECTION_IDLE_FOR_TOO_LONG));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_IO_READ_ERROR);
+                    });
             });
 
             it('logs the server message sent when the connection is killed', function () {
@@ -1265,8 +1277,12 @@ describe('connection failures', () => {
                                     .execute();
                             });
                     })
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_CONNECTION_KILLED_IN_DIFFERENT_SESSION));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_SESSION_WAS_KILLED);
+                    });
             });
 
             it('logs the server message sent when the connection is killed', () => {
@@ -1356,8 +1372,12 @@ describe('connection failures', () => {
                                     .execute();
                             });
                     })
-                    .then(() => expect.fail())
-                    .catch(err => expect(err.message).to.equal(errors.MESSAGES.ERR_CONNECTION_KILLED_IN_DIFFERENT_SESSION));
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ER_SESSION_WAS_KILLED);
+                    });
             });
 
             it('logs the server message sent when the connection is killed', () => {

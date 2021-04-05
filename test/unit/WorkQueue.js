@@ -33,12 +33,13 @@
 /* eslint-env node, mocha */
 
 const WorkQueue = require('../../lib/WorkQueue');
+const errors = require('../../lib/constants/errors');
 const expect = require('chai').expect;
 
 describe('WorkQueue', () => {
     describe('Simple queue processing', () => {
         it('throws an exception when empty', () => {
-            expect(() => (new WorkQueue()).process(true)).to.throw(/Queue is empty/);
+            expect(() => (new WorkQueue()).process(true)).to.throw(errors.MESSAGES.ER_X_CLIENT_EMPTY_WORK_QUEUE);
         });
 
         it('calls first handler on first call', () => {
@@ -91,7 +92,7 @@ describe('WorkQueue', () => {
             queue.push((message, cb) => cb());
             queue.process(true);
 
-            expect(() => queue.process(true)).to.throw(/Queue is empty/);
+            expect(() => queue.process(true)).to.throw(errors.MESSAGES.ER_X_CLIENT_EMPTY_WORK_QUEUE);
         });
 
         it('clears', () => {
@@ -99,7 +100,7 @@ describe('WorkQueue', () => {
             queue.push((message, cb) => cb());
             queue.clear();
 
-            expect(() => queue.process(true)).to.throw(/Queue is empty/);
+            expect(() => queue.process(true)).to.throw(errors.MESSAGES.ER_X_CLIENT_EMPTY_WORK_QUEUE);
         });
 
         it('handles multiple handlers in order', () => {
@@ -132,7 +133,7 @@ describe('WorkQueue', () => {
                 queue.process(true);
             }
 
-            expect(() => queue.process(true)).to.throw(/Queue is empty/);
+            expect(() => queue.process(true)).to.throw(errors.MESSAGES.ER_X_CLIENT_EMPTY_WORK_QUEUE);
         });
     });
 });

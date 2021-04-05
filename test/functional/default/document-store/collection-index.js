@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -122,7 +123,7 @@ describe('collection indexes', () => {
                         .then(() => expect.fail())
                         .catch(err => {
                             expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(1061);
+                            expect(err.info.code).to.equal(errors.ER_DUP_KEYNAME);
                         });
                 });
         });
