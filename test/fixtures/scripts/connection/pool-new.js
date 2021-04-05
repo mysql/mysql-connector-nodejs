@@ -30,48 +30,32 @@
 
 'use strict';
 
-const tls = require('tls');
+const mysqlx = require('../../../..');
 
-/**
- * Lists all the allowed TLS versions
- * @private
- * @returns {string[]}
- */
-exports.allowed = function () {
-    return ['TLSv1', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3'];
-};
+const config = JSON.parse(process.env.MYSQLX_CLIENT_CONFIG);
+const baseConfig = Object.assign({}, config, { schema: undefined });
 
-/**
- * List the TLS versions that are deprecated.
- * @returns {string[]}
- */
-exports.deprecated = function () {
-    return ['TLSv1', 'TLSv1.1'];
-};
+// additional configuration properties are provided via a JSON command argument
+const additionalConfig = JSON.parse(process.argv[2] || null);
+const scriptConfig = Object.assign({}, baseConfig, additionalConfig);
 
-/**
- * Retrieves the latest TLS version available for the Node.js engine (and
- * OpenSSL) version being used.
- * @private
- * @returns {string} Returns tls.DEFAULT_MAX_VERSION or 'TLSv1.2' if it is not
- * available.
- */
-exports.latest = function () {
-    return tls.DEFAULT_MAX_VERSION || 'TLSv1.2';
-};
+const pool = mysqlx.getClient(scriptConfig);
 
-/**
- * Retrieves the list of TLS versions supported by the current Node.js
- * engine (and OpenSSL) version.
- * @private
- * @returns {string[]} Returns ['TLSv1', 'TLSv1.1', 'TLSv1.2'] on Node.js
- * versions below or equal to 10.x, and ['TLSv1', 'TLSv1.1', 'TLSv1.2',
- * 'TLSv1.3'] on versions above.
- */
-exports.supported = function () {
-    const allowed = this.allowed();
-    const latest = this.latest();
-
-    // If TLSv1.3 is supported, we should include it.
-    return allowed.slice(0, allowed.indexOf(latest) > -1 ? allowed.indexOf(latest) + 1 : 0);
-};
+pool.getSession()
+    .then(session => {
+        return session.close();
+    })
+    .then(() => {
+        return pool.close();
+    })
+    .then(() => {
+        return pool.getSession();
+    })
+    .then(() => {
+        return pool.close();
+    })
+    .catch(err => {
+        // errors in should be passed as JSON to the parent process via stderr
+        console.error(JSON.stringify({ message: err.message, stack: err.stack }));
+        return process.exit(1);
+    });

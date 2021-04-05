@@ -64,11 +64,7 @@ describe('log tools', () => {
 
         context('when debug mode is enabled', () => {
             beforeEach('enable debug mode', () => {
-                process.env.NODE_DEBUG = true;
-            });
-
-            afterEach('disable debug mode', () => {
-                process.env.NODE_DEBUG = undefined;
+                td.replace(process, 'env', { NODE_DEBUG: true });
             });
 
             it('deffers logging a message to the system via util.debuglog', () => {
@@ -79,6 +75,78 @@ describe('log tools', () => {
                 td.when(util.debuglog('foo.bar')).thenReturn(debug);
 
                 expect(log.info('bar', 'baz')).to.equal('qux');
+            });
+        });
+    });
+
+    context('warning()', () => {
+        context('when debug mode is disabled', () => {
+            it('emits a general warning event using the MYCONNNJS code by default', () => {
+                const log = logger('foo');
+                const emitWarning = td.replace(process, 'emitWarning');
+
+                log.warning('bar', 'baz');
+
+                expect(td.explain(emitWarning).callCount).to.equal(1);
+                return expect(td.explain(emitWarning).calls[0].args).to.deep.equal(['baz', 'Warning', 'MYCONNNJS']);
+            });
+
+            it('emits a general warning event with a given code', () => {
+                const log = logger('foo');
+                const emitWarning = td.replace(process, 'emitWarning');
+
+                log.warning('bar', 'baz', { code: 'qux' });
+
+                expect(td.explain(emitWarning).callCount).to.equal(1);
+                return expect(td.explain(emitWarning).calls[0].args).to.deep.equal(['baz', 'Warning', 'qux']);
+            });
+
+            it('emits a warning event of a given type and code', () => {
+                const log = logger('foo');
+                const emitWarning = td.replace(process, 'emitWarning');
+
+                log.warning('bar', 'baz', { code: 'qux', type: 'quux' });
+
+                expect(td.explain(emitWarning).callCount).to.equal(1);
+                return expect(td.explain(emitWarning).calls[0].args).to.deep.equal(['baz', 'quux', 'qux']);
+            });
+
+            it('does not write any message to the system debug log', () => {
+                const log = logger('foo');
+                const info = td.replace(log, 'info');
+
+                td.replace(process, 'emitWarning');
+
+                log.warning('bar', 'baz');
+
+                return expect(td.explain(info).callCount).to.equal(0);
+            });
+        });
+
+        context('when debug mode is enabled', () => {
+            beforeEach('enable debug mode', () => {
+                td.replace(process, 'env', { NODE_DEBUG: true });
+            });
+
+            it('writes the message to the system debug log', () => {
+                const log = logger('foo');
+                const info = td.replace(log, 'info');
+
+                td.when(info('bar', 'baz')).thenReturn('qux');
+
+                expect(log.warning('bar', 'baz')).to.equal('qux');
+            });
+
+            it("does not emit any 'warning' event", () => {
+                const log = logger('foo');
+
+                td.replace(log, 'info');
+
+                const emitWarning = td.replace(process, 'emitWarning');
+
+                log.warning('bar', 'baz');
+
+                return expect(td.explain(emitWarning).callCount).to.equal(0);
             });
         });
     });

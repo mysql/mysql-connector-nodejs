@@ -49,6 +49,12 @@ describe('TLS version utilities', () => {
         });
     });
 
+    context('deprecated()', () => {
+        it('returns the list of TLS versions that are deprecated', () => {
+            return expect(versions.deprecated()).to.deep.equal(['TLSv1', 'TLSv1.1']);
+        });
+    });
+
     context('latest()', () => {
         it('returns the latest TLS version supported by the Node.js engine when it is available', () => {
             const maxVersion = 'foo';

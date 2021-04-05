@@ -1102,15 +1102,20 @@ describe('X DevAPI Connection', () => {
     });
 
     context('enableTLS()', () => {
-        let Client, secureContext, socket, tls;
+        let Client, log, secureContext, socket, tls, tlsVersions;
 
         beforeEach('create fakes', () => {
             secureContext = td.function();
 
             socket = new PassThrough();
+            // The "getProtocol()" method is specific to a TLS socket and not
+            // part of the native Duplex stream API, so we need to fake it.
+            socket.getProtocol = td.function();
 
             Client = td.replace('../../../lib/Protocol/Client');
+            log = td.replace('../../../lib/tool/log');
             secureContext = td.replace('../../../lib/tls/secure-context');
+            tlsVersions = td.replace('../../../lib/tls/versions');
             tls = td.replace('tls');
 
             connection = require('../../../lib/DevAPI/Connection');
@@ -1122,10 +1127,13 @@ describe('X DevAPI Connection', () => {
 
             td.when(Client.prototype.getConnection()).thenReturn('bar');
             td.when(secureContext.create({ option: 'foo' })).thenReturn({ option: 'quux' });
+
             td.when(tls.connect({ socket: 'bar', option: 'quux' })).thenDo(() => {
                 setTimeout(() => socket.emit('secureConnect'));
                 return socket;
             });
+
+            td.when(tlsVersions.deprecated()).thenReturn([]);
 
             return con.enableTLS()
                 .then(() => {
@@ -1133,6 +1141,57 @@ describe('X DevAPI Connection', () => {
                     expect(td.explain(Client.prototype.setConnection).calls[0].args).to.deep.equal([socket]);
 
                     return expect(con.isSecure()).to.be.true;
+                });
+        });
+
+        it('generates a deprecation message if the negotiated TLS version is deprecated', () => {
+            const tlsOptions = { option: 'foo' };
+            const con = connection({ tls: tlsOptions }).setClient(new Client());
+            const warning = td.function();
+
+            td.when(Client.prototype.getConnection()).thenReturn('bar');
+            td.when(secureContext.create({ option: 'foo' })).thenReturn({ option: 'baz' });
+
+            td.when(tls.connect({ socket: 'bar', option: 'baz' })).thenDo(() => {
+                setTimeout(() => socket.emit('secureConnect'));
+                return socket;
+            });
+
+            td.when(socket.getProtocol()).thenReturn('qux');
+            td.when(tlsVersions.deprecated()).thenReturn(['qux', 'quux']);
+            td.when(log('connection:tls')).thenReturn({ warning });
+
+            return con.enableTLS()
+                .then(() => {
+                    expect(td.explain(warning).callCount).to.equal(1);
+                    expect(td.explain(warning).calls[0].args).to.be.an('array').and.have.lengthOf(3);
+                    expect(td.explain(warning).calls[0].args[0]).to.equal('version');
+                    expect(td.explain(warning).calls[0].args[1]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'qux'));
+                    return expect(td.explain(warning).calls[0].args[2]).to.deep.equal({ type: 'DeprecationWarning' });
+                });
+        });
+
+        it('does not generate a deprecation message if the negotiated TLS version is not deprecated', () => {
+            const tlsOptions = { option: 'foo' };
+            const con = connection({ tls: tlsOptions }).setClient(new Client());
+            const warning = td.function();
+
+            td.when(Client.prototype.getConnection()).thenReturn('bar');
+            td.when(secureContext.create({ option: 'foo' })).thenReturn({ option: 'baz' });
+
+            td.when(tls.connect({ socket: 'bar', option: 'baz' })).thenDo(() => {
+                setTimeout(() => socket.emit('secureConnect'));
+                return socket;
+            });
+
+            td.when(socket.getProtocol()).thenReturn('qux');
+            td.when(tlsVersions.deprecated()).thenReturn(['quux']);
+            td.when(log('connection:tls')).thenReturn({ warning });
+
+            return con.enableTLS()
+                .then(() => {
+                    expect(td.explain(log).callCount).to.equal(0);
+                    return expect(td.explain(warning).callCount).to.equal(0);
                 });
         });
 
@@ -1148,6 +1207,8 @@ describe('X DevAPI Connection', () => {
 
                 return socket;
             });
+
+            td.when(tlsVersions.deprecated()).thenReturn([]);
 
             return con.enableTLS()
                 .then(() => {
@@ -1169,6 +1230,8 @@ describe('X DevAPI Connection', () => {
 
                 return socket;
             });
+
+            td.when(tlsVersions.deprecated()).thenReturn([]);
 
             return con.enableTLS()
                 .then(() => {

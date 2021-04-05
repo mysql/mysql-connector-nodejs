@@ -6,13 +6,13 @@ const mysqlx = require('@mysql/xdevapi');
 // using a connection string
 mysqlx.getSession('mysqlx://localhost')
     .then(session => {
-        console.log(session.inspect()); // { host: 'localhost', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 
 // using a configuration object
 mysqlx.getSession({ host: 'localhost' })
     .then(session => {
-        console.log(session.inspect()); // { host: 'localhost', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 ```
 
@@ -38,15 +38,15 @@ const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost?ssl-mode=DISABLED')
     .then(session => {
-        console.log(session.inspect()); // { host: 'localhost', ssl: false }
+        console.log(session.inspect()); // { host: 'localhost', tls: false }
     });
 
 // or using a plain JavaScript configuration object
-const options = { host: 'localhost', tls: { enabled: true };
+const options = { host: 'localhost', tls: { enabled: false } };
 
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect()); // { host: 'localhost', ssl: false }
+        console.log(session.inspect()); // { host: 'localhost', tls: false }
     });
 ```
 
@@ -63,7 +63,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.2,TLSv1.3]')
     .catch(err => {
-        console.log(err.message); // { host: 'localhost', ssl: true }
+        console.log(err.message); // { host: 'localhost', tls: true }
     });
 
 
@@ -71,7 +71,7 @@ const options = { host: 'localhost', tls: { enabled: true, versions: ['TLSv1.2',
 
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect()); // { host: 'localhost', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 ```
 
@@ -89,7 +89,7 @@ mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.1,TLSv1.2]')
 // With Node.js >=v10.0.0, with support for range-based negotiation, TLSv1.1 will be used
 mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.1,TLSv1.2]')
     .then(session => {
-        console.log(session.inspect()); // { host: 'localhost', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 ```
 
@@ -104,6 +104,73 @@ mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1,TLSv1.1]')
         console.log(err.message); // TCP socket hang
     });
 ```
+
+Both TLSv1 and TLSv1.1 are deprecated. This means that, when connecting to a server that does not support a later and more secure TLS version, or when the list of allowed TLS versions is restricted to one or both of those versions, the client will report a deprecation warning message.
+
+When connecting to an older server with support for TLSv1.1, using the default connection options, like the following `test.js` script:
+
+```javascript
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://root@localhost')
+    .then(session => {
+        console.log('done');
+    });
+```
+
+It will yield the following:
+
+```shell
+$ node test.js
+The connection is using TLSv1.1 which is now deprecated and will be removed in a future release of MySQL. Be prepared to use TLSv1.2 or TLSv1.3 when you upgrade.
+done
+```
+
+When connecting to an older server which supports only TLSv1, the script will yield the following:
+
+```shell
+$ node test.js
+The connection is using TLSv1 which is now deprecated and will be removed in a future release of MySQL. Be prepared to use TLSv1.2 or TLSv1.3 when you upgrade.
+done
+```
+
+The same should happen when connecting to any that supports TLSv1.2 or TLSv1.3 but the list of allowed TLS versions is restricted to one or more of the versions being deprecated.
+
+```javascript
+mysqlx.getSession('mysqlx://root@localhost?tls-versions=[TLSv1,TLSv1.1]')
+    .then(session => {
+        console.log('done');
+    });
+```
+
+Running the script will yield the following:
+
+```shell
+$ node test.js
+The connection is using TLSv1.1 which is now deprecated and will be removed in a future release of MySQL. Be prepared to use TLSv1.2 or TLSv1.3 when you upgrade.
+done
+```
+
+If we restrict it to TLSv1 only, the behavior should be the same, but the message will mention TLSv1 instead.
+
+```javascript
+mysqlx.getSession('mysqlx://root@localhost?tls-versions=[TLSv1]')
+    .then(session => {
+        console.log('done');
+    });
+```
+
+In which case, the script will yield the following:
+
+```shell
+$ node test.js
+The connection is using TLSv1 which is now deprecated and will be removed in a future release of MySQL. Be prepared to use TLSv1.2 or TLSv1.3 when you upgrade.
+done
+```
+
+The deprecation message is written in the process stderr stream as [`'warning'`](https://nodejs.org/docs/v12.0.0/api/process.html#process_event_warning) event, using the same infrastructure as the one used for deprecation messages generated by the core Node.js engine.
+
+When using a connection pool, the message is reported only when the pool creates a new connection or when it re-creates one that expired in the meantime. Idle connections that are re-used by the pool do not report the deprecation message.
 
 #### TLS Ciphersuites
 
@@ -147,14 +214,14 @@ const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost?tls-ciphersuites=[TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256]')
     .then(session => {
-        console.log(session.inspect()); // { host: 'foobar', ssl: true }
+        console.log(session.inspect()); // { host: 'foobar', tls: true }
     });
 
 const options = { host: 'localhost', tls: { ciphersuites: ['TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_DHE_RSA_WITH_AES_128_CBC_SHA256'], enabled: true } };
 
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect()); // { host: 'localhost', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 ```
 
@@ -169,7 +236,7 @@ const mysqlx = require('@mysql/xdevapi');
 
 mysqlx.getSession('mysqlx://localhost?ssl-ca=(/path/to/ca.pem)&ssl-crl=(/path/to/crl.pem)')
     .then(session => {
-        console.log(session.inspect()); // { host: 'localhost', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 
 
@@ -177,7 +244,7 @@ const options = { host: 'localhost', tls: { ca: '/path/to/ca.pem', crl: '/path/t
 
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect()); // { host: 'localhost', ssl: true }
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 ```
 
@@ -221,7 +288,7 @@ mysqlx.getSession('root@localhost?auth=MYSQL41')
         console.log(session.inspect().auth); // 'MYSQL41'
     })
 
-mysqlx.getSession({ auth: 'MYSQL41', ssl: false, user: 'root' })
+mysqlx.getSession({ auth: 'MYSQL41', tls: false, user: 'root' })
     .then(session => {
         console.log(session.inspect().auth); // 'MYSQL41'
     })

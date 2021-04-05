@@ -32,8 +32,12 @@
 
 const config = require('../../../config');
 const expect = require('chai').expect;
+const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../..');
+const path = require('path');
 const tls = require('tls');
+const util = require('util');
+const warnings = require('../../../../lib/constants/warnings');
 
 describe('TLS version negotiation', () => {
     context('server with support for the most secure TLS versions only', () => {
@@ -88,6 +92,140 @@ describe('TLS version negotiation', () => {
                     // ECONNRESET: socket hang up
                     expect(err.message).to.not.equal('expect.fail()');
                 });
+        });
+
+        context('with a standalone connection', () => {
+            it('does not write any deprecation warning to the log for any connection when debug mode is enabled', () => {
+                const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
+                const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
+
+                return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                    .then(proc => {
+                        expect(proc.logs).to.have.lengthOf(0);
+                    });
+            });
+
+            it('does not write any deprecation warning to stdout for any connection when debug mode is enabled', done => {
+                const tlsConfig = Object.assign({}, config, baseConfig);
+                const warningMessages = [];
+
+                process.on('warning', warning => {
+                    if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                        warningMessages.push(warning.message);
+                    }
+
+                    if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                        process.removeAllListeners('warning');
+                        // eslint-disable-next-line no-unused-expressions
+                        expect(warningMessages).to.be.empty;
+                        return done();
+                    }
+                });
+
+                Promise.all([mysqlx.getSession(tlsConfig), mysqlx.getSession(tlsConfig)])
+                    .then(sessions => {
+                        return sessions.map(session => session.close());
+                    })
+                    .then(() => {
+                        return process.emitWarning('There are no warnings.', 'NoWarning', 'MYCONNNJS');
+                    });
+            });
+        });
+
+        context('with a connection pool', () => {
+            context('when debug mode is enabled', () => {
+                it('does not write a deprecation warning to the log for new or re-created connections', () => {
+                    const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
+                    const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-new.js');
+
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                        .then(proc => {
+                            return expect(proc.logs).to.have.lengthOf(0);
+                        });
+                });
+
+                it('does not write a deprecation warning to the log for a connection that is re-used', () => {
+                    const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
+                    const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-reset.js');
+
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                        .then(proc => {
+                            return expect(proc.logs).to.have.lengthOf(0);
+                        });
+                });
+            });
+
+            context('when debug mode is not enabled', () => {
+                it('does not write a deprecation warning to stdout for new or re-created connections', done => {
+                    const maxIdleTime = 100;
+                    const pool = mysqlx.getClient(Object.assign({}, config, baseConfig), { pooling: { maxIdleTime } });
+                    const warningMessages = [];
+
+                    process.on('warning', warning => {
+                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                            warningMessages.push(warning.message);
+                        }
+
+                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                            process.removeAllListeners('warning');
+                            // eslint-disable-next-line no-unused-expressions
+                            expect(warningMessages).to.be.empty;
+                            return done();
+                        }
+                    });
+
+                    pool.getSession()
+                        .then(session => {
+                            return session.close();
+                        })
+                        .then(() => {
+                            // We need to wait a bit more than maxIdleTime,
+                            // just to be sure the connection expires.
+                            return new Promise(resolve => setTimeout(resolve, maxIdleTime + 10));
+                        })
+                        .then(() => {
+                            return pool.getSession();
+                        })
+                        .then(() => {
+                            return pool.close();
+                        })
+                        .then(() => {
+                            return process.emitWarning('There are no warnings.', 'NoWarning', 'MYCONNNJS');
+                        });
+                });
+
+                it('does not write a deprecation warning to stdout for a connection that is re-used', done => {
+                    const pool = mysqlx.getClient(Object.assign({}, config, baseConfig), { pooling: { maxIdleTime: 0 } });
+                    const warningMessages = [];
+
+                    process.on('warning', warning => {
+                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                            warningMessages.push(warning.message);
+                        }
+
+                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                            process.removeAllListeners('warning');
+                            // eslint-disable-next-line no-unused-expressions
+                            expect(warningMessages).to.be.empty;
+                            return done();
+                        }
+                    });
+
+                    pool.getSession()
+                        .then(session => {
+                            return session.close();
+                        })
+                        .then(() => {
+                            return pool.getSession();
+                        })
+                        .then(() => {
+                            return pool.close();
+                        })
+                        .then(() => {
+                            return process.emitWarning('There are no warnings.', 'NoWarning', 'MYCONNNJS');
+                        });
+                });
+            });
         });
     });
 
@@ -172,6 +310,159 @@ describe('TLS version negotiation', () => {
                     // OpenSSL: wrong version number
                     expect(err.message).to.not.equal('expect.fail()');
                 });
+        });
+
+        context('using a standalone connection', () => {
+            it('writes a deprecation warning to the log for every connection when debug mode is enabled', () => {
+                const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
+                const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
+
+                return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                    .then(proc => {
+                        expect(proc.logs).to.have.lengthOf(1);
+                        return expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
+                    })
+                    .then(() => {
+                        return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)]);
+                    })
+                    .then(proc => {
+                        expect(proc.logs).to.have.lengthOf(1);
+                        expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
+                    });
+            });
+
+            it('writes a deprecation warning to stdout for every connection when debug mode is not enabled', done => {
+                const tlsConfig = Object.assign({}, config, baseConfig);
+                const warningMessages = [];
+
+                process.on('warning', warning => {
+                    if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                        warningMessages.push(warning.message);
+                    }
+
+                    if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                        process.removeAllListeners('warning');
+
+                        expect(warningMessages).to.have.lengthOf(2);
+                        expect(warningMessages[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
+                        expect(warningMessages[1]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
+
+                        return done();
+                    }
+                });
+
+                Promise.all([mysqlx.getSession(tlsConfig), mysqlx.getSession(tlsConfig)])
+                    .then(sessions => {
+                        return sessions.map(session => session.close());
+                    })
+                    .then(() => {
+                        return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                    });
+            });
+        });
+
+        context('using a connection pool', () => {
+            context('when debug mode is enabled', () => {
+                it('writes a deprecation warning to the log for every new or re-created connection', () => {
+                    const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
+                    const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-new.js');
+
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                        .then(proc => {
+                            expect(proc.logs).to.have.lengthOf(2);
+                            expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
+                            return expect(proc.logs[1]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
+                        });
+                });
+
+                it('does not write a deprecation warning to the log for a connection that is re-used', () => {
+                    const scriptConfig = Object.assign({}, config, baseConfig, { socket: null });
+                    const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-reset.js');
+
+                    return fixtures.collectLogs('connection:tls.version', script, [JSON.stringify(scriptConfig)])
+                        .then(proc => {
+                            expect(proc.logs).to.have.lengthOf(1);
+                            return expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
+                        });
+                });
+            });
+
+            context('when debug mode is not enabled', () => {
+                it('writes a deprecation warning to stdout for every new or re-created connection', done => {
+                    const maxIdleTime = 100;
+                    const pool = mysqlx.getClient(Object.assign({}, config, baseConfig), { pooling: { maxIdleTime } });
+                    const warningMessages = [];
+
+                    process.on('warning', warning => {
+                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                            warningMessages.push(warning.message);
+                        }
+
+                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                            process.removeAllListeners('warning');
+
+                            expect(warningMessages).to.have.lengthOf(2);
+                            expect(warningMessages[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
+                            expect(warningMessages[1]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
+
+                            return done();
+                        }
+                    });
+
+                    pool.getSession()
+                        .then(session => {
+                            return session.close();
+                        })
+                        .then(() => {
+                            // We need to wait a bit more than maxIdleTime,
+                            // just to be sure the connection expires.
+                            return new Promise(resolve => setTimeout(resolve, maxIdleTime + 10));
+                        })
+                        .then(() => {
+                            return pool.getSession();
+                        })
+                        .then(() => {
+                            return pool.close();
+                        })
+                        .then(() => {
+                            return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                        });
+                });
+
+                it('does not write a deprecation warning to stdout for a connection that is re-used', done => {
+                    const pool = mysqlx.getClient(Object.assign({}, config, baseConfig), { pooling: { maxIdleTime: 0 } });
+                    const warningMessages = [];
+
+                    process.on('warning', warning => {
+                        if (warning.name && warning.code && warning.name === 'DeprecationWarning' && warning.code === 'MYCONNNJS') {
+                            warningMessages.push(warning.message);
+                        }
+
+                        if (warning.name && warning.code && warning.name === 'NoWarning' && warning.code === 'MYCONNNJS') {
+                            process.removeAllListeners('warning');
+
+                            expect(warningMessages).to.have.lengthOf(1);
+                            expect(warningMessages[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, 'TLSv1.1'));
+
+                            return done();
+                        }
+                    });
+
+                    pool.getSession()
+                        .then(session => {
+                            return session.close();
+                        })
+                        .then(() => {
+                            return pool.getSession();
+                        })
+                        .then(() => {
+                            return pool.close();
+                        })
+                        .then(() => {
+                            return process.emitWarning('No more warnings.', 'NoWarning', 'MYCONNNJS');
+                        });
+                });
+            });
         });
     });
 });
