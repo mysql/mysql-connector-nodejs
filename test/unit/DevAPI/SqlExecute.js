@@ -180,5 +180,24 @@ describe('SqlExecute', () => {
                 return expect(td.explain(deprecated).callCount).to.equal(1);
             });
         });
+
+        it('freezes the statement after returning a result', () => {
+            const getClient = td.function();
+            const isIdle = td.function();
+            const isOpen = td.function();
+            const connection = { getClient, isIdle, isOpen };
+            const statement = sqlExecute(connection);
+            const freeze = td.replace(statement, 'freeze');
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(isIdle()).thenReturn(false);
+            td.when(getClient()).thenReturn({ sqlStmtExecute });
+            td.when(sqlStmtExecute(statement), { ignoreExtraArgs: true }).thenResolve();
+
+            return statement.execute()
+                .then(() => {
+                    return expect(td.explain(freeze).callCount).to.equal(1);
+                });
+        });
     });
 });

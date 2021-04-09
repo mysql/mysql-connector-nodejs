@@ -37,12 +37,28 @@ const statement = require('../../../lib/DevAPI/Statement');
 
 describe('Statement', () => {
     context('addArgs()', () => {
-        it('appends a single value to the list of placeholder assignments', () => {
-            expect(statement().addArgs('foo').getArgs()).to.deep.equal(['foo']);
+        context('when the statement is not frozen', () => {
+            it('appends a single value to the list of placeholder assignments', () => {
+                expect(statement().addArgs('foo').getArgs()).to.deep.equal(['foo']);
+                expect(statement().addArgs('foo').addArgs('bar').getArgs()).to.deep.equal(['foo', 'bar']);
+            });
+
+            it('appends an array of values to the list of placeholder assignments', () => {
+                expect(statement().addArgs(['foo', 'bar']).getArgs()).to.deep.equal(['foo', 'bar']);
+                expect(statement().addArgs(['foo']).addArgs(['bar', 'baz']).getArgs()).to.deep.equal(['foo', 'bar', 'baz']);
+            });
         });
 
-        it('appends an array of values to the list of placeholder assignments', () => {
-            expect(statement().addArgs(['foo', 'bar']).getArgs()).to.deep.equal(['foo', 'bar']);
+        context('when the statement is not frozen', () => {
+            it('replaces the list of placeholder assignments with a given value', () => {
+                expect(statement().freeze().addArgs('foo').getArgs()).to.deep.equal(['foo']);
+                expect(statement().addArgs('foo').freeze().addArgs('bar').getArgs()).to.deep.equal(['bar']);
+            });
+
+            it('replaces the list of placeholder assignments with a given list of values', () => {
+                expect(statement().freeze().addArgs(['foo', 'bar']).getArgs()).to.deep.equal(['foo', 'bar']);
+                expect(statement().addArgs(['foo']).freeze().addArgs(['bar', 'baz']).getArgs()).to.deep.equal(['bar', 'baz']);
+            });
         });
     });
 });

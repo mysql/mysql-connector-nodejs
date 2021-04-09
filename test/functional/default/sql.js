@@ -1023,6 +1023,52 @@ describe('raw SQL', () => {
         });
     });
 
+    context('BUG#32750927 placeholder value refresh', () => {
+        it('allows to re-use a statement with different placeholder values', () => {
+            return mysqlx.getSession(config)
+                .then(session => {
+                    const statement = session.sql('select ?');
+
+                    return statement.bind('foo')
+                        .execute()
+                        .then(res => {
+                            return expect(res.fetchOne()).to.deep.equal(['foo']);
+                        })
+                        .then(() => {
+                            return statement.bind('bar')
+                                .execute();
+                        })
+                        .then(res => {
+                            return expect(res.fetchOne()).to.deep.equal(['bar']);
+                        })
+                        .then(() => {
+                            return session.close();
+                        });
+                });
+        });
+
+        it('allows to re-use a statement with the same placeholder values', () => {
+            return mysqlx.getSession(config)
+                .then(session => {
+                    const statement = session.sql('select ?').bind('foo');
+
+                    return statement.execute()
+                        .then(res => {
+                            return expect(res.fetchOne()).to.deep.equal(['foo']);
+                        })
+                        .then(() => {
+                            return statement.execute();
+                        })
+                        .then(res => {
+                            return expect(res.fetchOne()).to.deep.equal(['foo']);
+                        })
+                        .then(() => {
+                            return session.close();
+                        });
+                });
+        });
+    });
+
     context('when debug mode is enabled', () => {
         const script = path.join(__dirname, '..', '..', 'fixtures', 'scripts', 'sql-statement.js');
         const statement = `SELECT name AS col FROM ${config.schema}.test`;
