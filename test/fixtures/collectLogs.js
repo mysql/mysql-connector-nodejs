@@ -41,6 +41,31 @@ const config = require('../config');
  */
 
 /**
+ * Extract JSON log entries of a given section and process from log raw
+ * content.
+ * @private
+ * @function
+ * @param {Object} options
+ * @param {string} options.str - the raw log content
+ * @param {string} options.section - the relevant log section
+ * @param {number} options.pid - the associated child process id
+ * @returns {string}
+ */
+function extractJSON (log, section, pid) {
+    // We want to skip the log label which uses a given pattern.
+    const pattern = new RegExp(`${section.toUpperCase()} ${pid}: `);
+    const match = log.match(pattern);
+
+    if (!match) {
+        return `[${log.slice(1)}]`;
+    }
+
+    const remainder = log.slice(0, match.index).concat(',').concat(log.slice(match.index + match[0].length));
+
+    return extractJSON(remainder, section, pid);
+}
+
+/**
  * Runs a given script in a new process and collects the generated log entries matching a given pattern.
  * @private
  * @function
@@ -62,6 +87,9 @@ module.exports = function (section, path, args, options) {
         const child = cp.fork(path, args, { env, silent: true });
         const proc = { id: child.pid, logs: [] };
 
+        // Textual log accumulator.
+        let log = '';
+
         // pipe stdout to the parent process (so mocha can display it)
         child.stdout.pipe(process.stdout);
 
@@ -77,15 +105,24 @@ module.exports = function (section, path, args, options) {
                 return reject(error);
             }
 
-            // if the section does not match the filter, it can be ignored
-            if (!data.startsWith(section.toUpperCase())) {
+            // if the data does not contain any section matching the
+            // the filter, it can be ignored.
+            if (!data.match(`${section.toUpperCase()} ${child.pid}: `)) {
                 return;
             }
 
-            proc.logs.push(JSON.parse(data.slice(data.indexOf(child.pid) + child.pid.toString().length + 2 /* account for ": " */)));
+            // otherwise we append it to the relevant log content
+            log += data;
         });
 
-        child.on('close', () => resolve(proc));
+        child.on('close', () => {
+            // the logs property will contain an array where each item is
+            // a proper log object
+            proc.logs = proc.logs.concat(JSON.parse(extractJSON(log, section, child.pid)));
+
+            resolve(proc);
+        });
+
         child.on('error', reject);
     });
 };
