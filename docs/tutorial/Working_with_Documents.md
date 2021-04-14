@@ -116,9 +116,9 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
 
 #### Creating or updating a single document
 
-The connector also provides an additional utility method - `Collection.addOrReplaceOne()` - that allows to seamlessly either create a document with a given `_id` and properties or automatically replace an existing matching document.
+The connector also provides an additional utility method - {@link module:Collection#addOrReplaceOne|`Collection.addOrReplaceOne()`} - that allows to seamlessly either create a document with a given `_id` and properties or automatically replace an existing matching document.
 
-So, if a document with the given `_id` already exists in a collection, the behavior is the same as with `Collection.replaceOne()`.
+So, if a document with the given `_id` already exists in a collection, the behavior is the same as with {@link module:Collection#replaceOne|`Collection.replaceOne()`}.
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
@@ -160,6 +160,22 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
             })
             .then(result => {
                 console.log(result.fetchAll()); // [ { _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz', age: 23 } ]
+            });
+    });
+```
+
+When calling {@link module:Collection#addOrReplaceOne|`addOrReplaceOne()`}, if the replacement document in the second argument contains an `_id` property and its value is different from the id value provided as the first argument, an error will be reported, regardless of wether documents with either of those ids already exist in the collection or not.
+
+```js
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060/mySchema')
+    .then(session => {
+        const collection = session.getSchema('mySchema').getCollection('myCollection');
+
+        return collection.addOrReplaceOne('3', { _id: '4', name: 'baz', age: 23 })
+            .catch(err => {
+                console.log(err.message); // Replacement document has an _id that is different than the matched document.
             });
     });
 ```

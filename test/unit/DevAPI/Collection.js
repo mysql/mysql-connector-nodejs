@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
+const errors = require('../../../lib/constants/errors');
 const result = require('../../../lib/DevAPI/Result');
 const statement = require('../../../lib/DevAPI/Statement');
 const td = require('testdouble');
@@ -403,10 +404,9 @@ describe('Collection', () => {
         let collectionAdd, execute;
 
         beforeEach('create fakes', () => {
-            collectionAdd = td.function();
             execute = td.function();
 
-            td.replace('../../../lib/DevAPI/CollectionAdd', collectionAdd);
+            collectionAdd = td.replace('../../../lib/DevAPI/CollectionAdd');
             collection = require('../../../lib/DevAPI/Collection');
         });
 
@@ -438,18 +438,24 @@ describe('Collection', () => {
                 .then(actual => expect(actual).to.deep.equal(expected));
         });
 
-        it('ignores any additional `_id` property', () => {
-            const expected = { ok: 'true' };
-            const name = 'foo';
-            const schema = 'baz';
-            const session = 'qux';
-            const instance = collection(session, schema, name);
+        it('allows "_id" properties equal to the document id', () => {
+            td.when(collectionAdd(), { ignoreExtraArgs: true }).thenReturn({ execute });
+            td.when(execute()).thenResolve('foo');
 
-            td.when(execute()).thenResolve(expected);
-            td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
+            return collection().addOrReplaceOne('bar', { _id: 'bar', name: 'baz' })
+                .then(res => {
+                    return expect(res).to.equal('foo');
+                });
+        });
 
-            return instance.addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })
-                .then(actual => expect(actual).to.deep.equal(expected));
+        it('throws an error if the "_id" property is defined and is not equal to the document id', () => {
+            return collection().addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                });
         });
 
         it('fails if an unexpected error is thrown', () => {
@@ -462,7 +468,7 @@ describe('Collection', () => {
             td.when(execute()).thenReject(error);
             td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
-            return instance.addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })
+            return instance.addOrReplaceOne('foo', { name: 'bar' })
                 .then(() => expect.fail())
                 .catch(err => expect(err).to.deep.equal(error));
         });
