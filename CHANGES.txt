@@ -8,6 +8,22 @@ Copyright (c) 2016, 2021, Oracle and/or its affiliates.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.26
+=======
+
+- Internal connection management architecture has been re-structured and improved
+- Deprecation warnings are now reported when the connection uses TLSv1 or TLSv1.1
+- Pool connections that become unresponsive are now being released and can be re-used
+- Network sockets are now properly closed when the client does not connect to the server due to a timeout
+- Column metadata callbacks are now executed only once for each result set
+- SQL statement instances created with "Session.sql()" can now be re-used with different placeholder arguments
+- "Collection.replaceOne()" now fails with a non-matching replacement document "_id" property
+- "Collection.addOrReplaceOne()" now fails with a non-matching replacement document "_id" property
+- Expecations about column metadata in functional tests have been relaxed to avoid ongoing server changes
+- Log collection script used for functional tests has been improved to avoid test flakiness
+- Deprecated "Buffer()" constructor has been replaced with "Buffer.alloc()", "Buffer.allocUnsafe()" and "Buffer.from()"
+- Upstream floating point values provided as JavaScript numbers or X DevAPI expression literals are now correctly rounded
+
 v8.0.25
 =======
 
