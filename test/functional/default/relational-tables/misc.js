@@ -89,7 +89,7 @@ describe('relational miscellaneous tests', () => {
                     expect(actual.meta[0].getTableLabel()).to.equal('');
                     expect(actual.meta[0].getTableName()).to.equal('');
                     expect(actual.meta[0].getSchemaName()).to.equal('');
-                    expect(actual.meta[0].getLength()).to.equal(1);
+                    expect(actual.meta[0].getLength()).to.be.a('number');
                 });
         });
 
@@ -115,7 +115,7 @@ describe('relational miscellaneous tests', () => {
                     expect(actual.meta[0].getTableLabel()).to.equal('');
                     expect(actual.meta[0].getTableName()).to.equal('');
                     expect(actual.meta[0].getSchemaName()).to.equal('');
-                    expect(actual.meta[0].getLength()).to.equal(1);
+                    expect(actual.meta[0].getLength()).to.be.a('number');
                 });
         });
 
