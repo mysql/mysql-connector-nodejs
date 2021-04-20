@@ -317,7 +317,7 @@ describe('connecting with specific TLS versions', () => {
 
     context('when the negotiated TLS version is deprecated', () => {
         context('with a standalone connection', () => {
-            it('writes a deprecation warning to the log for every connection when debug mode is enabled', () => {
+            it('writes a deprecation warning to the log for every connection when debug mode is enabled', function () {
                 const deprecatedVersion = 'TLSv1.1';
                 const scriptConfig = { socket: null, tls: { versions: [deprecatedVersion] } };
                 const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
@@ -333,10 +333,20 @@ describe('connecting with specific TLS versions', () => {
                     .then(proc => {
                         expect(proc.logs).to.have.lengthOf(1);
                         expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, deprecatedVersion));
+                    })
+                    .catch(err => {
+                        if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                            throw err;
+                        }
+
+                        // If the server, for some reason, is not able to
+                        // negotiate the deprecated TLS version, the test should
+                        // be skipped to signal the expectations were not assured.
+                        return this.skip();
                     });
             });
 
-            it('writes a deprecation warning to stdout for every connection when debug mode is not enabled', done => {
+            it('writes a deprecation warning to stdout for every connection when debug mode is not enabled', function (done) {
                 const deprecatedVersion = 'TLSv1';
                 const tlsConfig = Object.assign({}, config, baseConfig, { tls: { versions: [deprecatedVersion] } });
                 const warningMessages = [];
@@ -357,6 +367,17 @@ describe('connecting with specific TLS versions', () => {
                     }
                 });
 
+                process.once('unhandledRejection', err => {
+                    if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                        return done(err);
+                    }
+
+                    // If the server, for some reason, is not able to
+                    // negotiate the deprecated TLS version, the test should
+                    // be skipped to signal the expectations were not assured.
+                    this.skip();
+                });
+
                 Promise.all([mysqlx.getSession(tlsConfig), mysqlx.getSession(tlsConfig)])
                     .then(sessions => {
                         return sessions.map(session => session.close());
@@ -369,7 +390,7 @@ describe('connecting with specific TLS versions', () => {
 
         context('with a connection pool', () => {
             context('when debug mode is enabled', () => {
-                it('writes a deprecation warning to the log for every new or re-created connection', () => {
+                it('writes a deprecation warning to the log for every new or re-created connection', function () {
                     const deprecatedVersion = 'TLSv1';
                     const scriptConfig = { socket: null, tls: { versions: [deprecatedVersion] } };
                     const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-new.js');
@@ -379,10 +400,20 @@ describe('connecting with specific TLS versions', () => {
                             expect(proc.logs).to.have.lengthOf(2);
                             expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, deprecatedVersion));
                             return expect(proc.logs[1]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, deprecatedVersion));
+                        })
+                        .catch(err => {
+                            if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                                throw err;
+                            }
+
+                            // If the server, for some reason, is not able to
+                            // negotiate the deprecated TLS version, the test should
+                            // be skipped to signal the expectations were not assured.
+                            return this.skip();
                         });
                 });
 
-                it('does not write a deprecation warning to the log for a connection that is re-used', () => {
+                it('does not write a deprecation warning to the log for a connection that is re-used', function () {
                     const deprecatedVersion = 'TLSv1.1';
                     const scriptConfig = { socket: null, tls: { versions: [deprecatedVersion] } };
                     const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'pool-reset.js');
@@ -391,12 +422,22 @@ describe('connecting with specific TLS versions', () => {
                         .then(proc => {
                             expect(proc.logs).to.have.lengthOf(1);
                             return expect(proc.logs[0]).to.equal(util.format(warnings.MESSAGES.WARN_DEPRECATED_TLS_VERSION, deprecatedVersion));
+                        })
+                        .catch(err => {
+                            if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                                throw err;
+                            }
+
+                            // If the server, for some reason, is not able to
+                            // negotiate the deprecated TLS version, the test should
+                            // be skipped to signal the expectations were not assured.
+                            return this.skip();
                         });
                 });
             });
 
             context('when debug mode is not enabled', () => {
-                it('writes a deprecation warning to stdout for every new or re-created connection', done => {
+                it('writes a deprecation warning to stdout for every new or re-created connection', function (done) {
                     const deprecatedVersion = 'TLSv1.1';
                     const maxIdleTime = 100;
                     const pool = mysqlx.getClient(Object.assign({}, config, baseConfig, { tls: { versions: [deprecatedVersion] } }), { pooling: { maxIdleTime } });
@@ -416,6 +457,17 @@ describe('connecting with specific TLS versions', () => {
 
                             return done();
                         }
+                    });
+
+                    process.once('unhandledRejection', err => {
+                        if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                            return done(err);
+                        }
+
+                        // If the server, for some reason, is not able to
+                        // negotiate the deprecated TLS version, the test should
+                        // be skipped to signal the expectations were not assured.
+                        this.skip();
                     });
 
                     pool.getSession()
@@ -438,7 +490,7 @@ describe('connecting with specific TLS versions', () => {
                         });
                 });
 
-                it('does not write a deprecation warning to stdout for a connection that is re-used', done => {
+                it('does not write a deprecation warning to stdout for a connection that is re-used', function (done) {
                     const deprecatedVersion = 'TLSv1';
                     const pool = mysqlx.getClient(Object.assign({}, config, baseConfig, { tls: { versions: [deprecatedVersion] } }), { pooling: { maxIdleTime: 0 } });
                     const warningMessages = [];
@@ -456,6 +508,17 @@ describe('connecting with specific TLS versions', () => {
 
                             return done();
                         }
+                    });
+
+                    process.once('unhandledRejection', err => {
+                        if (err.message !== errors.MESSAGES.ERR_TLS_VERSION_NEGOTIATION_FAILED) {
+                            return done(err);
+                        }
+
+                        // If the server, for some reason, is not able to
+                        // negotiate the deprecated TLS version, the test should
+                        // be skipped to signal the expectations were not assured.
+                        this.skip();
                     });
 
                     pool.getSession()
