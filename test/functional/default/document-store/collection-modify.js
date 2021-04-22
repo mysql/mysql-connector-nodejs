@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
@@ -160,43 +161,116 @@ describe('modifying documents in a collection', () => {
 
     context('single document replacement', () => {
         beforeEach('add fixtures', () => {
-            return collection
-                .add({ _id: '1', name: 'foo' })
+            return collection.add({ _id: '1', name: 'foo' })
                 .add({ _id: '2', name: 'bar' })
                 .add({ _id: '3', name: 'baz' })
                 .execute();
         });
 
-        it('replaces the entire document if it exists', () => {
-            const expected = [{ _id: '1', age: 23 }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
-            const actual = [];
+        context('when the replacement document does not contain a _id property', () => {
+            it('replaces the entire document if it exists', () => {
+                const expected = [{ _id: '1', age: 23 }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
 
-            return collection
-                .replaceOne('1', { _id: '3', age: 23 })
-                .then(result => {
-                    expect(result.getAffectedItemsCount()).to.equal(1);
+                return collection.replaceOne('1', { age: 23 })
+                    .then(result => {
+                        expect(result.getAffectedItemsCount()).to.equal(1);
 
-                    return collection
-                        .find()
-                        .execute(doc => actual.push(doc));
-                })
-                .then(() => expect(actual).to.deep.equal(expected));
+                        return collection.find()
+                            .execute();
+                    })
+                    .then(res => {
+                        return expect(res.fetchAll()).to.deep.equal(expected);
+                    });
+            });
+
+            it('does nothing if the document does not exist', () => {
+                const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
+
+                return collection.replaceOne('4', { name: 'baz', age: 23 })
+                    .then(result => {
+                        expect(result.getAffectedItemsCount()).to.equal(0);
+
+                        return collection.find()
+                            .execute();
+                    })
+                    .then(res => {
+                        return expect(res.fetchAll()).to.deep.equal(expected);
+                    });
+            });
         });
 
-        it('does nothing if the document does not exist', () => {
-            const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
-            const actual = [];
+        context('when the replacement document contains a matching _id property', () => {
+            it('replaces the entire document if it exists', () => {
+                const expected = [{ _id: '1', age: 23 }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
 
-            return collection
-                .replaceOne('4', { _id: '1', name: 'baz', age: 23 })
-                .then(result => {
-                    expect(result.getAffectedItemsCount()).to.equal(0);
+                return collection.replaceOne('1', { _id: '1', age: 23 })
+                    .then(result => {
+                        expect(result.getAffectedItemsCount()).to.equal(1);
 
-                    return collection
-                        .find()
-                        .execute(doc => actual.push(doc));
-                })
-                .then(() => expect(actual).to.deep.equal(expected));
+                        return collection.find()
+                            .execute();
+                    })
+                    .then(res => {
+                        return expect(res.fetchAll()).to.deep.equal(expected);
+                    });
+            });
+
+            it('does nothing if the document does not exist', () => {
+                const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
+
+                return collection.replaceOne('4', { _id: '4', name: 'baz', age: 23 })
+                    .then(result => {
+                        expect(result.getAffectedItemsCount()).to.equal(0);
+
+                        return collection.find()
+                            .execute();
+                    })
+                    .then(res => {
+                        return expect(res.fetchAll()).to.deep.equal(expected);
+                    });
+            });
+        });
+
+        context('when the replacement document contains a non matching _id property', () => {
+            it('fails if both ids already match existing documents', () => {
+                return collection.replaceOne('1', { _id: '2', name: 'baz', age: 23 })
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch((err) => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                    });
+            });
+
+            it('fails if both ids do no match any existing document', () => {
+                return collection.replaceOne('3', { _id: '4', name: 'baz', age: 23 })
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch((err) => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                    });
+            });
+
+            it('fails if the reference id matches an existing document but the replacement document id does not', () => {
+                return collection.replaceOne('2', { _id: '3', name: 'baz', age: 23 })
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch((err) => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                    });
+            });
+
+            it('fails if the reference id does not match an existing document but the replacement document id does', () => {
+                return collection.replaceOne('3', { _id: '2', name: 'baz', age: 23 })
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch((err) => {
+                        return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                    });
+            });
         });
     });
 

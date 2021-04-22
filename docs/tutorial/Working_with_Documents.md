@@ -68,11 +68,10 @@ The following scenarios are possible.
 
 #### Replacing a single document
 
-If a document with a given `_id` already exists in the database, it can be replaced via the `Collection.replaceOne()` method.
+If a document with a given `_id` already exists in the database, it can be replaced via the {@link module:Collection#replaceOne|`Collection.replaceOne()`} method.
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     .then(session => {
@@ -83,11 +82,11 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
                 console.log(result.getAffectedItemsCount()); // 1
 
                 return collection.find()
-                    .execute(doc => docs.push(doc));
+                    .execute();
             });
     })
-    .then(() => {
-        console.log(docs); // [ { _id: '1', age: 23 }, { _id: '2', name: 'bar' } ]
+    .then(result => {
+        console.log(result.fetchAll()); // [ { _id: '1', age: 23 }, { _id: '2', name: 'bar' } ]
     });
 ```
 
@@ -95,7 +94,6 @@ If no such document exists, the method will neither fail nor have any effect.
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
-const docs = [];
 
 mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     .then(session => {
@@ -106,11 +104,27 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
                 console.log(result.getAffectedItemsCount()); // 0
 
                 return collection.find()
-                    .execute(doc => docs.push(doc));
+                    .execute();
             });
     })
-    .then(() => {
-        console.log(docs); // [ { _id: '1', name: 'foo' }, { _id: '2', name: 'bar' } ]
+    .then(result => {
+        console.log(result.fetchAll()); // [ { _id: '1', name: 'foo' }, { _id: '2', name: 'bar' } ]
+    });
+```
+
+If the replacement document in the second argument contains an `_id` property and its value is different from the id value provided as the first argument, an error will be reported, regardless of whether documents with either of those ids already exist in the collection or not.
+
+```javascript
+const mysqlx = require('@mysql/xdevapi');
+
+mysqlx.getSession('mysqlx://localhost:33060/mySchema')
+    .then(session => {
+        const collection = session.getSchema('mySchema').getCollection('myCollection')
+
+        return collection.replaceOne('1', { _id: '2', name: 'baz', age: 23 })
+    })
+    .catch(err => {
+        console.log(err.message); // Replacement document has an _id that is different than the matched document.
     });
 ```
 
@@ -164,7 +178,7 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
     });
 ```
 
-When calling {@link module:Collection#addOrReplaceOne|`addOrReplaceOne()`}, if the replacement document in the second argument contains an `_id` property and its value is different from the id value provided as the first argument, an error will be reported, regardless of wether documents with either of those ids already exist in the collection or not.
+Just like {@link module:Collection#replaceOne|`replaceOne()`}, when calling {@link module:Collection#addOrReplaceOne|`addOrReplaceOne()`}, if the replacement document in the second argument contains an `_id` property and its value is different from the id value provided as the first argument, an error will be reported, regardless of whether documents with either of those ids already exist in the collection or not.
 
 ```js
 const mysqlx = require('@mysql/xdevapi');
@@ -174,9 +188,9 @@ mysqlx.getSession('mysqlx://localhost:33060/mySchema')
         const collection = session.getSchema('mySchema').getCollection('myCollection');
 
         return collection.addOrReplaceOne('3', { _id: '4', name: 'baz', age: 23 })
-            .catch(err => {
-                console.log(err.message); // Replacement document has an _id that is different than the matched document.
-            });
+    })
+    .catch(err => {
+        console.log(err.message); // Replacement document has an _id that is different than the matched document.
     });
 ```
 

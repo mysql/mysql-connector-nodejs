@@ -346,57 +346,73 @@ describe('Collection', () => {
     });
 
     context('replaceOne()', () => {
-        let collectionModify, execute, setDouble;
+        let bind, execute, set;
 
         beforeEach('create fakes', () => {
-            collectionModify = td.function();
+            bind = td.function();
             execute = td.function();
-            setDouble = td.function();
+            set = td.function();
 
-            td.replace('../../../lib/DevAPI/CollectionModify', collectionModify);
             collection = require('../../../lib/DevAPI/Collection');
         });
 
         it('returns the result of executing a modify operation for a given document', () => {
-            const instance = collection('foo', 'bar', 'baz');
-            const state = { ok: true };
-            const expected = result(state);
+            const col = collection();
+            const modify = td.replace(col, 'modify');
 
-            td.when(execute()).thenResolve(expected);
-            td.when(setDouble('$', { a: 'quux' })).thenReturn({ execute });
-            td.when(collectionModify('foo', 'bar', 'baz', '_id = "qux"')).thenReturn({ set: setDouble });
+            td.when(modify('_id = :id')).thenReturn({ bind });
+            td.when(bind('id', 'foo')).thenReturn({ set });
+            td.when(set('$', 'bar')).thenReturn({ execute });
+            td.when(execute()).thenResolve('baz');
 
-            return instance.replaceOne('qux', { a: 'quux' })
-                .then(actual => expect(actual).to.deep.equal(expected));
+            return col.replaceOne('foo', 'bar')
+                .then(res => {
+                    return expect(res).to.equal('baz');
+                });
         });
 
-        it('escapes the id value', () => {
-            // eslint-disable-next-line no-useless-escape
-            const documentId = 'b\"ar';
-            const criteria = '_id = "b\\"ar"';
-            const instance = collection('foo', 'bar', 'baz');
-            const state = { ok: true };
-            const expected = result(state);
+        it('allows "_id" properties equal to the document id', () => {
+            const col = collection();
+            const modify = td.replace(col, 'modify');
 
-            td.when(execute()).thenResolve(expected);
-            td.when(setDouble(), { ignoreExtraArgs: true }).thenReturn({ execute });
-            td.when(collectionModify('foo', 'bar', 'baz', criteria)).thenReturn({ set: setDouble });
+            td.when(modify(), { ignoreExtraArgs: true }).thenReturn({ bind });
+            td.when(bind(), { ignoreExtraArgs: true }).thenReturn({ set });
+            td.when(set(), { ignoreExtraArgs: true }).thenReturn({ execute });
+            td.when(execute()).thenResolve('foo');
 
-            return instance.replaceOne(documentId, { a: 'a' })
-                .then(actual => expect(actual).to.deep.equal(expected));
+            return col.replaceOne('bar', { _id: 'bar', name: 'baz' })
+                .then(res => {
+                    return expect(res).to.equal('foo');
+                });
+        });
+
+        it('fails if the "_id" property is defined and is not equal to the document id', () => {
+            return collection().replaceOne('foo', { _id: 'baz', name: 'bar' })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ERR_NON_MATCHING_ID_IN_REPLACEMENT_DOCUMENT);
+                });
         });
 
         it('fails if an unexpected error is thrown when modifying the document', () => {
-            const instance = collection('foo', 'bar', 'baz');
-            const error = new Error('foobar');
+            const col = collection();
+            const modify = td.replace(col, 'modify');
+            const error = new Error('foo');
 
+            td.when(modify(), { ignoreExtraArgs: true }).thenReturn({ bind });
+            td.when(bind(), { ignoreExtraArgs: true }).thenReturn({ set });
+            td.when(set(), { ignoreExtraArgs: true }).thenReturn({ execute });
             td.when(execute()).thenReject(error);
-            td.when(setDouble(), { ignoreExtraArgs: true }).thenReturn({ execute });
-            td.when(collectionModify('foo', 'bar', 'baz', '_id = "qux"')).thenReturn({ set: setDouble });
 
-            return instance.replaceOne('qux', { a: 'quux' })
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+            return col.replaceOne('bar', { _id: 'bar', name: 'baz' })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err).to.deep.equal(error);
+                });
         });
     });
 
