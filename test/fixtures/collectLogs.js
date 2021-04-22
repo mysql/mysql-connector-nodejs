@@ -77,26 +77,33 @@ function extractJSON (log, section, pid) {
  */
 module.exports = function (section, path, args, options) {
     args = args || [];
-    // a custom connection configuration can be provided via the options object
+    // A custom connection configuration can be provided via the options
+    // object.
     options = Object.assign({ config }, options);
 
     return new Promise((resolve, reject) => {
-        // the connection configuration is made available to each script via
-        // the MYSQLX_CLIENT_CONFIG environment variable
+        // The connection configuration is made available to each script via
+        // the MYSQLX_CLIENT_CONFIG environment variable.
         const env = Object.assign({}, process.env, { MYSQLX_CLIENT_CONFIG: JSON.stringify(options.config), NODE_DEBUG: section || '*' });
-        const child = cp.fork(path, args, { env, silent: true });
+        // We should prevent warnings from popping up in the stderr stream, in
+        // order make it easier to collect legitimate log content.
+        // To do that, we append the "--no-warnings" flag to the list of flags
+        // provided to the parent process.
+        // https://nodejs.org/docs/v12.0.0/api/process.html#process_event_warning
+        const child = cp.fork(path, args, { env, execArgv: process.execArgv.concat('--no-warnings'), silent: true });
         const proc = { id: child.pid, logs: [] };
 
         // Textual log accumulator.
         let log = '';
 
-        // pipe stdout to the parent process (so mocha can display it)
+        // Pipe stdout to the parent process (so mocha can display it).
         child.stdout.pipe(process.stdout);
 
-        // both errors and log data come as text on stderr
+        // Both errors and log data come as JSON text on stderr.
         child.stderr.setEncoding('utf8');
         child.stderr.on('data', data => {
-            // errors are a JSON strings of objects containing the "message" and "stack" properties
+            // An Error JSON object contains the "message" and "stack"
+            // properties.
             if (data.match(/.*Error:.+/)) {
                 const info = JSON.parse(data);
                 const error = new Error(info.message);
@@ -105,19 +112,23 @@ module.exports = function (section, path, args, options) {
                 return reject(error);
             }
 
-            // if the data does not contain any section matching the
+            // If the data does not contain any section matching the
             // the filter, it can be ignored.
+            // By this point, we should be only dealing with legitimate log
+            // content, however, although the pid will probably be always the
+            // same we are only interested in content from a specific section.
             if (!data.match(`${section.toUpperCase()} ${child.pid}: `)) {
                 return;
             }
 
-            // otherwise we append it to the relevant log content
+            // Otherwise (if its content from the given section) we append it
+            // to the relevant text log accumulator.
             log += data;
         });
 
         child.on('close', () => {
-            // the logs property will contain an array where each item is
-            // a proper log object
+            // The logs property will contain an array where each item is a
+            // proper log entry represented by a plain JavaScript object.
             proc.logs = proc.logs.concat(JSON.parse(extractJSON(log, section, child.pid)));
 
             resolve(proc);
