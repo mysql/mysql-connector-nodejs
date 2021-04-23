@@ -1,6 +1,6 @@
 {
   "name": "@mysql/xdevapi",
-  "version": "8.0.24",
+  "version": "8.0.25",
   "description": "MySQL Connector/Node.js - A Node.js driver for MySQL using the X Protocol and X DevAPI.",
   "contributors": [
     {
