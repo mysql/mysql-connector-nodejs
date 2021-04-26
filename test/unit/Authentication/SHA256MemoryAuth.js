@@ -33,10 +33,24 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const sha256MemoryAuth = require('../../../lib/Authentication/SHA256MemoryAuth');
 const td = require('testdouble');
 
+// subject under test needs to be reloaded with replacement fakes
+let sha256MemoryAuth = require('../../../lib/Authentication/SHA256MemoryAuth');
+
 describe('SHA256MemoryAuth', () => {
+    let crypto;
+
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
+    beforeEach('create fakes', () => {
+        crypto = td.replace('../../../lib/crypto');
+
+        sha256MemoryAuth = require('../../../lib/Authentication/SHA256MemoryAuth');
+    });
+
     it('mixes-in AuthPlugin', () => {
         expect(sha256MemoryAuth({ user: 'foo' }).getPassword).to.be.a('function');
         expect(sha256MemoryAuth({ user: 'foo' }).getSchema).to.be.a('function');
@@ -62,71 +76,89 @@ describe('SHA256MemoryAuth', () => {
             expect(() => sha256MemoryAuth({ user: 'foo' }).getNextAuthData('bar'.repeat(20))).to.throw();
         });
 
-        context('valid handshake', () => {
-            let fakeSHA256MemoryAuth, nonce, passwordHash, passwordHashHash, hashWithNonce, scramble, sha256, xor;
+        context('without a default schema', () => {
+            it('generates a valid payload without a password', () => {
+                const user = 'foo';
+                const scramble = 'bar';
+                const nonce = 'n'.repeat(20); // nonce needs to have 20 bytes
+                const hashWithNonce = 'baz';
+                const password = '';
+                const passwordHash = 'qux';
+                const passwordHashHash = 'quux';
 
-            afterEach('reset fakes', () => {
-                td.reset();
+                td.when(crypto.xor(hashWithNonce, passwordHash)).thenReturn(scramble);
+                td.when(crypto.sha256(passwordHashHash, nonce), { times: 1 }).thenReturn(hashWithNonce);
+                td.when(crypto.sha256(passwordHash), { times: 1 }).thenReturn(passwordHashHash);
+                td.when(crypto.sha256(password), { times: 2 }).thenReturn(passwordHash);
+
+                const authData = sha256MemoryAuth({ user }).getNextAuthData(nonce);
+
+                // eslint-disable-next-line no-control-regex
+                expect(authData.toString()).to.match(/\u0000foo\u0000bar*/);
             });
 
-            beforeEach('create fakes', () => {
-                sha256 = td.function();
-                xor = td.function();
+            it('generates a valid payload with a password', () => {
+                const user = 'foo';
+                const scramble = 'bar';
+                const nonce = 'n'.repeat(20); // nonce needs to have 20 bytes
+                const hashWithNonce = 'baz';
+                const password = 'qux';
+                const passwordHash = 'quux';
+                const passwordHashHash = 'quuz';
 
-                td.replace('../../../lib/Authentication/Util/crypto', { sha256, xor });
+                td.when(crypto.xor(hashWithNonce, passwordHash)).thenReturn(scramble);
+                td.when(crypto.sha256(passwordHashHash, nonce), { times: 1 }).thenReturn(hashWithNonce);
+                td.when(crypto.sha256(passwordHash), { times: 1 }).thenReturn(passwordHashHash);
+                td.when(crypto.sha256(password), { times: 2 }).thenReturn(passwordHash);
 
-                fakeSHA256MemoryAuth = require('../../../lib/Authentication/SHA256MemoryAuth');
+                const authData = sha256MemoryAuth({ user, password }).getNextAuthData(nonce);
 
-                scramble = 'scramble';
-                nonce = 'n'.repeat(20);
+                // eslint-disable-next-line no-control-regex
+                expect(authData.toString()).to.match(/\u0000foo\u0000bar*/);
+            });
+        });
 
-                td.when(xor(hashWithNonce, passwordHash)).thenReturn(scramble);
-                td.when(sha256(passwordHashHash, nonce), { times: 1 }).thenReturn(hashWithNonce);
-                td.when(sha256(passwordHash), { times: 1 }).thenReturn(passwordHashHash);
+        context('with a default schema', () => {
+            it('generates a valid payload without a password', () => {
+                const user = 'foo';
+                const scramble = 'bar';
+                const nonce = 'n'.repeat(20); // nonce needs to have 20 bytes
+                const hashWithNonce = 'baz';
+                const password = '';
+                const passwordHash = 'qux';
+                const passwordHashHash = 'quux';
+                const schema = 'quuz';
+
+                td.when(crypto.xor(hashWithNonce, passwordHash)).thenReturn(scramble);
+                td.when(crypto.sha256(passwordHashHash, nonce), { times: 1 }).thenReturn(hashWithNonce);
+                td.when(crypto.sha256(passwordHash), { times: 1 }).thenReturn(passwordHashHash);
+                td.when(crypto.sha256(password), { times: 2 }).thenReturn(passwordHash);
+
+                const authData = sha256MemoryAuth({ schema, user }).getNextAuthData(nonce);
+
+                // eslint-disable-next-line no-control-regex
+                expect(authData.toString()).to.match(/quuz\u0000foo\u0000bar*/);
             });
 
-            context('without a default schema', () => {
-                it('generates a valid payload without a password', () => {
-                    td.when(sha256(''), { times: 2 }).thenReturn(passwordHash);
+            it('generates a valid payload with a password', () => {
+                const user = 'foo';
+                const scramble = 'bar';
+                const nonce = 'n'.repeat(20); // nonce needs to have 20 bytes
+                const hashWithNonce = 'baz';
+                const password = 'qux';
+                const passwordHash = 'quux';
+                const passwordHashHash = 'quuz';
+                const schema = 'corge';
 
-                    const authData = fakeSHA256MemoryAuth({ user: 'user' }).getNextAuthData(nonce);
+                td.when(crypto.xor(hashWithNonce, passwordHash)).thenReturn(scramble);
+                td.when(crypto.sha256(passwordHashHash, nonce), { times: 1 }).thenReturn(hashWithNonce);
+                td.when(crypto.sha256(passwordHash), { times: 1 }).thenReturn(passwordHashHash);
+                td.when(crypto.sha256(password), { times: 2 }).thenReturn(passwordHash);
 
-                    // eslint-disable-next-line no-control-regex
-                    expect(authData.toString()).to.match(/\u0000user\u0000scramble*/);
-                });
+                const authData = sha256MemoryAuth({ schema, user, password }).getNextAuthData(nonce);
 
-                it('generates a valid payload with a password', () => {
-                    const password = 'foo';
-
-                    td.when(sha256(password), { times: 2 }).thenReturn(passwordHash);
-
-                    const authData = fakeSHA256MemoryAuth({ user: 'user', password }).getNextAuthData(nonce);
-
-                    // eslint-disable-next-line no-control-regex
-                    expect(authData.toString()).to.match(/\u0000user\u0000scramble*/);
-                });
-            });
-
-            context('with a default schema', () => {
-                it('generates a valid payload without a password', () => {
-                    td.when(sha256(''), { times: 2 }).thenReturn(passwordHash);
-
-                    const authData = fakeSHA256MemoryAuth({ schema: 'schema', user: 'user' }).getNextAuthData(nonce);
-
-                    // eslint-disable-next-line no-control-regex
-                    expect(authData.toString()).to.match(/schema\u0000user\u0000scramble*/);
-                });
-
-                it('generates a valid payload with a password', () => {
-                    const password = 'foo';
-
-                    td.when(sha256(password), { times: 2 }).thenReturn(passwordHash);
-
-                    const authData = fakeSHA256MemoryAuth({ schema: 'schema', user: 'user', password }).getNextAuthData(nonce);
-
-                    // eslint-disable-next-line no-control-regex
-                    expect(authData.toString()).to.match(/schema\u0000user\u0000scramble*/);
-                });
+                // eslint-disable-next-line no-control-regex
+                expect(authData.toString()).to.match(/corge\u0000foo\u0000bar*/);
             });
         });
     });

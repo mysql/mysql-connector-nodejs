@@ -82,8 +82,7 @@ describe('prepared statements for TableDelete', () => {
     });
 
     it('does not create a prepared statement when the operation is executed once', () => {
-        // eslint-disable-next-line node/no-deprecated-api
-        const expected = [[new Buffer('2'), 'bar'], [new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
+        const expected = [[Buffer.from('2'), 'bar'], [Buffer.from('3'), 'baz'], [Buffer.from('4'), 'qux']];
         const actual = [];
 
         return table.delete().where('_id = :id')
@@ -96,8 +95,7 @@ describe('prepared statements for TableDelete', () => {
     });
 
     it('creates a prepared statement on subsequent calls if the query boundaries do not change', () => {
-        // eslint-disable-next-line node/no-deprecated-api
-        const expected = [[new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
+        const expected = [[Buffer.from('3'), 'baz'], [Buffer.from('4'), 'qux']];
         const actual = [];
 
         const op = table.delete().where('_id = :id').bind('id', '1');
@@ -112,8 +110,7 @@ describe('prepared statements for TableDelete', () => {
     });
 
     it('deallocates a prepared statement on subsequent calls if the query boundaries change', () => {
-        // eslint-disable-next-line node/no-deprecated-api
-        const expected = [[new Buffer('4'), 'qux']];
+        const expected = [[Buffer.from('4'), 'qux']];
         const actual = [];
 
         const op = table.delete().where('_id = :id').bind('id', '1');
@@ -128,8 +125,7 @@ describe('prepared statements for TableDelete', () => {
     });
 
     it('resets the statement id when the session is closed', () => {
-        // eslint-disable-next-line node/no-deprecated-api
-        const expected = [[new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
+        const expected = [[Buffer.from('3'), 'baz'], [Buffer.from('4'), 'qux']];
         const actual = [];
 
         const op = table.delete().where('_id = :id').bind('id', '1');
@@ -177,8 +173,7 @@ describe('prepared statements for TableDelete', () => {
         });
 
         it('neither fails nor prepares any statement', () => {
-            // eslint-disable-next-line node/no-deprecated-api
-            const expected = [[new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
+            const expected = [[Buffer.from('3'), 'baz'], [Buffer.from('4'), 'qux']];
             const actual = [];
 
             const op = table.delete().where('_id = :id').bind('id', '1');

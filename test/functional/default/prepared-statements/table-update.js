@@ -82,8 +82,7 @@ describe('prepared statements for TableUpdate', () => {
     });
 
     it('does not create a prepared statement when the operation is executed once', () => {
-        // eslint-disable-next-line node/no-deprecated-api
-        const expected = [[new Buffer('1'), 'quux'], [new Buffer('2'), 'bar'], [new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
+        const expected = [[Buffer.from('1'), 'quux'], [Buffer.from('2'), 'bar'], [Buffer.from('3'), 'baz'], [Buffer.from('4'), 'qux']];
         const actual = [];
 
         return table.update()
@@ -98,8 +97,7 @@ describe('prepared statements for TableUpdate', () => {
     });
 
     it('creates a prepared statement on subsequent calls if the query boundaries do not change', () => {
-        // eslint-disable-next-line node/no-deprecated-api
-        const expected = [[new Buffer('1'), 'quux'], [new Buffer('2'), 'quux'], [new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
+        const expected = [[Buffer.from('1'), 'quux'], [Buffer.from('2'), 'quux'], [Buffer.from('3'), 'baz'], [Buffer.from('4'), 'qux']];
         const actual = [];
 
         const op = table.update().where('_id = :id').bind('id', '1').set('name', 'quux');
@@ -129,8 +127,7 @@ describe('prepared statements for TableUpdate', () => {
     });
 
     it('resets the statement id when the session is closed', () => {
-        // eslint-disable-next-line node/no-deprecated-api
-        const expected = [[new Buffer('1'), 'quux'], [new Buffer('2'), 'quux'], [new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
+        const expected = [[Buffer.from('1'), 'quux'], [Buffer.from('2'), 'quux'], [Buffer.from('3'), 'baz'], [Buffer.from('4'), 'qux']];
         const actual = [];
 
         const op = table.update().where('_id = :id').bind('id', '1').set('name', 'quux');
@@ -147,8 +144,7 @@ describe('prepared statements for TableUpdate', () => {
     });
 
     it('re-uses ids from previous prepared statements that have been deallocated', () => {
-        // eslint-disable-next-line node/no-deprecated-api
-        const expected = [[new Buffer('1'), 'quux'], [new Buffer('2'), 'biz'], [new Buffer('3'), 'biz'], [new Buffer('4'), 'biz']];
+        const expected = [[Buffer.from('1'), 'quux'], [Buffer.from('2'), 'biz'], [Buffer.from('3'), 'biz'], [Buffer.from('4'), 'biz']];
         const actual = [];
 
         const op = table.update().where('_id = :id').bind('id', '1').set('name', 'quux');
@@ -180,8 +176,7 @@ describe('prepared statements for TableUpdate', () => {
         });
 
         it('neither fails nor prepares any statement', () => {
-            // eslint-disable-next-line node/no-deprecated-api
-            const expected = [[new Buffer('1'), 'quux'], [new Buffer('2'), 'quux'], [new Buffer('3'), 'baz'], [new Buffer('4'), 'qux']];
+            const expected = [[Buffer.from('1'), 'quux'], [Buffer.from('2'), 'quux'], [Buffer.from('3'), 'baz'], [Buffer.from('4'), 'qux']];
             const actual = [];
 
             const op = table.update().where('_id = :id').bind('id', '1').set('name', 'quux');

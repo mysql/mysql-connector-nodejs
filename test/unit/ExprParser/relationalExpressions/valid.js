@@ -194,9 +194,7 @@ describe('ExprParser', () => {
                 const fstValue = fields[0].getValue();
                 expect(fstValue.getType()).to.equal(Expr.Type.LITERAL);
                 expect(fstValue.getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(fstValue.getLiteral().getVString().getValue()).toString()).to.equal('bar');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(fstValue.getLiteral().getVString().getValue()).toString()).to.equal('bar');
 
                 const sndValue = fields[1].getValue();
                 expect(sndValue.getType()).to.equal(Expr.Type.ARRAY);
@@ -736,11 +734,9 @@ describe('ExprParser', () => {
                     expect(param.getType()).to.equal(Expr.Type.LITERAL);
                     expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 });
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[1].getLiteral().getVString().getValue()).toString()).to.equal('one');
-                expect(new Buffer(params[2].getLiteral().getVString().getValue()).toString()).to.equal('two');
-                expect(new Buffer(params[3].getLiteral().getVString().getValue()).toString()).to.equal('three');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[1].getLiteral().getVString().getValue()).toString()).to.equal('one');
+                expect(Buffer.from(params[2].getLiteral().getVString().getValue()).toString()).to.equal('two');
+                expect(Buffer.from(params[3].getLiteral().getVString().getValue()).toString()).to.equal('three');
             });
 
             it('parses valid "cont_in" operations', () => {
@@ -763,9 +759,7 @@ describe('ExprParser', () => {
                 expect(args[0].getIdentifier().getDocumentPathList()).to.have.lengthOf(0);
                 expect(args[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(args[1].getLiteral().getType()).to.equal(Scalar.Type.V_OCTETS);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(args[1].getLiteral().getVOctets().getValue()).toString()).to.equal('JSON');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(args[1].getLiteral().getVOctets().getValue()).toString()).to.equal('JSON');
                 expect(params[1].getType()).to.equal(Expr.Type.IDENT);
                 expect(params[1].getIdentifier().getName()).to.equal('doc');
 
@@ -1036,9 +1030,7 @@ describe('ExprParser', () => {
                 expect(params[0].getLiteral().getVFloat()).to.equal(10.2);
                 expect(params[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_OCTETS);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('SIGNED INTEGER');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('SIGNED INTEGER');
 
                 input = 'cast(12.3123123123 as UNSIGNED)';
                 expr = Parser.parse(input, options);
@@ -1054,9 +1046,7 @@ describe('ExprParser', () => {
                 expect(params[0].getLiteral().getVDouble()).to.equal(12.3123123123);
                 expect(params[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_OCTETS);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('UNSIGNED');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('UNSIGNED');
 
                 input = 'cast(column as CHAR(10))';
                 expr = Parser.parse(input, options);
@@ -1071,9 +1061,7 @@ describe('ExprParser', () => {
                 expect(params[0].getIdentifier().getName()).to.equal('column');
                 expect(params[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_OCTETS);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('CHAR(10)');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('CHAR(10)');
 
                 input = 'cast(10 as BINARY(8))';
                 expr = Parser.parse(input, options);
@@ -1089,9 +1077,7 @@ describe('ExprParser', () => {
                 expect(params[0].getLiteral().getVUnsignedInt()).to.equal(10);
                 expect(params[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_OCTETS);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('BINARY(8)');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('BINARY(8)');
 
                 input = 'cast(123456789 as DECIMAL(2, 4))';
                 expr = Parser.parse(input, options);
@@ -1107,9 +1093,7 @@ describe('ExprParser', () => {
                 expect(params[0].getLiteral().getVUnsignedInt()).to.equal(123456789);
                 expect(params[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_OCTETS);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('DECIMAL(2, 4)');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('DECIMAL(2, 4)');
             });
         });
 
@@ -1132,9 +1116,7 @@ describe('ExprParser', () => {
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 expect(params[1].getLiteral().getVUnsignedInt()).to.equal(8);
                 expect(params[2].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[2].getLiteral().getVString().getValue()).toString()).to.equal('DAY');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[2].getLiteral().getVString().getValue()).toString()).to.equal('DAY');
 
                 params = params[0].getOperator().getParamList();
                 expect(params).to.have.lengthOf(3);
@@ -1145,25 +1127,19 @@ describe('ExprParser', () => {
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 expect(params[1].getLiteral().getVUnsignedInt()).to.equal(4);
                 expect(params[2].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[2].getLiteral().getVString().getValue()).toString()).to.equal('HOUR');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[2].getLiteral().getVString().getValue()).toString()).to.equal('HOUR');
 
                 params = params[0].getOperator().getParamList();
                 expect(params).to.have.lengthOf(3);
                 expect(params[0].getType()).to.equal(Expr.Type.LITERAL);
                 expect(params[0].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[0].getLiteral().getVString().getValue()).toString()).to.equal('2000-12-31 23:59:59');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[0].getLiteral().getVString().getValue()).toString()).to.equal('2000-12-31 23:59:59');
 
                 params.slice(1, params.length).forEach(param => expect(param.getType()).to.equal(Expr.Type.LITERAL));
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 expect(params[1].getLiteral().getVUnsignedInt()).to.equal(30);
                 expect(params[2].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[2].getLiteral().getVString().getValue()).toString()).to.equal('SECOND');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[2].getLiteral().getVString().getValue()).toString()).to.equal('SECOND');
             });
         });
     });

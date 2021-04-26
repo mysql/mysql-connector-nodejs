@@ -42,8 +42,7 @@ describe('Protobuf bytes wrapper', () => {
     context('class methods', () => {
         context('create()', () => {
             it('creates a wrapper with a typed array of raw network data using shared memory', () => {
-                // eslint-disable-next-line node/no-deprecated-api
-                const input = new Buffer('foo');
+                const input = Buffer.from('foo');
                 const output = bytes.create(input).valueOf();
 
                 // strict equality to ensure it references the same memory
@@ -61,8 +60,7 @@ describe('Protobuf bytes wrapper', () => {
 
         context('deserialize()', () => {
             it('converts binary networ raw data (Node.js Buffer) into binary protobuf raw data (JavaScript Uint8Array)', () => {
-                // eslint-disable-next-line node/no-deprecated-api
-                const input = new Buffer('foo');
+                const input = Buffer.from('foo');
                 const output = bytes.deserialize(input);
 
                 // strict equality to ensure it references the same memory
@@ -85,8 +83,7 @@ describe('Protobuf bytes wrapper', () => {
 
         context('toBuffer()', () => {
             it('converts the underlying typed array into a Node.js Buffer instance using shared memory', () => {
-                // eslint-disable-next-line node/no-deprecated-api
-                const input = new Uint8Array(new Buffer('foo'));
+                const input = Uint8Array.from(Buffer.from('foo'));
                 const output = bytes(input).toBuffer();
 
                 // strict equality to ensure it references the same memory
@@ -94,8 +91,7 @@ describe('Protobuf bytes wrapper', () => {
             });
 
             it('returns an empty Node.js Buffer instance if the underlying typed array is not valid', () => {
-                // eslint-disable-next-line node/no-deprecated-api
-                const empty = new Buffer(0);
+                const empty = Buffer.alloc(0);
 
                 expect(bytes().toBuffer()).to.deep.equal(empty);
                 expect(bytes(null).toBuffer()).to.deep.equal(empty);
@@ -105,8 +101,7 @@ describe('Protobuf bytes wrapper', () => {
 
         context('toJSON()', () => {
             it('returns an object that can be directly serialized to JSON', () => {
-                // eslint-disable-next-line node/no-deprecated-api
-                const input = new Uint8Array(new Buffer('foo'));
+                const input = Uint8Array.from(Buffer.from('foo'));
                 const output = bytes(input).toJSON();
 
                 expect(output).to.deep.equal({ type: 'Buffer', data: Array.from(input) });
@@ -116,12 +111,10 @@ describe('Protobuf bytes wrapper', () => {
         context('toString()', () => {
             it('converts the underlying typed array data into a string with a given encoding', () => {
                 const input = 'foo';
-                // eslint-disable-next-line node/no-deprecated-api
-                const wrapper = bytes(new Uint8Array(new Buffer(input)));
+                const wrapper = bytes(Uint8Array.from(Buffer.from(input)));
 
                 expect(wrapper.toString()).to.equal(input);
-                // eslint-disable-next-line node/no-deprecated-api
-                expect(wrapper.toString('base64')).to.equal((new Buffer(input)).toString('base64'));
+                expect(wrapper.toString('base64')).to.equal((Buffer.from(input)).toString('base64'));
             });
         });
 

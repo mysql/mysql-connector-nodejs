@@ -86,8 +86,7 @@ describe('autonomous prepared statements for tables without server support', () 
     context('select', () => {
         it('falls back to the regular execution mode', () => {
             // BUG#30162858 _id is a VARBINARY which should map to a Node.js Buffer.
-            // eslint-disable-next-line node/no-deprecated-api
-            const expected = [[new Buffer('1')], [new Buffer('2')], [new Buffer('3')]];
+            const expected = [[Buffer.from('1')], [Buffer.from('2')], [Buffer.from('3')]];
             const actual = [];
 
             const op = table.select('_id').where('name = :name');
@@ -111,8 +110,7 @@ describe('autonomous prepared statements for tables without server support', () 
     context('update', () => {
         it('falls back to the regular execution mode', () => {
             // BUG#30162858 _id is a VARBINARY which should map to a Node.js Buffer.
-            // eslint-disable-next-line node/no-deprecated-api
-            const expected = [[new Buffer('1'), 'qux'], [new Buffer('2'), 'qux'], [new Buffer('3'), 'qux']];
+            const expected = [[Buffer.from('1'), 'qux'], [Buffer.from('2'), 'qux'], [Buffer.from('3'), 'qux']];
             const actual = [];
 
             const op = table.update().where('name = :name').set('name', 'qux');

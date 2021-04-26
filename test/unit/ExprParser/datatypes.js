@@ -43,17 +43,13 @@ describe('ExprParser', () => {
         it('parses double-quoted strings', () => {
             const literal = Parser.parse('"foo"', { type });
             expect(literal.output.getType()).to.equal(Scalar.Type.V_STRING);
-            /* eslint-disable node/no-deprecated-api */
-            expect(new Buffer(literal.output.getVString().getValue()).toString()).to.equal('foo');
-            /* eslint-enable node/no-deprecated-api */
+            expect(Buffer.from(literal.output.getVString().getValue()).toString()).to.equal('foo');
         });
 
         it('parses single-quoted strings', () => {
             const literal = Parser.parse("'bar'", { type });
             expect(literal.output.getType()).to.equal(Scalar.Type.V_STRING);
-            /* eslint-disable node/no-deprecated-api */
-            expect(new Buffer(literal.output.getVString().getValue()).toString()).to.equal('bar');
-            /* eslint-enable node/no-deprecated-api */
+            expect(Buffer.from(literal.output.getVString().getValue()).toString()).to.equal('bar');
         });
 
         it('parses integers', () => {
@@ -119,16 +115,12 @@ describe('ExprParser', () => {
             let overflow = Number.MAX_SAFE_INTEGER + 1;
             let literal = Parser.parse(`${overflow}`, { type });
             expect(literal.output.getType()).to.equal(Scalar.Type.V_STRING);
-            /* eslint-disable node/no-deprecated-api */
-            expect(new Buffer(literal.output.getVString().getValue()).toString()).to.equal(`${overflow}`);
-            /* eslint-enable node/no-deprecated-api */
+            expect(Buffer.from(literal.output.getVString().getValue()).toString()).to.equal(`${overflow}`);
 
             overflow = Number.MIN_SAFE_INTEGER - 1;
             literal = Parser.parse(`${overflow}`, { type });
             expect(literal.output.getType()).to.equal(Scalar.Type.V_STRING);
-            /* eslint-disable node/no-deprecated-api */
-            expect(new Buffer(literal.output.getVString().getValue()).toString()).to.equal(`${overflow}`);
-            /* eslint-enable node/no-deprecated-api */
+            expect(Buffer.from(literal.output.getVString().getValue()).toString()).to.equal(`${overflow}`);
         });
     });
 });

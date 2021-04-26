@@ -49,8 +49,7 @@ describe('raw SQL', () => {
 
     context('BUG#30162858', () => {
         it('maps a MySQL BLOB to a Node.js Buffer', () => {
-            // eslint-disable-next-line node/no-deprecated-api
-            const bin = new Buffer('foo');
+            const bin = Buffer.from('foo');
             const expected = [[bin]];
             const actual = [];
 
@@ -446,10 +445,8 @@ describe('raw SQL', () => {
 
     context('BUG#30163003', () => {
         it('maps a Node.js Buffer to a MySQL BLOB', () => {
-            /* eslint-disable node/no-deprecated-api */
-            const bin1 = new Buffer('foo');
-            const bin2 = new Buffer('bar');
-            /* eslint-enable node/no-deprecated-api */
+            const bin1 = Buffer.from('foo');
+            const bin2 = Buffer.from('bar');
 
             const expected = [[bin2]];
             const actual = [];

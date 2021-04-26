@@ -132,8 +132,7 @@ describe('AuthenticationHandler inbound handler', () => {
 
             td.when(authenticateContinue.deserialize(), { ignoreExtraArgs: true }).thenReturn(authentication);
             td.when(authentication.toObject()).thenReturn({ authData: 'bar' });
-            // eslint-disable-next-line node/no-deprecated-api
-            td.when(authenticator.getNextAuthData(new Buffer('bar', 'base64'))).thenReturn('baz');
+            td.when(authenticator.getNextAuthData(Buffer.from('bar', 'base64'))).thenReturn('baz');
 
             handler[authenticateContinue.MESSAGE_ID]('foo');
 
@@ -205,8 +204,7 @@ describe('AuthenticationHandler inbound handler', () => {
 
                 td.when(authenticateContinue.deserialize(), { ignoreExtraArgs: true }).thenReturn(authentication);
                 td.when(authentication.toObject()).thenReturn({ authData: 'bar' });
-                // eslint-disable-next-line node/no-deprecated-api
-                td.when(authenticator.getNextAuthData(new Buffer('bar', 'base64'))).thenReturn('baz');
+                td.when(authenticator.getNextAuthData(Buffer.from('bar', 'base64'))).thenReturn('baz');
                 td.when(client.authenticateContinue('baz', handler)).thenThrow();
 
                 handler[authenticateContinue.MESSAGE_ID]('foo', queueDone);
@@ -226,8 +224,7 @@ describe('AuthenticationHandler inbound handler', () => {
 
                 td.when(authenticateContinue.deserialize(), { ignoreExtraArgs: true }).thenReturn(authentication);
                 td.when(authentication.toObject()).thenReturn({ authData: 'bar' });
-                // eslint-disable-next-line node/no-deprecated-api
-                td.when(authenticator.getNextAuthData(new Buffer('bar', 'base64'))).thenReturn('baz');
+                td.when(authenticator.getNextAuthData(Buffer.from('bar', 'base64'))).thenReturn('baz');
                 td.when(client.authenticateContinue('baz', handler)).thenThrow(error);
 
                 handler[authenticateContinue.MESSAGE_ID]('foo', () => {});
@@ -246,8 +243,7 @@ describe('AuthenticationHandler inbound handler', () => {
 
                 td.when(authenticateContinue.deserialize(), { ignoreExtraArgs: true }).thenReturn(authentication);
                 td.when(authentication.toObject()).thenReturn({ authData: 'bar' });
-                // eslint-disable-next-line node/no-deprecated-api
-                td.when(authenticator.getNextAuthData(new Buffer('bar', 'base64'))).thenReturn('baz');
+                td.when(authenticator.getNextAuthData(Buffer.from('bar', 'base64'))).thenReturn('baz');
                 td.when(client.authenticateContinue('baz', handler)).thenThrow();
 
                 handler[authenticateContinue.MESSAGE_ID]('foo', () => {});

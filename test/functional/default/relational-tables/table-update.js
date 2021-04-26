@@ -189,8 +189,7 @@ describe('updating data in a table', () => {
         });
 
         it('updates a MySQL BLOB using a Node.js Buffer', () => {
-            // eslint-disable-next-line node/no-deprecated-api
-            const data = new Buffer('quux');
+            const data = Buffer.from('quux');
             const expected = [[data]];
             const actual = [];
 

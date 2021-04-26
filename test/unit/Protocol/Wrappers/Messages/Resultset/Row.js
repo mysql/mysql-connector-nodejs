@@ -194,8 +194,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
         });
 
         it('returns binary data values as Node.js buffers', () => {
-            // eslint-disable-next-line node/no-deprecated-api
-            const binary = new Buffer('foo\0');
+            const binary = Buffer.from('foo\0');
             const columnProto = new ResultsetStub.ColumnMetaData([ResultsetStub.ColumnMetaData.FieldType.BYTES]);
             columnProto.setCollation(63); // binary charset and collation
 
@@ -233,8 +232,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
         });
 
         it('returns GEOMETRY data values as Node.js buffers', () => {
-            // eslint-disable-next-line node/no-deprecated-api
-            const binary = new Buffer('foo\0');
+            const binary = Buffer.from('foo\0');
             const columnProto = new ResultsetStub.ColumnMetaData([ResultsetStub.ColumnMetaData.FieldType.BYTES]);
             columnProto.setContentType(ResultsetStub.ContentType_BYTES.GEOMETRY);
 
@@ -279,8 +277,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             const obj = { foo: 'bar' };
 
             const rowProto = new ResultsetStub.Row();
-            // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.create(new Buffer(`${JSON.stringify(obj)}\0`)).valueOf());
+            rowProto.addField(bytes.create(Buffer.from(`${JSON.stringify(obj)}\0`)).valueOf());
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([obj]);
         });
 
@@ -291,8 +288,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             const xml = '<?xml version="1.0" encoding="UTF-8"?><text><para>foo</para></text>';
 
             const rowProto = new ResultsetStub.Row();
-            // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.create(new Buffer(`${xml}\0`)).valueOf());
+            rowProto.addField(bytes.create(Buffer.from(`${xml}\0`)).valueOf());
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([xml]);
         });
 
@@ -300,8 +296,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             const columnProto = new ResultsetStub.ColumnMetaData([ResultsetStub.ColumnMetaData.FieldType.BYTES]);
 
             const rowProto = new ResultsetStub.Row();
-            // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.create(new Buffer('foo\0')).valueOf());
+            rowProto.addField(bytes.create(Buffer.from('foo\0')).valueOf());
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['foo']);
 
             // without right-padding
@@ -309,14 +304,12 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.clearFlags();
 
             rowProto.clearFieldList();
-            // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.create(new Buffer('foo\0')).valueOf());
+            rowProto.addField(bytes.create(Buffer.from('foo\0')).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['foo']);
 
             rowProto.clearFieldList();
-            // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.create(new Buffer('\0')).valueOf());
+            rowProto.addField(bytes.create(Buffer.from('\0')).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['']);
 
@@ -325,8 +318,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.setFlags(1);
 
             rowProto.clearFieldList();
-            // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.create(new Buffer('foo\0')).valueOf());
+            rowProto.addField(bytes.create(Buffer.from('foo\0')).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['foo']);
 
@@ -335,8 +327,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             columnProto.setFlags(1);
 
             rowProto.clearFieldList();
-            // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.create(new Buffer('foo\0')).valueOf());
+            rowProto.addField(bytes.create(Buffer.from('foo\0')).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['foo  ']);
         });
@@ -354,17 +345,14 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             const columnProto = new ResultsetStub.ColumnMetaData([ResultsetStub.ColumnMetaData.FieldType.ENUM]);
 
             const rowProto = new ResultsetStub.Row();
-            // eslint-disable-next-line node/no-deprecated-api
-            rowProto.addField(bytes.create(new Buffer('foo\0')).valueOf());
+            rowProto.addField(bytes.create(Buffer.from('foo\0')).valueOf());
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['foo']);
         });
 
         it('returns time values as JavaScript strings', () => {
             const columnProto = new ResultsetStub.ColumnMetaData([ResultsetStub.ColumnMetaData.FieldType.TIME]);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            let time = new Buffer(2);
-            time.fill(0);
+            let time = Buffer.alloc(2);
             time.writeUInt8(22, 1);
 
             const rowProto = new ResultsetStub.Row();
@@ -372,9 +360,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['+22:00:00.000000']);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            time = new Buffer(2);
-            time.fill(1);
+            time = Buffer.alloc(2, 1);
             time.writeUInt8(5, 1);
 
             rowProto.clearFieldList();
@@ -382,9 +368,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['-05:00:00.000000']);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            time = new Buffer(3);
-            time.fill(1);
+            time = Buffer.alloc(3, 1);
             time.writeUInt8(14, 1);
             time.writeUInt8(47, 2);
 
@@ -393,9 +377,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['-14:47:00.000000']);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            time = new Buffer(4);
-            time.fill(0);
+            time = Buffer.alloc(4);
             time.writeUInt8(8, 1);
             time.writeUInt8(8, 2);
             time.writeUInt8(8, 3);
@@ -405,17 +387,15 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal(['+08:08:08.000000']);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            time = new Buffer(4);
-            time.fill(1);
+            time = Buffer.alloc(4, 1);
             time.writeUInt8(20, 1);
             time.writeUInt8(17, 2);
             time.writeUInt8(54, 3);
 
             const writer = new BinaryWriter();
             writer.writeUint64(1, 999999);
-            // eslint-disable-next-line node/no-deprecated-api
-            const useconds = new Buffer(writer.getResultBuffer().slice(1));
+
+            const useconds = Buffer.from(writer.getResultBuffer().slice(1));
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(Buffer.concat([time, useconds], time.length + useconds.length)).valueOf());
@@ -429,10 +409,8 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             const writer = new BinaryWriter();
             writer.writeUint64(1, 9999);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            let year = new Buffer(writer.getResultBuffer().slice(1));
-            // eslint-disable-next-line node/no-deprecated-api
-            let dayAndMonth = new Buffer(2);
+            let year = Buffer.from(writer.getResultBuffer().slice(1));
+            let dayAndMonth = Buffer.allocUnsafe(2);
             dayAndMonth.writeUInt8(12);
             dayAndMonth.writeUInt8(25, 1);
 
@@ -446,17 +424,14 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             writer.reset();
             writer.writeUint64(1, 2018);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            year = new Buffer(writer.getResultBuffer().slice(1));
-            // eslint-disable-next-line node/no-deprecated-api
-            dayAndMonth = new Buffer(2);
+            year = Buffer.from(writer.getResultBuffer().slice(1));
+            dayAndMonth = Buffer.allocUnsafe(2);
             dayAndMonth.writeUInt8(2);
             dayAndMonth.writeUInt8(19, 1);
 
             // works with additional time data as well
 
-            // eslint-disable-next-line node/no-deprecated-api
-            const hourAndMinute = new Buffer(2);
+            const hourAndMinute = Buffer.allocUnsafe(2);
             hourAndMinute.writeUInt8(15);
             hourAndMinute.writeUInt8(9, 1);
 
@@ -475,10 +450,8 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             const writer = new BinaryWriter();
             writer.writeUint64(1, 2018);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            const year = new Buffer(writer.getResultBuffer().slice(1));
-            // eslint-disable-next-line node/no-deprecated-api
-            const fromMonthToSeconds = new Buffer(5);
+            const year = Buffer.from(writer.getResultBuffer().slice(1));
+            const fromMonthToSeconds = Buffer.allocUnsafe(5);
             fromMonthToSeconds.writeUInt8(2);
             fromMonthToSeconds.writeUInt8(19, 1);
             fromMonthToSeconds.writeUInt8(15, 2);
@@ -487,9 +460,8 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             writer.reset();
             writer.writeUint64(1, 123000);
-            // eslint-disable-next-line node/no-deprecated-api
-            const useconds = new Buffer(writer.getResultBuffer().slice(1));
 
+            const useconds = Buffer.from(writer.getResultBuffer().slice(1));
             const datetime = Buffer.concat([year, fromMonthToSeconds, useconds], year.length + fromMonthToSeconds.length + useconds.length);
 
             const rowProto = new ResultsetStub.Row();
@@ -500,8 +472,7 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
         it('returns decimal values as JavaScript numbers', () => {
             const columnProto = new ResultsetStub.ColumnMetaData([ResultsetStub.ColumnMetaData.FieldType.DECIMAL]);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            let decimal = new Buffer('04123401d0', 'hex');
+            let decimal = Buffer.from('04123401d0', 'hex');
 
             const rowProto = new ResultsetStub.Row();
             rowProto.addField(bytes.create(decimal).valueOf());
@@ -510,8 +481,8 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             const overflow = Number.MAX_SAFE_INTEGER + 1;
             const scale = 10; // overflow size in hexadecimal
-            // eslint-disable-next-line node/no-deprecated-api
-            decimal = new Buffer(`${scale}${overflow}${overflow}c0`, 'hex');
+
+            decimal = Buffer.from(`${scale}${overflow}${overflow}c0`, 'hex');
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(decimal).valueOf());
@@ -527,24 +498,21 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([null]);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            let setDefinition = new Buffer('00', 'hex');
+            let setDefinition = Buffer.from('00', 'hex');
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(setDefinition).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([['']]);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            setDefinition = new Buffer('01', 'hex');
+            setDefinition = Buffer.from('01', 'hex');
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(setDefinition).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([[]]);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            setDefinition = new Buffer('0100', 'hex');
+            setDefinition = Buffer.from('0100', 'hex');
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(setDefinition).valueOf());
@@ -552,24 +520,20 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([['\0']]);
 
             // BUG#31654667
-            // eslint-disable-next-line node/no-deprecated-api
-            const x = (new Buffer('x')).toString('hex');
-            // eslint-disable-next-line node/no-deprecated-api
-            const y = (new Buffer('y')).toString('hex');
-            // eslint-disable-next-line node/no-deprecated-api
-            setDefinition = new Buffer(`01${x}01${y}`, 'hex');
+            const x = Buffer.from('x').toString('hex');
+            const y = Buffer.from('y').toString('hex');
+
+            setDefinition = Buffer.from(`01${x}01${y}`, 'hex');
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(setDefinition).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([['x', 'y']]);
 
-            // eslint-disable-next-line node/no-deprecated-api
-            const foo = (new Buffer('foo')).toString('hex');
-            // eslint-disable-next-line node/no-deprecated-api
-            const bar = (new Buffer('bar')).toString('hex');
-            // eslint-disable-next-line node/no-deprecated-api
-            setDefinition = new Buffer(`03${foo}03${bar}`, 'hex');
+            const foo = Buffer.from('foo').toString('hex');
+            const bar = Buffer.from('bar').toString('hex');
+
+            setDefinition = Buffer.from(`03${foo}03${bar}`, 'hex');
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(setDefinition).valueOf());

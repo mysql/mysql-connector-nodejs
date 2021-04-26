@@ -116,11 +116,9 @@ describe('ExprParser', () => {
                     expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 });
 
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[1].getLiteral().getVString().getValue()).toString()).to.equal('one');
-                expect(new Buffer(params[2].getLiteral().getVString().getValue()).toString()).to.equal('two');
-                expect(new Buffer(params[3].getLiteral().getVString().getValue()).toString()).to.equal('three');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[1].getLiteral().getVString().getValue()).toString()).to.equal('one');
+                expect(Buffer.from(params[2].getLiteral().getVString().getValue()).toString()).to.equal('two');
+                expect(Buffer.from(params[3].getLiteral().getVString().getValue()).toString()).to.equal('three');
             });
 
             it('parses valid "NOT IN" syntax', () => {
@@ -173,9 +171,7 @@ describe('ExprParser', () => {
                 const fstValue = fields[0].getValue();
                 expect(fstValue.getType()).to.equal(Expr.Type.LITERAL);
                 expect(fstValue.getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(fstValue.getLiteral().getVString().getValue()).toString()).to.equal('bar');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(fstValue.getLiteral().getVString().getValue()).toString()).to.equal('bar');
 
                 const sndValue = fields[1].getValue();
                 expect(sndValue.getType()).to.equal(Expr.Type.ARRAY);
@@ -211,9 +207,7 @@ describe('ExprParser', () => {
 
                 let literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal("foo'bar");
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal("foo'bar");
 
                 input = '"foo\'\'bar"';
                 expr = Parser.parse(input);
@@ -223,9 +217,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal("foo''bar");
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal("foo''bar");
 
                 input = '""""';
                 expr = Parser.parse(input);
@@ -235,9 +227,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('"');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal('"');
 
                 input = '""';
                 expr = Parser.parse(input);
@@ -247,9 +237,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal('');
 
                 input = '"foo\u005C"bar"';
                 expr = Parser.parse(input);
@@ -259,9 +247,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('foo"bar');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal('foo"bar');
 
                 input = '"foo""bar"';
                 expr = Parser.parse(input);
@@ -271,9 +257,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('foo"bar');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal('foo"bar');
 
                 input = '"\u005C\u005C&quot"';
                 expr = Parser.parse(input);
@@ -283,9 +267,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('\u005C&quot');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal('\u005C&quot');
             });
 
             it('parses valid single-quoted literals', () => {
@@ -297,9 +279,7 @@ describe('ExprParser', () => {
 
                 let literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('foo"bar');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal('foo"bar');
 
                 input = '\'foo""bar\'';
                 expr = Parser.parse(input);
@@ -309,9 +289,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('foo""bar');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal('foo""bar');
 
                 input = "''''";
                 expr = Parser.parse(input);
@@ -321,9 +299,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal("'");
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal("'");
 
                 input = "''";
                 expr = Parser.parse(input);
@@ -333,9 +309,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal('');
 
                 input = "'foo\u005C'bar'";
                 expr = Parser.parse(input);
@@ -345,9 +319,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal("foo'bar");
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal("foo'bar");
 
                 input = "'foo''bar'";
                 expr = Parser.parse(input);
@@ -357,9 +329,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal("foo'bar");
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal("foo'bar");
 
                 input = "'\u005C\u005C&quot'";
                 expr = Parser.parse(input);
@@ -369,9 +339,7 @@ describe('ExprParser', () => {
 
                 literal = expr.output.getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('\u005C&quot');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal('\u005C&quot');
             });
 
             // Following test-cases were not included in original EBNF, but are valid
@@ -538,10 +506,8 @@ describe('ExprParser', () => {
                     expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 });
 
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar');
-                expect(new Buffer(params[1].getLiteral().getVString().getValue()).toString()).to.equal('%foo%');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar');
+                expect(Buffer.from(params[1].getLiteral().getVString().getValue()).toString()).to.equal('%foo%');
 
                 input = "'foobar' NOT LIKE '%quux%'";
                 expr = Parser.parse(input);
@@ -571,11 +537,9 @@ describe('ExprParser', () => {
                     expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 });
 
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar_');
-                expect(new Buffer(params[1].getLiteral().getVString().getValue()).toString()).to.equal('foobar|_');
-                expect(new Buffer(params[2].getLiteral().getVString().getValue()).toString()).to.equal('|');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar_');
+                expect(Buffer.from(params[1].getLiteral().getVString().getValue()).toString()).to.equal('foobar|_');
+                expect(Buffer.from(params[2].getLiteral().getVString().getValue()).toString()).to.equal('|');
 
                 input = '4 BETWEEN 2 AND 6';
                 expr = Parser.parse(input);
@@ -627,10 +591,8 @@ describe('ExprParser', () => {
                     expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 });
 
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar!');
-                expect(new Buffer(params[1].getLiteral().getVString().getValue()).toString()).to.equal('.*');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar!');
+                expect(Buffer.from(params[1].getLiteral().getVString().getValue()).toString()).to.equal('.*');
 
                 input = "'foobar' not regexp '^q.*'";
                 expr = Parser.parse(input);
@@ -646,10 +608,8 @@ describe('ExprParser', () => {
                     expect(param.getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
                 });
 
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar');
-                expect(new Buffer(params[1].getLiteral().getVString().getValue()).toString()).to.equal('^q.*');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar');
+                expect(Buffer.from(params[1].getLiteral().getVString().getValue()).toString()).to.equal('^q.*');
 
                 input = 'not = foo';
                 expr = Parser.parse(input);
@@ -769,9 +729,7 @@ describe('ExprParser', () => {
 
                 const literal = params[0].getLiteral();
                 expect(literal.getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(literal.getVString().getValue()).toString()).to.equal('DocumentStore');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(literal.getVString().getValue()).toString()).to.equal('DocumentStore');
 
                 expect(params[1].getType()).to.equal(Expr.Type.IDENT);
 
@@ -971,9 +929,7 @@ describe('ExprParser', () => {
                 expect(args).to.have.lengthOf(3);
                 args.forEach(param => expect(param.getType()).to.equal(Expr.Type.LITERAL));
                 expect(args[0].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(args[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(args[0].getLiteral().getVString().getValue()).toString()).to.equal('foobar');
                 expect(args[1].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 expect(args[1].getLiteral().getVUnsignedInt()).to.equal(1);
                 expect(args[2].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
@@ -981,9 +937,7 @@ describe('ExprParser', () => {
 
                 expect(params[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(params[1].getLiteral().getVString().getValue()).toString()).to.equal('foo');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(params[1].getLiteral().getVString().getValue()).toString()).to.equal('foo');
 
                 input = "jcast(concat('[', 1, ',', 2, ']')) = [1,2]";
                 expr = Parser.parse(input);
@@ -1010,21 +964,15 @@ describe('ExprParser', () => {
                 expect(args).to.have.lengthOf(5);
                 args.forEach(arg => expect(arg.getType()).to.equal(Expr.Type.LITERAL));
                 expect(args[0].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(args[0].getLiteral().getVString().getValue()).toString()).to.equal('[');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(args[0].getLiteral().getVString().getValue()).toString()).to.equal('[');
                 expect(args[1].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 expect(args[1].getLiteral().getVUnsignedInt()).to.equal(1);
                 expect(args[2].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(args[2].getLiteral().getVString().getValue()).toString()).to.equal(',');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(args[2].getLiteral().getVString().getValue()).toString()).to.equal(',');
                 expect(args[3].getLiteral().getType()).to.equal(Scalar.Type.V_UINT);
                 expect(args[3].getLiteral().getVUnsignedInt()).to.equal(2);
                 expect(args[4].getLiteral().getType()).to.equal(Scalar.Type.V_STRING);
-                /* eslint-disable node/no-deprecated-api */
-                expect(new Buffer(args[4].getLiteral().getVString().getValue()).toString()).to.equal(']');
-                /* eslint-enable node/no-deprecated-api */
+                expect(Buffer.from(args[4].getLiteral().getVString().getValue()).toString()).to.equal(']');
             });
 
             it('parses expressions containing valid document paths', () => {

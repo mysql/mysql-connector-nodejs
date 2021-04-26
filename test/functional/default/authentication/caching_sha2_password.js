@@ -292,8 +292,7 @@ describe('caching_sha2_password authentication plugin', () => {
                             expect(proc.logs[0]).to.contain.keys('mech_name', 'auth_data');
                             expect(proc.logs[0].mech_name).to.equal('PLAIN');
                             expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
-                            // eslint-disable-next-line node/no-deprecated-api
-                            expect(new Buffer(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
+                            expect(Buffer.from(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
                         });
                 });
             });
@@ -885,8 +884,7 @@ describe('caching_sha2_password authentication plugin', () => {
                         expect(proc.logs[0]).to.contain.keys('mech_name', 'auth_data');
                         expect(proc.logs[0].mech_name).to.equal(authConfig.auth);
                         expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
-                        // eslint-disable-next-line node/no-deprecated-api
-                        expect(new Buffer(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
+                        expect(Buffer.from(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
                     });
             });
         });
@@ -1280,8 +1278,7 @@ describe('caching_sha2_password authentication plugin', () => {
                             expect(proc.logs).to.have.lengthOf(1);
                             expect(proc.logs[0]).to.contain.keys('auth_data');
                             expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
-                            // eslint-disable-next-line node/no-deprecated-api
-                            expect(new Buffer(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
+                            expect(Buffer.from(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
                         });
                 });
             });

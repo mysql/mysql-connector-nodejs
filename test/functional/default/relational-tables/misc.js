@@ -295,8 +295,7 @@ describe('relational miscellaneous tests', () => {
                 });
 
                 it('decodes values correctly', () => {
-                    // eslint-disable-next-line node/no-deprecated-api
-                    const expected = [[new Buffer('foo'), new Buffer('bar'), new Buffer('baz'), new Buffer('qux')]];
+                    const expected = [[Buffer.from('foo'), Buffer.from('bar'), Buffer.from('baz'), Buffer.from('qux')]];
                     const actual = [];
 
                     return schema.getTable('test').select()
@@ -345,8 +344,7 @@ describe('relational miscellaneous tests', () => {
 
                 it('decodes values correctly', () => {
                     // BINARY length = byte size
-                    // eslint-disable-next-line node/no-deprecated-api
-                    const expected = [[new Buffer('foo'), new Buffer('bar\0\0')]];
+                    const expected = [[Buffer.from('foo'), Buffer.from('bar\0\0')]];
                     const actual = [];
 
                     return schema.getTable('test').select()
@@ -395,8 +393,7 @@ describe('relational miscellaneous tests', () => {
                 it('decodes numeric values for columns of fixed-length datatypes that require padding', () => {
                     // BINARY length = byte size
                     // CHAR length = byte size * 4 (to accommodate UTF8)
-                    // eslint-disable-next-line node/no-deprecated-api
-                    const expected = [['0               ', new Buffer('0\0\0\0')]];
+                    const expected = [['0               ', Buffer.from('0\0\0\0')]];
                     const actual = [];
 
                     return schema.getTable('test').select()

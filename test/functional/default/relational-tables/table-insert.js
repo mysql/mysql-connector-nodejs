@@ -190,8 +190,7 @@ describe('inserting data into a table', () => {
         });
 
         it('saves a Node.js Buffer as a MySQL BLOB', () => {
-            // eslint-disable-next-line node/no-deprecated-api
-            const data = new Buffer('foo');
+            const data = Buffer.from('foo');
             const expected = [[data]];
             const actual = [];
 

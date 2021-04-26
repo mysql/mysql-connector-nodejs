@@ -194,10 +194,8 @@ describe('adding documents to a collection', () => {
                 .then(() => {
                     expect(actual).to.have.lengthOf(2);
 
-                    /* eslint-disable node/no-deprecated-api */
-                    const firstId = new Buffer(actual[0]._id, 'hex');
-                    const lastId = new Buffer(actual[1]._id, 'hex');
-                    /* eslint-enable node/no-deprecated-api */
+                    const firstId = Buffer.from(actual[0]._id, 'hex');
+                    const lastId = Buffer.from(actual[1]._id, 'hex');
 
                     expect(firstId.readUInt8(firstId.length - 1)).to.equal(lastId.readUInt8(lastId.length - 1) - 1);
                 });

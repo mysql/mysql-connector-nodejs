@@ -129,8 +129,7 @@ describe('session reset behavior', () => {
                         expect(proc.logs[0].cond[0]).to.have.keys('condition_key', 'condition_value', 'op');
                         expect(proc.logs[0].cond[0].condition_key).to.equal('EXPECT_FIELD_EXIST');
                         expect(proc.logs[0].cond[0].condition_value).to.have.keys('type', 'data');
-                        // eslint-disable-next-line node/no-deprecated-api
-                        expect((new Buffer(proc.logs[0].cond[0].condition_value.data)).toString()).to.equal('6.1'); // keep_open
+                        expect(Buffer.from(proc.logs[0].cond[0].condition_value.data).toString()).to.equal('6.1'); // keep_open
                         expect(proc.logs[0].cond[0].op).to.equal('EXPECT_OP_SET');
                     });
             });
@@ -169,8 +168,7 @@ describe('session reset behavior', () => {
                         expect(proc.logs[0].cond[0]).to.have.keys('condition_key', 'condition_value', 'op');
                         expect(proc.logs[0].cond[0].condition_key).to.equal('EXPECT_FIELD_EXIST');
                         expect(proc.logs[0].cond[0].condition_value).to.have.keys('type', 'data');
-                        // eslint-disable-next-line node/no-deprecated-api
-                        expect((new Buffer(proc.logs[0].cond[0].condition_value.data)).toString()).to.equal('6.1'); // keep_open
+                        expect(Buffer.from(proc.logs[0].cond[0].condition_value.data).toString()).to.equal('6.1'); // keep_open
                         expect(proc.logs[0].cond[0].op).to.equal('EXPECT_OP_SET');
                     });
             });

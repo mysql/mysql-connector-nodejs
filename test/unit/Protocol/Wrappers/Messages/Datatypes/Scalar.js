@@ -63,8 +63,7 @@ describe('Mysqlx.Datatypes.Scalar wrapper', () => {
             });
 
             it('returns true if the value is a Buffer instance', () => {
-                // eslint-disable-next-line node/no-deprecated-api
-                return expect(scalar.canEncode(new Buffer('foo'))).to.be.true;
+                return expect(scalar.canEncode(Buffer.from('foo'))).to.be.true;
             });
 
             it('returns true if the value is a boolean', () => {
@@ -148,13 +147,11 @@ describe('Mysqlx.Datatypes.Scalar wrapper', () => {
             });
 
             it('creates a wrapper of Mysqlx.Datatypes.Scalar.Type.V_OCTETS for Buffer instances', () => {
-                // eslint-disable-next-line node/no-deprecated-api
-                const bin = new Buffer('foo');
+                const bin = Buffer.from('foo');
                 const proto = scalar.create(bin).valueOf();
 
                 expect(proto.getType()).to.equal(ScalarStub.Type.V_OCTETS);
-                // eslint-disable-next-line node/no-deprecated-api
-                expect(new Buffer(proto.getVOctets().getValue()).toString()).to.equal('foo');
+                expect(Buffer.from(proto.getVOctets().getValue()).toString()).to.equal('foo');
             });
 
             it('creates a wrapper of Mysqlx.Datatypes.Scalar.Type.V_BOOL for booleans', () => {
@@ -174,16 +171,14 @@ describe('Mysqlx.Datatypes.Scalar wrapper', () => {
                 const proto = scalar.create(now).valueOf();
 
                 expect(proto.getType()).to.equal(ScalarStub.Type.V_STRING);
-                // eslint-disable-next-line node/no-deprecated-api
-                expect((new Buffer(proto.getVString().getValue())).toString()).to.equal(now.toJSON());
+                expect(Buffer.from(proto.getVString().getValue()).toString()).to.equal(now.toJSON());
             });
 
             it('creates a wrapper of Mysqlx.Datatypes.Scalar.Type.V_STRING for strings', () => {
                 const proto = scalar.create('foo').valueOf();
 
                 expect(proto.getType()).to.equal(ScalarStub.Type.V_STRING);
-                // eslint-disable-next-line node/no-deprecated-api
-                expect((new Buffer(proto.getVString().getValue())).toString()).to.equal('foo');
+                expect(Buffer.from(proto.getVString().getValue()).toString()).to.equal('foo');
             });
         });
     });

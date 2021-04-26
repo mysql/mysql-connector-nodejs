@@ -90,8 +90,7 @@ describe('Client', () => {
 
         it('throws an error if the server is using the MySQL classic protocol', () => {
             const client = new Client();
-            // eslint-disable-next-line node/no-deprecated-api
-            const classicServerGreeting = new Buffer('010000000a', 'hex');
+            const classicServerGreeting = Buffer.from('010000000a', 'hex');
 
             expect(() => client.decodeMessage(classicServerGreeting)).to.throw(errors.MESSAGES.ERR_WIRE_PROTOCOL_HEADER);
         });
@@ -112,7 +111,7 @@ describe('Client', () => {
             const client = new Client();
             const messageId = 5;
             const packetLength = 10;
-            const message = Buffer.alloc(5);
+            const message = Buffer.allocUnsafe(5);
             // The length of the packet is encoded in the the first byte but
             // does not include the length of the header itself (4 bytes).
             message.writeUInt32LE(packetLength - 4);
@@ -152,20 +151,18 @@ describe('Client', () => {
             decodeMessage = td.replace(Client.prototype, 'decodeMessage');
             process = td.replace(WorkQueue.prototype, 'process');
 
-            /* eslint-disable node/no-deprecated-api */
-            rawMessage1 = new Buffer(8);
+            rawMessage1 = Buffer.allocUnsafe(8);
             rawMessage1.writeUInt32LE(4);
             rawMessage1.writeUInt8(1, 4);
             rawMessage1.fill('foo', 5);
 
-            rawMessage2 = new Buffer(8);
+            rawMessage2 = Buffer.allocUnsafe(8);
             rawMessage2.writeUInt32LE(4);
             rawMessage2.writeUInt8(2, 4);
             rawMessage2.fill('bar', 5);
 
-            message1 = { id: 1, payload: new Buffer('foo') };
-            message2 = { id: 2, payload: new Buffer('bar') };
-            /* eslint-enable node/no-deprecated-api */
+            message1 = { id: 1, payload: Buffer.from('foo') };
+            message2 = { id: 2, payload: Buffer.from('bar') };
 
             td.when(process(), { ignoreExtraArgs: true }).thenReturn();
             td.when(decodeMessage(rawMessage2), { ignoreExtraArgs: true }).thenReturn(message2);
@@ -265,9 +262,8 @@ describe('Client', () => {
 
         it('handles fragments containing a lot of messages', () => {
             const client = new Client();
-            /* eslint-disable node/no-deprecated-api */
-            let fragment = new Buffer(0);
-            /* eslint-enable node/no-deprecated-api */
+
+            let fragment = Buffer.alloc(0);
 
             // The stack size on Node.js v4 seems to exceed for around 6035 messages of 8 bytes.
             // Let's keep a bit of a margin while making sure the test is fast enough.
@@ -312,8 +308,7 @@ describe('Client', () => {
 
         it('does not process empty notices', () => {
             const client = new Client();
-            // eslint-disable-next-line node/no-deprecated-api
-            const emptyNotice = new Buffer('010000000b', 'hex');
+            const emptyNotice = Buffer.from('010000000b', 'hex');
 
             client.handleServerMessage(emptyNotice);
 

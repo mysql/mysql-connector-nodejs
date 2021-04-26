@@ -549,8 +549,7 @@ describe('mysql_native_password authentication plugin', () => {
                         expect(proc.logs).to.have.lengthOf(1);
                         expect(proc.logs[0]).to.contain.keys('auth_data');
                         expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
-                        // eslint-disable-next-line node/no-deprecated-api
-                        expect(new Buffer(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
+                        expect(Buffer.from(proc.logs[0].auth_data.data).toString()).to.have.string(authConfig.user);
                     });
             });
         });
