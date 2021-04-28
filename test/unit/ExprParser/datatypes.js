@@ -76,24 +76,24 @@ describe('ExprParser', () => {
             expect(literal.output.getVDouble()).to.equal(-1.11111111);
         });
 
-        it('parses floats', () => {
+        it('parses floats as doubles', () => {
             let literal = Parser.parse('1.1', { type });
-            expect(literal.output.getType()).to.equal(Scalar.Type.V_FLOAT);
-            expect(literal.output.getVFloat()).to.equal(1.1);
+            expect(literal.output.getType()).to.equal(Scalar.Type.V_DOUBLE);
+            expect(literal.output.getVDouble()).to.equal(1.1);
 
             literal = Parser.parse('1.1111111', { type });
-            expect(literal.output.getType()).to.equal(Scalar.Type.V_FLOAT);
-            expect(literal.output.getVFloat()).to.equal(1.1111111);
+            expect(literal.output.getType()).to.equal(Scalar.Type.V_DOUBLE);
+            expect(literal.output.getVDouble()).to.equal(1.1111111);
         });
 
-        it('parses negative floats', () => {
+        it('parses negative floats as doubles', () => {
             let literal = Parser.parse('-1.1', { type });
-            expect(literal.output.getType()).to.equal(Scalar.Type.V_FLOAT);
-            expect(literal.output.getVFloat()).to.equal(-1.1);
+            expect(literal.output.getType()).to.equal(Scalar.Type.V_DOUBLE);
+            expect(literal.output.getVDouble()).to.equal(-1.1);
 
             literal = Parser.parse('-1.1111111', { type });
-            expect(literal.output.getType()).to.equal(Scalar.Type.V_FLOAT);
-            expect(literal.output.getVFloat()).to.equal(-1.1111111);
+            expect(literal.output.getType()).to.equal(Scalar.Type.V_DOUBLE);
+            expect(literal.output.getVDouble()).to.equal(-1.1111111);
         });
 
         it('parses booleans', () => {

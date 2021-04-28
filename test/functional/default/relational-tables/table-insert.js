@@ -215,7 +215,7 @@ describe('inserting data into a table', () => {
         });
     });
 
-    context('BUG#31734504 floating point precision', () => {
+    context('BUG#31734504 rounding for DOUBLE fields', () => {
         beforeEach('create table', () => {
             return session.sql('CREATE TABLE double_precision (v_double DOUBLE)')
                 .execute();
@@ -236,6 +236,31 @@ describe('inserting data into a table', () => {
                 .then(res => {
                     expect(res.getColumns()[0].getType()).to.equal('DOUBLE');
                     expect(res.fetchOne()).to.deep.equal([1.000001]);
+                });
+        });
+    });
+
+    context('BUG#32687374 rounding for DECIMAL fields', () => {
+        beforeEach('create table', () => {
+            return session.sql('CREATE TABLE decimal_precision (v_decimal DECIMAL(16, 2))')
+                .execute();
+        });
+
+        beforeEach('load table', () => {
+            table = schema.getTable('decimal_precision');
+        });
+
+        it('inserts floating point numbers without losing precision', () => {
+            return table.insert('v_decimal')
+                .values(-56565656.56)
+                .execute()
+                .then(() => {
+                    return table.select()
+                        .execute();
+                })
+                .then(res => {
+                    expect(res.getColumns()[0].getType()).to.equal('DECIMAL');
+                    expect(res.fetchOne()).to.deep.equal([-56565656.56]);
                 });
         });
     });

@@ -390,6 +390,38 @@ describe('relational table select', () => {
         });
     });
 
+    context('BUG#32687374 rounding for DECIMAL fields', () => {
+        beforeEach('add a DECIMAL column to the existing table', () => {
+            return session.sql(`ALTER TABLE ${schema.getName()}.${table.getName()} ADD COLUMN fpn DECIMAL (16,2)`)
+                .execute();
+        });
+
+        beforeEach('add fixtures', () => {
+            return table.insert(['id', 'name', 'fpn'])
+                .values([1, 'foo', -56565656.56])
+                .execute();
+        });
+
+        it('applies a filter using a floating point number expression literal without losing precision', () => {
+            return table.select('name')
+                .where('fpn = -56565656.56')
+                .execute()
+                .then(res => {
+                    return expect(res.fetchOne()).to.deep.equal(['foo']);
+                });
+        });
+
+        it('applies a filter using a floating point number placeholder argument without losing precision', () => {
+            return table.select('name')
+                .where('fpn = :float')
+                .bind('float', -56565656.56)
+                .execute()
+                .then(res => {
+                    return expect(res.fetchOne()).to.deep.equal(['foo']);
+                });
+        });
+    });
+
     context('when debug mode is enabled', () => {
         beforeEach('populate table', () => {
             return table.insert(['id', 'name', 'age'])

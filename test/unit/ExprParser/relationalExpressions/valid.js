@@ -1026,8 +1026,8 @@ describe('ExprParser', () => {
                 params = expr.output.getOperator().getParamList();
                 expect(params).to.have.lengthOf(2);
                 expect(params[0].getType()).to.equal(Expr.Type.LITERAL);
-                expect(params[0].getLiteral().getType()).to.equal(Scalar.Type.V_FLOAT);
-                expect(params[0].getLiteral().getVFloat()).to.equal(10.2);
+                expect(params[0].getLiteral().getType()).to.equal(Scalar.Type.V_DOUBLE);
+                expect(params[0].getLiteral().getVDouble()).to.equal(10.2);
                 expect(params[1].getType()).to.equal(Expr.Type.LITERAL);
                 expect(params[1].getLiteral().getType()).to.equal(Scalar.Type.V_OCTETS);
                 expect(Buffer.from(params[1].getLiteral().getVOctets().getValue()).toString()).to.equal('SIGNED INTEGER');

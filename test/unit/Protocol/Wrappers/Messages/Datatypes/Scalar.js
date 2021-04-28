@@ -118,22 +118,20 @@ describe('Mysqlx.Datatypes.Scalar wrapper', () => {
                 expect(proto.getVSignedInt()).to.equal(-3);
             });
 
-            it('creates a wrapper of Mysqlx.Datatypes.Scalar.Type.V_FLOAT for numbers with small decimal precision', () => {
+            it('creates a wrapper of Mysqlx.Datatypes.Scalar.Type.V_DOUBLE for floating point numbers', () => {
                 let proto = scalar.create(3.14).valueOf();
-                expect(proto.getType()).to.equal(ScalarStub.Type.V_FLOAT);
-                expect(proto.getVFloat()).to.equal(3.14);
+                expect(proto.getType()).to.equal(ScalarStub.Type.V_DOUBLE);
+                expect(proto.getVDouble()).to.equal(3.14);
 
                 proto = scalar.create(-3.14).valueOf();
-                expect(proto.getType()).to.equal(ScalarStub.Type.V_FLOAT);
-                expect(proto.getVFloat()).to.equal(-3.14);
+                expect(proto.getType()).to.equal(ScalarStub.Type.V_DOUBLE);
+                expect(proto.getVDouble()).to.equal(-3.14);
 
                 proto = scalar.create(1.0001).valueOf();
-                expect(proto.getType()).to.equal(ScalarStub.Type.V_FLOAT);
-                expect(proto.getVFloat()).to.equal(1.0001);
-            });
+                expect(proto.getType()).to.equal(ScalarStub.Type.V_DOUBLE);
+                expect(proto.getVDouble()).to.equal(1.0001);
 
-            it('creates a wrapper of Mysqlx.Datatypes.Scalar.Type.V_DOUBLE for numbers with big decimal precision', () => {
-                let proto = scalar.create(Math.PI).valueOf();
+                proto = scalar.create(Math.PI).valueOf();
                 expect(proto.getType()).to.equal(ScalarStub.Type.V_DOUBLE);
                 expect(proto.getVDouble()).to.equal(Math.PI);
 

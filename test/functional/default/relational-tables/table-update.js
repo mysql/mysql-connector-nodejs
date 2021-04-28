@@ -233,6 +233,29 @@ describe('updating data in a table', () => {
         });
     });
 
+    context('BUG#32687374 rounding for decimal fields', () => {
+        beforeEach('add a DECIMAL column to the existing table', () => {
+            return session.sql(`ALTER TABLE ${schema.getName()}.${table.getName()} ADD COLUMN fpn DECIMAL (16,2)`)
+                .execute();
+        });
+
+        it('updates floating point numbers without losing precision', () => {
+            const float = -56565656.56;
+
+            return table.update()
+                .where('true')
+                .set('fpn', float)
+                .execute()
+                .then(() => {
+                    return table.select('fpn')
+                        .execute();
+                })
+                .then(res => {
+                    return expect(res.fetchOne()).to.deep.equal([float]);
+                });
+        });
+    });
+
     context('when debug mode is enabled', () => {
         const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'relational-tables', 'update.js');
 
