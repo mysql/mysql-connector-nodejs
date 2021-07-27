@@ -64,7 +64,7 @@
     "node": ">=12.0.0"
   },
   "devDependencies": {
-    "chai": "4.2.0",
+    "chai": "4.3.4",
     "dns2": "1.4.2",
     "eslint-plugin-header": "3.1.0",
     "mocha": "8.2.1",
