@@ -41,21 +41,25 @@ describe('autonomous prepared statements for tables without server support', () 
     let schema, session, table;
 
     // server container defined in docker.compose.yml
-    const baseConfig = { host: 'mysql-8.0.3', socket: undefined };
+    const baseConfig = { host: 'mysql-8.0.3', socket: undefined, schema: config.schema || 'mysql-connector-nodejs_test' };
 
     beforeEach('create default schema', () => {
-        return fixtures.createSchema(config.schema, baseConfig);
+        const schemalessConfig = Object.assign({}, config, baseConfig, { schema: undefined });
+
+        return fixtures.createSchema(baseConfig.schema, schemalessConfig);
     });
 
     beforeEach('create session using default schema', () => {
-        return mysqlx.getSession(Object.assign({}, config, baseConfig))
+        const defaultSessionConfig = Object.assign({}, config, baseConfig);
+
+        return mysqlx.getSession(defaultSessionConfig)
             .then(s => {
                 session = s;
             });
     });
 
     beforeEach('load default schema', () => {
-        schema = session.getSchema(config.schema);
+        schema = session.getDefaultSchema();
     });
 
     beforeEach('create table', () => {
@@ -76,7 +80,7 @@ describe('autonomous prepared statements for tables without server support', () 
     });
 
     afterEach('drop default schema', () => {
-        return session.dropSchema(config.schema);
+        return session.dropSchema(schema.getName());
     });
 
     afterEach('close session', () => {

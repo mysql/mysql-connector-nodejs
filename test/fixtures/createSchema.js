@@ -30,10 +30,10 @@
 
 'use strict';
 
-const config = require('../config');
+const baseConfig = require('../config');
 const mysqlx = require('../..');
 
-module.exports = function ({ schema = config.schema || 'mysql-connector-nodejs_test' } = {}) {
+module.exports = function ({ schema = baseConfig.schema || 'mysql-connector-nodejs_test' } = {}, config = baseConfig) {
     return mysqlx.getSession(config)
         .then(session => {
             return session.dropSchema(schema)
