@@ -114,11 +114,12 @@ describe('ConnectionPool', () => {
     });
 
     context('getConnection()', () => {
-        let acquire, connection, isExpired, isOpen, override;
+        let acquire, connection, isClosing, isExpired, isOpen, override;
 
         beforeEach('create fakes', () => {
             acquire = td.function();
             connection = td.function();
+            isClosing = td.function();
             isExpired = td.function();
             isOpen = td.function();
             override = td.function();
@@ -128,7 +129,7 @@ describe('ConnectionPool', () => {
             connectionPool = require('../../../lib/DevAPI/ConnectionPool');
         });
 
-        it('fails if queueTimeout is exceeded', done => {
+        it('fails if queueTimeout was exceeded', done => {
             const queueTimeout = 5000;
             const pool = connectionPool({ pooling: { maxSize: 3, queueTimeout } }).create({ active: ['foo', 'bar', 'baz'] });
             const update = td.replace(pool, 'update');
@@ -151,11 +152,12 @@ describe('ConnectionPool', () => {
         });
 
         it('acquires and returns an idle connection if one exists and no expired ones exist', () => {
-            const poolConnection = { acquire, isExpired, isOpen, override };
+            const poolConnection = { acquire, isClosing, isExpired, isOpen, override };
             const pool = connectionPool({ pooling: { maxSize: 3 } }).create({ active: ['foo'], idle: [poolConnection] });
             const update = td.replace(pool, 'update');
 
             td.when(update()).thenResolve();
+            td.when(isClosing()).thenReturn(false);
             td.when(isOpen()).thenReturn(true);
             td.when(isExpired()).thenReturn(false);
             td.when(override()).thenResolve(poolConnection);
@@ -171,11 +173,12 @@ describe('ConnectionPool', () => {
         });
 
         it('acquires and returns an idle connection if one exists and expired ones exist', () => {
-            const poolConnection = { acquire, isExpired, isOpen, override };
+            const poolConnection = { acquire, isClosing, isExpired, isOpen, override };
             const pool = connectionPool({ pooling: { maxSize: 3 } }).create({ active: ['foo'], idle: [poolConnection], expired: ['bar'] });
             const update = td.replace(pool, 'update');
 
             td.when(update()).thenResolve();
+            td.when(isClosing()).thenReturn(false);
             td.when(isOpen()).thenReturn(true);
             td.when(isExpired()).thenReturn(false);
             td.when(override()).thenResolve(poolConnection);
@@ -192,13 +195,14 @@ describe('ConnectionPool', () => {
 
         it('acquires and returns a refurbished connection if one exists and no idle ones exist but expired ones exist', () => {
             const open = td.function();
-            const expiredConnection = { isOpen, isExpired, open };
+            const expiredConnection = { isClosing, isExpired, isOpen, open };
             const options = { foo: 'bar', pooling: { maxSize: 3 } };
             const pool = connectionPool(options).create({ active: ['baz'], idle: [], expired: [expiredConnection] });
             const update = td.replace(pool, 'update');
             const poolConnection = { acquire };
 
             td.when(update()).thenResolve();
+            td.when(isClosing()).thenReturn(false);
             td.when(isOpen()).thenReturn(true);
             td.when(isExpired()).thenReturn(true);
             td.when(open()).thenResolve(poolConnection);
@@ -215,13 +219,14 @@ describe('ConnectionPool', () => {
 
         it('acquires and returns a refurbished connection if all idle ones have expired', () => {
             const open = td.function();
-            const expiredConnection = { isOpen, isExpired, open };
+            const expiredConnection = { isClosing, isExpired, isOpen, open };
             const options = { foo: 'bar', pooling: { maxSize: 3 } };
             const pool = connectionPool(options).create({ active: ['baz'], idle: [expiredConnection] });
             const update = td.replace(pool, 'update');
             const poolConnection = { acquire };
 
             td.when(update()).thenResolve();
+            td.when(isClosing()).thenReturn(false);
             td.when(isOpen()).thenReturn(true);
             td.when(isExpired()).thenReturn(true);
             td.when(open()).thenResolve(poolConnection);
@@ -253,6 +258,61 @@ describe('ConnectionPool', () => {
                     expect(pool.activeConnections()).to.deep.include(con);
                     return expect(con).to.deep.equal(poolConnection);
                 });
+        });
+
+        it('queues the request when the pool is full and queueTimeout was not exceeded', done => {
+            const queueTimeout = 1000;
+            const options = { pooling: { maxSize: 3, queueTimeout } };
+            const pool = connectionPool(options).create({ active: ['foo', 'bar', 'baz'] });
+            const update = td.replace(pool, 'update');
+            const open = td.function();
+            const poolConnection = { acquire };
+
+            td.when(update()).thenResolve();
+            td.when(connection(options)).thenReturn({ open });
+            td.when(open()).thenResolve(poolConnection);
+
+            // We need to travel in time only after calling
+            // pool.getConnection(), otherwise, Date.now() will also be in the
+            // future.
+            pool.getConnection().then(con => {
+                expect(td.explain(acquire).callCount).to.equal(1);
+                expect(pool.activeConnections()).to.deep.include(con);
+                expect(con).to.deep.equal(poolConnection);
+
+                return done();
+            });
+
+            tk.travel(new Date(Date.now() + queueTimeout / 10 + 1));
+            // We reset the pool after queueTimeout / 10.
+            setTimeout(() => pool.reset(), queueTimeout / 10);
+        });
+
+        it('queues the request when an an expired connection is available but is still being closed and queueTimeout was not exceeded', done => {
+            const queueTimeout = 1000;
+            const options = { pooling: { maxSize: 3, queueTimeout } };
+            const pool = connectionPool(options).create({ active: ['foo', 'bar'], expired: [{ isClosing }] });
+            const update = td.replace(pool, 'update');
+            const open = td.function();
+            const poolConnection = { acquire };
+
+            td.when(update()).thenResolve();
+            td.when(isClosing()).thenReturn(true);
+            td.when(connection(options)).thenReturn({ open });
+            td.when(open()).thenResolve(poolConnection);
+
+            // We need to travel in time only after calling
+            // pool.getConnection(), otherwise, Date.now() will also be in the
+            // future.
+            pool.getConnection().then(con => {
+                expect(td.explain(acquire).callCount).to.equal(1);
+                expect(pool.activeConnections()).to.deep.include(con);
+                expect(con).to.deep.equal(poolConnection);
+
+                return done();
+            });
+
+            tk.travel(new Date(Date.now() + queueTimeout / 10 + 1));
         });
     });
 
@@ -307,7 +367,7 @@ describe('ConnectionPool', () => {
         });
 
         it('moves active connections that have been closed by the server into the list of expired connections', () => {
-            const connection = { destroy, isOpen };
+            const connection = { destroy, isIdle, isOpen };
             const pool = connectionPool().create({ active: [connection] });
 
             td.when(isOpen()).thenReturn(false);

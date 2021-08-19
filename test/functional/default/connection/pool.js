@@ -35,6 +35,7 @@
 const config = require('../../../config');
 const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
+const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../..');
 
 describe('connection pool', () => {
@@ -643,6 +644,147 @@ describe('connection pool', () => {
                 })
                 .then(() => {
                     expect(processIds).to.not.include.members(connectionIds);
+                });
+        });
+    });
+
+    context('when acquiring connections in parallel', () => {
+        const totalRequestsInQueue = 4;
+
+        beforeEach('reduce the number of allowed connections in the server', () => {
+            return fixtures.setServerGlobalVariable('mysqlx_max_connections', totalRequestsInQueue - 1);
+        });
+
+        afterEach('reset the number of allowed connections in the server', () => {
+            return fixtures.setServerGlobalVariable('mysqlx_max_connections', 100);
+        });
+
+        it('succeeds to re-use connections if they are released before queueTimeout', function () {
+            const poolingConfig = Object.assign({}, config, baseConfig);
+            const maxSize = totalRequestsInQueue / 2;
+            const queueTimeout = 500;
+            const pool = mysqlx.getClient(poolingConfig, { pooling: { enabled: true, maxSize, queueTimeout } });
+
+            const connectAndWaitBeforeClose = () => {
+                return pool.getSession()
+                    .then(session => {
+                        // we want to handle the connection requests while
+                        // there is still no room to accommodate them, so, we
+                        // need to wait for the other connection requests
+                        // before releasing the existing connections from the
+                        // pool
+                        return new Promise(resolve => setTimeout(resolve, queueTimeout / 2))
+                            .then(() => {
+                                return session.close();
+                            });
+                    });
+            };
+
+            const work = [...Array(totalRequestsInQueue)].map(() => connectAndWaitBeforeClose());
+
+            return Promise.all(work)
+                .then(() => {
+                    return pool.close();
+                });
+        });
+
+        it('fails to re-use connections if they are released after queueTimeout', function () {
+            const poolingConfig = Object.assign({}, config, baseConfig);
+            const maxSize = totalRequestsInQueue / 2;
+            const queueTimeout = 500;
+            const pool = mysqlx.getClient(poolingConfig, { pooling: { enabled: true, maxSize, queueTimeout } });
+            const error = `Could not retrieve a connection from the pool. Timeout of ${queueTimeout} ms was exceeded.`;
+
+            const connectAndWaitBeforeClose = () => {
+                return pool.getSession()
+                    .then(session => {
+                        // we want to handle the connection requests while
+                        // there is still no room to accommodate them, so, we
+                        // need to wait for the other connection requests
+                        // before releasing the existing connections from the
+                        // pool
+                        return new Promise(resolve => setTimeout(resolve, queueTimeout * 2))
+                            .then(() => {
+                                return session.close();
+                            });
+                    });
+            };
+
+            const work = [...Array(totalRequestsInQueue)].map(() => connectAndWaitBeforeClose());
+
+            return Promise.all(work)
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err.message).to.equal(error);
+                    return pool.close();
+                });
+        });
+
+        it('succeeds to re-create connections if they expire before queueTimeout', function () {
+            const poolingConfig = Object.assign({}, config, baseConfig);
+            const maxSize = totalRequestsInQueue / 2;
+            const queueTimeout = 500;
+            const maxIdleTime = queueTimeout / 2;
+            const pool = mysqlx.getClient(poolingConfig, { pooling: { enabled: true, maxIdleTime, maxSize, queueTimeout } });
+
+            return pool.getSession()
+                .then(session1 => {
+                    return pool.getSession()
+                        .then(session2 => {
+                            return session2.close();
+                        })
+                        .then(() => {
+                            // we want one of the connections to expire
+                            return new Promise(resolve => setTimeout(resolve, maxIdleTime + maxIdleTime / 2));
+                        })
+                        .then(() => {
+                            // we still release the other connection just so
+                            // we accommodate two more parallel requests
+                            return session1.close();
+                        })
+                        .then(() => {
+                            // at this moment the pool should contain one
+                            // expired connection and one idle connection
+                            return Promise.all([pool.getSession(), pool.getSession()]);
+                        })
+                        .then(() => {
+                            return pool.close();
+                        });
+                });
+        });
+
+        it('fails to re-create connections if they expire after queueTimeout', function () {
+            const poolingConfig = Object.assign({}, config, baseConfig);
+            const maxSize = totalRequestsInQueue / 2;
+            const queueTimeout = 500;
+            const maxIdleTime = queueTimeout / 2;
+            const pool = mysqlx.getClient(poolingConfig, { pooling: { enabled: true, maxIdleTime, maxSize, queueTimeout } });
+            const error = `Could not retrieve a connection from the pool. Timeout of ${queueTimeout} ms was exceeded.`;
+
+            return pool.getSession()
+                .then(() => {
+                    return pool.getSession()
+                        .then(session2 => {
+                            return session2.close();
+                        })
+                        .then(() => {
+                            // we want one of the connections to expire
+                            return new Promise(resolve => setTimeout(resolve, maxIdleTime + maxIdleTime / 2));
+                        })
+                        .then(() => {
+                            // right now, we should not have room to
+                            // accommodate two parallel requests
+                            return Promise.all([pool.getSession(), pool.getSession()]);
+                        });
+                })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err.message).to.equal(error);
+                    return pool.close();
                 });
         });
     });

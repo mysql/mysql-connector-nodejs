@@ -1451,5 +1451,14 @@ describe('connection failures', () => {
                         });
                 });
         });
+
+        it('does not fail if the session is being closed multiple times in parallel', () => {
+            const validConfig = Object.assign({}, config, baseConfig);
+
+            return mysqlx.getSession(validConfig)
+                .then(session => {
+                    return Promise.all([session.close(), session.close()]);
+                });
+        });
     });
 });

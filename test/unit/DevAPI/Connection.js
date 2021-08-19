@@ -1042,12 +1042,14 @@ describe('X DevAPI Connection', () => {
 
             td.when(isOpen()).thenReturn(true);
             td.when(Client.prototype.connectionClose()).thenResolve();
-            td.when(Client.prototype.getConnection()).thenReturn({ destroy });
+            td.when(Client.prototype.getConnection()).thenReturn({ destroy, destroyed: false });
 
             return con.destroy()
                 .then(() => {
                     expect(td.explain(Client.prototype.connectionClose).callCount).to.equal(1);
                     expect(td.explain(destroy).callCount).to.equal(1);
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(con.isClosing()).to.be.false;
                     return expect(td.explain(destroy).calls[0].args).to.be.an('array').and.be.empty;
                 });
         });
@@ -1064,7 +1066,29 @@ describe('X DevAPI Connection', () => {
                 });
         });
 
-        it('does nothing if the underlying connection is closing', () => {
+        it('does nothing if the network socket is destroyed', () => {
+            const con = connection().setClient(new Client());
+            const isOpen = td.replace(con, 'isOpen');
+
+            td.when(isOpen()).thenReturn(true);
+            td.when(Client.prototype.getConnection()).thenReturn({ destroyed: true });
+
+            return Promise.all([con.destroy(), con.destroy()])
+                .then(() => {
+                    expect(td.explain(Client.prototype.connectionClose).callCount).to.equal(0);
+                })
+                .then(() => {
+                    return con.destroy();
+                })
+                .then(() => {
+                    return con.destroy();
+                })
+                .then(() => {
+                    expect(td.explain(Client.prototype.connectionClose).callCount).to.equal(0);
+                });
+        });
+
+        it('only closes the connection once', () => {
             const con = connection().setClient(new Client());
             const isOpen = td.replace(con, 'isOpen');
             const destroy = td.function();
@@ -1073,10 +1097,7 @@ describe('X DevAPI Connection', () => {
             td.when(Client.prototype.connectionClose()).thenResolve();
             td.when(Client.prototype.getConnection()).thenReturn({ destroy });
 
-            return con.destroy()
-                .then(() => {
-                    return con.destroy();
-                })
+            return Promise.all([con.destroy(), con.destroy()])
                 .then(() => {
                     expect(td.explain(Client.prototype.connectionClose).callCount).to.equal(1);
                     return expect(td.explain(destroy).callCount).to.equal(1);
@@ -1090,6 +1111,7 @@ describe('X DevAPI Connection', () => {
 
             td.when(isOpen()).thenReturn(true);
             td.when(Client.prototype.connectionClose()).thenReject(error);
+            td.when(Client.prototype.getConnection()).thenReturn({ destroyed: false });
 
             return con.destroy()
                 .then(() => {
