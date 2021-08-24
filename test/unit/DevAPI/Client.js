@@ -92,28 +92,61 @@ describe('DevAPI Client', () => {
     });
 
     context('close()', () => {
-        let pool;
+        let connection, pool, session;
 
         beforeEach('create fakes', () => {
+            connection = td.function();
             pool = td.function();
+            session = td.function();
 
+            td.replace('../../../lib/DevAPI/Connection', connection);
             td.replace('../../../lib/DevAPI/ConnectionPool', pool);
+            td.replace('../../../lib/DevAPI/Session', session);
 
             client = require('../../../lib/DevAPI/Client');
         });
 
-        it('destroys an existing pool reference', () => {
+        it('destroys an existing connection pool', () => {
             const destroy = td.function();
+            const create = td.function();
+            const getConnection = td.function();
 
-            td.when(pool(), { ignoreExtraArgs: true }).thenReturn({ destroy });
+            td.when(pool(), { ignoreExtraArgs: true }).thenReturn({ create });
+            td.when(create()).thenReturn({ destroy, getConnection });
+            td.when(getConnection()).thenResolve('foo');
+            td.when(session('foo')).thenReturn();
             td.when(destroy()).thenResolve();
 
-            return client().close()
+            const cli = client({ pooling: { enabled: true } });
+
+            return cli.getSession()
                 .then(() => {
-                    expect(td.explain(destroy).callCount).to.equal(1);
+                    return cli.close();
                 })
                 .then(() => {
-                    return client.getSession({ pool: { enabled: true } });
+                    expect(td.explain(destroy).callCount).to.equal(1);
+                });
+        });
+
+        it('fails if an existing connection pool has already been destroyed', () => {
+            const destroy = td.function();
+            const create = td.function();
+            const getConnection = td.function();
+
+            td.when(pool(), { ignoreExtraArgs: true }).thenReturn({ create });
+            td.when(create()).thenReturn({ destroy, getConnection });
+            td.when(getConnection()).thenResolve('foo');
+            td.when(session('foo')).thenReturn();
+            td.when(destroy()).thenResolve();
+
+            const cli = client({ pooling: { enabled: true } });
+
+            return cli.getSession()
+                .then(() => {
+                    return cli.close();
+                })
+                .then(() => {
+                    return cli.close();
                 })
                 .then(() => {
                     return expect.fail();
@@ -123,13 +156,68 @@ describe('DevAPI Client', () => {
                 });
         });
 
-        it('fails if the pool is not available', () => {
-            return client().close()
+        it('fails if an existing connection pool is not available', () => {
+            return client({ pooling: { enabled: true } }).close()
                 .then(() => {
                     return expect.fail();
                 })
                 .catch(err => {
                     return expect(err.message).to.deep.equal(errors.MESSAGES.ER_DEVAPI_POOL_CLOSED);
+                });
+        });
+
+        it('destroys an existing standalone connection', () => {
+            const destroy = td.function();
+            const open = td.function();
+
+            td.when(connection(), { ignoreExtraArgs: true }).thenReturn({ destroy, open });
+            td.when(open()).thenResolve('foo');
+            td.when(session('foo')).thenReturn();
+            td.when(destroy()).thenResolve();
+
+            const cli = client({ pooling: { enabled: false } });
+
+            return cli.getSession()
+                .then(() => {
+                    return cli.close();
+                })
+                .then(() => {
+                    expect(td.explain(destroy).callCount).to.equal(1);
+                });
+        });
+
+        it('does nothing if an existing standalone connection has already been closed', () => {
+            const destroy = td.function();
+            const open = td.function();
+
+            td.when(connection(), { ignoreExtraArgs: true }).thenReturn({ destroy, open });
+            td.when(open()).thenResolve('foo');
+            td.when(session('foo')).thenReturn();
+            td.when(destroy()).thenResolve();
+
+            const cli = client({ pooling: { enabled: false } });
+
+            return cli.getSession()
+                .then(() => {
+                    return cli.close();
+                })
+                .then(() => {
+                    return cli.close();
+                })
+                .then(() => {
+                    expect(td.explain(destroy).callCount).to.equal(1);
+                });
+        });
+
+        it('does nothing if an existing standalone connection is not available', () => {
+            const destroy = td.function();
+
+            td.when(connection(), { ignoreExtraArgs: true }).thenReturn(null);
+            td.when(destroy()).thenResolve();
+
+            return client({ pooling: { enabled: false } }).close()
+                .then(() => {
+                    expect(td.explain(destroy).callCount).to.equal(0);
                 });
         });
     });

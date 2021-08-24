@@ -646,6 +646,17 @@ describe('connection pool', () => {
                     expect(processIds).to.not.include.members(connectionIds);
                 });
         });
+
+        it('standalone connections are gracefully closed', () => {
+            const poolingConfig = Object.assign({}, config, baseConfig);
+
+            const pool = mysqlx.getClient(poolingConfig, { pooling: { enabled: false } });
+
+            return pool.getSession()
+                .then(() => {
+                    return pool.close();
+                });
+        });
     });
 
     context('when acquiring connections in parallel', () => {
