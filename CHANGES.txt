@@ -8,6 +8,14 @@ Copyright (c) 2016, 2021, Oracle and/or its affiliates.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.27
+=======
+
+- Test suite as been re-structured and missing relevant tests have been added
+- Error and warning management logic has been centralized and improved
+- Attempts to acquire connections in parallel are how properly handled by a connection pool
+- Standalone connections can now be properly managed via the "Client" interface
+
 v8.0.26
 =======
 
