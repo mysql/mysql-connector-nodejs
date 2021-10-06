@@ -56,7 +56,11 @@ For additional security, the user is able to customize the setup and do other th
 
 #### TLS versions
 
-A handpicked list of allowed TLS versions can be defined. Alternatively the client will rely on a default list of versions it supports, which includes `TLSv1`, `TLSv1.1` and `TLSv1.2` and `TLSv1.3` (depending on the Node.js version).
+A handpicked list of allowed TLS versions can be defined. Alternatively the client will rely on a default list of versions it supports, which includes `TLSv1.2` and `TLSv1.3` (depending on the Node.js version).
+
+> **IMPORTANT**<br />
+> Since version 8.0.28, only TLSv1.2 and TLSv1.3 are effectively supported.
+> As long as one or both are part of the list of TLS versions, the client tries to pick the most appropriate one to use when connecting to the server, however, if the list contains only TLSv1 and/or TLSv1.1, the client reports an error.
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
@@ -80,97 +84,30 @@ With Node.js v10.0.0 (or higher), where the TLS negotiation supports a range of 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
 
-// With older Node.js versions, if the server does not support TLSv1.2
-mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.1,TLSv1.2]')
+// With older Node.js versions, if the server does not support TLSv1.3
+mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.2,TLSv1.3]')
     .catch(err => {
         console.log(err.message); // OpenSSL wrong version number error
     });
 
-// With Node.js >=v10.0.0, with support for range-based negotiation, TLSv1.1 will be used
-mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.1,TLSv1.2]')
+// With Node.js >=v10.0.0, with support for range-based negotiation, TLSv1.2 will be used
+mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.2,TLSv1.3]')
     .then(session => {
         console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 ```
 
-If the oldest version of TLS supported by the server is newer than the one used by the client, the socket will hang up during the negotiation, regardless of the Node.js engine version being used.
+If the oldest version of TLS supported by the server is newer than the one used by the client, the socket will hang up during the negotiation or will close with a fatal error, depending on the Node.js (and OpenSSL) version.
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
 
-// The server supports only TLSv1.2 or higher
-mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1,TLSv1.1]')
-    .catch(err => {
-        console.log(err.message); // TCP socket hang
+// The server supports only TLSv1.3
+mysqlx.getSession('mysqlx://localhost?tls-versions=[TLSv1.2]')
+    .catch(() => {
+        // does not connect
     });
 ```
-
-Both TLSv1 and TLSv1.1 are deprecated. This means that, when connecting to a server that does not support a later and more secure TLS version, or when the list of allowed TLS versions is restricted to one or both of those versions, the client will report a deprecation warning message.
-
-When connecting to an older server with support for TLSv1.1, using the default connection options, like the following `test.js` script:
-
-```javascript
-const mysqlx = require('@mysql/xdevapi');
-
-mysqlx.getSession('mysqlx://root@localhost')
-    .then(session => {
-        console.log('done');
-    });
-```
-
-It will yield the following:
-
-```shell
-$ node test.js
-The connection is using TLSv1.1 which is now deprecated and will be removed in a future release of MySQL. Be prepared to use TLSv1.2 or TLSv1.3 when you upgrade.
-done
-```
-
-When connecting to an older server which supports only TLSv1, the script will yield the following:
-
-```shell
-$ node test.js
-The connection is using TLSv1 which is now deprecated and will be removed in a future release of MySQL. Be prepared to use TLSv1.2 or TLSv1.3 when you upgrade.
-done
-```
-
-The same should happen when connecting to any that supports TLSv1.2 or TLSv1.3 but the list of allowed TLS versions is restricted to one or more of the versions being deprecated.
-
-```javascript
-mysqlx.getSession('mysqlx://root@localhost?tls-versions=[TLSv1,TLSv1.1]')
-    .then(session => {
-        console.log('done');
-    });
-```
-
-Running the script will yield the following:
-
-```shell
-$ node test.js
-The connection is using TLSv1.1 which is now deprecated and will be removed in a future release of MySQL. Be prepared to use TLSv1.2 or TLSv1.3 when you upgrade.
-done
-```
-
-If we restrict it to TLSv1 only, the behavior should be the same, but the message will mention TLSv1 instead.
-
-```javascript
-mysqlx.getSession('mysqlx://root@localhost?tls-versions=[TLSv1]')
-    .then(session => {
-        console.log('done');
-    });
-```
-
-In which case, the script will yield the following:
-
-```shell
-$ node test.js
-The connection is using TLSv1 which is now deprecated and will be removed in a future release of MySQL. Be prepared to use TLSv1.2 or TLSv1.3 when you upgrade.
-done
-```
-
-The deprecation message is written in the process stderr stream as [`'warning'`](https://nodejs.org/docs/v12.0.0/api/process.html#process_event_warning) event, using the same infrastructure as the one used for deprecation messages generated by the core Node.js engine.
-
-When using a connection pool, the message is reported only when the pool creates a new connection or when it re-creates one that expired in the meantime. Idle connections that are re-used by the pool do not report the deprecation message.
 
 #### TLS Ciphersuites
 

@@ -45,13 +45,7 @@ describe('TLS version utilities', () => {
 
     context('allowed()', () => {
         it('returns the list of TLS versions that are allowed by the client', () => {
-            return expect(versions.allowed()).to.deep.equal(['TLSv1', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3']);
-        });
-    });
-
-    context('deprecated()', () => {
-        it('returns the list of TLS versions that are deprecated', () => {
-            return expect(versions.deprecated()).to.deep.equal(['TLSv1', 'TLSv1.1']);
+            return expect(versions.allowed()).to.deep.equal(['TLSv1.2', 'TLSv1.3']);
         });
     });
 
@@ -94,6 +88,12 @@ describe('TLS version utilities', () => {
             td.when(latest()).thenReturn('foo');
 
             expect(versions.supported()).to.deep.equal(['foo']);
+        });
+    });
+
+    context('unsupported()', () => {
+        it('returns the list of valid TLS versions that are not supported', () => {
+            return expect(versions.unsupported()).to.deep.equal(['TLSv1', 'TLSv1.1']);
         });
     });
 });

@@ -62,28 +62,24 @@ describe('TLS secure context utilities', () => {
                 secureContext = require('../../../lib/tls/secure-context');
             });
 
-            it('defines the range using the list of supported TLS versions', () => {
-                const versions = ['TLSv1', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3'];
+            it('defines the range using a list of supported TLS versions', () => {
+                const versions = ['TLSv1.2', 'TLSv1.3'];
+
+                td.when(tlsVersions.allowed()).thenReturn(versions);
+                td.when(tlsVersions.supported()).thenReturn(versions.slice(1));
+                td.when(tlsCiphers.defaults()).thenReturn([]);
+
+                expect(secureContext.create()).to.deep.include({ maxVersion: versions[versions.length - 1], minVersion: versions[versions.length - 1] });
+            });
+
+            it('defines the range using the list of provided TLS versions', () => {
+                const versions = ['TLSv1.2', 'TLSv1.3'];
 
                 td.when(tlsVersions.allowed()).thenReturn(versions);
                 td.when(tlsVersions.supported()).thenReturn(versions);
                 td.when(tlsCiphers.defaults()).thenReturn([]);
 
                 return expect(secureContext.create()).to.deep.include({ maxVersion: versions[versions.length - 1], minVersion: versions[0] });
-            });
-
-            it('defines the range using a list of provided TLS versions', () => {
-                const versions = ['TLSv1', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3'];
-
-                td.when(tlsVersions.allowed()).thenReturn(versions);
-                td.when(tlsVersions.supported()).thenReturn(versions.slice(2));
-                td.when(tlsCiphers.defaults()).thenReturn([]);
-
-                expect(secureContext.create()).to.deep.include({ maxVersion: versions[versions.length - 1], minVersion: versions[2] });
-
-                td.when(tlsVersions.supported()).thenReturn(versions.slice(0, 2));
-
-                return expect(secureContext.create()).to.deep.include({ maxVersion: versions[1], minVersion: versions[0] });
             });
         });
 
@@ -95,17 +91,13 @@ describe('TLS secure context utilities', () => {
             });
 
             it('defines the latest supported TLS version as the target', () => {
-                const versions = ['TLSv1', 'TLSv1.1', 'TLSv1.2'];
+                const versions = ['TLSv1.2'];
 
                 td.when(tlsVersions.allowed()).thenReturn(versions);
                 td.when(tlsVersions.supported()).thenReturn(versions);
                 td.when(tlsCiphers.defaults()).thenReturn([]);
 
                 expect(secureContext.create()).to.deep.include({ secureProtocol: `${versions[versions.length - 1]}_client_method`.replace('.', '_') });
-
-                td.when(tlsVersions.supported()).thenReturn(versions.slice(0, 2));
-
-                return expect(secureContext.create()).to.deep.include({ secureProtocol: `${versions[1]}_client_method`.replace('.', '_') });
             });
         });
 
@@ -246,17 +238,35 @@ describe('TLS secure context utilities', () => {
             return expect(() => secureContext.validate({ ssl: true, tls: { versions: {} } })).to.throw(util.format(error, {}));
         });
 
-        it('fails when the list of TLS versions contains invalid values', () => {
+        it('fails when the list of TLS versions only contains invalid values', () => {
             td.when(tlsVersions.allowed()).thenReturn(['foo', 'bar']);
+            td.when(tlsVersions.unsupported()).thenReturn([]);
 
-            return expect(() => secureContext.validate({ tls: { versions: ['foo', 'bar', 'baz'] } })).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'baz', 'foo, bar'));
+            return expect(() => secureContext.validate({ tls: { versions: ['baz', 'qux'] } })).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'baz', 'foo, bar'));
+        });
+
+        it('fails when all the TLS versions in the list are insecure', () => {
+            td.when(tlsVersions.allowed()).thenReturn(['foo', 'bar']);
+            td.when(tlsVersions.unsupported()).thenReturn(['baz', 'qux']);
+
+            return expect(() => secureContext.validate({ tls: { versions: ['baz'] } })).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_INSECURE_TLS_VERSIONS, 'baz', 'foo, bar'));
         });
 
         it('fails when none of the TLS versions in the list are supported', () => {
-            td.when(tlsVersions.allowed()).thenReturn(['foo', 'bar', 'baz', 'qux']);
-            td.when(tlsVersions.supported()).thenReturn(['foo', 'bar']);
+            td.when(tlsVersions.allowed()).thenReturn(['foo', 'bar']);
+            td.when(tlsVersions.supported()).thenReturn([]);
+            td.when(tlsVersions.unsupported()).thenReturn([]);
 
-            return expect(() => secureContext.validate({ tls: { versions: ['baz', 'qux'] } })).to.throw(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
+            return expect(() => secureContext.validate({ tls: { versions: ['foo', 'bar'] } })).to.throw(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
+        });
+
+        it('does not fail if any TLS version in the list if effectively supported by the client', () => {
+            td.when(tlsVersions.allowed()).thenReturn(['foo', 'bar']);
+            td.when(tlsVersions.supported()).thenReturn(['foo']);
+            td.when(tlsVersions.unsupported()).thenReturn(['baz']);
+            td.when(tlsCiphers.overlaps(), { ignoreExtraArgs: true }).thenReturn(['qux']);
+
+            return expect(secureContext.validate({ tls: { versions: ['foo', 'bar', 'baz'] } })).to.be.true;
         });
 
         it('fails when the list of ciphersuites is badly specified', () => {
@@ -265,6 +275,7 @@ describe('TLS secure context utilities', () => {
             // We need to allow and support at least one version.
             td.when(tlsVersions.allowed()).thenReturn(['foo']);
             td.when(tlsVersions.supported()).thenReturn(['foo']);
+            td.when(tlsVersions.unsupported()).thenReturn([]);
 
             expect(() => secureContext.validate({ tls: { enabled: true, ciphersuites: null } })).to.throw(util.format(error, null));
             expect(() => secureContext.validate({ ssl: true, tls: { ciphersuites: null } })).to.throw(util.format(error, null));
@@ -286,6 +297,7 @@ describe('TLS secure context utilities', () => {
             // We need to allow and support at least one version.
             td.when(tlsVersions.allowed()).thenReturn(['baz']);
             td.when(tlsVersions.supported()).thenReturn(['baz']);
+            td.when(tlsVersions.unsupported()).thenReturn([]);
 
             td.when(tlsCiphers.overlaps(ciphersuites)).thenReturn([]);
 

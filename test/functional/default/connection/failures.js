@@ -132,7 +132,31 @@ describe('connection failures', () => {
                         });
                 });
 
-                it('fails when unknown TLS versions are provided in the list', () => {
+                it('fails when the list of TLS versions is empty', () => {
+                    const emptyTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: [] } });
+
+                    return mysqlx.getSession(emptyTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
+                        });
+                });
+
+                it('fails when the list does not contain any allowed TLS version', () => {
+                    const nonAllowedTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { versions: ['foo', 'TLSv1.1'] } });
+
+                    return mysqlx.getSession(nonAllowedTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_INSECURE_TLS_VERSIONS, 'TLSv1.1', 'TLSv1.2, TLSv1.3'));
+                        });
+                });
+
+                it('fails when the list contains only invalid TLS versions', () => {
                     const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { versions: ['foo', 'bar'] } });
 
                     return mysqlx.getSession(invalidTLSConfig)
@@ -140,13 +164,25 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1.2, TLSv1.3'));
                         });
                 });
 
-                it('fails when all the TLS versions provided in the list are not supported', function () {
+                it('fails when the list contains only insecure TLS versions', () => {
+                    const insecureTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { versions: ['TLSv1', 'TLSv1.1'] } });
+
+                    return mysqlx.getSession(insecureTLSConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_INSECURE_TLS_VERSIONS, 'TLSv1', 'TLSv1.2, TLSv1.3'));
+                        });
+                });
+
+                it('fails when all the TLS versions provided in the list are not supported by the client', function () {
                     // This test only makes sense on Node.js v10 (or lower).
-                    if (tls.DEFAULT_MAX_VERSION === 'TLSv1.3') {
+                    if (tls.DEFAULT_MAX_VERSION && tls.DEFAULT_MAX_VERSION !== 'TLSv1.2') {
                         return this.skip();
                     }
 
@@ -383,7 +419,33 @@ describe('connection failures', () => {
                         });
                 });
 
-                it('fails when unknown TLS versions are provided in the list', () => {
+                it('fails when the list of TLS versions is empty', () => {
+                    const emptyTLSConfig = Object.assign({}, config, baseConfig);
+                    const uri = `mysqlx://${emptyTLSConfig.user}:${emptyTLSConfig.password}@${emptyTLSConfig.host}:${emptyTLSConfig.port}?tls-versions=[]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
+                        });
+                });
+
+                it('fails when the list does not contain any allowed TLS version', () => {
+                    const nonAllowedTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['foo', 'TLSv1.1'] } });
+                    const uri = `mysqlx://${nonAllowedTLSConfig.user}:${nonAllowedTLSConfig.password}@${nonAllowedTLSConfig.host}:${nonAllowedTLSConfig.port}?tls-versions=[${nonAllowedTLSConfig.tls.versions.join(',')}]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_INSECURE_TLS_VERSIONS, 'TLSv1.1', 'TLSv1.2, TLSv1.3'));
+                        });
+                });
+
+                it('fails when the list contains only invalid TLS versions', () => {
                     const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['foo', 'bar'] } });
                     const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
 
@@ -392,13 +454,26 @@ describe('connection failures', () => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1.2, TLSv1.3'));
                         });
                 });
 
-                it('fails when all the TLS versions provided in the list are not supported', function () {
+                it('fails when the list contains only insecure TLS versions', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['TLSv1', 'TLSv1.1'] } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_INSECURE_TLS_VERSIONS, 'TLSv1', 'TLSv1.2, TLSv1.3'));
+                        });
+                });
+
+                it('fails when all the TLS versions provided in the list are not supported by the client', function () {
                     // This test only makes sense on Node.js v10 (or lower).
-                    if (tls.DEFAULT_MAX_VERSION === 'TLSv1.3') {
+                    if (tls.DEFAULT_MAX_VERSION && tls.DEFAULT_MAX_VERSION !== 'TLSv1.2') {
                         return this.skip();
                     }
 
@@ -624,7 +699,7 @@ describe('connection failures', () => {
                     let invalidTLSConfig = { tls: { versions: {} } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, '{}'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, {}));
 
                     invalidTLSConfig = { tls: { versions: 'foo' } };
 
@@ -632,19 +707,35 @@ describe('connection failures', () => {
                         .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, 'foo'));
                 });
 
-                it('throws an error when unknown TLS versions are provided in the list', () => {
-                    let invalidTLSConfig = { tls: { versions: ['foo', 'bar'] } };
+                it('throws an error when the list of TLS versions is empty', () => {
+                    const emptyTLSConfig = { tls: { versions: [] } };
 
-                    expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
-
-                    invalidTLSConfig = { tls: { versions: ['TLSv1.2', 'bar'] } };
-
-                    expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'bar', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                    expect(() => mysqlx.getClient(emptyTLSConfig))
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
                 });
 
-                it('throws an error when all the TLS versions provided in the list are not supported', function () {
+                it('throws an error when the list does not contain any allowed TLS version', () => {
+                    const nonAllowedTLSConfig = { tls: { versions: ['foo', 'TLSv1'] } };
+
+                    expect(() => mysqlx.getClient(nonAllowedTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_INSECURE_TLS_VERSIONS, 'TLSv1', 'TLSv1.2, TLSv1.3'));
+                });
+
+                it('throws an error when the list contains only invalid TLS versions', () => {
+                    const invalidTLSConfig = { tls: { versions: ['foo', 'bar'] } };
+
+                    expect(() => mysqlx.getClient(invalidTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1.2, TLSv1.3'));
+                });
+
+                it('throws an error when the list contains only insecure TLS versions', () => {
+                    const insecureTLSConfig = { tls: { versions: ['TLSv1', 'TLSv1.1'] } };
+
+                    expect(() => mysqlx.getClient(insecureTLSConfig))
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_INSECURE_TLS_VERSIONS, 'TLSv1', 'TLSv1.2, TLSv1.3'));
+                });
+
+                it('throws an error when all the TLS versions provided in the list are not supported by the client', function () {
                     if (tls.DEFAULT_MAX_VERSION === 'TLSv1.3') {
                         return this.skip();
                     }
@@ -652,7 +743,7 @@ describe('connection failures', () => {
                     const invalidTLSConfig = { tls: { versions: ['TLSv1.3'] } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION, 'TLSv1.3'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION));
                 });
 
                 it('throws an error when the list of ciphersuites is badly specified', () => {
@@ -664,7 +755,7 @@ describe('connection failures', () => {
                     invalidTLSConfig = { tls: { ciphersuites: {} } };
 
                     expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, '{}'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, {}));
 
                     invalidTLSConfig = { tls: { ciphersuites: false } };
 
@@ -814,7 +905,7 @@ describe('connection failures', () => {
                     let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=${JSON.stringify(invalidTLSConfig.tls.versions)}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, '{}'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, JSON.stringify({})));
 
                     invalidTLSConfig.tls.versions = 'foo';
                     uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=${invalidTLSConfig.tls.versions}`;
@@ -823,21 +914,39 @@ describe('connection failures', () => {
                         .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION_LIST, 'foo'));
                 });
 
-                it('throws an error when unknown TLS versions are provided in the list', () => {
-                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['foo', 'bar'] } });
-                    let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
+                it('throws an error when the list of TLS versions is empty', () => {
+                    const emptyTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: [] } });
+                    const uri = `mysqlx://${emptyTLSConfig.user}:${emptyTLSConfig.password}@${emptyTLSConfig.host}:${emptyTLSConfig.port}?tls-versions=${JSON.stringify(emptyTLSConfig.tls.versions)}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
-
-                    invalidTLSConfig.tls.versions = ['TLSv1.2', 'bar'];
-                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
-
-                    expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'bar', 'TLSv1, TLSv1.1, TLSv1.2, TLSv1.3'));
+                        .to.throw(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION);
                 });
 
-                it('throws an error when all the TLS versions provided in the list are not supported', function () {
+                it('throws an error when the list does not contain any allowed TLS version', () => {
+                    const nonAllowedTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['foo', 'TLSv1'] } });
+                    const uri = `mysqlx://${nonAllowedTLSConfig.user}:${nonAllowedTLSConfig.password}@${nonAllowedTLSConfig.host}:${nonAllowedTLSConfig.port}?tls-versions=[${nonAllowedTLSConfig.tls.versions.join(',')}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_INSECURE_TLS_VERSIONS, 'TLSv1', 'TLSv1.2, TLSv1.3'));
+                });
+
+                it('throws an error when the list contains only invalid TLS versions', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['foo', 'bar'] } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_VERSION, 'foo', 'TLSv1.2, TLSv1.3'));
+                });
+
+                it('throws an error when the list contains only insecure TLS versions', () => {
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: ['TLSv1', 'TLSv1.1'] } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
+
+                    expect(() => mysqlx.getClient(uri))
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_INSECURE_TLS_VERSIONS, 'TLSv1', 'TLSv1.2, TLSv1.3'));
+                });
+
+                it('throws an error when all the TLS versions provided in the list are not supported by the client', function () {
                     if (tls.DEFAULT_MAX_VERSION === 'TLSv1.3') {
                         return this.skip();
                     }
@@ -846,7 +955,7 @@ describe('connection failures', () => {
                     const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION, 'TLSv1.3'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_VERSION));
                 });
 
                 it('throws an error when the list of ciphersuites is badly specified', () => {
@@ -860,7 +969,7 @@ describe('connection failures', () => {
                     uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=${JSON.stringify(invalidTLSConfig.tls.ciphersuites)}`;
 
                     expect(() => mysqlx.getClient(uri))
-                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, '{}'));
+                        .to.throw(util.format(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CIPHERSUITE_LIST, JSON.stringify({})));
 
                     invalidTLSConfig.tls.ciphersuites = false;
                     uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-ciphersuites=${invalidTLSConfig.tls.ciphersuites}`;
