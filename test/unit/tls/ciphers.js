@@ -94,10 +94,9 @@ describe('TLS ciphersuite utilities', () => {
     context('defaults()', () => {
         it('returns the list containing the mandatory, approved and deprecated compatibility OpenSSL cipher names', () => {
             const totalSize = cipherRef.mandatory_tls_ciphersuites.length +
-                cipherRef.approved_tls_ciphersuites.length + 3; // number of deprecated ciphersuites to include
+                cipherRef.approved_tls_ciphersuites.length;
 
             expect(ciphers.defaults()).to.have.lengthOf(totalSize);
-            expect(ciphers.defaults()).to.include.members(['DHE-RSA-AES256-SHA', 'DHE-RSA-AES128-SHA', 'AES256-SHA']);
         });
     });
 });

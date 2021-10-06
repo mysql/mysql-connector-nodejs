@@ -1,1465 +1,2064 @@
 {
-  "metadata": [
-    {
-      "version": "2.0",
-      "date": "11/14/2019"
-    }
-  ],
-  "mandatory_tls_ciphersuites": [
-    {
-      "category": "P1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "ECDHE-ECDSA-AES128-GCM-SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "P1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "ECDHE-ECDSA-AES256-GCM-SHA384",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "P1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "ECDHE-RSA-AES128-GCM-SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    }
-  ],
-  "approved_tls_ciphersuites": [
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.3",
-      "iana_cipher_name": "TLS_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "TLS_AES_128_GCM_SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.3",
-      "iana_cipher_name": "TLS_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "TLS_AES_256_GCM_SHA384",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.3",
-      "iana_cipher_name": "TLS_CHACHA20_POLY1305_SHA256",
-      "openssl_cipher_name": "TLS_CHACHA20_POLY1305_SHA256",
-      "fips": "No",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.3",
-      "iana_cipher_name": "TLS_AES_128_CCM_SHA256",
-      "openssl_cipher_name": "TLS_AES_128_CCM_SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.3",
-      "iana_cipher_name": "TLS_AES_128_CCM_8_SHA256",
-      "openssl_cipher_name": "TLS_AES_128_CCM_8_SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "For embedded devices only"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "ECDHE-RSA-AES256-GCM-SHA384",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "DHE-RSA-AES128-GCM-SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "DHE-DSS-AES128-GCM-SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "DHE-DSS-AES256-GCM-SHA384",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "DHE-RSA-AES256-GCM-SHA384",
-      "fips": "Yes",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-      "openssl_cipher_name": "ECDHE-ECDSA-CHACHA20-POLY1305",
-      "fips": "No",
-      "forward_secrecy": "Yes",
-      "comments": "rfc6347 rfc7905"
-    },
-    {
-      "category": "A1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
-      "openssl_cipher_name": "ECDHE-RSA-CHACHA20-POLY1305",
-      "fips": "No",
-      "forward_secrecy": "Yes",
-      "comments": "rfc6347 rfc7905"
-    },
-    {
-      "category": "A2",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DH_DSS_WITH_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "DH-DSS-AES128-GCM-SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A2",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "ECDH-ECDSA-AES128-GCM-SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A2",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DH_DSS_WITH_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "DH-DSS-AES256-GCM-SHA384",
-      "fips": "Yes",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A2",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "ECDH-ECDSA-AES256-GCM-SHA384",
-      "fips": "Yes",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A2",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DH_RSA_WITH_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "DH-RSA-AES128-GCM-SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A2",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "ECDH-RSA-AES128-GCM-SHA256",
-      "fips": "Yes",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A2",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DH_RSA_WITH_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "DH-RSA-AES256-GCM-SHA384",
-      "fips": "Yes",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "A2",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "ECDH-RSA-AES256-GCM-SHA384",
-      "fips": "Yes",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    }
-  ],
-  "deprecated_tls_ciphersuites": [
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
-      "openssl_cipher_name": "ECDHE-ECDSA-AES128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-      "openssl_cipher_name": "ECDHE-RSA-AES128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
-      "openssl_cipher_name": "ECDHE-ECDSA-AES256-SHA384",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
-      "openssl_cipher_name": "ECDHE-RSA-AES256-SHA384",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
-      "openssl_cipher_name": "DHE-DSS-AES128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
-      "openssl_cipher_name": "DHE-DSS-AES256-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
-      "openssl_cipher_name": "DHE-RSA-AES256-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
-      "openssl_cipher_name": "DHE-RSA-AES128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "ECDHE-RSA-AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "ECDHE-ECDSA-AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "ECDHE-RSA-AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "ECDHE-ECDSA-AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "DHE-DSS-AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "DHE-RSA-AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "DHE-DSS-AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "DHE-RSA-AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DH_RSA_WITH_AES_128_CBC_SHA256",
-      "openssl_cipher_name": "DH-RSA-AES128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
-      "openssl_cipher_name": "ECDH-ECDSA-AES128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
-      "openssl_cipher_name": "ECDH-RSA-AES128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DH_RSA_WITH_AES_256_CBC_SHA256",
-      "openssl_cipher_name": "DH-RSA-AES256-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",
-      "openssl_cipher_name": "ECDH-RSA-AES256-SHA384",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DH_DSS_WITH_AES_128_CBC_SHA256",
-      "openssl_cipher_name": "DH-DSS-AES128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
-      "openssl_cipher_name": "ECDH-ECDSA-AES256-SHA384",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DH_DSS_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "DH-DSS-AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "ECDH-ECDSA-AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DH_DSS_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "DH-DSS-AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "ECDH-ECDSA-AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_DH_DSS_WITH_AES_256_CBC_SHA256",
-      "openssl_cipher_name": "DH-DSS-AES256-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DH_RSA_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "DH-RSA-AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "ECDH-RSA-AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DH_RSA_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "DH-RSA-AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "ECDH-RSA-AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_RSA_WITH_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "AES128-GCM-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "See Bleichenbacher note"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_RSA_WITH_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "AES256-GCM-SHA384",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "See Bleichenbacher note"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_RSA_WITH_AES_128_CBC_SHA256",
-      "openssl_cipher_name": "AES128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "See Bleichenbacher note"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_RSA_WITH_AES_256_CBC_SHA256",
-      "openssl_cipher_name": "AES256-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "See Bleichenbacher note"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2",
-      "iana_cipher_name": "TLS_RSA_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "Mandatory per RFC5246 (TLSv1.2). See Bleichenbacher note"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_RSA_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "With fix in implementation provider for https://robotattack.org/"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_RSA_WITH_CAMELLIA_256_CBC_SHA",
-      "openssl_cipher_name": "CAMELLIA256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "With fix in implementation provider for https://robotattack.org/"
-    },
-    {
-      "category": "D1",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_RSA_WITH_CAMELLIA_128_CBC_SHA",
-      "openssl_cipher_name": "CAMELLIA128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "With fix in implementation provider for https://robotattack.org"
-    },
-    {
-      "category": "D2",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "N/A",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "Not available in OpenSSL"
-    },
-    {
-      "category": "D2",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "N/A",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "Not available in OpenSSL"
-    },
-    {
-      "category": "D2",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "DHE-DSS-DES-CBC3-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D2",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "DHE-RSA-DES-CBC3-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D2",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "ECDH-RSA-DES-CBC3-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D2",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "ECDH-ECDSA-DES-CBC3-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D2",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "ECDHE-RSA-DES-CBC3-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D2",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "ECDHE-ECDSA-DES-CBC3-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "Yes",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "D2",
-      "tls_protocol": "TLSv1.2, TLSv1.1",
-      "iana_cipher_name": "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "DES-CBC3-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "Mandatory per RFC4346 (TLSv1.1) but end of 2017 3-key 3DES deprecation by NIST. With fix in implementation provider for https://robotattack.org/."
-    },
-    {
-      "category": "D3",
-      "tls_protocol": "TLSv1.0",
-      "iana_cipher_name": "All approved ciphers",
-      "openssl_cipher_name": "All approved ciphers",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "This includes all ciphers from the Mandatory and Approved categories when used with TLSv1.0 (remaining ones without SHA2). This excludes Unacceptable ciphers."
-    },
-    {
-      "category": "D3",
-      "tls_protocol": "TLS-SRP",
-      "iana_cipher_name": "All TLS-SRP ciphers",
-      "openssl_cipher_name": "All TLS-SRP ciphers",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "AES SRP ciphers preferred over 3DES. This excludes Unacceptable ciphers."
-    }
-  ],
-  "unacceptable_tls_ciphersuites": [
-    {
-      "category": "eNULL, aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_anon_WITH_NULL_SHA",
-      "openssl_cipher_name": "AECDH-NULL-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "eNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDHE_RSA_WITH_NULL_SHA",
-      "openssl_cipher_name": "ECDHE-RSA-NULL-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "eNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_NULL_SHA",
-      "openssl_cipher_name": "ECDHE-ECDSA-NULL-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "eNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_GOSTR341001_WITH_NULL_GOSTR3411",
-      "openssl_cipher_name": "GOST94-NULL-GOST94",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "eNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_GOSTR341094_WITH_NULL_GOSTR3411",
-      "openssl_cipher_name": "GOST2001-GOST89-GOST89",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "eNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_RSA_WITH_NULL_SHA",
-      "openssl_cipher_name": "ECDH-RSA-NULL-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "eNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_NULL_SHA",
-      "openssl_cipher_name": "ECDH-ECDSA-NULL-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "eNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_WITH_NULL_SHA256",
-      "openssl_cipher_name": "NULL-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "eNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_WITH_NULL_SHA",
-      "openssl_cipher_name": "NULL-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "eNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_WITH_NULL_MD5",
-      "openssl_cipher_name": "NULL-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_anon_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "AECDH-AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_AES_256_GCM_SHA384",
-      "openssl_cipher_name": "ADH-AES256-GCM-SHA384",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_AES_256_CBC_SHA256",
-      "openssl_cipher_name": "ADH-AES256-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "ADH-AES256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256",
-      "openssl_cipher_name": "ADH-CAMELLIA256-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA",
-      "openssl_cipher_name": "ADH-CAMELLIA256-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "AECDH-AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_AES_128_GCM_SHA256",
-      "openssl_cipher_name": "ADH-AES128-GCM-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_AES_128_CBC_SHA256",
-      "openssl_cipher_name": "ADH-AES128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "ADH-AES128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256",
-      "openssl_cipher_name": "ADH-CAMELLIA128-SHA256",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA",
-      "openssl_cipher_name": "AADH-CAMELLIA128-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_anon_WITH_RC4_128_SHA",
-      "openssl_cipher_name": "AECDH-RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_RC4_128_MD5",
-      "openssl_cipher_name": "ADH-RC4-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "AECDH-DES-CBC3-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "ADH-DES-CBC3-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "aNULL",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_DES_CBC_SHA",
-      "openssl_cipher_name": "ADH-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
-      "openssl_cipher_name": "EXP-RC4-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5",
-      "openssl_cipher_name": "EXP-RC2-CBC-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_DH_DSS_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "N/A",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_DH_RSA_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "N/A",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-DH-DSS-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-DH-RSA-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-EDH-DSS-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-EDH-RSA-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
-      "openssl_cipher_name": "EXP-ADH-RC4-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-ADH-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
-      "openssl_cipher_name": "EXP-KRB5-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA",
-      "openssl_cipher_name": "EXP-KRB5-RC2-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_RC4_40_SHA",
-      "openssl_cipher_name": "EXP-KRB5-RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
-      "openssl_cipher_name": "EXP-KRB5-DES-CBC-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5",
-      "openssl_cipher_name": "EXP-KRB5-RC2-CBC-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_RC4_40_MD5",
-      "openssl_cipher_name": "EXP-KRB5-RC4-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_EXPORT_WITH_RC4_40_MD5",
-      "openssl_cipher_name": "EXP-RC4-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5",
-      "openssl_cipher_name": "EXP-RC2-CBC-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "TLS_RSA_EXPORT_WITH_DES40_CBC_SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-DH-DSS-DES-CBC-SHA ",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-DH-RSA-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-EDH-DSS-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-EDH-RSA-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_EXPORT_WITH_RC4_40_MD5",
-      "openssl_cipher_name": "EXP-ADH-RC4-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-      "openssl_cipher_name": "EXP-ADH-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_EXPORT1024_WITH_DES_CBC_SHA",
-      "openssl_cipher_name": "EXP1024-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_EXPORT1024_WITH_RC4_56_SHA",
-      "openssl_cipher_name": "EXP1024-RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_EXPORT1024_WITH_RC4_56_MD5",
-      "openssl_cipher_name": "EXP1024-RC4-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_EXPORT1024_WITH_RC2_CBC_56_MD5",
-      "openssl_cipher_name": "EXP1024-RC2-CBC-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA",
-      "openssl_cipher_name": "EXP1024-DHE-DSS-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA",
-      "openssl_cipher_name": "EXP1024-DHE-DSS-RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_CK_RC4_128_EXPORT40_WITH_MD5",
-      "openssl_cipher_name": "EXP-RC4-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_CK_RC2_128_CBC_EXPORT40_WITH_MD5",
-      "openssl_cipher_name": "EXP-RC2-CBC-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "export ciphers",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_CK_RC2_128_CBC_EXPORT40_WITH_MD5",
-      "openssl_cipher_name": "EXP-RC2-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - DES",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DHE_RSA_WITH_DES_CBC_SHA",
-      "openssl_cipher_name": "EDH-RSA-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - DES",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DHE_DSS_WITH_DES_CBC_SHA",
-      "openssl_cipher_name": "EDH-DSS-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - DES",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_DES_CBC_SHA",
-      "openssl_cipher_name": "ADH-DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - DES",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SL_CK_DES_64_CBC_WITH_SHA",
-      "openssl_cipher_name": "DES-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - MD5",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_DH_anon_WITH_RC4_128_MD5",
-      "openssl_cipher_name": "ADH-RC4-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - MD5",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_WITH_RC4_128_MD5",
-      "openssl_cipher_name": "RC4-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - MD5",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_WITH_NULL_MD5",
-      "openssl_cipher_name": "NULL-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-      "openssl_cipher_name": "ECDHE-RSA-RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-      "openssl_cipher_name": "ECDHE-ECDSA-RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_anon_WITH_RC4_128_SHA",
-      "openssl_cipher_name": "AECDH-RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_RSA_WITH_RC4_128_SHA",
-      "openssl_cipher_name": "ECDH-RSA-RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
-      "openssl_cipher_name": "ECDH-ECDSA-RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_WITH_RC4_128_SHA",
-      "openssl_cipher_name": "RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - LOW",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_anon_WITH_NULL_SHA",
-      "openssl_cipher_name": "AECDH-NULL-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - LOW",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_RSA_WITH_NULL_SHA",
-      "openssl_cipher_name": "ECDH-RSA-NULL-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - LOW",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_NULL_SHA",
-      "openssl_cipher_name": "ECDH-ECDSA-NULL-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - PSK",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_PSK_WITH_AES_256_CBC_SHA",
-      "openssl_cipher_name": "PSK-AES256-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - PSK",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_PSK_WITH_AES_128_CBC_SHA",
-      "openssl_cipher_name": "PSK-AES128-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - PSK",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_PSK_WITH_3DES_EDE_CBC_SHA",
-      "openssl_cipher_name": "PSK-3DES-EDE-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - PSK",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_PSK_WITH_RC4_128_SHA",
-      "openssl_cipher_name": "PSK-RC4-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC2",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5",
-      "openssl_cipher_name": "EXP-RC2-CBC-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC2",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA",
-      "openssl_cipher_name": "EXP-KRB5-RC2-CBC-SHA",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC2",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "TLS_RSA_EXPORT1024_WITH_RC2_CBC_56_MD5",
-      "openssl_cipher_name": "EXP1024-RC2-CBC-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC2",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_CK_RC2_128_CBC_WITH_MD5",
-      "openssl_cipher_name": "RC2-CBC-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    },
-    {
-      "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC2",
-      "tls_protocol": "N/A",
-      "iana_cipher_name": "SSL_CK_RC2_128_CBC_EXPORT40_WITH_MD5",
-      "openssl_cipher_name": "EXP-RC2-CBC-MD5",
-      "fips": "NotDefined",
-      "forward_secrecy": "No",
-      "comments": "NotDefined"
-    }
-  ]
+    "metadata": [
+        {
+            "version": "2.9",
+            "date": "08/31/2021",
+            "releases": {
+              "2.4": ["06/11/2020 deprecated TLS_DH and TLS_ECDH from category A2 to D1"] ,
+              "2.5": ["06/18/2020 cnsa attribute added, as well as changelog in metadata"],
+              "2.6": ["06/22/2020 approved_TLS_DHE and TLS_ECDHE supported groups added"],
+              "2.7": ["06/24/2020 adding missing CCM and CCM_8 TLS 1.2 ciphersuites"],
+              "2.8": ["10/26/2020 adding 4 missing CAMELLIA ciphersuites in the deprecated section"],
+              "2.9": ["08/31/2021 moving TLS_DH_* and 3DES_EDE from deprecated to unacceptable, moving secp256r1 before secp384r1, moving CCM_8 cipher to deprecated, lowering DHE order"]
+            }
+        }
+    ],
+    "approved_TLS_DHE_supported_groups":[
+        {
+            "group_name": "ffdhe2048",
+            "tls_protocol": "TLSv1.2,TLSv1.3",
+            "crb_recommended": "Yes",
+            "anssi_recommended": "Yes",
+            "cnsa": "No",
+            "nist": "Yes",
+            "comments": "nist sp800-56a rev3",
+            "hex_code": "0x01,0x00"
+        },
+        {
+            "group_name": "ffdhe3072",
+            "tls_protocol": "TLSv1.2,TLSv1.3",
+            "crb_recommended": "Yes",
+            "anssi_recommended": "Yes",
+            "cnsa": "No",
+            "nist": "Yes",
+            "comments": "nist sp800-56a rev3",
+            "hex_code": "0x01,0x01"
+        },
+        {
+            "group_name": "ffdhe4096",
+            "tls_protocol": "TLSv1.2,TLSv1.3",
+            "crb_recommended": "Yes",
+            "anssi_recommended": "Yes",
+            "cnsa": "No",
+            "nist": "Yes",
+            "comments": "nist sp800-56a rev3",
+            "hex_code": "0x01,0x02"
+        },
+        {
+            "group_name": "ffdhe6144",
+            "tls_protocol": "TLSv1.2,TLSv1.3",
+            "crb_recommended": "Yes",
+            "anssi_recommended": "Yes",
+            "cnsa": "No",
+            "nist": "Yes",
+            "comments": "nist sp800-56a rev3",
+            "hex_code": "0x01,0x03"
+        },
+        {
+            "group_name": "ffdhe8192",
+            "tls_protocol": "TLSv1.2,TLSv1.3",
+            "crb_recommended": "Yes",
+            "anssi_recommended": "Yes",
+            "cnsa": "No",
+            "nist": "Yes",
+            "comments": "nist sp800-56a rev3",
+            "hex_code": "0x01,0x04"
+        }
+    ],
+    "approved_TLS_ECDHE_supported_groups":[
+     
+        {
+            "group_name": "secp256r1",
+            "tls_protocol": "TLSv1.2,TLSv1.3",
+            "x962_name": "prime256v1",
+            "nist_name": "P-256",
+            "crb_recommended": "Yes",
+            "anssi_recommended": "Yes",
+            "cnsa": "No",
+            "nist": "Yes",
+            "comments": "nist sp800-56a rev3",
+            "hex_code": "0x00,0x17"
+        },  
+        {
+            "group_name": "secp384r1",
+            "tls_protocol": "TLSv1.2,TLSv1.3",
+            "x962_name": "prime384v1",
+            "nist_name": "P-384",
+            "crb_recommended": "Yes",
+            "anssi_recommended": "Yes",
+            "cnsa": "Yes",
+            "nist": "Yes",
+            "comments": "nist sp800-56a rev3",
+            "hex_code": "0x00,0x18"
+        },
+        {
+            "group_name": "secp521r1",
+            "tls_protocol": "TLSv1.2,TLSv1.3",
+            "x962_name": "prime521v1",
+            "nist_name": "P-521",
+            "crb_recommended": "Yes",
+            "anssi_recommended": "Yes",
+            "cnsa": "No",
+            "nist": "Yes",
+            "comments": "nist sp800-56a rev3",
+            "hex_code": "0x00,0x19"
+        },
+        {
+            "group_name": "x25519",
+            "tls_protocol": "TLSv1.2,TLSv1.3",
+            "x962_name": "NotDefined",
+            "nist_name": "NotDefined",
+            "crb_recommended": "Yes",
+            "anssi_recommended": "Yes",
+            "cnsa": "No",
+            "nist": "No",
+            "comments": "",
+            "hex_code": "0x00,0x1D"
+        },
+        {
+            "group_name": "x448",
+            "tls_protocol": "TLSv1.2,TLSv1.3",
+            "x962_name": "NotDefined",
+            "nist_name": "NotDefined",
+            "crb_recommended": "Yes",
+            "anssi_recommended": "Yes",
+            "cnsa": "No",
+            "nist": "No",
+            "comments": "",
+            "hex_code": "0x00,0x1E"
+        }
+    ],
+    "mandatory_tls_ciphersuites": [
+        {
+            "category": "P1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "ECDHE-ECDSA-AES128-GCM-SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x2B"
+        },
+        {
+            "category": "P1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "ECDHE-ECDSA-AES256-GCM-SHA384",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "Yes",
+            "hex_code": "0xC0,0x2C"
+        },
+        {
+            "category": "P1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "ECDHE-RSA-AES128-GCM-SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x2F"
+        }
+    ],
+    "approved_tls_ciphersuites": [
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.3",
+            "iana_cipher_name": "TLS_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "TLS_AES_128_GCM_SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x13,0x01"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.3",
+            "iana_cipher_name": "TLS_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "TLS_AES_256_GCM_SHA384",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "Yes",
+            "hex_code": "0x13,0x02"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.3",
+            "iana_cipher_name": "TLS_CHACHA20_POLY1305_SHA256",
+            "openssl_cipher_name": "TLS_CHACHA20_POLY1305_SHA256",
+            "fips": "No",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x13,0x03"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.3",
+            "iana_cipher_name": "TLS_AES_128_CCM_SHA256",
+            "openssl_cipher_name": "TLS_AES_128_CCM_SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x13,0x04"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "ECDHE-RSA-AES256-GCM-SHA384",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "Yes",
+            "hex_code": "0xC0,0x30"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+            "openssl_cipher_name": "ECDHE-ECDSA-CHACHA20-POLY1305",
+            "fips": "No",
+            "forward_secrecy": "Yes",
+            "comments": "rfc6347 rfc7905",
+            "cnsa": "No",
+            "hex_code": "0xCC,0xA9"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+            "openssl_cipher_name": "ECDHE-RSA-CHACHA20-POLY1305",
+            "fips": "No",
+            "forward_secrecy": "Yes",
+            "comments": "rfc6347 rfc7905",
+            "cnsa": "No",
+            "hex_code": "0xCC,0xA8"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_256_CCM",
+            "openssl_cipher_name": "ECDHE-ECDSA-AES256-CCM",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "rfc7251. Should support the secp384r1",
+            "cnsa": "No",
+            "hex_code": "0xC0,0xAD"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_128_CCM",
+            "openssl_cipher_name": "ECDHE-ECDSA-AES128-CCM",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "rfc7251. Should support the secp256r1",
+            "cnsa": "No",
+            "hex_code": "0xC0,0xAC"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "DHE-RSA-AES128-GCM-SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "Only use approved groups with DHE, especially for FIPS. See Key agreement in crypto standard.",
+            "cnsa": "No",
+            "hex_code": "0x00,0x9E"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "DHE-RSA-AES256-GCM-SHA384",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "Only use approved groups with DHE, especially for FIPS. See Key agreement in crypto standard.",
+            "cnsa": "Yes",
+            "hex_code": "0x00,0x9F"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_256_CCM",
+            "openssl_cipher_name": "DHE-RSA-AES256-CCM",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "rfc6655. Only use approved groups with DHE, especially for FIPS. See Key agreement in crypto standard.",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x9F"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_128_CCM",
+            "openssl_cipher_name": "DHE-RSA-AES128-CCM",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "rfc6655. Only use approved groups with DHE, especially for FIPS. See Key agreement in crypto standard.",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x9E"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "DHE-DSS-AES256-GCM-SHA384",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "upcoming deprecation",
+            "cnsa": "No",
+            "hex_code": "0x00,0xA3"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "DHE-DSS-AES128-GCM-SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "upcoming deprecation",
+            "cnsa": "No",
+            "hex_code": "0x00,0xA2"
+        },
+        {
+            "category": "A1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+            "openssl_cipher_name": "DHE-RSA-CHACHA20-POLY1305",
+            "fips": "No",
+            "forward_secrecy": "Yes",
+            "comments": "Only use approved groups with DHE, especially for FIPS. See Key agreement in crypto standard.",
+            "cnsa": "No",
+            "hex_code": "0xCC,0xAA"
+        }
+    ],
+    "deprecated_tls_ciphersuites": [
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.3",
+            "iana_cipher_name": "TLS_AES_128_CCM_8_SHA256",
+            "openssl_cipher_name": "TLS_AES_128_CCM_8_SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "For embedded devices only. Deprecated to make sure this is not used outside of this use case",
+            "cnsa": "No",
+            "hex_code": "0x13,0x05"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8",
+            "openssl_cipher_name": "ECDHE-ECDSA-AES256-CCM8",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "Should support the secp384r1. For embedded devices only.  Deprecated to make sure this is not used outside of this use case",
+            "cnsa": "No",
+            "hex_code": "0xC0,0xAF"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8",
+            "openssl_cipher_name": "ECDHE-ECDSA-AES128-CCM8",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "Should support the secp256r1. For embedded devices only.  Deprecated to make sure this is not used outside of this use case",
+            "cnsa": "No",
+            "hex_code": "0xC0,0xAE"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_256_CCM_8",
+            "openssl_cipher_name": "DHE-RSA-AES256-CCM8",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "rfc6655.  For embedded devices only.  Deprecated to make sure this is not used outside of this use case",
+            "cnsa": "No",
+            "hex_code": "0xC0,0xA3"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_128_CCM_8",
+            "openssl_cipher_name": "DHE-RSA-AES128-CCM8",
+            "fips": "Yes",
+            "forward_secrecy": "Yes",
+            "comments": "rfc6655.  For embedded devices only. Deprecated to make sure this is not used outside of this use case",
+            "cnsa": "No",
+            "hex_code": "0xC0,0xA2"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+            "openssl_cipher_name": "ECDHE-ECDSA-AES128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x23"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+            "openssl_cipher_name": "ECDHE-RSA-AES128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x27"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+            "openssl_cipher_name": "ECDHE-ECDSA-AES256-SHA384",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x24"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+            "openssl_cipher_name": "ECDHE-RSA-AES256-SHA384",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x28"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
+            "openssl_cipher_name": "DHE-DSS-AES128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x40"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+            "openssl_cipher_name": "DHE-DSS-AES256-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x6A"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+            "openssl_cipher_name": "DHE-RSA-AES256-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x6B"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+            "openssl_cipher_name": "DHE-RSA-AES128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x67"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256",
+            "openssl_cipher_name": "DHE-RSA-CAMELLIA256-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0xC4"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+            "openssl_cipher_name": "DHE-RSA-CAMELLIA128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0xBE"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "ECDHE-RSA-AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x13"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "ECDHE-ECDSA-AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x09"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "ECDHE-RSA-AES256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x14"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "ECDHE-ECDSA-AES256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x0A"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "DHE-DSS-AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x32"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "DHE-RSA-AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x33"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "DHE-RSA-AES256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x39"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA",
+            "openssl_cipher_name": "DHE-RSA-CAMELLIA256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x88"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA",
+            "openssl_cipher_name": "DHE-RSA-CAMELLIA128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x45"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
+            "openssl_cipher_name": "ECDH-ECDSA-AES128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x25"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
+            "openssl_cipher_name": "ECDH-RSA-AES128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x29"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",
+            "openssl_cipher_name": "ECDH-RSA-AES256-SHA384",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x2A"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
+            "openssl_cipher_name": "ECDH-ECDSA-AES256-SHA384",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x26"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "ECDH-ECDSA-AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x04"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "ECDH-ECDSA-AES256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x05"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "ECDH-RSA-AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x0E"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "ECDH-RSA-AES256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x0F"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "AES128-GCM-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "See Bleichenbacher note",
+            "cnsa": "No",
+            "hex_code": "0x00,0x9C"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_AES_128_CCM",
+            "openssl_cipher_name": "AES128-CCM",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "See Bleichenbacher note",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x9C"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_AES_128_CCM_8",
+            "openssl_cipher_name": "AES128-CCM8",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "See Bleichenbacher note",
+            "cnsa": "No",
+            "hex_code": "0xC0,0xA0"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "AES256-GCM-SHA384",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "See Bleichenbacher note",
+            "cnsa": "Yes",
+            "hex_code": "0x00,0x9D"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_AES_256_CCM",
+            "openssl_cipher_name": "AES256-CCM",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "See Bleichenbacher note",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x9D"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_AES_256_CCM_8",
+            "openssl_cipher_name": "AES256-CCM8",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "See Bleichenbacher note",
+            "cnsa": "No",
+            "hex_code": "0xC0,0xA1"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_AES_128_CBC_SHA256",
+            "openssl_cipher_name": "AES128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "See Bleichenbacher note",
+            "cnsa": "No",
+            "hex_code": "0x00,0x3C"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_AES_256_CBC_SHA256",
+            "openssl_cipher_name": "AES256-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "See Bleichenbacher note",
+            "cnsa": "No",
+            "hex_code": "0x00,0x3D"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "Mandatory per RFC5246 (TLSv1.2). See Bleichenbacher note",
+            "cnsa": "No",
+            "hex_code": "0x00,0x2F"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "AES256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "With fix in implementation provider for https://robotattack.org/",
+            "cnsa": "No",
+            "hex_code": "0x00,0x35"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_CAMELLIA_256_CBC_SHA",
+            "openssl_cipher_name": "CAMELLIA256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "With fix in implementation provider for https://robotattack.org/",
+            "cnsa": "No",
+            "hex_code": "0x00,0x84"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_CAMELLIA_128_CBC_SHA",
+            "openssl_cipher_name": "CAMELLIA128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "With fix in implementation provider for https://robotattack.org",
+            "cnsa": "No",
+            "hex_code": "0x00,0x41"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "ECDH-ECDSA-AES128-GCM-SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x2D"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "ECDH-ECDSA-AES256-GCM-SHA384",
+            "fips": "Yes",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x2E"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "ECDH-RSA-AES128-GCM-SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x31"
+        },
+        {
+            "category": "D1",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "ECDH-RSA-AES256-GCM-SHA384",
+            "fips": "Yes",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x32"
+        },
+        {
+            "category": "D3",
+            "tls_protocol": "TLS-SRP",
+            "iana_cipher_name": "All TLS-SRP ciphers",
+            "openssl_cipher_name": "All TLS-SRP ciphers",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "AES SRP ciphers preferred over 3DES. This excludes Unacceptable ciphers.",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        }
+    ],
+    "unacceptable_tls_ciphersuites": [
+        {
+            "category": "when used with TLSv1.0 or TLSv1.1",
+            "tls_protocol": "TLSv1.0, TLSv1.1",
+            "iana_cipher_name": "All ciphers",
+            "openssl_cipher_name": "All ciphers",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "eNULL, aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_anon_WITH_NULL_SHA",
+            "openssl_cipher_name": "AECDH-NULL-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x15"
+        },
+        {
+            "category": "eNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDHE_RSA_WITH_NULL_SHA",
+            "openssl_cipher_name": "ECDHE-RSA-NULL-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x10"
+        },
+        {
+            "category": "eNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_NULL_SHA",
+            "openssl_cipher_name": "ECDHE-ECDSA-NULL-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x06"
+        },
+        {
+            "category": "eNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_GOSTR341001_WITH_NULL_GOSTR3411",
+            "openssl_cipher_name": "GOST94-NULL-GOST94",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "eNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_GOSTR341094_WITH_NULL_GOSTR3411",
+            "openssl_cipher_name": "GOST2001-GOST89-GOST89",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "eNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_RSA_WITH_NULL_SHA",
+            "openssl_cipher_name": "ECDH-RSA-NULL-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x0B"
+        },
+        {
+            "category": "eNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_NULL_SHA",
+            "openssl_cipher_name": "ECDH-ECDSA-NULL-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x01"
+        },
+        {
+            "category": "eNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_WITH_NULL_SHA256",
+            "openssl_cipher_name": "NULL-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x3B"
+        },
+        {
+            "category": "eNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_WITH_NULL_SHA",
+            "openssl_cipher_name": "NULL-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x02"
+        },
+        {
+            "category": "eNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_WITH_NULL_MD5",
+            "openssl_cipher_name": "NULL-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x01"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_anon_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "AECDH-AES256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x19"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "ADH-AES256-GCM-SHA384",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0xA7"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_AES_256_CBC_SHA256",
+            "openssl_cipher_name": "ADH-AES256-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x6D"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "ADH-AES256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x3A"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256",
+            "openssl_cipher_name": "ADH-CAMELLIA256-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0xC5"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA",
+            "openssl_cipher_name": "ADH-CAMELLIA256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x89"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "AECDH-AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x18"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "ADH-AES128-GCM-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0xA6"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_AES_128_CBC_SHA256",
+            "openssl_cipher_name": "ADH-AES128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x6C"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "ADH-AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x34"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256",
+            "openssl_cipher_name": "ADH-CAMELLIA128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0xBF"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA",
+            "openssl_cipher_name": "AADH-CAMELLIA128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x46"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_anon_WITH_RC4_128_SHA",
+            "openssl_cipher_name": "AECDH-RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x16"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_RC4_128_MD5",
+            "openssl_cipher_name": "ADH-RC4-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x18"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "AECDH-DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x17"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "ADH-DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x1B"
+        },
+        {
+            "category": "aNULL",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_DES_CBC_SHA",
+            "openssl_cipher_name": "ADH-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x1A"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
+            "openssl_cipher_name": "EXP-RC4-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5",
+            "openssl_cipher_name": "EXP-RC2-CBC-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "EXP-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_DH_DSS_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "N/A",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_DH_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "N/A",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "EXP-DH-DSS-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x0B"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "EXP-DH-RSA-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x0E"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "EXP-EDH-DSS-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "EXP-EDH-RSA-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
+            "openssl_cipher_name": "EXP-ADH-RC4-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "EXP-ADH-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
+            "openssl_cipher_name": "EXP-KRB5-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x26"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA",
+            "openssl_cipher_name": "EXP-KRB5-RC2-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x27"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_RC4_40_SHA",
+            "openssl_cipher_name": "EXP-KRB5-RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x28"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
+            "openssl_cipher_name": "EXP-KRB5-DES-CBC-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x29"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5",
+            "openssl_cipher_name": "EXP-KRB5-RC2-CBC-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x2A"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_RC4_40_MD5",
+            "openssl_cipher_name": "EXP-KRB5-RC4-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x2B"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_EXPORT_WITH_RC4_40_MD5",
+            "openssl_cipher_name": "EXP-RC4-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x03"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5",
+            "openssl_cipher_name": "EXP-RC2-CBC-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x06"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "TLS_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x08"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "EXP-EDH-DSS-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x11"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "EXP-EDH-RSA-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x14"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_EXPORT_WITH_RC4_40_MD5",
+            "openssl_cipher_name": "EXP-ADH-RC4-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x17"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+            "openssl_cipher_name": "EXP-ADH-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x19"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_EXPORT1024_WITH_DES_CBC_SHA",
+            "openssl_cipher_name": "EXP1024-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_EXPORT1024_WITH_RC4_56_SHA",
+            "openssl_cipher_name": "EXP1024-RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_EXPORT1024_WITH_RC4_56_MD5",
+            "openssl_cipher_name": "EXP1024-RC4-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_EXPORT1024_WITH_RC2_CBC_56_MD5",
+            "openssl_cipher_name": "EXP1024-RC2-CBC-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA",
+            "openssl_cipher_name": "EXP1024-DHE-DSS-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA",
+            "openssl_cipher_name": "EXP1024-DHE-DSS-RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_CK_RC4_128_EXPORT40_WITH_MD5",
+            "openssl_cipher_name": "EXP-RC4-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_CK_RC2_128_CBC_EXPORT40_WITH_MD5",
+            "openssl_cipher_name": "EXP-RC2-CBC-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "export ciphers",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_CK_RC2_128_CBC_EXPORT40_WITH_MD5",
+            "openssl_cipher_name": "EXP-RC2-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - DES",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_DES_CBC_SHA",
+            "openssl_cipher_name": "EDH-RSA-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x15"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - DES",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DHE_DSS_WITH_DES_CBC_SHA",
+            "openssl_cipher_name": "EDH-DSS-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x12"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - DES",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_DES_CBC_SHA",
+            "openssl_cipher_name": "ADH-DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x1A"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - DES",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SL_CK_DES_64_CBC_WITH_SHA",
+            "openssl_cipher_name": "DES-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - MD5",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_DH_anon_WITH_RC4_128_MD5",
+            "openssl_cipher_name": "ADH-RC4-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x18"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - MD5",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_WITH_RC4_128_MD5",
+            "openssl_cipher_name": "RC4-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x04"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - MD5",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_WITH_NULL_MD5",
+            "openssl_cipher_name": "NULL-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x01"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
+            "openssl_cipher_name": "ECDHE-RSA-RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x11"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
+            "openssl_cipher_name": "ECDHE-ECDSA-RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x07"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_anon_WITH_RC4_128_SHA",
+            "openssl_cipher_name": "AECDH-RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x16"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_RSA_WITH_RC4_128_SHA",
+            "openssl_cipher_name": "ECDH-RSA-RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x0C"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
+            "openssl_cipher_name": "ECDH-ECDSA-RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x02"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC4",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_WITH_RC4_128_SHA",
+            "openssl_cipher_name": "RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x05"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - LOW",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_anon_WITH_NULL_SHA",
+            "openssl_cipher_name": "AECDH-NULL-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x15"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - LOW",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_RSA_WITH_NULL_SHA",
+            "openssl_cipher_name": "ECDH-RSA-NULL-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x0B"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - LOW",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_NULL_SHA",
+            "openssl_cipher_name": "ECDH-ECDSA-NULL-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x01"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - PSK",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_PSK_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "PSK-AES256-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x8D"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - PSK",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_PSK_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "PSK-AES128-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x8C"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - PSK",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_PSK_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "PSK-3DES-EDE-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x8B"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - PSK",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_PSK_WITH_RC4_128_SHA",
+            "openssl_cipher_name": "PSK-RC4-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x8A"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC2",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5",
+            "openssl_cipher_name": "EXP-RC2-CBC-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x06"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC2",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA",
+            "openssl_cipher_name": "EXP-KRB5-RC2-CBC-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x27"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC2",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "TLS_RSA_EXPORT1024_WITH_RC2_CBC_56_MD5",
+            "openssl_cipher_name": "EXP1024-RC2-CBC-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC2",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_CK_RC2_128_CBC_WITH_MD5",
+            "openssl_cipher_name": "RC2-CBC-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "LOW:MD5:DES:RC2:RC4:PSK ciphers - RC2",
+            "tls_protocol": "N/A",
+            "iana_cipher_name": "SSL_CK_RC2_128_CBC_EXPORT40_WITH_MD5",
+            "openssl_cipher_name": "EXP-RC2-CBC-MD5",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "NotDefined"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_RSA_WITH_AES_128_CBC_SHA256",
+            "openssl_cipher_name": "DH-RSA-AES128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x3F"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_RSA_WITH_AES_256_CBC_SHA256",
+            "openssl_cipher_name": "DH-RSA-AES256-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x69"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_DSS_WITH_AES_128_CBC_SHA256",
+            "openssl_cipher_name": "DH-DSS-AES128-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x3E"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_DSS_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "DH-DSS-AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x30"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_DSS_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "DH-DSS-AES256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x36"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_DSS_WITH_AES_256_CBC_SHA256",
+            "openssl_cipher_name": "DH-DSS-AES256-SHA256",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x68"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_RSA_WITH_AES_128_CBC_SHA",
+            "openssl_cipher_name": "DH-RSA-AES128-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x31"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_RSA_WITH_AES_256_CBC_SHA",
+            "openssl_cipher_name": "DH-RSA-AES256-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x37"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_DSS_WITH_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "DH-DSS-AES128-GCM-SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0xA4"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_DSS_WITH_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "DH-DSS-AES256-GCM-SHA384",
+            "fips": "Yes",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0xA5"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_RSA_WITH_AES_128_GCM_SHA256",
+            "openssl_cipher_name": "DH-RSA-AES128-GCM-SHA256",
+            "fips": "Yes",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0xA0"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_RSA_WITH_AES_256_GCM_SHA384",
+            "openssl_cipher_name": "DH-RSA-AES256-GCM-SHA384",
+            "fips": "Yes",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0xA1"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "DH-DSS-DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "Not available in OpenSSL",
+            "cnsa": "No",
+            "hex_code": "0x00,0x0D"
+        },
+        {
+            "category": "non ephemeral DH",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "DH-RSA-DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "Not available in OpenSSL",
+            "cnsa": "No",
+            "hex_code": "0x00,0x10"
+        },
+        {
+            "category": "3DES",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "EDH-DSS-DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x13"
+        },
+        {
+            "category": "3DES",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "EDH-RSA-DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0x00,0x16"
+        },
+        {
+            "category": "3DES",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "ECDH-RSA-DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x0D"
+        },
+        {
+            "category": "3DES",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "ECDH-ECDSA-DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x03"
+        },
+        {
+            "category": "3DES",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "ECDHE-RSA-DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x12"
+        },
+        {
+            "category": "3DES",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "ECDHE-ECDSA-DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "Yes",
+            "comments": "NotDefined",
+            "cnsa": "No",
+            "hex_code": "0xC0,0x08"
+        },
+        {
+            "category": "3DES",
+            "tls_protocol": "TLSv1.2",
+            "iana_cipher_name": "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
+            "openssl_cipher_name": "DES-CBC3-SHA",
+            "fips": "NotDefined",
+            "forward_secrecy": "No",
+            "comments": "Mandatory per RFC4346 (TLSv1.1) but end of 2017 3-key 3DES deprecation by NIST. With fix in implementation provider for https://robotattack.org/.",
+            "cnsa": "No",
+            "hex_code": "0x00,0x0A"
+        }
+    ]
 }
