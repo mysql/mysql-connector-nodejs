@@ -33,11 +33,14 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-
-// subject under test needs to be reloaded with replacement fakes
+const td = require('testdouble');
 const validator = require('../../lib/validator');
 
 describe('input validation functions', () => {
+    afterEach('reset fakes', () => {
+        td.reset();
+    });
+
     context('isValidArray()', () => {
         it('validates a value that is an array', () => {
             // eslint-disable-next-line no-unused-expressions
@@ -66,6 +69,24 @@ describe('input validation functions', () => {
             expect(validator.isValidArray({})).to.be.true;
             /* eslint-enable no-unused-expressions */
             return expect(validator.isValidArray()).to.be.true;
+        });
+
+        it('validates each value in the array if an item validator is provided', () => {
+            const itemValidator = td.function();
+
+            /* eslint-disable no-unused-expressions */
+            expect(validator.isValidArray({ value: [], validator: itemValidator })).to.be.false;
+            /* eslint-enable no-unused-expressions */
+            td.when(itemValidator({ required: true, value: undefined })).thenReturn(false);
+            /* eslint-disable no-unused-expressions */
+            expect(validator.isValidArray({ value: [undefined], validator: itemValidator })).to.be.false;
+            expect(validator.isValidArray({ value: ['foo', undefined], validator: itemValidator })).to.be.false;
+            /* eslint-enable no-unused-expressions */
+
+            td.when(itemValidator({ required: true, value: 'foo' })).thenReturn(true);
+            td.when(itemValidator({ required: true, value: 'bar' })).thenReturn(true);
+
+            return expect(validator.isValidArray({ value: ['foo', 'bar'], validator: itemValidator })).to.be.true;
         });
     });
 
@@ -143,6 +164,29 @@ describe('input validation functions', () => {
         });
     });
 
+    context('isValidPEM()', () => {
+        it('validates a string that uses PEM formatting', () => {
+            return expect(validator.isValidPEM({ value: '-----BEGIN X509-----\nfoo\n-----END X509-----' })).to.be.true;
+        });
+
+        it('validates a Node.js Buffer', () => {
+            const isBuffer = td.replace(Buffer, 'isBuffer');
+            td.when(isBuffer('foo')).thenReturn(true);
+
+            return expect(validator.isValidPEM({ value: 'foo' })).to.be.true;
+        });
+
+        it('invalidates everything else', () => {
+            // eslint-disable-next-line no-unused-expressions
+            expect(validator.isValidPEM({ required: true })).to.be.false;
+
+            const isBuffer = td.replace(Buffer, 'isBuffer');
+            td.when(isBuffer('foo')).thenReturn(false);
+
+            return expect(validator.isValidPEM({ value: 'foo' })).to.be.false;
+        });
+    });
+
     context('isValidPlainObject()', () => {
         it('validates a value that is an plain object', () => {
             // eslint-disable-next-line no-unused-expressions
@@ -216,6 +260,13 @@ describe('input validation functions', () => {
             expect(validator.isValidString({ pattern: 'foobar' })).to.be.true;
             /* eslint-enable no-unused-expressions */
             return expect(validator.isValidString()).to.be.true;
+        });
+
+        it('validates a value according to a given pattern', () => {
+            /* eslint-disable no-unused-expressions */
+            expect(validator.isValidString({ value: 'foo', pattern: '[0-9]+' })).to.be.false;
+            /* eslint-enable no-unused-expressions */
+            return expect(validator.isValidString({ value: 'foo', pattern: '[a-zA-Z]+' })).to.be.true;
         });
     });
 });

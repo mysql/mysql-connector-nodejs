@@ -129,7 +129,7 @@ describe('TLS secure context utilities', () => {
             return expect(secureContext.create()).to.deep.include({ rejectUnauthorized: false });
         });
 
-        context('when a path to a CA chain PEM file is provided', () => {
+        context('when a path to a certificate authority chain PEM file is provided', () => {
             let fs;
 
             beforeEach('create fakes', () => {
@@ -138,26 +138,66 @@ describe('TLS secure context utilities', () => {
                 secureContext = require('../../../lib/tls/secure-context');
             });
 
-            it('reads the PEM file content', () => {
+            it('creates a proper secure context after reading the PEM file', () => {
                 td.when(tlsVersions.allowed()).thenReturn([]);
                 td.when(tlsVersions.supported()).thenReturn([]);
                 td.when(tlsCiphers.defaults()).thenReturn([]);
                 td.when(fs.readFileSync('foo')).thenReturn('bar');
 
-                return expect(secureContext.create({ ca: 'foo' })).to.deep.include({ ca: 'bar' });
-            });
-
-            it('rejects unauthorized servers', () => {
-                td.when(tlsVersions.allowed()).thenReturn([]);
-                td.when(tlsVersions.supported()).thenReturn([]);
-                td.when(tlsCiphers.defaults()).thenReturn([]);
-                td.when(fs.readFileSync(), { ignoreExtraArgs: true }).thenReturn();
-
-                return expect(secureContext.create({ ca: 'foo' })).to.deep.include({ rejectUnauthorized: true });
+                return expect(secureContext.create({ ca: 'foo' })).to.deep.include({ ca: 'bar', rejectUnauthorized: true });
             });
         });
 
-        context('when a path to a CRL PEM file is provided', () => {
+        context('when the certificate authority PEM file pointer is provided', () => {
+            let fs, isValidPEM;
+
+            beforeEach('create fakes', () => {
+                fs = td.replace('fs');
+                isValidPEM = td.function();
+
+                td.replace('../../../lib/validator', { isValidPEM });
+
+                secureContext = require('../../../lib/tls/secure-context');
+            });
+
+            it('creates a proper secure context using the PEM file contents', () => {
+                td.when(tlsVersions.allowed()).thenReturn([]);
+                td.when(tlsVersions.supported()).thenReturn([]);
+                td.when(tlsCiphers.defaults()).thenReturn([]);
+                td.when(isValidPEM({ value: 'foo' })).thenReturn(true);
+
+                expect(secureContext.create({ ca: 'foo' })).to.deep.include({ ca: 'foo', rejectUnauthorized: true });
+
+                return expect(td.explain(fs.readFileSync).callCount).to.equal(0);
+            });
+        });
+
+        context('when the multiple certificate authority PEM file pointers are provided', () => {
+            let fs, isValidArray, isValidPEM;
+
+            beforeEach('create fakes', () => {
+                fs = td.replace('fs');
+                isValidArray = td.function();
+                isValidPEM = td.function();
+
+                td.replace('../../../lib/validator', { isValidArray, isValidPEM });
+
+                secureContext = require('../../../lib/tls/secure-context');
+            });
+
+            it('creates a proper secure context using the contents of all PEM files', () => {
+                td.when(tlsVersions.allowed()).thenReturn([]);
+                td.when(tlsVersions.supported()).thenReturn([]);
+                td.when(tlsCiphers.defaults()).thenReturn([]);
+                td.when(isValidArray({ value: ['foo', 'bar'], validator: isValidPEM })).thenReturn(true);
+
+                expect(secureContext.create({ ca: ['foo', 'bar'] })).to.deep.include({ ca: ['foo', 'bar'], rejectUnauthorized: true });
+
+                return expect(td.explain(fs.readFileSync).callCount).to.equal(0);
+            });
+        });
+
+        context('when a path to a certificate revocation list PEM file is provided', () => {
             let fs;
 
             beforeEach('create fakes', () => {
@@ -175,6 +215,55 @@ describe('TLS secure context utilities', () => {
                 return expect(secureContext.create({ crl: 'foo' })).to.deep.include({ crl: 'bar' });
             });
         });
+
+        context('when the certificate revocation list PEM file pointer is provided', () => {
+            let fs, isValidPEM;
+
+            beforeEach('create fakes', () => {
+                fs = td.replace('fs');
+                isValidPEM = td.function();
+
+                td.replace('../../../lib/validator', { isValidPEM });
+
+                secureContext = require('../../../lib/tls/secure-context');
+            });
+
+            it('creates a proper secure context using the PEM file contents', () => {
+                td.when(tlsVersions.allowed()).thenReturn([]);
+                td.when(tlsVersions.supported()).thenReturn([]);
+                td.when(tlsCiphers.defaults()).thenReturn([]);
+                td.when(isValidPEM({ value: 'foo' })).thenReturn(true);
+
+                expect(secureContext.create({ crl: 'foo' })).to.deep.include({ crl: 'foo' });
+
+                return expect(td.explain(fs.readFileSync).callCount).to.equal(0);
+            });
+        });
+
+        context('when the multiple certificate revocation list PEM file pointers are provided', () => {
+            let fs, isValidArray, isValidPEM;
+
+            beforeEach('create fakes', () => {
+                fs = td.replace('fs');
+                isValidArray = td.function();
+                isValidPEM = td.function();
+
+                td.replace('../../../lib/validator', { isValidArray, isValidPEM });
+
+                secureContext = require('../../../lib/tls/secure-context');
+            });
+
+            it('creates a proper secure context using the contents of all PEM files', () => {
+                td.when(tlsVersions.allowed()).thenReturn([]);
+                td.when(tlsVersions.supported()).thenReturn([]);
+                td.when(tlsCiphers.defaults()).thenReturn([]);
+                td.when(isValidArray({ value: ['foo', 'bar'], validator: isValidPEM })).thenReturn(true);
+
+                expect(secureContext.create({ crl: ['foo', 'bar'] })).to.deep.include({ crl: ['foo', 'bar'] });
+
+                return expect(td.explain(fs.readFileSync).callCount).to.equal(0);
+            });
+        });
     });
 
     context('validate()', () => {
@@ -187,7 +276,7 @@ describe('TLS secure context utilities', () => {
             return expect(() => secureContext.validate({ tls: { enabled: false }, ssl: true, sslOptions: { ca: 'foo' } })).to.throw(error);
         });
 
-        it('fails a path to the CA chain PEM file is not valid', () => {
+        it('fails when the certificate authority chain is not valid', () => {
             const error = errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH;
 
             expect(() => secureContext.validate({ tls: { enabled: true, ca: null } })).to.throw(error);
@@ -204,7 +293,7 @@ describe('TLS secure context utilities', () => {
             return expect(() => secureContext.validate({ ssl: true, sslOptions: { ca: {} } })).to.throw(error);
         });
 
-        it('fails a path to the CA chain PEM file is not valid', () => {
+        it('fails when the certificate revocation list chain is not valid', () => {
             const error = errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH;
 
             expect(() => secureContext.validate({ tls: { enabled: true, crl: null } })).to.throw(error);

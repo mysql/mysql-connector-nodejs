@@ -168,24 +168,192 @@ Non-TLS ciphersuites, including the `MD5`, `SSLv3` and other older sets are not 
 
 #### Certificate authority validation
 
+When creating a connection to the database using TLS, the connector can validate if the server certificate was signed by a certificate authority (CA) and, at the same time, ensure that the certificate was not revoked by that same authority, or any other in a given chain of trust.
+
+Just like with TLS-related core Node.js APIs, an application can provide one or more PEM formatted CA certificates and certificate revocation lists (CRL). The [secure context](https://nodejs.org/docs/v12.0.0/api/tls.html#tls_tls_createsecurecontext_options) uses a list of well-known CAs curated by Mozilla, which are completely replaced by the list of CAs provided by an application. This means that if the certificate was not signed by the root CA, the entire chain of trust down to the signing CA, should be included in the list. The same is true for the certificate revocation lists, because each CA has its own.
+
+Verifying if the server certificate was signed by the root CA can be done by providing the path to the CA file:
+
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
+const path = require('path');
 
-mysqlx.getSession('mysqlx://localhost?ssl-ca=(/path/to/ca.pem)&ssl-crl=(/path/to/crl.pem)')
+mysqlx.getSession('mysqlx://localhost?ssl-ca=(/path/to/root/ca.pem)')
     .then(session => {
+        // the connection succeeds if the server certificate was signed by the root CA
         console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 
 
-const options = { host: 'localhost', tls: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem', enabled: true } };
+const options = {
+    host: 'localhost',
+    tls: {
+        ca: path.join('/', 'path', 'to', 'root', 'ca.pem')
+    }
+};
 
 mysqlx.getSession(options)
     .then(session => {
+        // the connection succeeds if the server certificate was signed by the root CA
         console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 ```
 
-Note: file paths can be either [pct-encoded](https://en.wikipedia.org/wiki/Percent-encoding) or unencoded but enclosed by parenthesis (as demonstrated in the example).
+Or, additionally, by reading the file contents beforehand:
+
+```javascript
+const fs = require('fs');
+const mysqlx = require('@mysql/xdevapi');
+
+const options = {
+    host: 'localhost',
+    tls: {
+        ca: fs.readFileSync('/path/to/root/ca.pem')
+    }
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        // the connection succeeds if the server certificate was signed by the root CA
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+```
+
+When the server certificate is not signed by the root CA, but instead by an intermediate or leaf CA in the chain of trust, all the CAs down to the one that has actually signed the certificate, need to be provided.
+
+This using a single PEM file that concatenates the entire chain of trust.
+
+```javascript
+const mysqlx = require('@mysql/xdevapi');
+const path = require('path');
+
+// /path/to/chain/ca.pem should contain the entire chain of trust
+mysqlx.getSession('mysqlx://localhost?ssl-ca=(/path/to/chain/ca.pem)')
+    .then(session => {
+        // the connection succeeds if the server certificate was signed by the root CA
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+
+mysqlx.getSession(`mysqlx://localhost?ssl-ca=${encodeURIComponent('/path/to/chain/ca.pem')}`)
+    .then(session => {
+        // the connection succeeds if the server certificate was signed by the root CA
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+
+
+let options = {
+    host: 'localhost',
+    tls: {
+        // /path/to/chain/ca.pem should contain the entire chain of trust
+        ca: path.join('/', 'path', 'to', 'chain', 'ca.pem')
+    }
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        // the connection succeeds if the server certificate was signed by the root CA
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+```
+
+Or using multiple PEM files for the entire chain of trust. In this case, there is no support to provide multiple file paths in the connection string, which means applications should use a connection configuration object.
+
+```javascript
+const fs = require('fs')
+const mysqlx = require('@mysql/xdevapi');
+const path = require('path')
+
+const options = {
+    host: 'localhost',
+    tls: {
+        ca: [
+            fs.readFileSync(path.join('/', 'path', 'to', 'leaf', 'ca.pem')),
+            fs.readFileSync(path.join('/', 'path', 'to', 'root', 'ca.pem'))
+        ]
+    }
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        // the connection succeeds if the server certificate was signed by the root CA
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+```
+
+The connector can also verify if the server certificate was revoked by any CA in the chain of trust. In this case, due to some design constraints in the Node.js OpenSSL bindings, providing a single file containing the CRLs for every CA in the chain of trust is not possible, so applications must provide *ALL* CRL files individually to ensure the verification works as expected (this is also required because OpenSSL uses the [X509_V_FLAG_CRL_CHECK_ALL](https://www.openssl.org/docs/man1.1.0/man3/X509_VERIFY_PARAM_set_flags.html) flag by default as a verification parameter).
+
+```javascript
+const fs = require('fs')
+const mysqlx = require('@mysql/xdevapi');
+const path = require('path');
+
+const options = {
+    host: 'localhost',
+    tls: {
+        ca: [
+            fs.readFileSync(path.join('/', 'path', 'to', 'leaf', 'ca.pem')),
+            fs.readFileSync(path.join('/', 'path', 'to', 'root', 'ca.pem'))
+        ],
+        crl: [
+            fs.readFileSync(path.join('/', 'path', 'to', 'leaf', 'crl.pem')),
+            fs.readFileSync(path.join('/', 'path', 'to', 'root', 'crl.pem'))
+        ],
+    }
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        // the connection succeeds if the server certificate was not revoked neither the leaf CA nor the root CA
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+```
+
+When the chain of trust contains only the root CA and CRL, every API flavour should work.
+
+```javascript
+const fs = require('fs')
+const mysqlx = require('@mysql/xdevapi');
+const path = require('path');
+
+mysqlx.getSession('mysqlx://localhost?ssl-ca=(/path/to/root/ca.pem)&ssl-crl=(/path/to/root/crl.pem)')
+    .then(session => {
+        // the connection succeeds if the server certificate was not revoked by the root CA
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+
+mysqlx.getSession(`mysqlx://localhost?ssl-ca=${encodeURIComponent('/path/to/root/ca.pem')}&ssl-crl=${encodeURIComponent('/path/to/root/crl.pem')}`)
+    .then(session => {
+        // the connection succeeds if the server certificate was not revoked by the root CA
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+
+
+let options = {
+    host: 'localhost',
+    tls: {
+        ca: path.join('/', 'path', 'to', 'root', 'ca.pem'),
+        crl: path.join('/', 'path', 'to', 'root', 'crl.pem')
+    }
+};
+
+mysqlx.getSession(options)
+    .then(session => {
+        // the connection succeeds if the server certificate was not revoked by the root CA
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+
+options.tls.ca = fs.readFileSync(path.join('/', 'path', 'to', 'root', 'ca.pem'));
+options.tls.crl = fs.readFileSync(path.join('/', 'path', 'to', 'root', 'crl.pem'));
+
+mysqlx.getSession(options)
+    .then(session => {
+        // the connection succeeds if the server certificate was not revoked by the root CA
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+```
+
+> **IMPORTANT**<br />
+> Due to the constraints imposed by connection strings, the fact that all core Node.js TLS-related APIs expect PEM file content as input, and the fact that Node.js and OpenSSL cannot verify CRLs concatenated in a single file, it is strongly recommended that applications always use a connection configuration object to specify one or more PEM files for CAs and CRLs using "fs.readFileSync()".
 
 ### Authentication Mechanisms
 

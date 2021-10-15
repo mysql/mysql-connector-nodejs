@@ -380,32 +380,6 @@ describe('connection failures', () => {
                         });
                 });
 
-                it('fails when the path to the CA file is badly specified', () => {
-                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { ca: false } });
-                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-ca=[]`;
-
-                    return mysqlx.getSession(uri)
-                        .then(() => {
-                            return expect.fail();
-                        })
-                        .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH);
-                        });
-                });
-
-                it('fails when the path to the CRL file is badly specified', () => {
-                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { crl: false } });
-                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-crl={}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(() => {
-                            return expect.fail();
-                        })
-                        .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH);
-                        });
-                });
-
                 it('fails when the list of TLS versions is badly specified', () => {
                     const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: 'foo' } });
                     const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=foo`;
@@ -870,34 +844,6 @@ describe('connection failures', () => {
 
                     expect(() => mysqlx.getClient(uri))
                         .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
-                });
-
-                it('throws an error when the path to the CA file is badly specified', () => {
-                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { ca: [] } });
-                    let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-ca=${JSON.stringify(invalidTLSConfig.tls.ca)}`;
-
-                    expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH);
-
-                    invalidTLSConfig.tls.ca = {};
-                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-ca=${JSON.stringify(invalidTLSConfig.tls.ca)}`;
-
-                    expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH);
-                });
-
-                it('throws an error when the path to the CRL file is badly specified', () => {
-                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { crl: [] } });
-                    let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-crl=${JSON.stringify(invalidTLSConfig.tls.crl)}`;
-
-                    expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH);
-
-                    invalidTLSConfig.tls.crl = {};
-                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-crl=${JSON.stringify(invalidTLSConfig.tls.crl)}`;
-
-                    expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_CRL_PATH);
                 });
 
                 it('throws an error when the list of TLS versions is badly specified', () => {
