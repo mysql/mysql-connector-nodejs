@@ -102,7 +102,7 @@ describe('prepared statements for CollectionModify', () => {
         const actual = [];
 
         const op = collection.modify('_id = :id').bind('id', '1').set('name', 'quux');
-        const sql = `UPDATE \`${schema.getName()}\`.\`test\` SET doc=JSON_SET(JSON_SET(doc,'$.name','quux'),'$._id',JSON_EXTRACT(\`doc\`,'$._id')) WHERE (JSON_EXTRACT(doc,'$._id') = ?)`;
+        const sql = `UPDATE \`${schema.getName()}\`.\`test\` SET doc=JSON_SET(JSON_SET(doc,'$.name','quux'),'$._id',JSON_EXTRACT(\`doc\`,'$._id')) WHERE (JSON_UNQUOTE(JSON_EXTRACT(doc,'$._id')) = ?)`;
 
         return op.execute()
             .then(() => op.bind('id', '2').execute())
@@ -149,7 +149,7 @@ describe('prepared statements for CollectionModify', () => {
         const actual = [];
 
         const op = collection.modify('_id = :id').bind('id', '1').set('name', 'quux');
-        const sql = `UPDATE \`${schema.getName()}\`.\`test\` SET doc=JSON_SET(JSON_REMOVE(JSON_SET(doc,'$.name','quux'),'$.name'),'$._id',JSON_EXTRACT(\`doc\`,'$._id')) WHERE (JSON_EXTRACT(doc,'$._id') = ?)`;
+        const sql = `UPDATE \`${schema.getName()}\`.\`test\` SET doc=JSON_SET(JSON_REMOVE(JSON_SET(doc,'$.name','quux'),'$.name'),'$._id',JSON_EXTRACT(\`doc\`,'$._id')) WHERE (JSON_UNQUOTE(JSON_EXTRACT(doc,'$._id')) = ?)`;
 
         return op.execute()
             .then(() => op.bind('id', '2').execute())

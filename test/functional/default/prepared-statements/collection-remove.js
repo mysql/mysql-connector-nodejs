@@ -102,7 +102,7 @@ describe('prepared statements for CollectionRemove', () => {
         const actual = [];
 
         const op = collection.remove('_id = :id').bind('id', '1');
-        const sql = `DELETE FROM \`${schema.getName()}\`.\`test\` WHERE (JSON_EXTRACT(doc,'$._id') = ?)`;
+        const sql = `DELETE FROM \`${schema.getName()}\`.\`test\` WHERE (JSON_UNQUOTE(JSON_EXTRACT(doc,'$._id')) = ?)`;
 
         return op.execute()
             .then(() => op.bind('id', '2').execute())
@@ -167,7 +167,7 @@ describe('prepared statements for CollectionRemove', () => {
         const actual = [];
 
         const op = collection.remove('_id = :id').bind('id', '1');
-        const sql = `DELETE FROM \`${schema.getName()}\`.\`test\` WHERE (JSON_EXTRACT(doc,'$._id') = ?) ORDER BY JSON_EXTRACT(doc,'$.name')`;
+        const sql = `DELETE FROM \`${schema.getName()}\`.\`test\` WHERE (JSON_UNQUOTE(JSON_EXTRACT(doc,'$._id')) = ?) ORDER BY JSON_EXTRACT(doc,'$.name')`;
 
         return op.execute()
             .then(() => op.bind('id', '2').execute())
