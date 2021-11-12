@@ -48,7 +48,7 @@ There are a few ways to contribute to the Connector/Node.js code. Please refer t
 * [MySQL Connector/Node.js forum](http://forums.mysql.com/list.php?44)
 * [`#connectors` channel in MySQL Community Slack](https://mysqlcommunity.slack.com/messages/connectors) ([Sign-up](https://lefred.be/mysql-community-on-slack/) required when not using an Oracle account)
 * [Twitter](https://twitter.com/mysql)
-* [InsideMySQL.com Connectors Blog](https://insidemysql.com/category/mysql-development/connectors/)
+* [MySQL Blog Archive: Connectors Category](https://dev.mysql.com/blog-archive/?cat=Connectors%20%2F%20Languages)
 * [MySQL Public Bug Tracker](https://bugs.mysql.com/)
 
 For more information about this and other MySQL products, please visit [MySQL Contact & Questions](https://www.mysql.com/about/contact/).
