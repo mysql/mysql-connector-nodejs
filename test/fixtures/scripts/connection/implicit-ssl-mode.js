@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,26 +30,22 @@
 
 'use strict';
 
-/* eslint-env node, mocha */
+const mysqlx = require('../../../../');
 
-const config = require('../../../config');
-const expect = require('chai').expect;
-const mysqlx = require('../../../..');
+const config = JSON.parse(process.env.MYSQLX_CLIENT_CONFIG);
+const baseConfig = Object.assign({}, config, { schema: undefined, socket: undefined });
 
-describe('SSL/TLS support', () => {
-    context('when TLS is it not enabled in the server', () => {
-        // container as defined in docker-compose.yml
-        const baseConfig = { host: 'mysql-with-ssl-disabled', schema: undefined, socket: undefined };
+// additional configuration properties are provided via a JSON command argument
+const additionalConfig = JSON.parse(process.argv[2] || null);
+const scriptConfig = Object.assign({}, baseConfig, additionalConfig);
+const uri = `mysqlx://${scriptConfig.user}:${scriptConfig.password}@${scriptConfig.host}:${scriptConfig.port}?ssl-ca=${encodeURIComponent(scriptConfig.tls.ca)}`;
 
-        it('fails to connect if the client requires it', () => {
-            const secureConfig = Object.assign({}, config, baseConfig, { tls: { enabled: true } });
-            const error = 'The X Plugin version installed in the server does not support TLS. Check https://dev.mysql.com/doc/refman/8.0/en/x-plugin-ssl-connections.html for more details on how to enable secure connections.';
-
-            return mysqlx.getSession(secureConfig)
-                .then(() => expect.fail())
-                .catch(err => {
-                    expect(err.message).to.equal(error);
-                });
-        });
+mysqlx.getSession(uri)
+    .then(session => {
+        return session.close();
+    })
+    .catch(err => {
+        // errors in should be passed as JSON to the parent process via stderr
+        console.error(JSON.stringify({ message: err.message, stack: err.stack }));
+        return process.exit(1);
     });
-});

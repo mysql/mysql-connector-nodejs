@@ -32,15 +32,18 @@
 
 /* eslint-env node, mocha */
 
+const errors = require('../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const parseSecurityOptions = require('../../../../../lib/DevAPI/Util/URIParser/parseSecurityOptions');
+const util = require('util');
 
 describe('parseSecurityOptions', () => {
     it('enables ssl if any of the security related properties are provided', () => {
-        // TODO(Rui): add `ssl-mode=VERIFY_CA`, `ssl-mode=VERIFY_IDENTITY` and/or `ssl-mode=VERIFY_CRL`?
         expect(parseSecurityOptions('?ssl-mode=REQUIRED')).to.deep.include({ enabled: true });
-        expect(parseSecurityOptions('?ssl-ca=foo')).to.deep.include({ enabled: true });
-        expect(parseSecurityOptions('?ssl-crl=bar')).to.deep.include({ enabled: true });
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_CA&ssl-ca=foo')).to.deep.include({ enabled: true });
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_IDENTITY&ssl-ca=foo')).to.deep.include({ enabled: true });
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_CA&ssl-ca=foo&ssl-crl=bar')).to.deep.include({ enabled: true });
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_IDENTITY&ssl-ca=foo&ssl-crl=bar')).to.deep.include({ enabled: true });
         expect(parseSecurityOptions('?tls-versions=[foo,bar]')).to.deep.include({ enabled: true });
     });
 
@@ -52,24 +55,40 @@ describe('parseSecurityOptions', () => {
         expect(parseSecurityOptions('?ssl-mode=DISABLED')).to.deep.equal({ enabled: false });
     });
 
-    it('parses all the related security properties', () => {
-        expect(parseSecurityOptions('?ssl-ca=foo&ssl-crl=bar')).to.deep.equal({ enabled: true, ca: 'foo', crl: 'bar' });
+    it('parses all the certificate-related options if the ssl mode is "VERIFY_CA"', () => {
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_CA&ssl-ca=foo&ssl-crl=bar')).to.deep.equal({ enabled: true, ca: 'foo', crl: 'bar' });
+    });
+
+    it('parses all the certificate-related options if the ssl mode is "VERIFY_IDENTITY"', () => {
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_IDENTITY&ssl-ca=foo&ssl-crl=bar')).to.deep.equal({ enabled: true, ca: 'foo', crl: 'bar', checkServerIdentity: true });
+    });
+
+    it('skips certificate-related options if the ssl mode is "REQUIRED"', () => {
+        expect(parseSecurityOptions('?ssl-mode=REQUIRED&ssl-ca=foo&ssl-crl=bar')).to.deep.equal({ enabled: true });
+    });
+
+    it('skips certificate-related options if the ssl mode is "DISABLED""', () => {
+        expect(parseSecurityOptions('?ssl-mode=DISABLED&ssl-ca=foo&ssl-crl=bar')).to.deep.equal({ enabled: false });
+    });
+
+    it('skips certificate-related options if the ssl mode is not set', () => {
+        expect(parseSecurityOptions('?ssl-ca=foo&ssl-crl=bar')).to.deep.equal({ enabled: true });
     });
 
     it('parses a pct-encoded CA file path', () => {
-        expect(parseSecurityOptions('?ssl-ca=foo%2Fbar')).to.deep.equal({ enabled: true, ca: 'foo/bar' });
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_CA&ssl-ca=foo%2Fbar')).to.deep.equal({ enabled: true, ca: 'foo/bar' });
     });
 
     it('parses a custom encoded CA file path', () => {
-        expect(parseSecurityOptions('?ssl-ca=(/foo/bar')).to.deep.equal({ enabled: true, ca: '/foo/bar' });
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_CA&ssl-ca=(/foo/bar')).to.deep.equal({ enabled: true, ca: '/foo/bar' });
     });
 
     it('parses a pct-encoded CRL file path', () => {
-        expect(parseSecurityOptions('?ssl-crl=foo%2Fbar')).to.deep.equal({ enabled: true, crl: 'foo/bar' });
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_CA&ssl-ca=foo%2Fbar&ssl-crl=baz%2Fqux')).to.deep.equal({ enabled: true, ca: 'foo/bar', crl: 'baz/qux' });
     });
 
     it('parses a custom encoded CRL file path', () => {
-        expect(parseSecurityOptions('?ssl-crl=(/foo/bar)')).to.deep.equal({ enabled: true, crl: '/foo/bar' });
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_CA&ssl-ca=(/foo/bar)&ssl-crl=(/baz/qux)')).to.deep.equal({ enabled: true, ca: '/foo/bar', crl: '/baz/qux' });
     });
 
     it('parses a list of TLS versions', () => {
@@ -88,17 +107,15 @@ describe('parseSecurityOptions', () => {
         expect(parseSecurityOptions('?tls-ciphersuites=foo')).to.deep.equal({ enabled: true, ciphersuites: 'foo' });
     });
 
-    it('throws an error for duplicate options', () => {
-        const error = 'The connection string cannot contain duplicate query parameters.';
-
-        expect(() => parseSecurityOptions('?ssl-mode=REQUIRED&ssl-mode=DISABLED')).to.throw(error);
-        expect(() => parseSecurityOptions('?ssl-ca=foo&ssl-ca=bar')).to.throw(error);
-        expect(() => parseSecurityOptions('?ssl-crl=foo&ssl-crl=bar')).to.throw(error);
-        expect(() => parseSecurityOptions('?tls-versions=[foo,bar]&tls-versions=[baz]')).to.throw(error);
-        expect(() => parseSecurityOptions('?tls-ciphersuites=[foo,bar]&tls-ciphersuites=[baz]')).to.throw(error);
+    it('picks the value of the last duplicate option', () => {
+        expect(parseSecurityOptions('?ssl-mode=REQUIRED&ssl-mode=DISABLED')).to.deep.equal({ enabled: false });
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_CA&ssl-ca=foo&ssl-ca=bar')).to.deep.equal({ enabled: true, ca: 'bar' });
+        expect(parseSecurityOptions('?ssl-mode=VERIFY_CA&ssl-ca=foo&ssl-crl=bar&ssl-crl=baz')).to.deep.equal({ enabled: true, ca: 'foo', crl: 'baz' });
+        expect(parseSecurityOptions('?tls-versions=[foo,bar]&tls-versions=[baz]')).to.deep.equal({ enabled: true, versions: ['baz'] });
+        expect(parseSecurityOptions('?tls-ciphersuites=[foo,bar]&tls-ciphersuites=[baz]')).to.deep.equal({ enabled: true, ciphersuites: ['baz'] });
     });
 
-    it('ignores case of "ssl-mode" key and value', () => {
+    it('ignores case of the "ssl-mode" key and value', () => {
         ['?sSl-MoDe=required', '?SSL-MODE=REQUIRED', '?ssl-mode=REQUired'].forEach(valid => {
             expect(parseSecurityOptions(valid)).to.deep.equal({ enabled: true });
         });
@@ -120,9 +137,19 @@ describe('parseSecurityOptions', () => {
         expect(parseSecurityOptions('?tls-ciphersuites=[baz,qux]')).to.deep.equal({ enabled: true, ciphersuites: ['baz', 'qux'] });
     });
 
-    it('does not ignore case of security options except `ssl-mode`', () => {
-        expect(parseSecurityOptions('?sSl-mOdE=requIRED&ssl-ca=(/Path/TO/ca.pem)')).to.deep.equal({ enabled: true, ca: '/Path/TO/ca.pem' });
-        expect(parseSecurityOptions('?sSl-mOdE=requIRED&ssl-crl=(/paTH/tO/CA.PEM)')).to.deep.equal({ enabled: true, crl: '/paTH/tO/CA.PEM' });
+    it('does not ignore case of security options except "ssl-mode"', () => {
+        expect(parseSecurityOptions('?sSl-mOdE=vErIfY_cA&ssl-ca=(/Path/TO/ca.pem)')).to.deep.equal({ enabled: true, ca: '/Path/TO/ca.pem' });
+        expect(parseSecurityOptions('?sSl-mOdE=VeRiFy_IdEnTiTy&ssl-ca=(/patH/TO/Crl.PEM)&ssl-crl=(/paTH/tO/CRL.PEM)')).to.deep.equal({ enabled: true, ca: '/patH/TO/Crl.PEM', crl: '/paTH/tO/CRL.PEM', checkServerIdentity: true });
         expect(parseSecurityOptions('?sSl-mOdE=requIRED&tls-versions=[FOO,bar,bAz,QuX]')).to.deep.equal({ enabled: true, versions: ['FOO', 'bar', 'bAz', 'QuX'] });
+    });
+
+    it('throws an error if "ssl-mode" is "VERIFY_CA" and "ssl-ca" is not provided', () => {
+        expect(() => parseSecurityOptions('?ssl-mode=VERIFY_CA')).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_CERTIFICATE_AUTHORITY_REQUIRED, 'VERIFY_CA'));
+        expect(() => parseSecurityOptions('?ssl-mode=VERIFY_CA&ssl-crl=(/path/to/crl.pem)')).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_CERTIFICATE_AUTHORITY_REQUIRED, 'VERIFY_CA'));
+    });
+
+    it('throws an error if "ssl-mode" is "VERIFY_IDENTITY" and "ssl-ca" is not provided', () => {
+        expect(() => parseSecurityOptions('?ssl-mode=VERIFY_IDENTITY')).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_CERTIFICATE_AUTHORITY_REQUIRED, 'VERIFY_IDENTITY'));
+        expect(() => parseSecurityOptions('?ssl-mode=VERIFY_IDENTITY&ssl-crl=(/path/to/crl.pem)')).to.throw(util.format(errors.MESSAGES.ER_DEVAPI_CERTIFICATE_AUTHORITY_REQUIRED, 'VERIFY_IDENTITY'));
     });
 });

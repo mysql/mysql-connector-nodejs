@@ -166,19 +166,22 @@ Applications are free to use older TLSv1 and TLSv1.1 compatible ciphersuites (li
 
 Non-TLS ciphersuites, including the `MD5`, `SSLv3` and other older sets are not supported and will be ignored if the application wants to use them. If none of the ciphers provided by the application is actually supported by the client, an error will be thrown.
 
-#### Certificate authority validation
+#### Certificate Authority Validation
 
 When creating a connection to the database using TLS, the connector can validate if the server certificate was signed by a certificate authority (CA) and, at the same time, ensure that the certificate was not revoked by that same authority, or any other in a given chain of trust.
 
 Just like with TLS-related core Node.js APIs, an application can provide one or more PEM formatted CA certificates and certificate revocation lists (CRL). The [secure context](https://nodejs.org/docs/v12.0.0/api/tls.html#tls_tls_createsecurecontext_options) uses a list of well-known CAs curated by Mozilla, which are completely replaced by the list of CAs provided by an application. This means that if the certificate was not signed by the root CA, the entire chain of trust down to the signing CA, should be included in the list. The same is true for the certificate revocation lists, because each CA has its own.
 
-Verifying if the server certificate was signed by the root CA can be done by providing the path to the CA file:
+Verifying if the server certificate was signed by the root CA can be done by providing the path to the CA file. When using a connection string, this feature needs to be explicitly enabled by setting value of `ssl-mode` to `VERIFY_CA` or `VERIFY_IDENTITY` (which will also validate the server identity against its own certificate).
+
+> **IMPORTANT**<br />
+> When using a connection string, if the `ssl-mode` option is not set whilst providing a path to a certificate authority file, the verification does not happen and the client will yield a warning message.
 
 ```javascript
 const mysqlx = require('@mysql/xdevapi');
 const path = require('path');
 
-mysqlx.getSession('mysqlx://localhost?ssl-ca=(/path/to/root/ca.pem)')
+mysqlx.getSession('mysqlx://localhost?ssl-mode=VERIFY_CA&ssl-ca=(/path/to/root/ca.pem)')
     .then(session => {
         // the connection succeeds if the server certificate was signed by the root CA
         console.log(session.inspect()); // { host: 'localhost', tls: true }
@@ -228,13 +231,13 @@ const mysqlx = require('@mysql/xdevapi');
 const path = require('path');
 
 // /path/to/chain/ca.pem should contain the entire chain of trust
-mysqlx.getSession('mysqlx://localhost?ssl-ca=(/path/to/chain/ca.pem)')
+mysqlx.getSession('mysqlx://localhost?ssl-mode=VERIFY_CA&ssl-ca=(/path/to/chain/ca.pem)')
     .then(session => {
         // the connection succeeds if the server certificate was signed by the root CA
         console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 
-mysqlx.getSession(`mysqlx://localhost?ssl-ca=${encodeURIComponent('/path/to/chain/ca.pem')}`)
+mysqlx.getSession(`mysqlx://localhost?ssl-mode=VERIFY_CA&ssl-ca=${encodeURIComponent('/path/to/chain/ca.pem')}`)
     .then(session => {
         // the connection succeeds if the server certificate was signed by the root CA
         console.log(session.inspect()); // { host: 'localhost', tls: true }
@@ -315,13 +318,13 @@ const fs = require('fs')
 const mysqlx = require('@mysql/xdevapi');
 const path = require('path');
 
-mysqlx.getSession('mysqlx://localhost?ssl-ca=(/path/to/root/ca.pem)&ssl-crl=(/path/to/root/crl.pem)')
+mysqlx.getSession('mysqlx://localhost?ssl-mode=VERIFY_CA&ssl-ca=(/path/to/root/ca.pem)&ssl-crl=(/path/to/root/crl.pem)')
     .then(session => {
         // the connection succeeds if the server certificate was not revoked by the root CA
         console.log(session.inspect()); // { host: 'localhost', tls: true }
     });
 
-mysqlx.getSession(`mysqlx://localhost?ssl-ca=${encodeURIComponent('/path/to/root/ca.pem')}&ssl-crl=${encodeURIComponent('/path/to/root/crl.pem')}`)
+mysqlx.getSession(`mysqlx://localhost?ssl-mode=VERIFY_CA&ssl-ca=${encodeURIComponent('/path/to/root/ca.pem')}&ssl-crl=${encodeURIComponent('/path/to/root/crl.pem')}`)
     .then(session => {
         // the connection succeeds if the server certificate was not revoked by the root CA
         console.log(session.inspect()); // { host: 'localhost', tls: true }
@@ -354,6 +357,101 @@ mysqlx.getSession(options)
 
 > **IMPORTANT**<br />
 > Due to the constraints imposed by connection strings, the fact that all core Node.js TLS-related APIs expect PEM file content as input, and the fact that Node.js and OpenSSL cannot verify CRLs concatenated in a single file, it is strongly recommended that applications always use a connection configuration object to specify one or more PEM files for CAs and CRLs using "fs.readFileSync()".
+
+### Checking the Server Identity
+
+Besides verifying if the server certificate was signed or revoked by a certificate in a given authority chain, it is also possible to additionally verify if the server is the effective owner of the certificate, by comparing the server hostname and the common name specifified by the certificate, according to a specific set of prerequisites. This check is only performed if the certificate first passes all the other checks, such as being issued by a given CA (required).
+
+When using a connection configuration object, this can be done by providing an additional `checkServerIdentity` property as part of the secure context. If its value is `true`, the server identity check will happen using the builtin [`tls.checkServerIdentity()`](https://nodejs.org/docs/v12.0.0/api/tls.html#tls_tls_checkserveridentity_hostname_cert) function, which expects both the server hostname and certificate common name to be exactly the same.
+
+```js
+const fs = require('fs')
+const mysqlx = require('@mysql/xdevapi');
+const path = require('path');
+
+let options = {
+    host: 'localhost',
+    tls: {
+        ca: path.join('/', 'path', 'to', 'ca.pem'),
+        checkServerIdentity: true
+    }
+};
+
+// CN = 'localhost'
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+
+// CN = 'example.com'
+mysqlx.getSession(options)
+    .catch(err => {
+        console.log(err.message); // Hostname/IP does not match certificate's altnames: Host: localhost. is not cert's CN: example.com
+    });
+```
+
+An application can specify its own set of requirements to determine if the server identity is valid. This can be done by providing a custom `checkServerIdentity()` function. As an example, this can be useful, for instance to allow subdomains.
+
+```js
+const fs = require('fs')
+const mysqlx = require('@mysql/xdevapi');
+const path = require('path');
+
+let options = {
+    host: 'dev.mysql.com',
+    tls: {
+        ca: path.join('/', 'path', 'to', 'ca.pem'),
+        checkServerIdentity (hostname, cert) {
+            // Checks if the domain is the same.
+            if (cert.subject.CN === hostname.substring(hostname.length - cert.subject.CN.length)) {
+                return true;
+            }
+
+            // Instead of being thrown, the error needs to be returned back to the client.
+            return new Error(`"${hostname}" is not a valid subdomain of "${cert.subject.cn}"`);
+        }
+    }
+};
+
+// CN = 'mysql.com'
+mysqlx.getSession(options)
+    .then(session => {
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+
+// CN = 'example.com'
+mysqlx.getSession(options)
+    .catch(err => {
+        console.log(err.message); // "dev.mysql.com" is not a valid subdomain of "example.com"
+    });
+```
+
+By default, if the `checkServerIdentity` property is not specified, the check will not be performed.
+
+> **IMPORTANT**<br />
+> Custom `checkServerIdentity()` functions should "return" all errors instead "throwing" them. Further implementation details are availabe in the official Node.js [documentation](https://nodejs.org/docs/v12.0.0/api/tls.html#tls_tls_checkserveridentity_hostname_cert).
+
+When using a connection string, the API is a little bit more restricted. The only possibility is to set the value of the `ssl-mode` option to `VERIFY_IDENTITY` in order to explicitly enable the server identity check using the builtin `tls.checkServerIdentity()` function.
+
+```js
+const fs = require('fs')
+const mysqlx = require('@mysql/xdevapi');
+const path = require('path');
+
+const ca = path.join('path', 'to', 'ca.pem');
+
+// CN = 'localhost'
+mysqlx.getSession(`mysqlx://localhost?ssl-mode=VERIFY_IDENTITY&ssl-ca=${encodeURIComponent(ca)}`)
+    .then(session => {
+        console.log(session.inspect()); // { host: 'localhost', tls: true }
+    });
+
+// CN = 'example.com'
+mysqlx.getSession(`mysqlx://localhost?ssl-mode=VERIFY_IDENTITY&ssl-ca=${encodeURIComponent(ca)}`)
+    .catch(err => {
+        console.log(err.message); // Hostname/IP does not match certificate's altnames: Host: localhost. is not cert's CN: example.com
+    });
+```
 
 ### Authentication Mechanisms
 

@@ -264,18 +264,39 @@ describe('TLS secure context utilities', () => {
                 return expect(td.explain(fs.readFileSync).callCount).to.equal(0);
             });
         });
+
+        it('uses the builtin "checkServerIdentity" function if certificate identity verification function is explicitly enabled', () => {
+            td.when(tlsVersions.allowed()).thenReturn([]);
+            td.when(tlsVersions.supported()).thenReturn([]);
+            td.when(tlsCiphers.defaults()).thenReturn([]);
+
+            return expect(secureContext.create({ checkServerIdentity: true })).to.not.deep.include.keys('checkServerIdentity');
+        });
+
+        it('uses a no-op "checkServerIdentity" function if certificate identity verification is not explicitly enabled', () => {
+            td.when(tlsVersions.allowed()).thenReturn([]);
+            td.when(tlsVersions.supported()).thenReturn([]);
+            td.when(tlsCiphers.defaults()).thenReturn([]);
+
+            const ctx = secureContext.create();
+
+            expect(ctx).to.deep.include.keys('checkServerIdentity');
+            expect(ctx.checkServerIdentity).to.be.a('function');
+            return expect(ctx.checkServerIdentity()).to.not.exist;
+        });
+
+        it('uses a custom certificate identity verification function if one is provided', () => {
+            const checkServerIdentity = () => { };
+
+            td.when(tlsVersions.allowed()).thenReturn([]);
+            td.when(tlsVersions.supported()).thenReturn([]);
+            td.when(tlsCiphers.defaults()).thenReturn([]);
+
+            return expect(secureContext.create({ checkServerIdentity })).to.deep.include({ checkServerIdentity });
+        });
     });
 
     context('validate()', () => {
-        it('fails when TLS is disabled but defines additional options', () => {
-            const error = errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS;
-
-            expect(() => secureContext.validate({ tls: { enabled: false, ca: 'foo' } })).to.throw(error);
-            expect(() => secureContext.validate({ ssl: false, sslOptions: { ca: 'foo' } })).to.throw(error);
-            expect(() => secureContext.validate({ tls: { enabled: false }, sslOptions: { ca: 'foo' } })).to.throw(error);
-            return expect(() => secureContext.validate({ tls: { enabled: false }, ssl: true, sslOptions: { ca: 'foo' } })).to.throw(error);
-        });
-
         it('fails when the certificate authority chain is not valid', () => {
             const error = errors.MESSAGES.ER_DEVAPI_BAD_TLS_CA_PATH;
 

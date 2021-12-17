@@ -51,93 +51,235 @@ describe('connecting to the server using TLS certificates', () => {
         const certificates = path.join(__dirname, '..', '..', '..', 'fixtures', 'tls', 'client', 'root');
 
         context('when providing a path for a file containing the certificate authority chain', () => {
-            it('succeeds if the server certificate was signed by a certificate authority in the given chain', () => {
-                const ca = path.join(certificates, 'ca.pem');
-                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
-
-                return mysqlx.getSession(secureConfig)
-                    .then(session => {
-                        expect(session.inspect()).to.have.property('tls', true);
-                        return session.close();
-                    });
-            });
-
-            it('fails if the server certificate was not signed by a certificate authority in the given chain', () => {
-                const ca = path.join(certificates, 'alternative-ca.pem');
-                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
-
-                return mysqlx.getSession(secureConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
-                    });
-            });
-
-            it('succeeds if the server certificate was not revoked by a certificate authority in the given chain', () => {
-                const ca = path.join(certificates, 'ca.pem');
-                const crl = path.join(certificates, 'empty-crl.pem');
-                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
-
-                return mysqlx.getSession(secureConfig)
-                    .then(session => {
-                        expect(session.inspect()).to.have.property('tls', true);
-                        return session.close();
-                    });
-            });
-
-            it('fails if the server certificate was revoked by a certificate authority in the given chain', () => {
-                const ca = path.join(certificates, 'ca.pem');
-                const crl = path.join(certificates, 'crl.pem');
-                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
-
-                return mysqlx.getSession(secureConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.code).to.equal('CERT_REVOKED');
-                    });
-            });
-
-            context('when deprecated TLS connection properties are used', () => {
-                it('writes a deprecation warning to the log when debug mode is enabled', () => {
-                    // TLS is only available over TCP connections
-                    // The socket should be null since JSON.stringify() removes undefined properties
+            context('using a connection configuration object', () => {
+                it('succeeds if the server certificate was signed by a certificate authority in the given chain', () => {
                     const ca = path.join(certificates, 'ca.pem');
-                    const scriptConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { sslOptions: { ca } });
-                    const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
+                    const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
 
-                    return fixtures.collectLogs('connection:options.sslOptions', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
-                        .then(proc => {
-                            expect(proc.logs).to.have.lengthOf(1);
-                            expect(proc.logs[0]).to.equal(warnings.MESSAGES.WARN_DEPRECATED_SSL_ADDITIONAL_OPTIONS);
+                    return mysqlx.getSession(secureConfig)
+                        .then(session => {
+                            expect(session.inspect()).to.have.property('tls', true);
+                            return session.close();
                         });
                 });
 
-                it('writes a deprecation warning to stdout when debug mode is not enabled', done => {
-                    const tlsConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { ssl: true });
-                    const warningMessages = [];
+                it('fails if the server certificate was not signed by a certificate authority in the given chain', () => {
+                    const ca = path.join(certificates, 'alternative-ca.pem');
+                    const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
 
-                    process.on('warning', warning => {
-                        if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
-                            warningMessages.push(warning.message);
-                        }
+                    return mysqlx.getSession(secureConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+                        });
+                });
 
-                        if (warning.name && warning.name === 'NoWarning') {
-                            process.removeAllListeners('warning');
+                it('fails if the server identity custom verification is not successful', () => {
+                    const ca = path.join(certificates, 'ca.pem');
+                    const error = new Error('foobar');
 
-                            expect(warningMessages).to.have.lengthOf(1);
-                            expect(warningMessages[0]).to.equal(warnings.MESSAGES.WARN_DEPRECATED_SSL_OPTION);
+                    // checkServerIdentity should not "throw" the error, but
+                    // "return" it instead
+                    const checkServerIdentity = () => { return error; };
+                    const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, checkServerIdentity } });
 
-                            return done();
-                        }
+                    return mysqlx.getSession(secureConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            expect(err).to.deep.equal(error);
+                        });
+                });
+
+                it('succeeds if the server certificate was not revoked by a certificate authority in the given chain', () => {
+                    const ca = path.join(certificates, 'ca.pem');
+                    const crl = path.join(certificates, 'empty-crl.pem');
+                    const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
+
+                    return mysqlx.getSession(secureConfig)
+                        .then(session => {
+                            expect(session.inspect()).to.have.property('tls', true);
+                            return session.close();
+                        });
+                });
+
+                it('fails if the server certificate was revoked by a certificate authority in the given chain', () => {
+                    const ca = path.join(certificates, 'ca.pem');
+                    const crl = path.join(certificates, 'crl.pem');
+                    const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
+
+                    return mysqlx.getSession(secureConfig)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            expect(err.code).to.equal('CERT_REVOKED');
+                        });
+                });
+
+                context('when deprecated TLS connection properties are used', () => {
+                    it('writes a deprecation warning to the log when debug mode is enabled', () => {
+                        // TLS is only available over TCP connections
+                        // The socket should be null since JSON.stringify() removes undefined properties
+                        const ca = path.join(certificates, 'ca.pem');
+                        const scriptConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { sslOptions: { ca } });
+                        const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'default.js');
+
+                        return fixtures.collectLogs('connection:options.sslOptions', script, [JSON.stringify(scriptConfig)], { level: Level.WARNING })
+                            .then(proc => {
+                                expect(proc.logs).to.have.lengthOf(1);
+                                expect(proc.logs[0]).to.equal(warnings.MESSAGES.WARN_DEPRECATED_SSL_ADDITIONAL_OPTIONS);
+                            });
                     });
 
-                    mysqlx.getSession(tlsConfig)
-                        .then(session => {
-                            return session.close();
-                        })
-                        .then(() => {
-                            return process.emitWarning('No more warnings.', 'NoWarning');
+                    it('writes a deprecation warning to stdout when debug mode is not enabled', done => {
+                        const tlsConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { ssl: true });
+                        const warningMessages = [];
+
+                        process.on('warning', warning => {
+                            if (warning.name && warning.code && warning.name === warnings.TYPES.DEPRECATION && warning.code.startsWith(warnings.CODES.DEPRECATION)) {
+                                warningMessages.push(warning.message);
+                            }
+
+                            if (warning.name && warning.name === 'NoWarning') {
+                                process.removeAllListeners('warning');
+
+                                expect(warningMessages).to.have.lengthOf(1);
+                                expect(warningMessages[0]).to.equal(warnings.MESSAGES.WARN_DEPRECATED_SSL_OPTION);
+
+                                return done();
+                            }
                         });
+
+                        mysqlx.getSession(tlsConfig)
+                            .then(session => {
+                                return session.close();
+                            })
+                            .then(() => {
+                                return process.emitWarning('No more warnings.', 'NoWarning');
+                            });
+                    });
+                });
+            });
+
+            context('using a connection string', () => {
+                context('that enables certificate authority verification', () => {
+                    const tlsMode = 'VERIFY_CA';
+
+                    it('succeeds if the server certificate was signed by a certificate authority in the given chain', () => {
+                        const ca = path.join(certificates, 'ca.pem');
+                        const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
+                        const uri = `mysqlx://${secureConfig.user}:${secureConfig.password}@${secureConfig.host}:${secureConfig.port}?ssl-mode=${tlsMode}&ssl-ca=${secureConfig.tls.ca}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.inspect()).to.have.property('tls', true);
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the server certificate was not signed by a certificate authority in the given chain', () => {
+                        const ca = path.join(certificates, 'alternative-ca.pem');
+                        const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
+                        const uri = `mysqlx://${secureConfig.user}:${secureConfig.password}@${secureConfig.host}:${secureConfig.port}?ssl-mode=${tlsMode}&ssl-ca=${secureConfig.tls.ca}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => {
+                                return expect.fail();
+                            })
+                            .catch(err => {
+                                expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+                            });
+                    });
+
+                    it('succeeds if the server certificate was not revoked by a certificate authority in the given chain', () => {
+                        const ca = path.join(certificates, 'ca.pem');
+                        const crl = path.join(certificates, 'empty-crl.pem');
+                        const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
+                        const uri = `mysqlx://${secureConfig.user}:${secureConfig.password}@${secureConfig.host}:${secureConfig.port}?ssl-mode=${tlsMode}&ssl-ca=${secureConfig.tls.ca}&ssl-crl=${secureConfig.tls.crl}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.inspect()).to.have.property('tls', true);
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the server certificate was revoked by a certificate authority in the given chain', () => {
+                        const ca = path.join(certificates, 'ca.pem');
+                        const crl = path.join(certificates, 'crl.pem');
+                        const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
+                        const uri = `mysqlx://${secureConfig.user}:${secureConfig.password}@${secureConfig.host}:${secureConfig.port}?ssl-mode=${tlsMode}&ssl-ca=${secureConfig.tls.ca}&ssl-crl=${secureConfig.tls.crl}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => {
+                                return expect.fail();
+                            })
+                            .catch(err => {
+                                expect(err.code).to.equal('CERT_REVOKED');
+                            });
+                    });
+                });
+
+                context('that enables identity verification', () => {
+                    const tlsMode = 'VERIFY_IDENTITY';
+
+                    it('succeeds if the server certificate was signed by a certificate authority in the given chain', () => {
+                        const ca = path.join(certificates, 'ca.pem');
+                        const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
+                        const uri = `mysqlx://${secureConfig.user}:${secureConfig.password}@${secureConfig.host}:${secureConfig.port}?ssl-mode=${tlsMode}&ssl-ca=${secureConfig.tls.ca}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.inspect()).to.have.property('tls', true);
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the server certificate was not signed by a certificate authority in the given chain', () => {
+                        const ca = path.join(certificates, 'alternative-ca.pem');
+                        const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
+                        const uri = `mysqlx://${secureConfig.user}:${secureConfig.password}@${secureConfig.host}:${secureConfig.port}?ssl-mode=${tlsMode}&ssl-ca=${secureConfig.tls.ca}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => {
+                                return expect.fail();
+                            })
+                            .catch(err => {
+                                expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+                            });
+                    });
+
+                    it('succeeds if the server certificate was not revoked by a certificate authority in the given chain', () => {
+                        const ca = path.join(certificates, 'ca.pem');
+                        const crl = path.join(certificates, 'empty-crl.pem');
+                        const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
+                        const uri = `mysqlx://${secureConfig.user}:${secureConfig.password}@${secureConfig.host}:${secureConfig.port}?ssl-mode=${tlsMode}&ssl-ca=${secureConfig.tls.ca}&ssl-crl=${secureConfig.tls.crl}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(session => {
+                                expect(session.inspect()).to.have.property('tls', true);
+                                return session.close();
+                            });
+                    });
+
+                    it('fails if the server certificate was revoked by a certificate authority in the given chain', () => {
+                        const ca = path.join(certificates, 'ca.pem');
+                        const crl = path.join(certificates, 'crl.pem');
+                        const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
+                        const uri = `mysqlx://${secureConfig.user}:${secureConfig.password}@${secureConfig.host}:${secureConfig.port}?ssl-mode=${tlsMode}&ssl-ca=${secureConfig.tls.ca}&ssl-crl=${secureConfig.tls.crl}`;
+
+                        return mysqlx.getSession(uri)
+                            .then(() => {
+                                return expect.fail();
+                            })
+                            .catch(err => {
+                                expect(err.code).to.equal('CERT_REVOKED');
+                            });
+                    });
                 });
             });
         });
@@ -159,9 +301,29 @@ describe('connecting to the server using TLS certificates', () => {
                 const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
 
                 return mysqlx.getSession(secureConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+                    });
+            });
+
+            it('fails if the server identity custom verification is not successful', () => {
+                const ca = fs.readFileSync(path.join(certificates, 'ca.pem'));
+                const error = new Error('foobar');
+
+                // checkServerIdentity should not "throw" the error, but
+                // "return" it instead
+                const checkServerIdentity = () => { return error; };
+                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, checkServerIdentity } });
+
+                return mysqlx.getSession(secureConfig)
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        expect(err).to.deep.equal(error);
                     });
             });
 
@@ -183,7 +345,9 @@ describe('connecting to the server using TLS certificates', () => {
                 const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
 
                 return mysqlx.getSession(secureConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.code).to.equal('CERT_REVOKED');
                     });
@@ -207,9 +371,29 @@ describe('connecting to the server using TLS certificates', () => {
                 const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
 
                 return mysqlx.getSession(secureConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+                    });
+            });
+
+            it('fails if the server identity custom verification is not successful', () => {
+                const ca = fs.readFileSync(path.join(certificates, 'ca.pem'), { encoding: 'ascii' });
+                const error = new Error('foobar');
+
+                // checkServerIdentity should not "throw" the error, but
+                // "return" it instead
+                const checkServerIdentity = () => { return error; };
+                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, checkServerIdentity } });
+
+                return mysqlx.getSession(secureConfig)
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        expect(err).to.deep.equal(error);
                     });
             });
 
@@ -231,7 +415,9 @@ describe('connecting to the server using TLS certificates', () => {
                 const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
 
                 return mysqlx.getSession(secureConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.code).to.equal('CERT_REVOKED');
                     });
@@ -270,9 +456,32 @@ describe('connecting to the server using TLS certificates', () => {
                 const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
 
                 return mysqlx.getSession(secureConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+                    });
+            });
+
+            it('fails if the server identity custom verification is not successful', () => {
+                const ca = [
+                    fs.readFileSync(path.join(certificates, 'ca.pem')),
+                    fs.readFileSync(path.join(certificates, 'root-ca.pem'))
+                ];
+                const error = new Error('foobar');
+
+                // checkServerIdentity should not "throw" the error, but
+                // "return" it instead
+                const checkServerIdentity = () => { return error; };
+                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, checkServerIdentity } });
+
+                return mysqlx.getSession(secureConfig)
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        expect(err).to.deep.equal(error);
                     });
             });
 
@@ -310,7 +519,9 @@ describe('connecting to the server using TLS certificates', () => {
                 const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
 
                 return mysqlx.getSession(secureConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.code).to.equal('CERT_REVOKED');
                     });
@@ -342,9 +553,32 @@ describe('connecting to the server using TLS certificates', () => {
                 const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
 
                 return mysqlx.getSession(secureConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.code).to.equal('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
+                    });
+            });
+
+            it('fails if the server identity custom verification is not successful', () => {
+                const ca = [
+                    fs.readFileSync(path.join(certificates, 'ca.pem'), { encoding: 'ascii' }),
+                    fs.readFileSync(path.join(certificates, 'root-ca.pem'), { encoding: 'ascii' })
+                ];
+                const error = new Error('foobar');
+
+                // checkServerIdentity should not "throw" the error, but
+                // "return" it instead
+                const checkServerIdentity = () => { return error; };
+                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, checkServerIdentity } });
+
+                return mysqlx.getSession(secureConfig)
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        expect(err).to.deep.equal(error);
                     });
             });
 
@@ -382,9 +616,72 @@ describe('connecting to the server using TLS certificates', () => {
                 const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, crl } });
 
                 return mysqlx.getSession(secureConfig)
-                    .then(() => expect.fail())
+                    .then(() => {
+                        return expect.fail();
+                    })
                     .catch(err => {
                         expect(err.code).to.equal('CERT_REVOKED');
+                    });
+            });
+        });
+    });
+
+    context('with a server certificate with the wrong identity', () => {
+        // container name as defined in docker-compose.yml
+        const tlsCertificateConfig = { host: 'mysql-with-wrong-cert-identity' };
+        // directory containing the certificates
+        const certificates = path.join(__dirname, '..', '..', '..', 'fixtures', 'tls', 'client', 'root');
+
+        context('using a connection configuration object', () => {
+            it('succeeds if certificate identity verification is not explicitly enabled', () => {
+                const ca = path.join(certificates, 'ca.pem');
+                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
+
+                return mysqlx.getSession(secureConfig)
+                    .then(session => {
+                        expect(session.inspect()).to.have.property('tls', true);
+                        return session.close();
+                    });
+            });
+
+            it('fails if certificate identity verification is explicitly enabled', () => {
+                const ca = path.join(certificates, 'ca.pem');
+                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca, checkServerIdentity: true } });
+
+                return mysqlx.getSession(secureConfig)
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.code).to.equal('ERR_TLS_CERT_ALTNAME_INVALID');
+                    });
+            });
+        });
+
+        context('using a connection string', () => {
+            it('succeeds if certificate identity verification is not explicitly enabled', () => {
+                const ca = path.join(certificates, 'ca.pem');
+                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
+                const uri = `mysqlx://${secureConfig.user}:${secureConfig.password}@${secureConfig.host}:${secureConfig.port}?ssl-mode=VERIFY_CA&ssl-ca=${secureConfig.tls.ca}`;
+
+                return mysqlx.getSession(uri)
+                    .then(session => {
+                        expect(session.inspect()).to.have.property('tls', true);
+                        return session.close();
+                    });
+            });
+
+            it('fails if certificate identity verification is explicitly enabled', () => {
+                const ca = path.join(certificates, 'ca.pem');
+                const secureConfig = Object.assign({}, config, baseConfig, tlsCertificateConfig, { tls: { enabled: true, ca } });
+                const uri = `mysqlx://${secureConfig.user}:${secureConfig.password}@${secureConfig.host}:${secureConfig.port}?ssl-mode=VERIFY_IDENTITY&ssl-ca=${secureConfig.tls.ca}`;
+
+                return mysqlx.getSession(uri)
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.code).to.equal('ERR_TLS_CERT_ALTNAME_INVALID');
                     });
             });
         });

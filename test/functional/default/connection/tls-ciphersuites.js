@@ -111,18 +111,6 @@ describe('connecting with a list of ciphersuites', () => {
                     return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_CIPHERSUITE);
                 });
         });
-
-        it('fails if the connection is not using TLS', () => {
-            const tlsConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, ciphersuites: ['foo', 'bar'] } });
-
-            return mysqlx.getSession(tlsConfig)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
-                });
-        });
     });
 
     context('connection string', () => {
@@ -183,18 +171,6 @@ describe('connecting with a list of ciphersuites', () => {
                 })
                 .catch(err => {
                     return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SUPPORTED_TLS_CIPHERSUITE);
-                });
-        });
-
-        it('fails if the connection is not using TLS', () => {
-            const tlsConfig = Object.assign({}, config, baseConfig, { tls: { ciphersuites: ['foo', 'bar'] } });
-
-            return mysqlx.getSession(`mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}/${tlsConfig.schema}?ssl-mode=DISABLED&tls-ciphersuites=[${tlsConfig.tls.ciphersuites.join(',')}]`)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
                 });
         });
     });

@@ -84,18 +84,6 @@ describe('connection failures', () => {
             });
 
             context('when the connection options are specified with a configuration object', () => {
-                it('fails when TLS is disabled and additional TLS options are provided', () => {
-                    const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { enabled: false, ca: '/path/to/ca.pem' } });
-
-                    return mysqlx.getSession(invalidTLSConfig)
-                        .then(() => {
-                            return expect.fail();
-                        })
-                        .catch(err => {
-                            return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
-                        });
-                });
-
                 it('fails when the path to the CA file is badly specified', () => {
                     const invalidTLSConfig = Object.assign({}, config, baseConfig, failureConfig, { tls: { ca: false } });
 
@@ -367,16 +355,31 @@ describe('connection failures', () => {
             });
 
             context('when the connection options are specified with a connection string', () => {
-                it('fails when TLS is disabled and additional TLS options are provided', () => {
-                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, versions: ['TLSv1.2', 'TLSv1.3'] } });
-                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-mode=DISABLED&tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]}`;
+                it('fails when certificate authority verification is enabled but the path to the certificate authority file is not provided', () => {
+                    const tlsMode = 'VERIFY_CA';
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { enabled: true } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-mode=${tlsMode}`;
 
                     return mysqlx.getSession(uri)
                         .then(() => {
                             return expect.fail();
                         })
                         .catch(err => {
-                            expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_CERTIFICATE_AUTHORITY_REQUIRED, tlsMode));
+                        });
+                });
+
+                it('fails when hostname verification is enabled but the path to the certificate authority file is not provided', () => {
+                    const tlsMode = 'VERIFY_IDENTITY';
+                    const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { enabled: true } });
+                    const uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-mode=${tlsMode}`;
+
+                    return mysqlx.getSession(uri)
+                        .then(() => {
+                            return expect.fail();
+                        })
+                        .catch(err => {
+                            return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_CERTIFICATE_AUTHORITY_REQUIRED, tlsMode));
                         });
                 });
 
@@ -633,18 +636,6 @@ describe('connection failures', () => {
             });
 
             context('when the connection options are specified with a configuration object', () => {
-                it('throws an error when TLS is disabled and additional TLS options are provided', () => {
-                    let invalidTLSConfig = { tls: { enabled: false, versions: ['TLSv1.2', 'TLSv1.3'] } };
-
-                    expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
-
-                    invalidTLSConfig = { tls: { enabled: false, ca: '/path/to/ca.pem' } };
-
-                    expect(() => mysqlx.getClient(invalidTLSConfig))
-                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
-                });
-
                 it('throws an error when the path to the CA file is badly specified', () => {
                     let invalidTLSConfig = { tls: { ca: false } };
 
@@ -832,20 +823,6 @@ describe('connection failures', () => {
             });
 
             context('when the connection options are specified with a connection string', () => {
-                it('throws an error when TLS is disabled and additional TLS options are provided', () => {
-                    let invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, versions: ['TLSv1.2', 'TLSv1.3'] } });
-                    let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-mode=DISABLED&tls-versions=[${invalidTLSConfig.tls.versions.join(',')}]}`;
-
-                    expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
-
-                    invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, ca: '/path/to/ca.pem' } });
-                    uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?ssl-mode=DISABLED&ssl-ca=${encodeURIComponent('/path/to/ca.pem')}`;
-
-                    expect(() => mysqlx.getClient(uri))
-                        .to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TLS_OPTIONS);
-                });
-
                 it('throws an error when the list of TLS versions is badly specified', () => {
                     const invalidTLSConfig = Object.assign({}, config, baseConfig, { tls: { versions: {} } });
                     let uri = `mysqlx://${invalidTLSConfig.user}:${invalidTLSConfig.password}@${invalidTLSConfig.host}:${invalidTLSConfig.port}?tls-versions=${JSON.stringify(invalidTLSConfig.tls.versions)}`;
