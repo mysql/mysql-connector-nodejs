@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -166,10 +166,16 @@ describe('Mysqlx.Datatypes.Scalar wrapper', () => {
 
             it('creates a wrapper of Mysqlx.Datatypes.Scalar.Type.V_STRING for Date instances', () => {
                 const now = new Date();
+                const dateString = now.toJSON();
                 const proto = scalar.create(now).valueOf();
 
                 expect(proto.getType()).to.equal(ScalarStub.Type.V_STRING);
-                expect(Buffer.from(proto.getVString().getValue()).toString()).to.equal(now.toJSON());
+                // MySQL does not support the Zulu Time indicator used in the
+                // ISO 8601 convention for Date instances.
+                // 'Z' should be replaced by '+00:00' which has similar
+                // meaning.
+                const supportedDateString = dateString.substring(0, dateString.length - 1).concat('+00:00');
+                expect(Buffer.from(proto.getVString().getValue()).toString()).to.equal(supportedDateString);
             });
 
             it('creates a wrapper of Mysqlx.Datatypes.Scalar.Type.V_STRING for strings', () => {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -228,11 +228,12 @@ describe('adding documents to a collection', () => {
 
     context('BUG#29179767 JavaScript Date converted to empty object', () => {
         it('saves a JavaScript Date as a valid JSON value', () => {
-            const now = new Date();
-            const expected = [{ createdAt: now.toJSON() }];
+            const now = (new Date()).toJSON();
+            const createdAt = now.substring(0, now.length - 1).concat('+00:00');
+            const expected = [{ createdAt }];
             const actual = [];
 
-            return collection.add({ name: 'foo', createdAt: now })
+            return collection.add({ name: 'foo', createdAt })
                 .execute()
                 .then(() => {
                     return collection.find('name = :name')

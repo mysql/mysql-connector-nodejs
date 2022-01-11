@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -168,6 +168,20 @@ describe('collection indexes', () => {
                 .then(actual => expect(actual).to.be.true)
                 .then(() => fixtures.getTableIndex(session, schema.getName(), collection.getName(), name))
                 .then(actual => expect(actual).to.deep.equal(expected));
+        });
+    });
+
+    context('BUG#33740190 collection DATETIME index', () => {
+        it('works with a document field containing a JavaScript Date instance', () => {
+            const field = '$.createdAt';
+            const name = 'createdAt_idx';
+            const definition = { fields: [{ field, type: 'DATETIME' }] };
+
+            return collection.add({ name: 'foo', createdAt: new Date() })
+                .execute()
+                .then(() => {
+                    return collection.createIndex(name, definition);
+                });
         });
     });
 });

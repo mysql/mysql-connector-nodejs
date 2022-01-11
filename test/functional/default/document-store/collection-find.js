@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -518,11 +518,12 @@ describe('finding documents in collections', () => {
         });
 
         it('does not fail when a placeholder is assigned a JavaScript Date instance', () => {
-            const expected = [{ _id: '1', name: 'foo', updatedAt: now.toJSON() }];
+            const updatedAt = now.toJSON().substring(0, now.toJSON().length - 1).concat('+00:00');
+            const expected = [{ _id: '1', name: 'foo', updatedAt }];
             const actual = [];
 
             return collection.find('updatedAt = :date')
-                .bind('date', now)
+                .bind('date', updatedAt)
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
         });

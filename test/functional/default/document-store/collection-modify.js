@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -513,13 +513,14 @@ describe('modifying documents in a collection', () => {
         });
 
         it('updates a single field using a valid JSON value from a JavaScript Date object', () => {
-            const now = new Date();
-            const expected = [{ createdAt: now.toJSON() }];
+            const now = (new Date()).toJSON();
+            const createdAt = now.substring(0, now.length - 1).concat('+00:00');
+            const expected = [{ createdAt }];
             const actual = [];
 
             return collection.modify('_id = :id')
                 .bind('id', '1')
-                .set('createdAt', now)
+                .set('createdAt', createdAt)
                 .execute()
                 .then(() => {
                     return collection.find('_id = :id')
@@ -533,13 +534,14 @@ describe('modifying documents in a collection', () => {
         });
 
         it('updates a multiple fields using valid JSON values from JavaScript Date objects', () => {
-            const now = new Date();
-            const expected = [{ createdAt: now.toJSON(), updatedAt: now.toJSON() }];
+            const now = (new Date()).toJSON();
+            const utcDateString = now.substring(0, now.length - 1).concat('+00:00');
+            const expected = [{ createdAt: utcDateString, updatedAt: utcDateString }];
             const actual = [];
 
             return collection.modify('_id = :id')
                 .bind('id', '1')
-                .patch({ createdAt: now, updatedAt: now })
+                .patch({ createdAt: utcDateString, updatedAt: utcDateString })
                 .execute()
                 .then(() => {
                     return collection.find('_id = :id')
