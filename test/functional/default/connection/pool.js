@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -657,6 +657,24 @@ describe('connection pool', () => {
                     return pool.close();
                 });
         });
+
+        it('queued connection requests are not fullfilled', () => {
+            const poolingConfig = Object.assign({}, config, baseConfig);
+            const pool = mysqlx.getClient(poolingConfig, { pooling: { maxSize: 2 } });
+
+            return Promise.all([pool.getSession(), pool.getSession()])
+                .then(() => {
+                    return new Promise(resolve => {
+                        // We need to ensure the test only finishes after the
+                        // queued connection request is processed.
+                        pool.getSession().then(resolve);
+                        pool.close();
+                    });
+                })
+                .then(session => {
+                    return expect(session).to.not.exist;
+                });
+        });
     });
 
     context('when acquiring connections in parallel', () => {
@@ -675,6 +693,7 @@ describe('connection pool', () => {
             const maxSize = totalRequestsInQueue / 2;
             const queueTimeout = 500;
             const pool = mysqlx.getClient(poolingConfig, { pooling: { enabled: true, maxSize, queueTimeout } });
+            const connections = [...Array(totalRequestsInQueue)];
 
             const connectAndWaitBeforeClose = () => {
                 return pool.getSession()
@@ -691,9 +710,7 @@ describe('connection pool', () => {
                     });
             };
 
-            const work = [...Array(totalRequestsInQueue)].map(() => connectAndWaitBeforeClose());
-
-            return Promise.all(work)
+            return Promise.all(connections.map(() => connectAndWaitBeforeClose()))
                 .then(() => {
                     return pool.close();
                 });
@@ -704,6 +721,7 @@ describe('connection pool', () => {
             const maxSize = totalRequestsInQueue / 2;
             const queueTimeout = 500;
             const pool = mysqlx.getClient(poolingConfig, { pooling: { enabled: true, maxSize, queueTimeout } });
+            const connections = [...Array(totalRequestsInQueue)];
             const error = `Could not retrieve a connection from the pool. Timeout of ${queueTimeout} ms was exceeded.`;
 
             const connectAndWaitBeforeClose = () => {
@@ -721,9 +739,7 @@ describe('connection pool', () => {
                     });
             };
 
-            const work = [...Array(totalRequestsInQueue)].map(() => connectAndWaitBeforeClose());
-
-            return Promise.all(work)
+            return Promise.all(connections.map(() => connectAndWaitBeforeClose()))
                 .then(() => {
                     return expect.fail();
                 })
@@ -796,6 +812,55 @@ describe('connection pool', () => {
                 .catch(err => {
                     expect(err.message).to.equal(error);
                     return pool.close();
+                });
+        });
+    });
+
+    context('when the pool has been closed', () => {
+        it('fulfills new connection requests', () => {
+            const poolingConfig = Object.assign({}, config, baseConfig);
+            const pool = mysqlx.getClient(poolingConfig, { pooling: { maxSize: 2 } });
+
+            return Promise.all([pool.getSession(), pool.getSession()])
+                .then(() => {
+                    return pool.close();
+                })
+                .then(() => {
+                    return pool.getSession();
+                })
+                .then(session => {
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(session).to.exist;
+                    return pool.close();
+                });
+        });
+
+        it('queued connection requests are not fullfilled', () => {
+            const poolingConfig = Object.assign({}, config, baseConfig);
+            const pool = mysqlx.getClient(poolingConfig, { pooling: { maxSize: 2 } });
+
+            return Promise.all([pool.getSession(), pool.getSession()])
+                .then(() => {
+                    return new Promise(resolve => {
+                        // We need to ensure the test only finishes after the
+                        // queued connection request is processed.
+                        pool.getSession().then(resolve);
+                        pool.close();
+                    });
+                })
+                .then(() => {
+                    return Promise.all([pool.getSession(), pool.getSession()]);
+                })
+                .then(() => {
+                    return new Promise(resolve => {
+                        // We need to ensure the test only finishes after the
+                        // queued connection request is processed.
+                        pool.getSession().then(resolve);
+                        pool.close();
+                    });
+                })
+                .then(session => {
+                    return expect(session).to.not.exist;
                 });
         });
     });

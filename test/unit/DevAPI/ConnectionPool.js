@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -111,17 +111,29 @@ describe('ConnectionPool', () => {
                     return expect(td.explain(reset).callCount).to.equal(1);
                 });
         });
+
+        it('makes the pool instance unvailable for future use', () => {
+            const pool = connectionPool().create({ active: [{ destroy }] });
+
+            return pool.destroy()
+                .then(() => {
+                    // eslint-disable-next-line no-unused-expressions
+                    expect(pool.isAvailable()).to.be.false;
+                });
+        });
     });
 
     context('getConnection()', () => {
-        let acquire, connection, isClosing, isExpired, isOpen, override;
+        let acquire, connection, destroy, isClosing, isExpired, isOpen, open, override;
 
         beforeEach('create fakes', () => {
             acquire = td.function();
             connection = td.function();
+            destroy = td.function();
             isClosing = td.function();
             isExpired = td.function();
             isOpen = td.function();
+            open = td.function();
             override = td.function();
 
             td.replace('../../../lib/DevAPI/PoolConnection', connection);
@@ -132,9 +144,11 @@ describe('ConnectionPool', () => {
         it('fails if queueTimeout was exceeded', done => {
             const queueTimeout = 5000;
             const pool = connectionPool({ pooling: { maxSize: 3, queueTimeout } }).create({ active: ['foo', 'bar', 'baz'] });
+            const isAvailable = td.replace(pool, 'isAvailable');
             const update = td.replace(pool, 'update');
 
             td.when(update()).thenResolve();
+            td.when(isAvailable()).thenReturn(true);
 
             // We need to travel in time only after calling
             // pool.getConnection(), otherwise, Date.now() will also be in the
@@ -154,9 +168,11 @@ describe('ConnectionPool', () => {
         it('acquires and returns an idle connection if one exists and no expired ones exist', () => {
             const poolConnection = { acquire, isClosing, isExpired, isOpen, override };
             const pool = connectionPool({ pooling: { maxSize: 3 } }).create({ active: ['foo'], idle: [poolConnection] });
+            const isAvailable = td.replace(pool, 'isAvailable');
             const update = td.replace(pool, 'update');
 
             td.when(update()).thenResolve();
+            td.when(isAvailable()).thenReturn(true);
             td.when(isClosing()).thenReturn(false);
             td.when(isOpen()).thenReturn(true);
             td.when(isExpired()).thenReturn(false);
@@ -175,9 +191,11 @@ describe('ConnectionPool', () => {
         it('acquires and returns an idle connection if one exists and expired ones exist', () => {
             const poolConnection = { acquire, isClosing, isExpired, isOpen, override };
             const pool = connectionPool({ pooling: { maxSize: 3 } }).create({ active: ['foo'], idle: [poolConnection], expired: ['bar'] });
+            const isAvailable = td.replace(pool, 'isAvailable');
             const update = td.replace(pool, 'update');
 
             td.when(update()).thenResolve();
+            td.when(isAvailable()).thenReturn(true);
             td.when(isClosing()).thenReturn(false);
             td.when(isOpen()).thenReturn(true);
             td.when(isExpired()).thenReturn(false);
@@ -194,14 +212,15 @@ describe('ConnectionPool', () => {
         });
 
         it('acquires and returns a refurbished connection if one exists and no idle ones exist but expired ones exist', () => {
-            const open = td.function();
             const expiredConnection = { isClosing, isExpired, isOpen, open };
             const options = { foo: 'bar', pooling: { maxSize: 3 } };
             const pool = connectionPool(options).create({ active: ['baz'], idle: [], expired: [expiredConnection] });
+            const isAvailable = td.replace(pool, 'isAvailable');
             const update = td.replace(pool, 'update');
             const poolConnection = { acquire };
 
             td.when(update()).thenResolve();
+            td.when(isAvailable()).thenReturn(true);
             td.when(isClosing()).thenReturn(false);
             td.when(isOpen()).thenReturn(true);
             td.when(isExpired()).thenReturn(true);
@@ -218,14 +237,15 @@ describe('ConnectionPool', () => {
         });
 
         it('acquires and returns a refurbished connection if all idle ones have expired', () => {
-            const open = td.function();
             const expiredConnection = { isClosing, isExpired, isOpen, open };
             const options = { foo: 'bar', pooling: { maxSize: 3 } };
             const pool = connectionPool(options).create({ active: ['baz'], idle: [expiredConnection] });
+            const isAvailable = td.replace(pool, 'isAvailable');
             const update = td.replace(pool, 'update');
             const poolConnection = { acquire };
 
             td.when(update()).thenResolve();
+            td.when(isAvailable()).thenReturn(true);
             td.when(isClosing()).thenReturn(false);
             td.when(isOpen()).thenReturn(true);
             td.when(isExpired()).thenReturn(true);
@@ -244,11 +264,12 @@ describe('ConnectionPool', () => {
         it('acquires and returns a new connection if neither idle nor expired ones exist', () => {
             const options = { foo: 'bar', pooling: { maxSize: 3 } };
             const pool = connectionPool(options).create({ active: ['baz'], idle: [], expired: [] });
+            const isAvailable = td.replace(pool, 'isAvailable');
             const update = td.replace(pool, 'update');
-            const open = td.function();
             const poolConnection = { acquire };
 
             td.when(update()).thenResolve();
+            td.when(isAvailable()).thenReturn(true);
             td.when(connection(options)).thenReturn({ open });
             td.when(open()).thenResolve(poolConnection);
 
@@ -264,11 +285,12 @@ describe('ConnectionPool', () => {
             const queueTimeout = 1000;
             const options = { pooling: { maxSize: 3, queueTimeout } };
             const pool = connectionPool(options).create({ active: ['foo', 'bar', 'baz'] });
+            const isAvailable = td.replace(pool, 'isAvailable');
             const update = td.replace(pool, 'update');
-            const open = td.function();
             const poolConnection = { acquire };
 
             td.when(update()).thenResolve();
+            td.when(isAvailable()).thenReturn(true);
             td.when(connection(options)).thenReturn({ open });
             td.when(open()).thenResolve(poolConnection);
 
@@ -292,11 +314,12 @@ describe('ConnectionPool', () => {
             const queueTimeout = 1000;
             const options = { pooling: { maxSize: 3, queueTimeout } };
             const pool = connectionPool(options).create({ active: ['foo', 'bar'], expired: [{ isClosing }] });
+            const isAvailable = td.replace(pool, 'isAvailable');
             const update = td.replace(pool, 'update');
-            const open = td.function();
             const poolConnection = { acquire };
 
             td.when(update()).thenResolve();
+            td.when(isAvailable()).thenReturn(true);
             td.when(isClosing()).thenReturn(true);
             td.when(connection(options)).thenReturn({ open });
             td.when(open()).thenResolve(poolConnection);
@@ -314,6 +337,75 @@ describe('ConnectionPool', () => {
 
             tk.travel(new Date(Date.now() + queueTimeout / 10 + 1));
         });
+
+        it('does not re-use any connection when the pool is not available', () => {
+            const options = { pooling: { maxSize: 2, queueTimeout: 0 } };
+            const poolConnection = { destroy, override };
+            const pool = connectionPool(options).create({ idle: [poolConnection, poolConnection] });
+            const isAvailable = td.replace(pool, 'isAvailable');
+            const update = td.replace(pool, 'update');
+
+            td.when(update()).thenResolve();
+            td.when(isAvailable()).thenReturn(false);
+
+            return pool.getConnection()
+                .then(() => {
+                    expect(td.explain(override).callCount).to.equal(0);
+                });
+        });
+
+        it('does not refurbish any connection when the pool is not available', () => {
+            const options = { pooling: { maxSize: 2, queueTimeout: 0 } };
+            const poolConnection = { destroy, open };
+            const pool = connectionPool(options).create({ expired: [poolConnection, poolConnection] });
+            const isAvailable = td.replace(pool, 'isAvailable');
+            const update = td.replace(pool, 'update');
+
+            td.when(update()).thenResolve();
+            td.when(isAvailable()).thenReturn(false);
+
+            return pool.getConnection()
+                .then(() => {
+                    expect(td.explain(open).callCount).to.equal(0);
+                });
+        });
+
+        it('does not create new connections when the pool is not available', () => {
+            const options = { pooling: { maxSize: 2, queueTimeout: 0 } };
+            const pool = connectionPool(options).create();
+            const isAvailable = td.replace(pool, 'isAvailable');
+
+            td.when(isAvailable()).thenReturn(false);
+            td.when(connection(options)).thenReturn({ open });
+            td.when(open()).thenResolve({ acquire });
+
+            return Promise.all([pool.getConnection(), pool.destroy()])
+                .then(() => {
+                    expect(td.explain(open).callCount).to.equal(0);
+                });
+        });
+    });
+
+    context('isAvailable()', () => {
+        let destroy;
+
+        beforeEach('create fakes', () => {
+            destroy = td.function();
+        });
+
+        it('checks if the pool is available to fulfill connection requests', done => {
+            const poolConnection = { destroy };
+            const pool = connectionPool({ pooling: { maxSize: 2 } }).create({ active: [poolConnection, poolConnection] });
+
+            // eslint-disable-next-line no-unused-expressions
+            expect(pool.isAvailable()).to.be.true;
+
+            // We need to check the state before the pool is effectively
+            // closed.
+            pool.destroy().then(() => done());
+            // eslint-disable-next-line no-unused-expressions
+            expect(pool.isAvailable()).to.be.false;
+        });
     });
 
     context('isFull()', () => {
@@ -328,14 +420,15 @@ describe('ConnectionPool', () => {
     });
 
     context('reset()', () => {
-        it('clears the state of the pool by cleaning up the internal connection lists', () => {
+        it('resets the internal state of the pool', () => {
             const pool = connectionPool().create({ active: ['foo', 'bar'], idle: ['baz', 'qux'], expired: ['qux'] }).reset();
 
             /* eslint-disable no-unused-expressions */
             expect(pool.activeConnections()).to.be.an('array').and.be.empty;
             expect(pool.idleConnections()).to.be.an('array').and.be.empty;
+            expect(pool.expiredConnections()).to.be.an('array').and.be.empty;
             /* elint-enable no-unused-expressions */
-            return expect(pool.expiredConnections()).to.be.an('array').and.be.empty;
+            return expect(pool.isAvailable()).to.be.false;
         });
     });
 

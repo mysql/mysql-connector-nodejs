@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -87,6 +87,21 @@ describe('DevAPI Client', () => {
             return client(options).getSession()
                 .then(res => {
                     expect(res).to.equal('qux');
+                });
+        });
+
+        it('does not create a session if the pool is not able to return a valid connection', () => {
+            const options = { foo: 'bar', pooling: { enabled: true } };
+            const create = td.function();
+            const getConnection = td.function();
+
+            td.when(pool(options)).thenReturn({ create });
+            td.when(create()).thenReturn({ getConnection });
+            td.when(getConnection()).thenResolve('baz');
+
+            return client(options).getSession()
+                .then(res => {
+                    return expect(res).to.not.exist;
                 });
         });
     });
