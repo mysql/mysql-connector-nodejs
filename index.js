@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -162,8 +162,8 @@ exports.getVersion = function () {
 
 /**
  * Database entity types.
- * @name Mode
- * @type {Query~DataModel}
+ * @const
+ * @type {Query.DataModel}
  * @example
  * mysqlx.Mode.TABLE
  * mysqlx.Mode.DOCUMENT
@@ -172,8 +172,8 @@ exports.Mode = query.Type;
 
 /**
  * Locking modes.
- * @name LockContention
- * @type {Locking~LockContention}
+ * @const
+ * @type {Locking.LockContention}
  * @example
  * mysqlx.LockContention.DEFAULT
  * mysqlx.LockContention.NOWAIT
@@ -183,7 +183,8 @@ exports.LockContention = locking.LockContention;
 
 /**
  * Schema validation.
- * @name Schema
+ * @const
+ * @property {module:Schema.ValidationLevel} ValidationLevel
  * @example
  * mysqlx.Schema.ValidationLevel.OFF
  * mysqlx.Schema.ValidationLevel.STRICT
