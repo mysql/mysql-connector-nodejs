@@ -35,7 +35,6 @@
 const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const td = require('testdouble');
-const tk = require('timekeeper');
 const util = require('util');
 
 // subject under test needs to be reloaded with replacement fakes
@@ -44,7 +43,6 @@ let connectionPool = require('../../../lib/DevAPI/ConnectionPool');
 describe('ConnectionPool', () => {
     afterEach('reset fakes', () => {
         td.reset();
-        tk.reset();
     });
 
     context('create()', () => {
@@ -139,30 +137,6 @@ describe('ConnectionPool', () => {
             td.replace('../../../lib/DevAPI/PoolConnection', connection);
 
             connectionPool = require('../../../lib/DevAPI/ConnectionPool');
-        });
-
-        it('fails if queueTimeout was exceeded', done => {
-            const queueTimeout = 5000;
-            const pool = connectionPool({ pooling: { maxSize: 3, queueTimeout } }).create({ active: ['foo', 'bar', 'baz'] });
-            const isAvailable = td.replace(pool, 'isAvailable');
-            const update = td.replace(pool, 'update');
-
-            td.when(update()).thenResolve();
-            td.when(isAvailable()).thenReturn(true);
-
-            // We need to travel in time only after calling
-            // pool.getConnection(), otherwise, Date.now() will also be in the
-            // future.
-            pool.getConnection()
-                .then(() => {
-                    done(expect.fail());
-                })
-                .catch(err => {
-                    expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_POOL_QUEUE_TIMEOUT, queueTimeout));
-                    done();
-                });
-
-            tk.travel(new Date(Date.now() + queueTimeout + 1));
         });
 
         it('acquires and returns an idle connection if one exists and no expired ones exist', () => {
@@ -281,61 +255,109 @@ describe('ConnectionPool', () => {
                 });
         });
 
-        it('queues the request when the pool is full and queueTimeout was not exceeded', done => {
-            const queueTimeout = 1000;
-            const options = { pooling: { maxSize: 3, queueTimeout } };
-            const pool = connectionPool(options).create({ active: ['foo', 'bar', 'baz'] });
-            const isAvailable = td.replace(pool, 'isAvailable');
-            const update = td.replace(pool, 'update');
-            const poolConnection = { acquire };
+        context('when the pool is full', () => {
+            let system;
 
-            td.when(update()).thenResolve();
-            td.when(isAvailable()).thenReturn(true);
-            td.when(connection(options)).thenReturn({ open });
-            td.when(open()).thenResolve(poolConnection);
+            beforeEach('setup fake time', () => {
+                system = td.replace('../../../lib/system');
 
-            // We need to travel in time only after calling
-            // pool.getConnection(), otherwise, Date.now() will also be in the
-            // future.
-            pool.getConnection().then(con => {
-                expect(td.explain(acquire).callCount).to.equal(1);
-                expect(pool.activeConnections()).to.deep.include(con);
-                expect(con).to.deep.equal(poolConnection);
-
-                return done();
+                connectionPool = require('../../../lib/DevAPI/ConnectionPool');
             });
 
-            tk.travel(new Date(Date.now() + queueTimeout / 10 + 1));
-            // We reset the pool after queueTimeout / 10.
-            setTimeout(() => pool.reset(), queueTimeout / 10);
-        });
+            it('queues the request if queueTimeout was not exceeded', done => {
+                const queueTimeout = 1000;
+                const options = { pooling: { maxSize: 3, queueTimeout } };
+                const pool = connectionPool(options).create({ active: ['foo', 'bar', 'baz'] });
+                const isAvailable = td.replace(pool, 'isAvailable');
+                const update = td.replace(pool, 'update');
+                const poolConnection = { acquire };
+                const now = Date.now();
 
-        it('queues the request when an an expired connection is available but is still being closed and queueTimeout was not exceeded', done => {
-            const queueTimeout = 1000;
-            const options = { pooling: { maxSize: 3, queueTimeout } };
-            const pool = connectionPool(options).create({ active: ['foo', 'bar'], expired: [{ isClosing }] });
-            const isAvailable = td.replace(pool, 'isAvailable');
-            const update = td.replace(pool, 'update');
-            const poolConnection = { acquire };
+                // The last time it is called, system.time() should return a time
+                // after queueTimeout.
+                td.when(system.time()).thenReturn(now + queueTimeout / 10 + 1);
+                // The first time it is called, system.time() should return the
+                // initial time.
+                td.when(system.time(), { times: 1 }).thenReturn(now);
+                td.when(update()).thenResolve();
+                td.when(isAvailable()).thenReturn(true);
+                td.when(connection(options)).thenReturn({ open });
+                td.when(open()).thenResolve(poolConnection);
 
-            td.when(update()).thenResolve();
-            td.when(isAvailable()).thenReturn(true);
-            td.when(isClosing()).thenReturn(true);
-            td.when(connection(options)).thenReturn({ open });
-            td.when(open()).thenResolve(poolConnection);
+                // We need to travel in time only after calling
+                // pool.getConnection(), otherwise, Date.now() will also be in the
+                // future.
+                pool.getConnection().then(con => {
+                    expect(td.explain(acquire).callCount).to.equal(1);
+                    expect(pool.activeConnections()).to.deep.include(con);
+                    expect(con).to.deep.equal(poolConnection);
 
-            // We need to travel in time only after calling
-            // pool.getConnection(), otherwise, Date.now() will also be in the
-            // future.
-            pool.getConnection().then(con => {
-                expect(td.explain(acquire).callCount).to.equal(1);
-                expect(pool.activeConnections()).to.deep.include(con);
-                expect(con).to.deep.equal(poolConnection);
+                    return done();
+                });
 
-                return done();
+                // We reset the pool after queueTimeout / 10.
+                setTimeout(() => pool.reset(), queueTimeout / 10);
             });
 
-            tk.travel(new Date(Date.now() + queueTimeout / 10 + 1));
+            it('queues the request when an an expired connection is available but is still being closed and queueTimeout was not exceeded', () => {
+                const queueTimeout = 1000;
+                const options = { pooling: { maxSize: 3, queueTimeout } };
+                const pool = connectionPool(options).create({ active: ['foo', 'bar'], expired: [{ isClosing }] });
+                const isAvailable = td.replace(pool, 'isAvailable');
+                const update = td.replace(pool, 'update');
+                const poolConnection = { acquire };
+                const now = Date.now();
+
+                // The last time it is called, system.time() should return a time
+                // after queueTimeout.
+                td.when(system.time()).thenReturn(now + queueTimeout / 10 + 1);
+                // The first time it is called, system.time() should return the
+                // initial time.
+                td.when(system.time(), { times: 1 }).thenReturn(now);
+                td.when(update()).thenResolve();
+                td.when(isAvailable()).thenReturn(true);
+                td.when(isClosing()).thenReturn(true);
+                td.when(connection(options)).thenReturn({ open });
+                td.when(open()).thenResolve(poolConnection);
+
+                // We need to travel in time only after calling
+                // pool.getConnection(), otherwise, Date.now() will also be in the
+                // future.
+                return pool.getConnection()
+                    .then(con => {
+                        expect(td.explain(acquire).callCount).to.equal(1);
+                        expect(pool.activeConnections()).to.deep.include(con);
+                        return expect(con).to.deep.equal(poolConnection);
+                    });
+            });
+
+            it('fails when queueTimeout is exceeded', () => {
+                const queueTimeout = 5000;
+                const pool = connectionPool({ pooling: { maxSize: 3, queueTimeout } }).create({ active: ['foo', 'bar', 'baz'] });
+                const isAvailable = td.replace(pool, 'isAvailable');
+                const update = td.replace(pool, 'update');
+                const now = Date.now();
+
+                // The last time it is called, system.time() should return a time
+                // after queueTimeout.
+                td.when(system.time()).thenReturn(now + queueTimeout + 1);
+                // The first time it is called, system.time() should return the
+                // initial time.
+                td.when(system.time(), { times: 1 }).thenReturn(now);
+                td.when(update()).thenResolve();
+                td.when(isAvailable()).thenReturn(true);
+
+                // We need to travel in time only after calling
+                // pool.getConnection(), otherwise, Date.now() will also be in the
+                // future.
+                return pool.getConnection()
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_POOL_QUEUE_TIMEOUT, queueTimeout));
+                    });
+            });
         });
 
         it('does not re-use any connection when the pool is not available', () => {

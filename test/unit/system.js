@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -125,6 +125,24 @@ describe('system details', () => {
             td.when(os.arch()).thenReturn('arm');
 
             expect(system.platform()).to.equal('ARM');
+        });
+    });
+
+    context('time()', () => {
+        let now;
+
+        beforeEach('setup fake time', () => {
+            now = td.replace(Date, 'now');
+
+            system = require('../../lib/system');
+        });
+
+        it('returns current system time in milliseconds elapsed since the Unix epoch', () => {
+            const time = 1;
+
+            td.when(now()).thenReturn(time);
+
+            return expect(system.time()).to.equal(time);
         });
     });
 });

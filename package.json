@@ -71,8 +71,7 @@
     "nyc": "15.1.0",
     "snazzy": "9.0.0",
     "standardx": "7.0.0",
-    "testdouble": "3.16.1",
-    "timekeeper": "2.2.0"
+    "testdouble": "3.16.1"
   },
   "nyc": {
     "branches": 75,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -34,7 +34,6 @@
 
 const expect = require('chai').expect;
 const td = require('testdouble');
-const tk = require('timekeeper');
 
 // subject under test needs to be reloaded with replacement fakes
 let poolConnection = require('../../../lib/DevAPI/PoolConnection');
@@ -48,6 +47,10 @@ describe('X DevAPI Pool Connection', () => {
         td.replace('../../../lib/DevAPI/Connection', connection);
 
         poolConnection = require('../../../lib/DevAPI/PoolConnection');
+    });
+
+    afterEach('reset fakes', () => {
+        td.reset();
     });
 
     context('mixins', () => {
@@ -83,44 +86,52 @@ describe('X DevAPI Pool Connection', () => {
     });
 
     context('isExpired()', () => {
+        let system;
+
+        beforeEach('setup fake time', () => {
+            system = td.replace('../../../lib/system');
+
+            poolConnection = require('../../../lib/DevAPI/PoolConnection');
+        });
+
         it('checks if an idle connection has exceeded maxIdleTime', () => {
             const maxIdleTime = 2000;
             const con = poolConnection({ pooling: { maxIdleTime } });
+            const now = Date.now();
+
+            // maxIdleTime should be exceeded when we check if the connection
+            // is idle.
+            td.when(system.time()).thenReturn(now + maxIdleTime + 100);
+            // Potential time after the connection is released.
+            // Determined by the close() call.
+            td.when(system.time(), { times: 1 }).thenReturn(now);
 
             // eslint-disable-next-line no-unused-expressions
             expect(con.isExpired()).to.be.false;
 
             return con.close()
                 .then(() => {
-                    // We need to make sure that maxIdleTime is exceeded.
-                    tk.travel(new Date(Date.now() + maxIdleTime + 100));
                     return expect(con.isExpired()).to.be.true;
                 });
         });
 
         it('does not check if a connection has expired when it is active', () => {
-            const maxIdleTime = 2000;
-            const con = poolConnection({ pooling: { maxIdleTime } }).acquire();
-
-            // No matter how much time it passes, the connection will
-            // never expire, but we check it anyway.
-            tk.travel(new Date(Date.now() + maxIdleTime + 100));
-
-            return expect(con.isExpired()).to.be.false;
+            return expect(poolConnection({ pooling: { maxIdleTime: 2000 } }).acquire().isExpired()).to.be.false;
         });
 
         it('does not check if a connection has expired when maxIdleTime is infinite', () => {
             const maxIdleTime = 0;
             const con = poolConnection({ pooling: { maxIdleTime } });
 
+            // Potential time after the connection is released.
+            // Determined by the close() call.
+            td.when(system.time()).thenReturn(Date.now());
+
             // eslint-disable-next-line no-unused-expressions
             expect(con.isExpired()).to.be.false;
 
             return con.close()
                 .then(() => {
-                    // No matter how much time it passes, the connection will
-                    // never expire, but we check it anyway.
-                    tk.travel(new Date(Date.now() + maxIdleTime + 100));
                     return expect(con.isExpired()).to.be.false;
                 });
         });
@@ -133,9 +144,21 @@ describe('X DevAPI Pool Connection', () => {
     });
 
     context('isIdle()', () => {
+        let system;
+
+        beforeEach('setup fake time', () => {
+            system = td.replace('../../../lib/system');
+
+            poolConnection = require('../../../lib/DevAPI/PoolConnection');
+        });
+
         it('checks if a connection is idle', () => {
             const maxIdleTime = 2000;
             const con = poolConnection({ pooling: { maxIdleTime } });
+
+            // maxIdleTime should be exceeded when we check if a potential
+            // expired connection is idle.
+            td.when(system.time()).thenReturn(Date.now() + maxIdleTime + 100);
 
             // Fresh connections are never idle.
             // eslint-disable-next-line no-unused-expressions
@@ -151,7 +174,6 @@ describe('X DevAPI Pool Connection', () => {
                     // eslint-disable-next-line no-unused-expressions
                     expect(con.isIdle()).to.be.true;
                     // Expired connections should still be idle.
-                    tk.travel(new Date(Date.now() + maxIdleTime + 100));
                     return expect(con.isIdle()).to.be.true;
                 });
         });
