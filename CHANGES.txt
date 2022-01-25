@@ -8,6 +8,19 @@ Copyright (c) 2016, 2022, Oracle and/or its affiliates.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.29
+=======
+
+- Constraints for TLS connection options were relaxed
+- Certificate authority validation can now be explicitly enabled with a connection string via the "VERIFY_CA" TLS mode
+- Default server identity verification can now be enabled with a connection string via the "VERIFY_IDENTITY" TLS mode
+- A custom server identity verification function can be provided via the "tls.checkServerIdentity" configuration option
+- Allow index of DATETIME or similar column data types for document fields created from JavaScript Date instances
+- Prevent closed connection pool to create extraneous connections for queued requests
+- Cleanup global and private references in the API docs
+- Remove extraneous 3rd-party dependency
+- Update google-protobuf to v3.19.4
+
 v8.0.28
 =======
 
