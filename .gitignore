@@ -1,4 +1,5 @@
 .*/
+.gitreview
 coverage
 docs/INFO_BIN
 docs/INFO_SRC

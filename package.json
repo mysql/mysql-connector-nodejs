@@ -57,7 +57,7 @@
     "test:unit": "npm run mocha test/unit"
   },
   "dependencies": {
-    "google-protobuf": "3.14.0",
+    "google-protobuf": "3.19.4",
     "parsimmon": "1.16.0"
   },
   "engines": {
