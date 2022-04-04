@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -59,7 +59,7 @@ describe('fixing copyright notice source file headers', () => {
             return fs.writeFile(filename, `${copyright.createNotice()}\n\n'use strict'\n`);
         });
 
-        it('keeps the file exactly as it was before', () => {
+        it('keeps the file exactly as it was before', function () {
             const expected = `${copyright.createNotice()}\n\n'use strict'\n`;
 
             return copyright.fixHeaders(directory)
@@ -79,7 +79,7 @@ describe('fixing copyright notice source file headers', () => {
             return fs.writeFile(filename, `'use strict'\n`);
         });
 
-        it('prepends the correct header to the file', () => {
+        it('prepends the correct header to the file', function () {
             const expected = `${copyright.createNotice()}\n\n'use strict'\n`;
 
             return copyright.fixHeaders(directory)
@@ -98,7 +98,7 @@ describe('fixing copyright notice source file headers', () => {
             return fs.writeFile(filename, '/* foo */\n');
         });
 
-        it('prepends the correct header to the file', () => {
+        it('prepends the correct header to the file', function () {
             const expected = `${copyright.createNotice()}\n\n/* foo */\n`;
 
             return copyright.fixHeaders(directory)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -54,9 +54,9 @@ precommit()
             return;
         }
 
-        console.error('Missing or wrong copyright notice header detected for the following files:\n');
+        console.error('Missing or wrong copyright notice header was fixed for the following files:\n');
         filesChanged.forEach(file => console.error(`- ${file}`));
-        console.error();
+        console.error('\nChanges must added to the index and commited again.');
 
         return process.exit(1);
     });

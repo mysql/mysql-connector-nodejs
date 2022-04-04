@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -69,12 +69,13 @@ describe('copyright tooling', () => {
     });
 
     context('fixHeaders()', () => {
-        let exec, readFile, readdir, writeFile;
+        let cwd, exec, readFile, readdir, writeFile;
 
         beforeEach('create fakes', () => {
             const cp = td.replace('child_process');
             const util = td.replace('util');
 
+            cwd = td.replace(process, 'cwd');
             exec = td.function();
             readFile = td.function();
             readdir = td.function();
@@ -87,20 +88,28 @@ describe('copyright tooling', () => {
             copyright = require('../../../lib/tool/copyright');
         });
 
+        afterEach('reset fakes', () => {
+            td.reset();
+        });
+
         context('ignores non JavaScript files', () => {
-            it('in the root directory', () => {
+            it('in the root directory', function () {
                 const file = { name: 'bar.md', isDirectory: () => false };
 
+                td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M bar.md' });
+                td.when(cwd()).thenReturn('');
                 td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
 
                 return copyright.fixHeaders('foo')
                     .then(filesChanged => expect(filesChanged).to.be.an('array').and.be.empty);
             });
 
-            it('in a sub directory', () => {
+            it('in a sub directory', function () {
                 const directory = { name: 'bar', isDirectory: () => true };
                 const file = { name: 'baz.md', isDirectory: () => false };
 
+                td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M bar/baz.md' });
+                td.when(cwd()).thenReturn('');
                 td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                 td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
 
@@ -110,10 +119,12 @@ describe('copyright tooling', () => {
         });
 
         context('ignores specific directories in the ignore list', () => {
-            it('within the root directory', () => {
+            it('within the root directory', function () {
                 const directory = { name: 'bar', isDirectory: () => true };
                 const file = { name: 'baz.js', isDirectory: () => false };
 
+                td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
+                td.when(cwd()).thenReturn('');
                 td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                 td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
 
@@ -121,11 +132,13 @@ describe('copyright tooling', () => {
                     .then(filesChanged => expect(filesChanged).to.be.an('array').and.be.empty);
             });
 
-            it('inside a sub directory', () => {
+            it('inside a sub directory', function () {
                 const directory = { name: 'bar', isDirectory: () => true };
                 const subDirectory = { name: 'baz', isDirectory: () => true };
                 const file = { name: 'qux.js', isDirectory: () => false };
 
+                td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
+                td.when(cwd()).thenReturn('');
                 td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                 td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([subDirectory]);
                 td.when(readdir(path.join('foo', 'bar', 'baz'), { withFileTypes: true })).thenResolve([file]);
@@ -136,111 +149,276 @@ describe('copyright tooling', () => {
         });
 
         context('when git is not available', () => {
-            it('prepends an header with the current year only if the file does not contain one', () => {
+            context('and the file is in the root directory', () => {
                 const file = { name: 'bar.js', isDirectory: () => false };
-                const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
-                td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenReject();
-                td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenReject();
-                td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('foo\n');
-                td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+                it('prepends an header with the current year only if the file does not contain one', function () {
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
-                return copyright.fixHeaders('foo')
-                    .then(filesChanged => {
-                        return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
-                    });
+                    td.when(exec('git status --porcelain')).thenReject();
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenReject();
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenReject();
+                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('foo\n');
+                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                        });
+                });
+
+                it('prepends an header with the current year only if the file does not contain one and starts with a comment', function () {
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
+
+                    td.when(exec('git status --porcelain')).thenReject();
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenReject();
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenReject();
+                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
+                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                        });
+                });
+
+                it('does nothing if the file contains a valid copyright header', function () {
+                    const source = '/*\n * Copyright (c) 2015, 2018, Oracle and/or its affiliates.\n */\n\nfoo\n';
+
+                    td.when(exec('git status --porcelain')).thenReject();
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenReject();
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenReject();
+                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve(source);
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.be.an('array').and.be.empty;
+                        });
+                });
             });
 
-            it('prepends an header with the current year only if the file does not contain one and starts with a comment', () => {
-                const file = { name: 'bar.js', isDirectory: () => false };
-                const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
+            context('and the file is in a subdirectory', () => {
+                const directory = { name: 'bar', isDirectory: () => true };
+                const file = { name: 'baz.js', isDirectory: () => false };
 
-                td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenReject();
-                td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenReject();
-                td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
-                td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+                it('prepends an header with the current year only if the file does not contain one', function () {
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
-                return copyright.fixHeaders('foo')
-                    .then(filesChanged => {
-                        return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
-                    });
-            });
+                    td.when(exec('git status --porcelain')).thenReject();
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
+                    td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
+                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve('foo\n');
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
 
-            it('does nothing if the file contains a valid copyright header', () => {
-                const file = { name: 'bar.js', isDirectory: () => false };
-                const source = '/*\n * Copyright (c) 2015, 2018, Oracle and/or its affiliates.\n */\n\nfoo\n';
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                        });
+                });
 
-                td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenReject();
-                td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenReject();
-                td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve(source);
+                it('prepends an header with the current year only if the file does not contain one and starts with a comment', function () {
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
 
-                return copyright.fixHeaders('foo')
-                    .then(filesChanged => {
-                        return expect(filesChanged).to.be.an('array').and.be.empty;
-                    });
+                    td.when(exec('git status --porcelain')).thenReject();
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
+                    td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
+                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                        });
+                });
+
+                it('does nothing if the file contains a valid copyright header', function () {
+                    const source = '/*\n * Copyright (c) 2015, 2018, Oracle and/or its affiliates.\n */\n\nfoo\n';
+
+                    td.when(exec('git status --porcelain')).thenReject();
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
+                    td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
+                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve(source);
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.be.an('array').and.be.empty;
+                        });
+                });
             });
         });
 
-        context('when git log does not return metadata', () => {
-            it('prepends an header with the current year only if the file does not contain one', () => {
+        context('when the file is new and has been added to the git index', () => {
+            context('and is in the root directory', () => {
                 const file = { name: 'bar.js', isDirectory: () => false };
-                const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
-                td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('foo\n');
-                td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+                it('prepends an header with the current year only if the file does not contain one', function () {
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
-                return copyright.fixHeaders('foo')
-                    .then(filesChanged => {
-                        return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
-                    });
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.js\n' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('foo\n');
+                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                        });
+                });
+
+                it('prepends an header with the current year only if the file does not contain one and starts with a comment', function () {
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.js\n' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
+                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                        });
+                });
+
+                it('does nothing if the file contains a valid copyright header', function () {
+                    // "createNotice()" is already being tested, so we can simply use it here
+                    const source = `${copyright.createNotice((new Date()).getFullYear())}\nfoo\n`;
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.js\n' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve(source);
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.be.an('array').and.be.empty;
+                        });
+                });
+
+                it('replaces the header using the current year if the file contains one that is incorrect', function () {
+                    const source = '/*\n * Copyright (c) 2015, 2018, Oracle and/or its affiliates.\n */\n\nfoo\n';
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.js\n' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve(source);
+                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                        });
+                });
             });
 
-            it('prepends an header with the current year only if the file does not contain one and starts with a comment', () => {
-                const file = { name: 'bar.js', isDirectory: () => false };
-                const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
+            context('and is in a subdirectory', () => {
+                const directory = { name: 'bar', isDirectory: () => true };
+                const file = { name: 'baz.js', isDirectory: () => false };
 
-                td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
-                td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+                it('prepends an header with the current year only if the file does not contain one', function () {
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
-                return copyright.fixHeaders('foo')
-                    .then(filesChanged => {
-                        return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
-                    });
-            });
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar/baz.js\n' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
+                    td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve('foo\n');
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
 
-            it('does nothing if the file contains a valid copyright header', () => {
-                const file = { name: 'bar.js', isDirectory: () => false };
-                const source = '/*\n * Copyright (c) 2015, 2018, Oracle and/or its affiliates.\n */\n\nfoo\n';
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                        });
+                });
 
-                td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve(source);
+                it('prepends an header with the current year only if the file does not contain one and starts with a comment', function () {
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
 
-                return copyright.fixHeaders('foo')
-                    .then(filesChanged => {
-                        return expect(filesChanged).to.be.an('array').and.be.empty;
-                    });
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar/baz.js\n' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
+                    td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                        });
+                });
+
+                it('does nothing if the file contains a valid copyright header', function () {
+                    // "createNotice()" is already being tested, so we can simply use it here
+                    const source = `${copyright.createNotice((new Date()).getFullYear())}\nfoo\n`;
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar/baz.js\n' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
+                    td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve(source);
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.be.an('array').and.be.empty;
+                        });
+                });
+
+                it('replaces the header using the current year if the file contains one that is incorrect', function () {
+                    const source = '/*\n * Copyright (c) 2015, 2018, Oracle and/or its affiliates.\n */\n\nfoo\n';
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar/baz.js\n' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
+                    td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve(source);
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                        });
+                });
             });
         });
 
-        context('when git log returns metadata', () => {
-            context('when a file is in the root directory', () => {
+        context('when the file has changed since the last commit', () => {
+            context('and is in the root directory', () => {
                 const file = { name: 'bar.js', isDirectory: () => false };
 
-                it('prepends an header with the first commit year and the current year if the file does not contain one', () => {
+                it('prepends an header with the first commit year and the current year if the file does not contain one', function () {
                     const origYear = 2015;
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar.js\n' });
+                    td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
                     td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
                     td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
@@ -253,10 +431,12 @@ describe('copyright tooling', () => {
                         });
                 });
 
-                it('prepends an header with the first commit year and the current year if the file does not contain one and starts with a comment', () => {
+                it('prepends an header with the first commit year and the current year if the file does not contain one and starts with a comment', function () {
                     const origYear = 2015;
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
 
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar.js\n' });
+                    td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
                     td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
                     td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
@@ -269,11 +449,13 @@ describe('copyright tooling', () => {
                         });
                 });
 
-                it('replaces the header using the first commit year and the current year if the file contains one that is incorrect', () => {
+                it('replaces the header using the first commit year and the current year if the file contains one that is incorrect', function () {
                     const origYear = 2015;
                     const source = `/*\n * Copyright (c) ${origYear + 2}, 2018 Oracle and/or its affiliates.\n */\n\nfoo\n`;
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar.js\n' });
+                    td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
                     td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
                     td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
@@ -287,14 +469,16 @@ describe('copyright tooling', () => {
                 });
             });
 
-            context('when a file is in a sub-directory', () => {
+            context('and is in a subdirectory', () => {
                 const directory = { name: 'bar', isDirectory: () => true };
                 const file = { name: 'baz.js', isDirectory: () => false };
 
-                it('prepends an header with the first commit year and the current year if the file does not contain one', () => {
+                it('prepends an header with the first commit year and the current year if the file does not contain one', function () {
                     const origYear = 2015;
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar/baz.js\n' });
+                    td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                     td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
                     td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
@@ -308,10 +492,12 @@ describe('copyright tooling', () => {
                         });
                 });
 
-                it('prepends an header with the first commit year and the current year if the file does not contain one and starts with a comment', () => {
+                it('prepends an header with the first commit year and the current year if the file does not contain one and starts with a comment', function () {
                     const origYear = 2015;
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
 
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar/baz.js' });
+                    td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                     td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
                     td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
@@ -325,11 +511,137 @@ describe('copyright tooling', () => {
                         });
                 });
 
-                it('replaces the header using the first commit year and the current year if the file contains one that is incorrect', () => {
+                it('replaces the header using the first commit year and the current year if the file contains one that is incorrect', function () {
                     const origYear = 2015;
                     const source = `/*\n * Copyright (c) ${origYear + 2}, 2018 Oracle and/or its affiliates.\n */\n\nfoo\n`;
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar/baz.js' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
+                    td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve(source);
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                        });
+                });
+            });
+        });
+
+        context('when the copyright header does not match the correct one for the last commit', () => {
+            context('and the file is in the root directory', () => {
+                const file = { name: 'bar.js', isDirectory: () => false };
+
+                it('prepends an header with the first commit year and the current year if the file does not contain one', function () {
+                    const origYear = 2015;
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('foo\n');
+                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                        });
+                });
+
+                it('prepends an header with the first commit year and the current year if the file does not contain one and starts with a comment', function () {
+                    const origYear = 2015;
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
+                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                        });
+                });
+
+                it('replaces the header using the first commit year and the current year if the file contains one that is incorrect', function () {
+                    const origYear = 2015;
+                    const source = `/*\n * Copyright (c) ${origYear + 2}, 2018 Oracle and/or its affiliates.\n */\n\nfoo\n`;
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve(source);
+                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                        });
+                });
+            });
+
+            context('and the file is in a subdirectory', () => {
+                const directory = { name: 'bar', isDirectory: () => true };
+                const file = { name: 'baz.js', isDirectory: () => false };
+
+                it('prepends an header with the first commit year and the current year if the file does not contain one', function () {
+                    const origYear = 2015;
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
+                    td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve('foo\n');
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                        });
+                });
+
+                it('prepends an header with the first commit year and the current year if the file does not contain one and starts with a comment', function () {
+                    const origYear = 2015;
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
+                    td.when(cwd()).thenReturn('');
+                    td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
+                    td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+
+                    return copyright.fixHeaders('foo')
+                        .then(filesChanged => {
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                        });
+                });
+
+                it('replaces the header using the first commit year and the current year if the file contains one that is incorrect', function () {
+                    const origYear = 2015;
+                    const source = `/*\n * Copyright (c) ${origYear + 2}, 2018 Oracle and/or its affiliates.\n */\n\nfoo\n`;
+                    const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
+
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
+                    td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                     td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
                     td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
