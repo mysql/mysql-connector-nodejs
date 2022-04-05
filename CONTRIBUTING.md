@@ -104,13 +104,15 @@ Besides looking at the content generated via the standard output of your command
 Any change to the project's source code must also follow the standard set of code style/convention rules enforced by the existing tooling infrastructure. So, before submitting a patch, you can check if it violates any of those rules using the following:
 
 ```sh
-$ npm run linter:checks
+$ npm run lint:lib
+$ npm run lint:types
 ```
 
 Some categories of problems can easily be addressed and automatically fixed by running:
 
 ```sh
-$ npm run linter:fixes
+$ npm run fix:lib
+$ npm run fix:types
 ```
 
 The project maintainers reserve the right, of course, to further extend or amend any change in order to enforce additional informal rules.
@@ -122,14 +124,21 @@ The project provides some utilities you can use in a proper hook for your Git wo
 You can go as far as executing test or code coverage scripts, but we recommend to, at least, check for code style and update/fix copyright header notices. This can be done (after installing the project dependencies), for instance, by adding the following to a `pre-commit` script (in this case, a bash script) under `.git/hooks`.
 
 ```bash
-# linter checks
+# lint implementation files
 node_modules/.bin/standardx --verbose | node_modules/.bin/snazzy
 if [[ $? -ne 0 ]]; then
   echo 'JavaScript code style errors were detected. Aborting commit.'
   exit 1
 fi
 
-# copyright header checks
+# lint type definition files
+node_modules/.bin/eslint -c types/.eslintrc.js .
+if [[ $? -ne 0 ]]; then
+  echo 'TypeScript definition style errors were detected. Aborting commit.'
+  exit 1
+fi
+
+# check copyright headers
 node bin/precommit.js
 if [[ $? -ne 0 ]]; then
   echo 'Copyright header changes were detected. Aborting commit to verify changes.'

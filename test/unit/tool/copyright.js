@@ -92,7 +92,7 @@ describe('copyright tooling', () => {
             td.reset();
         });
 
-        context('ignores non JavaScript files', () => {
+        context('ignores files without the ".js" or ".ts" extension', () => {
             it('in the root directory', function () {
                 const file = { name: 'bar.md', isDirectory: () => false };
 
@@ -202,7 +202,7 @@ describe('copyright tooling', () => {
 
             context('and the file is in a subdirectory', () => {
                 const directory = { name: 'bar', isDirectory: () => true };
-                const file = { name: 'baz.js', isDirectory: () => false };
+                const file = { name: 'baz.ts', isDirectory: () => false };
 
                 it('prepends an header with the current year only if the file does not contain one', function () {
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
@@ -210,14 +210,14 @@ describe('copyright tooling', () => {
                     td.when(exec('git status --porcelain')).thenReject();
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                     td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
-                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve('foo\n');
-                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.ts')}`)).thenReject();
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.ts')}`)).thenReject();
+                    td.when(readFile(path.join('foo', 'bar', 'baz.ts'), { encoding: 'utf8' })).thenResolve('foo\n');
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.ts')]);
                         });
                 });
 
@@ -227,14 +227,14 @@ describe('copyright tooling', () => {
                     td.when(exec('git status --porcelain')).thenReject();
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                     td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
-                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
-                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.ts')}`)).thenReject();
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.ts')}`)).thenReject();
+                    td.when(readFile(path.join('foo', 'bar', 'baz.ts'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.ts')]);
                         });
                 });
 
@@ -244,9 +244,9 @@ describe('copyright tooling', () => {
                     td.when(exec('git status --porcelain')).thenReject();
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                     td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenReject();
-                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve(source);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.ts')}`)).thenReject();
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.ts')}`)).thenReject();
+                    td.when(readFile(path.join('foo', 'bar', 'baz.ts'), { encoding: 'utf8' })).thenResolve(source);
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
@@ -258,39 +258,39 @@ describe('copyright tooling', () => {
 
         context('when the file is new and has been added to the git index', () => {
             context('and is in the root directory', () => {
-                const file = { name: 'bar.js', isDirectory: () => false };
+                const file = { name: 'bar.ts', isDirectory: () => false };
 
                 it('prepends an header with the current year only if the file does not contain one', function () {
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
-                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.js\n' });
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.ts\n' });
                     td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('foo\n');
-                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar.ts'), { encoding: 'utf8' })).thenResolve('foo\n');
+                    td.when(writeFile(path.join('foo', 'bar.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.ts')]);
                         });
                 });
 
                 it('prepends an header with the current year only if the file does not contain one and starts with a comment', function () {
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
 
-                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.js\n' });
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.ts\n' });
                     td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
-                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar.ts'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
+                    td.when(writeFile(path.join('foo', 'bar.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.ts')]);
                         });
                 });
 
@@ -298,12 +298,12 @@ describe('copyright tooling', () => {
                     // "createNotice()" is already being tested, so we can simply use it here
                     const source = `${copyright.createNotice((new Date()).getFullYear())}\nfoo\n`;
 
-                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.js\n' });
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.ts\n' });
                     td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve(source);
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar.ts'), { encoding: 'utf8' })).thenResolve(source);
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
@@ -315,17 +315,17 @@ describe('copyright tooling', () => {
                     const source = '/*\n * Copyright (c) 2015, 2018, Oracle and/or its affiliates.\n */\n\nfoo\n';
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
-                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.js\n' });
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' A foo/bar.ts\n' });
                     td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: '' });
-                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve(source);
-                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: '' });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: '' });
+                    td.when(readFile(path.join('foo', 'bar.ts'), { encoding: 'utf8' })).thenResolve(source);
+                    td.when(writeFile(path.join('foo', 'bar.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.ts')]);
                         });
                 });
             });
@@ -471,24 +471,24 @@ describe('copyright tooling', () => {
 
             context('and is in a subdirectory', () => {
                 const directory = { name: 'bar', isDirectory: () => true };
-                const file = { name: 'baz.js', isDirectory: () => false };
+                const file = { name: 'baz.ts', isDirectory: () => false };
 
                 it('prepends an header with the first commit year and the current year if the file does not contain one', function () {
                     const origYear = 2015;
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
-                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar/baz.js\n' });
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar/baz.ts\n' });
                     td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                     td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
-                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve('foo\n');
-                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.ts')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.ts')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar', 'baz.ts'), { encoding: 'utf8' })).thenResolve('foo\n');
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.ts')]);
                         });
                 });
 
@@ -496,18 +496,18 @@ describe('copyright tooling', () => {
                     const origYear = 2015;
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\n\\/\\* foo \\*\\/\n$`);
 
-                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar/baz.js' });
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar/baz.ts' });
                     td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                     td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
-                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
-                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.ts')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.ts')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar', 'baz.ts'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.ts')]);
                         });
                 });
 
@@ -516,18 +516,18 @@ describe('copyright tooling', () => {
                     const source = `/*\n * Copyright (c) ${origYear + 2}, 2018 Oracle and/or its affiliates.\n */\n\nfoo\n`;
                     const regexp = new RegExp(`^\\/\\*\n \\* Copyright \\(c\\) ${origYear}, ${(new Date()).getUTCFullYear()}, Oracle and\\/or its affiliates\\.\n(\\*(?!\\/)|[^*])*\\*\\/\n\nfoo\n$`);
 
-                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar/baz.js' });
+                    td.when(exec('git status --porcelain')).thenResolve({ stdout: ' M foo/bar/baz.ts' });
                     td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([directory]);
                     td.when(readdir(path.join('foo', 'bar'), { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
-                    td.when(readFile(path.join('foo', 'bar', 'baz.js'), { encoding: 'utf8' })).thenResolve(source);
-                    td.when(writeFile(path.join('foo', 'bar', 'baz.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar', 'baz.ts')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar', 'baz.ts')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar', 'baz.ts'), { encoding: 'utf8' })).thenResolve(source);
+                    td.when(writeFile(path.join('foo', 'bar', 'baz.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar', 'baz.ts')]);
                         });
                 });
             });
@@ -535,7 +535,7 @@ describe('copyright tooling', () => {
 
         context('when the copyright header does not match the correct one for the last commit', () => {
             context('and the file is in the root directory', () => {
-                const file = { name: 'bar.js', isDirectory: () => false };
+                const file = { name: 'bar.ts', isDirectory: () => false };
 
                 it('prepends an header with the first commit year and the current year if the file does not contain one', function () {
                     const origYear = 2015;
@@ -544,14 +544,14 @@ describe('copyright tooling', () => {
                     td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
                     td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
-                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('foo\n');
-                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar.ts'), { encoding: 'utf8' })).thenResolve('foo\n');
+                    td.when(writeFile(path.join('foo', 'bar.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.ts')]);
                         });
                 });
 
@@ -562,14 +562,14 @@ describe('copyright tooling', () => {
                     td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
                     td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
-                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
-                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar.ts'), { encoding: 'utf8' })).thenResolve('/* foo */\n');
+                    td.when(writeFile(path.join('foo', 'bar.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.ts')]);
                         });
                 });
 
@@ -581,14 +581,14 @@ describe('copyright tooling', () => {
                     td.when(exec('git status --porcelain')).thenResolve({ stdout: '' });
                     td.when(cwd()).thenReturn('');
                     td.when(readdir('foo', { withFileTypes: true })).thenResolve([file]);
-                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
-                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.js')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
-                    td.when(readFile(path.join('foo', 'bar.js'), { encoding: 'utf8' })).thenResolve(source);
-                    td.when(writeFile(path.join('foo', 'bar.js'), td.matchers.contains(regexp))).thenResolve();
+                    td.when(exec(`git log --format=%aD --reverse ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: `Mon, 30 Mar ${origYear} 14:44:08 -0500\n` });
+                    td.when(exec(`git log --format=%aD --max-count=1 ${path.join('foo', 'bar.ts')}`)).thenResolve({ stdout: 'Fri, 10 Jul 2018 10:49:36 +0100\n' });
+                    td.when(readFile(path.join('foo', 'bar.ts'), { encoding: 'utf8' })).thenResolve(source);
+                    td.when(writeFile(path.join('foo', 'bar.ts'), td.matchers.contains(regexp))).thenResolve();
 
                     return copyright.fixHeaders('foo')
                         .then(filesChanged => {
-                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.js')]);
+                            return expect(filesChanged).to.deep.equal([path.join('foo', 'bar.ts')]);
                         });
                 });
             });

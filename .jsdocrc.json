@@ -13,7 +13,7 @@
         ]
     },
     "templates": {
-        "copyright": "Copyright (c) 2016, 2021, Oracle and/or its affiliates.",
+        "copyright": "Copyright (c) 2016, 2022, Oracle and/or its affiliates.",
         "dateFormat": "MMMM YYYY",
         "linenums": true,
         "search": false,

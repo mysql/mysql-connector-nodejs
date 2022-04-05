@@ -18,6 +18,7 @@
   ],
   "license": "GPL-2.0",
   "main": "index.js",
+  "types": "types/index.d.ts",
   "files": [
     "CHANGES.txt",
     "CONTRIBUTING.md",
@@ -25,7 +26,8 @@
     "README.txt",
     "docs/",
     "lib/",
-    "test/"
+    "test/",
+    "types/"
   ],
   "keywords": [
     "MySQL",
@@ -47,14 +49,18 @@
     "coverage:functional": "nyc npm run test:functional",
     "coverage:summary": "nyc report --reporter=text-summary",
     "coverage:unit": "nyc npm run test:unit",
-    "linter:checks": "standardx --verbose | snazzy",
-    "linter:fixes": "standardx --fix",
+    "fix:lib": "standardx --fix",
+    "fix:types": "eslint --fix -c types/.eslintrc.js .",
+    "lint:lib": "standardx --verbose | snazzy",
+    "lint:types": "eslint -c types/.eslintrc.js .",
+    "lint": "npm run lint:lib && npm run lint:types",
     "mocha": "mocha --reporter spec --timeout 10000 --recursive",
     "prepack": "node bin/prepack.js",
     "pretest": "node bin/wait-for.js",
-    "test": "npm run mocha test/unit test/functional/default",
+    "test": "tsd && npm run mocha test/unit test/functional/default",
     "test:functional": "npm run pretest && npm run mocha test/functional/default",
-    "test:unit": "npm run mocha test/unit"
+    "test:unit": "npm run mocha test/unit",
+    "test:types": "tsd"
   },
   "dependencies": {
     "google-protobuf": "3.19.4",
@@ -64,14 +70,21 @@
     "node": ">=12.0.0"
   },
   "devDependencies": {
+    "@types/node": "17.0.21",
+    "@typescript-eslint/eslint-plugin": "5.14.0",
     "chai": "4.3.4",
     "dns2": "1.4.2",
+    "eslint-config-standard-with-typescript": "21.0.1",
     "eslint-plugin-header": "3.1.0",
+    "eslint-plugin-tsdoc": "0.2.14",
     "mocha": "8.2.1",
     "nyc": "15.1.0",
     "snazzy": "9.0.0",
     "standardx": "7.0.0",
-    "testdouble": "3.16.1"
+    "testdouble": "3.16.1",
+    "ts-standard": "11.0.0",
+    "tsd": "0.19.1",
+    "typescript": "4.6.2"
   },
   "nyc": {
     "branches": 75,
@@ -79,7 +92,8 @@
     "exclude": [
       "bin",
       "lib/Protocol/Stubs",
-      "test"
+      "test",
+      "types"
     ],
     "functions": 75,
     "lines": 75,
@@ -93,5 +107,8 @@
     "ignore": [
       "**/mysqlx*_pb.js"
     ]
+  },
+  "tsd": {
+    "directory": "types/test"
   }
 }
