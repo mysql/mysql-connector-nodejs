@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -245,6 +245,27 @@ describe('Mysqlx.Expr.Expr wrapper', () => {
                 td.when(valueOf(), { times: 1 }).thenReturn('bar');
 
                 expect(wrapper.getPlaceholderArgs(bindings)).to.deep.equal(['bar', 'qux']);
+            });
+
+            it('ignores undefined placeholder values which do not have any protobuf scalar representation', () => {
+                const proto = new ExprStub.Expr();
+                const wrapper = expr(proto);
+                const valueOf = td.function();
+                const bindings = { foo: 'bar', baz: false, qux: undefined };
+
+                // eslint-disable-next-line no-unused-expressions
+                expect(wrapper.getPlaceholderArgs(bindings)).to.be.an('array').and.be.empty;
+
+                wrapper.setPlaceholders(['foo', 'baz']);
+
+                td.when(scalar.create(undefined)).thenReturn({ valueOf });
+                td.when(valueOf()).thenReturn(undefined);
+                td.when(scalar.create(false)).thenReturn({ valueOf });
+                td.when(valueOf()).thenReturn(false);
+                td.when(scalar.create('bar')).thenReturn({ valueOf });
+                td.when(valueOf(), { times: 1 }).thenReturn('bar');
+
+                expect(wrapper.getPlaceholderArgs(bindings)).to.deep.equal(['bar', false]);
             });
         });
 

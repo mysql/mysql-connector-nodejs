@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const config = require('../../config');
+const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../fixtures');
 const mysqlx = require('../../../');
@@ -1101,6 +1102,22 @@ describe('raw SQL', () => {
                         .then(() => {
                             return session.close();
                         });
+                });
+        });
+    });
+
+    context('BUG#33940584', () => {
+        it('fails with the corresponding server error if the placeholder value is not supported', () => {
+            return session.sql('CREATE TABLE test (name VARCHAR(3))')
+                .execute()
+                .then(() => {
+                    return session.sql('SELECT * FROM test WHERE name = ?')
+                        .bind({ name: 'foo' })
+                        .execute();
+                })
+                .catch(err => {
+                    expect(err.info).to.include.keys('code');
+                    return expect(err.info.code).to.equal(errors.ER_X_INVALID_DATA);
                 });
         });
     });

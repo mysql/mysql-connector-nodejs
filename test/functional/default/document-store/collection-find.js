@@ -34,6 +34,7 @@
 
 const Level = require('../../../../lib/logger').Level;
 const config = require('../../../config');
+const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../..');
@@ -189,6 +190,21 @@ describe('finding documents in collections', () => {
                 .bind({ size: 42 })
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        context('BUG#33940584', () => {
+            it('fails with the corresponding server error if the placeholder value is not supported', () => {
+                return collection.find('size = :size')
+                    .bind('size', { size: 42 })
+                    .execute()
+                    .then(() => {
+                        return expect.fail();
+                    })
+                    .catch(err => {
+                        expect(err.info).to.include.keys('code');
+                        return expect(err.info.code).to.equal(errors.ER_X_EXPR_BAD_VALUE);
+                    });
+            });
         });
     });
 
