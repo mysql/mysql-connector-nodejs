@@ -360,7 +360,7 @@ mysqlx.getSession(options)
 
 ### Checking the Server Identity
 
-Besides verifying if the server certificate was signed or revoked by a certificate in a given authority chain, it is also possible to additionally verify if the server is the effective owner of the certificate, by comparing the server hostname and the common name specifified by the certificate, according to a specific set of prerequisites. This check is only performed if the certificate first passes all the other checks, such as being issued by a given CA (required).
+Besides verifying if the server certificate was signed or revoked by a certificate in a given authority chain, it is also possible to additionally verify if the server is the effective owner of the certificate, by comparing the server hostname and the common name specified by the certificate, according to a specific set of prerequisites. This check is only performed if the certificate first passes all the other checks, such as being issued by a given CA (required).
 
 When using a connection configuration object, this can be done by providing an additional `checkServerIdentity` property as part of the secure context. If its value is `true`, the server identity check will happen using the builtin [`tls.checkServerIdentity()`](https://nodejs.org/docs/v12.0.0/api/tls.html#tls_tls_checkserveridentity_hostname_cert) function, which expects both the server hostname and certificate common name to be exactly the same.
 
@@ -416,7 +416,7 @@ let options = {
 // CN = 'mysql.com'
 mysqlx.getSession(options)
     .then(session => {
-        console.log(session.inspect()); // { host: 'localhost', tls: true }
+        console.log(session.inspect()); // { host: 'dev.mysql.com', tls: true }
     });
 
 // CN = 'example.com'
@@ -429,7 +429,7 @@ mysqlx.getSession(options)
 By default, if the `checkServerIdentity` property is not specified, the check will not be performed.
 
 > **IMPORTANT**<br />
-> Custom `checkServerIdentity()` functions should "return" all errors instead "throwing" them. Further implementation details are availabe in the official Node.js [documentation](https://nodejs.org/docs/v12.0.0/api/tls.html#tls_tls_checkserveridentity_hostname_cert).
+> Custom `checkServerIdentity()` functions should "return" all errors instead "throwing" them. Further implementation details are available in the official Node.js [documentation](https://nodejs.org/docs/v12.0.0/api/tls.html#tls_tls_checkserveridentity_hostname_cert).
 
 When using a connection string, the API is a little bit more restricted. The only possibility is to set the value of the `ssl-mode` option to `VERIFY_IDENTITY` in order to explicitly enable the server identity check using the builtin `tls.checkServerIdentity()` function.
 
