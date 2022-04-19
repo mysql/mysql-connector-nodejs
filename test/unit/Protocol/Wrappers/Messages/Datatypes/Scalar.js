@@ -42,10 +42,6 @@ let scalar = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes
 describe('Mysqlx.Datatypes.Scalar wrapper', () => {
     context('class methods', () => {
         context('canEncode()', () => {
-            it('returns true if the value is undefined', () => {
-                return expect(scalar.canEncode()).to.be.true;
-            });
-
             it('returns true if the value is an instance of Mysqlx.Datatypes.Scalar', () => {
                 return expect(scalar.canEncode(new ScalarStub())).to.be.true;
             });
