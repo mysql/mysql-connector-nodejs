@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -43,7 +43,7 @@ describe('connecting to the MySQL server using IPv6', () => {
     const baseConfig = { schema: undefined, socket: undefined };
 
     beforeEach('resolve IPv6 address', () => {
-        return fixtures.getIPv6Address(config.host)
+        return fixtures.getIPv6Address({ host: config.host, port: config.port })
             .then(address => {
                 host = address;
             });

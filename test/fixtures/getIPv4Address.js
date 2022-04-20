@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,17 +30,12 @@
 
 'use strict';
 
-const dns = require('dns');
+const dns = require('dns').promises;
 
-module.exports = function (host) {
-    return new Promise(resolve => {
-        dns.lookup(host, { family: 4 }, (err, address) => {
-            if (err) {
-                // ignore errors
-                return resolve();
-            }
-
-            resolve(address);
-        });
-    });
+module.exports = function ({ host } = {}) {
+    return dns.lookup(host, { family: 4 })
+        .then(({ address }) => address)
+        // Ultimately, if the IPv4 address cannot be obtained, it should be
+        // "undefined".
+        .catch(() => undefined);
 };
