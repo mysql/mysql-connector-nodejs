@@ -12,7 +12,7 @@ Please refer to the [README.txt](https://github.com/mysql/mysql-connector-nodejs
 
 ## Getting the Latest Release
 
-MySQL Connector/Node.js is free to use under the terms of the specified license and it runs on any Operating System that supports a Node.js 12.0.0 (or higher) runtime. Packages can and should be installed using the npm CLI.
+MySQL Connector/Node.js is free to use under the terms of the specified license and it runs on any Operating System that supports a Node.js 14.0.0 (or higher) runtime. Packages can and should be installed using the npm CLI.
 
 Since releases do **NOT** follow [Semantic Versioning](https://semver.org/) rules, it is advised to install a specific version of the package (the latest preferably) or by using an additional standard lockfile such as [`npm-shrinkwrap.json`](https://docs.npmjs.com/files/shrinkwrap.json.html) or [`package-lock.json`](https://docs.npmjs.com/files/package-lock.json) depending on the version of the npm CLI.
 

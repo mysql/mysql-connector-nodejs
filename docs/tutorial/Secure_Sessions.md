@@ -170,7 +170,7 @@ Non-TLS ciphersuites, including the `MD5`, `SSLv3` and other older sets are not 
 
 When creating a connection to the database using TLS, the connector can validate if the server certificate was signed by a certificate authority (CA) and, at the same time, ensure that the certificate was not revoked by that same authority, or any other in a given chain of trust.
 
-Just like with TLS-related core Node.js APIs, an application can provide one or more PEM formatted CA certificates and certificate revocation lists (CRL). The [secure context](https://nodejs.org/docs/v12.0.0/api/tls.html#tls_tls_createsecurecontext_options) uses a list of well-known CAs curated by Mozilla, which are completely replaced by the list of CAs provided by an application. This means that if the certificate was not signed by the root CA, the entire chain of trust down to the signing CA, should be included in the list. The same is true for the certificate revocation lists, because each CA has its own.
+Just like with TLS-related core Node.js APIs, an application can provide one or more PEM formatted CA certificates and certificate revocation lists (CRL). The [secure context](https://nodejs.org/docs/v14.0.0/api/tls.html#tls_tls_createsecurecontext_options) uses a list of well-known CAs curated by Mozilla, which are completely replaced by the list of CAs provided by an application. This means that if the certificate was not signed by the root CA, the entire chain of trust down to the signing CA, should be included in the list. The same is true for the certificate revocation lists, because each CA has its own.
 
 Verifying if the server certificate was signed by the root CA can be done by providing the path to the CA file. When using a connection string, this feature needs to be explicitly enabled by setting value of `ssl-mode` to `VERIFY_CA` or `VERIFY_IDENTITY` (which will also validate the server identity against its own certificate).
 
@@ -362,7 +362,7 @@ mysqlx.getSession(options)
 
 Besides verifying if the server certificate was signed or revoked by a certificate in a given authority chain, it is also possible to additionally verify if the server is the effective owner of the certificate, by comparing the server hostname and the common name specified by the certificate, according to a specific set of prerequisites. This check is only performed if the certificate first passes all the other checks, such as being issued by a given CA (required).
 
-When using a connection configuration object, this can be done by providing an additional `checkServerIdentity` property as part of the secure context. If its value is `true`, the server identity check will happen using the builtin [`tls.checkServerIdentity()`](https://nodejs.org/docs/v12.0.0/api/tls.html#tls_tls_checkserveridentity_hostname_cert) function, which expects both the server hostname and certificate common name to be exactly the same.
+When using a connection configuration object, this can be done by providing an additional `checkServerIdentity` property as part of the secure context. If its value is `true`, the server identity check will happen using the builtin [`tls.checkServerIdentity()`](https://nodejs.org/docs/v14.0.0/api/tls.html#tls_tls_checkserveridentity_hostname_cert) function, which expects both the server hostname and certificate common name to be exactly the same.
 
 ```js
 const fs = require('fs')
@@ -429,7 +429,7 @@ mysqlx.getSession(options)
 By default, if the `checkServerIdentity` property is not specified, the check will not be performed.
 
 > **IMPORTANT**<br />
-> Custom `checkServerIdentity()` functions should "return" all errors instead "throwing" them. Further implementation details are available in the official Node.js [documentation](https://nodejs.org/docs/v12.0.0/api/tls.html#tls_tls_checkserveridentity_hostname_cert).
+> Custom `checkServerIdentity()` functions should "return" all errors instead "throwing" them. Further implementation details are available in the official Node.js [documentation](https://nodejs.org/docs/v14.0.0/api/tls.html#tls_tls_checkserveridentity_hostname_cert).
 
 When using a connection string, the API is a little bit more restricted. The only possibility is to set the value of the `ssl-mode` option to `VERIFY_IDENTITY` in order to explicitly enable the server identity check using the builtin `tls.checkServerIdentity()` function.
 

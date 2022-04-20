@@ -5,7 +5,7 @@ MySQL Connector/Node.js is a MySQL 8 driver for Node.js, officially supported an
 ### Requirements
 
  * MySQL 8.0.11 or higher
- * Node.js 12.0.0 or higher
+ * Node.js 14.0.0 or higher
 
 Altough some of the latest MySQL `5.7` versions are partially supported, the entire feature set is only available in the latest 8.x version.
 

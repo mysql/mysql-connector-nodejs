@@ -20,7 +20,7 @@ Contributing to MySQL projects is easy. You just need to follow these steps.
 
 * Make sure you have a user account at [bugs.mysql.com](https://bugs.mysql.com). You will need to reference this user account when you submit your Oracle Contributor Agreement (OCA).
 * Sign the Oracle Contributor Agreement. You can find instructions for doing that at the [OCA Page](https://oca.opensource.oracle.com/).
-* Develop your pull request. Make sure you are aware of the requirements for the project (e.g. do not require Node.js 0.x if we are supporting Node.js 12.x and higher).
+* Develop your pull request. Make sure you are aware of the requirements for the project (e.g. do not require Node.js 0.x when we are supporting Node.js 14.x and higher).
 * Validate your pull request by including tests that sufficiently cover the functionality you are adding.
 * Verify that the entire test suite passes with your code applied.
 * Submit your pull request. While you can submit the pull request via [GitHub](https://github.com/mysql/mysql-connector-nodejs/pulls), you can also submit it directly via [bugs.mysql.com](https://bugs.mysql.com).

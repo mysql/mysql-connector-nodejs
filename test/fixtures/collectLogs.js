@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -91,7 +91,7 @@ module.exports = function (section, path, args, options) {
         // order make it easier to collect legitimate log content.
         // To do that, we append the "--no-warnings" flag to the list of flags
         // provided to the parent process.
-        // https://nodejs.org/docs/v12.0.0/api/process.html#process_event_warning
+        // https://nodejs.org/docs/v14.0.0/api/process.html#process_event_warning
         const child = cp.fork(path, args, { env, execArgv: process.execArgv.concat('--no-warnings'), silent: true });
         const proc = { id: child.pid, logs: [] };
 
