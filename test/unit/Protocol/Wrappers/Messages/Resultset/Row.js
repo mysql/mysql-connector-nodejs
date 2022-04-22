@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -469,25 +469,44 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([(new Date('2018-02-19T15:21:26.123Z')).getTime()]);
         });
 
-        it('returns decimal values as JavaScript numbers', () => {
+        it('returns decimal values as JavaScript numbers when there is no risk of precision loss', () => {
             const columnProto = new ResultsetStub.ColumnMetaData([ResultsetStub.ColumnMetaData.FieldType.DECIMAL]);
-
-            let decimal = Buffer.from('04123401d0', 'hex');
+            const decimal = Buffer.from('04123401d0', 'hex'); // d0 => sign ("-")
 
             const rowProto = new ResultsetStub.Row();
             rowProto.addField(bytes.create(decimal).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([-12.3401]);
+        });
 
-            const overflow = Number.MAX_SAFE_INTEGER + 1;
-            const scale = 10; // overflow size in hexadecimal
+        it('returns decimal values as JavaScript strings when there is a risk of precision loss', () => {
+            const columnProto = new ResultsetStub.ColumnMetaData([ResultsetStub.ColumnMetaData.FieldType.DECIMAL]);
+            const overflow = Number.MAX_SAFE_INTEGER + 1; // length = 16
+            const safeNumber = 9; // length = 1
 
-            decimal = Buffer.from(`${scale}${overflow}${overflow}c0`, 'hex');
+            let scale = '10'; // overflow size in hexadecimal (parseInt(10, 16) = 16)
+            let decimal = Buffer.from(`${scale}${safeNumber}${overflow}c0`, 'hex'); // c0 => sign ("+")
+
+            const rowProto = new ResultsetStub.Row();
+            rowProto.addField(bytes.create(decimal).valueOf());
+
+            expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([`${safeNumber}.${overflow}`]);
+
+            scale = '01'; // safe number size in hexadecimal
+            decimal = Buffer.from(`${scale}${overflow}${safeNumber}d0`, 'hex'); // d0 => sign ("-")
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(decimal).valueOf());
 
-            expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([`+${overflow}.${overflow}`]);
+            expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([`-${overflow}.${safeNumber}`]);
+
+            scale = '10'; // overflow size in hexadecimal (parseInt(10, 16) = 16)
+            decimal = Buffer.from(`${scale}${overflow}${overflow}c0`, 'hex'); // c0 => sign ("+")
+
+            rowProto.clearFieldList();
+            rowProto.addField(bytes.create(decimal).valueOf());
+
+            expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([`${overflow}.${overflow}`]);
         });
 
         it('returns set values as JavaScript arrays', () => {

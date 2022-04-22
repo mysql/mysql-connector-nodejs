@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -554,6 +554,34 @@ describe('relational miscellaneous tests', () => {
                         expect(columns[0].getFractionalDigits()).to.equal(0);
                         expect(columns[1].getFractionalDigits()).to.equal(0);
                         expect(columns[2].getFractionalDigits()).to.equal(2);
+                    });
+            });
+        });
+
+        context('BUG#34016587 values encoded as DECIMAL with precision loss', () => {
+            beforeEach('create table', () => {
+                // A JavaScript number does not have enough precision to encode
+                // more than 17 corresponding DECIMAL digits in MySQL.
+                return session.sql(`CREATE TABLE test (
+                        decimal_1 DECIMAL(18, 1),
+                        decimal_2 DECIMAL(18, 17),
+                        decimal_3 DECIMAL(18, 17),
+                        decimal_4 DECIMAL(18, 1))`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', () => {
+                return session.sql('INSERT INTO test VALUES (-99999999999999999.9, -9.99999999999999999, 9.99999999999999999, 99999999999999999.9)')
+                    .execute();
+            });
+
+            it('decodes values using a string to avoid precision loss', () => {
+                const expected = [['-99999999999999999.9', '-9.99999999999999999', '9.99999999999999999', '99999999999999999.9']];
+
+                return schema.getTable('test').select()
+                    .execute()
+                    .then(res => {
+                        return expect(res.fetchAll()).to.deep.equal(expected);
                     });
             });
         });

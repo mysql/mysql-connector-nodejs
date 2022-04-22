@@ -1122,6 +1122,34 @@ describe('raw SQL', () => {
         });
     });
 
+    context('BUG#34016587 values encoded as DECIMAL with precision loss', () => {
+        beforeEach('create table', () => {
+            // A JavaScript number does not have enough precision to encode
+            // more than 17 corresponding DECIMAL digits in MySQL.
+            return session.sql(`CREATE TABLE test (
+                    decimal_1 DECIMAL(18, 1),
+                    decimal_2 DECIMAL(18, 17),
+                    decimal_3 DECIMAL(18, 17),
+                    decimal_4 DECIMAL(18, 1))`)
+                .execute();
+        });
+
+        beforeEach('add fixtures', () => {
+            return session.sql('INSERT INTO test VALUES (-99999999999999999.9, -9.99999999999999999, 9.99999999999999999, 99999999999999999.9)')
+                .execute();
+        });
+
+        it('decodes values using a string to avoid precision loss', () => {
+            const expected = [['-99999999999999999.9', '-9.99999999999999999', '9.99999999999999999', '99999999999999999.9']];
+
+            return session.sql('select * from test')
+                .execute()
+                .then(res => {
+                    return expect(res.fetchAll()).to.deep.equal(expected);
+                });
+        });
+    });
+
     context('warnings', () => {
         beforeEach('create table', () => {
             return session.sql('CREATE TABLE test (a TINYINT NOT NULL, b VARCHAR(3))')
