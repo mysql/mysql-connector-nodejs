@@ -8,6 +8,16 @@ Copyright (c) 2016, 2022, Oracle and/or its affiliates.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.30
+=======
+
+- TypeScript type definitions are now available in the "types" directory
+- Update non-authoritative minimum required Node.js engine version to 14.0.0
+- Prevent unexpected and uninformative errors for bad placeholder assignments
+- Allow the MYSQLX_HOST environment variable to be used with IPv4 addresses when executing the test suite
+- Accommodate DECIMAL values as JavaScript strings when the decimal part risks losing precision
+- Update list of supported utf8mb4 collations
+
 v8.0.29
 =======
 
