@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -33,6 +33,7 @@
 /* eslint-env node, mocha */
 
 const StringStub = require('../../../../../../lib/Protocol/Stubs/mysqlx_datatypes_pb').Scalar.String;
+const collations = require('../../../../../../lib/Protocol/collations.json');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -40,11 +41,10 @@ const td = require('testdouble');
 let str = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/String');
 
 describe('Mysqlx.Datatypes.Scalar.String wrapper', () => {
-    let bytes, collations;
+    let bytes;
 
     beforeEach('create fakes', () => {
         bytes = td.replace('../../../../../../lib/Protocol/Wrappers/ScalarValues/bytes');
-        collations = td.replace('../../../../../../lib/Protocol/Collations');
         str = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/String');
     });
 
@@ -54,38 +54,23 @@ describe('Mysqlx.Datatypes.Scalar.String wrapper', () => {
 
     context('getCharset()', () => {
         it('returns the charset of the underlying string', () => {
+            // pick a random collection from the list [0...collations.length - 1]
+            const collation = collations[Math.floor(Math.random() * collations.length)];
             const proto = new StringStub();
-            proto.setCollation(1);
+            proto.setCollation(collation.id);
 
-            td.when(collations.find(1)).thenReturn({ charset: 'foo' });
-
-            expect(str(proto).getCharset()).to.equal('foo');
-        });
-
-        it('returns undefined if the underlying string charset is unknown', () => {
-            const proto = new StringStub();
-            proto.setCollation(1);
-
-            td.when(collations.find(1)).thenReturn();
-
-            return expect(str(proto).getCharset()).to.not.exist;
-        });
-
-        it('returns undefined if the underlying string does not reference the charset', () => {
-            const proto = new StringStub();
-
-            td.when(collations.find()).thenReturn();
-
-            return expect(str(proto).getCharset()).to.not.exist;
+            expect(str(proto).getCharset()).to.equal(collation.charset);
         });
     });
 
     context('getCollationId()', () => {
         it('returns the specified collation id', () => {
+            // pick a random collection from the list [0...collations.length - 1]
+            const collation = collations[Math.floor(Math.random() * collations.length)];
             const proto = new StringStub();
-            proto.setCollation(1);
+            proto.setCollation(collation.id);
 
-            return expect(str(proto).getCollationId()).to.equal(1);
+            return expect(str(proto).getCollationId()).to.equal(collation.id);
         });
 
         it('returns undefined if the collation id is not valid', () => {
@@ -95,27 +80,30 @@ describe('Mysqlx.Datatypes.Scalar.String wrapper', () => {
 
     context('toJSON()', () => {
         it('returns a textual representation of a Mysqlx.Datatypes.Scalar.Octets stub instance', () => {
+            // pick a random collection from the list [0...collations.length - 1]
+            const collation = collations[Math.floor(Math.random() * collations.length)];
             const toString = td.function();
             const proto = new StringStub();
             proto.setValue('foo');
-            proto.setCollation(1);
+            proto.setCollation(collation.id);
 
             td.when(toString()).thenReturn('bar');
             td.when(bytes('foo')).thenReturn({ toString });
 
-            expect(str(proto).toJSON()).to.deep.equal({ collation: 1, value: 'bar' });
+            expect(str(proto).toJSON()).to.deep.equal({ collation: collation.id, value: 'bar' });
         });
     });
 
     context('toString()', () => {
         context('when the charset is binary', () => {
             it('returns the output of the byte wrapper toString method in the right encoding', () => {
+                // binary collation is the first item in the list
+                const collation = collations[0];
                 const toString = td.function();
                 const proto = new StringStub();
                 proto.setValue('foo');
-                proto.setCollation(1);
+                proto.setCollation(collation.id);
 
-                td.when(collations.find(1)).thenReturn({ charset: 'binary' });
                 td.when(toString('base64')).thenReturn('bar');
                 td.when(bytes('foo')).thenReturn({ toString });
 
@@ -125,24 +113,12 @@ describe('Mysqlx.Datatypes.Scalar.String wrapper', () => {
 
         context('when the charset is not binary', () => {
             it('returns the output of the byte wrapper toString method in the right encoding', () => {
+                // non-binary collations in the list start from the second item (min = 1)
+                const collation = collations[Math.floor(Math.random() * (collations.length - 1) + 1)];
                 const toString = td.function();
                 const proto = new StringStub();
                 proto.setValue('foo');
-                proto.setCollation(1);
-
-                td.when(collations.find(1)).thenReturn({ charset: 'utf8mb4' });
-                td.when(toString()).thenReturn('bar');
-                td.when(bytes('foo')).thenReturn({ toString });
-
-                expect(str(proto).toString()).to.equal('bar');
-            });
-        });
-
-        context('when the charset is not available', () => {
-            it('returns the output of the byte wrapper toString method in the right encoding', () => {
-                const toString = td.function();
-                const proto = new StringStub();
-                proto.setValue('foo');
+                proto.setCollation(collation.id);
 
                 td.when(toString()).thenReturn('bar');
                 td.when(bytes('foo')).thenReturn({ toString });

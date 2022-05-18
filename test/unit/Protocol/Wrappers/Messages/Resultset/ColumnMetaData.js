@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const collations = require('../../../../../../lib/Protocol/collations.json');
 const expect = require('chai').expect;
 const td = require('testdouble');
 
@@ -39,12 +40,11 @@ const td = require('testdouble');
 let columnMetadata = require('../../../../../../lib/Protocol/Wrappers/Messages/Resultset/ColumnMetadata');
 
 describe('Mysqlx.Resultset.ColumnMetaData wrapper', () => {
-    let ResultsetStub, bytes, collations, wraps;
+    let ResultsetStub, bytes, wraps;
 
     beforeEach('create fakes', () => {
         ResultsetStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_resultset_pb');
         bytes = td.replace('../../../../../../lib/Protocol/Wrappers/ScalarValues/bytes');
-        collations = td.replace('../../../../../../lib/Protocol/Collations');
         wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
         columnMetadata = require('../../../../../../lib/Protocol/Wrappers/Messages/Resultset/ColumnMetadata');
     });
@@ -88,12 +88,13 @@ describe('Mysqlx.Resultset.ColumnMetaData wrapper', () => {
 
             it('returns the character set name of the respective collation id', () => {
                 const proto = new ResultsetStub.ColumnMetaData();
+                // pick a random collection from the list [0...collations.length - 1]
+                const collation = collations[Math.floor(Math.random() * collations.length)];
 
                 td.when(proto.hasCollation()).thenReturn(true);
-                td.when(proto.getCollation()).thenReturn('foo');
-                td.when(collations.find('foo')).thenReturn({ charset: 'bar' });
+                td.when(proto.getCollation()).thenReturn(collation.id);
 
-                expect(columnMetadata(proto).getCharset()).to.equal('bar');
+                expect(columnMetadata(proto).getCharset()).to.equal(collation.charset);
             });
         });
 
@@ -119,12 +120,13 @@ describe('Mysqlx.Resultset.ColumnMetaData wrapper', () => {
 
             it('returns the collation name of the respective collation id', () => {
                 const proto = new ResultsetStub.ColumnMetaData();
+                // pick a random collection from the list [0...collations.length - 1]
+                const collation = collations[Math.floor(Math.random() * collations.length)];
 
                 td.when(proto.hasCollation()).thenReturn(true);
-                td.when(proto.getCollation()).thenReturn('foo');
-                td.when(collations.find('foo')).thenReturn({ name: 'bar' });
+                td.when(proto.getCollation()).thenReturn(collation.id);
 
-                expect(columnMetadata(proto).getCollation()).to.equal('bar');
+                expect(columnMetadata(proto).getCollation()).to.equal(collation.name);
             });
         });
 
@@ -334,27 +336,28 @@ describe('Mysqlx.Resultset.ColumnMetaData wrapper', () => {
 
                 td.when(proto.getType()).thenReturn(ResultsetStub.ColumnMetaData.FieldType.BYTES);
                 td.when(proto.getContentType()).thenReturn(ResultsetStub.ContentType_BYTES.JSON);
-                td.when(collations.find(), { ignoreExtraArgs: true }).thenReturn({});
 
                 expect(columnMetadata(proto).getTypeString()).to.equal('JSON');
             });
 
             it('returns STRING for binary content with the utf8mb4 charset', () => {
                 const proto = new ResultsetStub.ColumnMetaData();
+                // non-binary collations in the list start from the second item (min = 1)
+                const collation = collations[Math.floor(Math.random() * (collations.length - 1) + 1)];
 
                 td.when(proto.getType()).thenReturn(ResultsetStub.ColumnMetaData.FieldType.BYTES);
-                td.when(proto.getCollation()).thenReturn('foo');
-                td.when(collations.find('foo')).thenReturn({ charset: 'utf8mb4' });
+                td.when(proto.getCollation()).thenReturn(collation.id);
 
                 expect(columnMetadata(proto).getTypeString()).to.equal('STRING');
             });
 
             it('returns BYTES for binary content with the binary charset', () => {
+                // binary collation is the first item in the list
+                const collation = collations[0];
                 const proto = new ResultsetStub.ColumnMetaData();
 
                 td.when(proto.getType()).thenReturn(ResultsetStub.ColumnMetaData.FieldType.BYTES);
-                td.when(proto.getCollation()).thenReturn(1);
-                td.when(collations.find(1)).thenReturn({ charset: 'binary' });
+                td.when(proto.getCollation()).thenReturn(collation.id);
 
                 expect(columnMetadata(proto).getTypeString()).to.equal('BYTES');
             });
@@ -397,7 +400,6 @@ describe('Mysqlx.Resultset.ColumnMetaData wrapper', () => {
 
                 td.when(proto.getType()).thenReturn(ResultsetStub.ColumnMetaData.FieldType.BYTES);
                 td.when(proto.getContentType()).thenReturn(ResultsetStub.ContentType_BYTES.GEOMETRY);
-                td.when(collations.find(), { ignoreExtraArgs: true }).thenReturn({});
 
                 expect(columnMetadata(proto).getTypeString()).to.equal('GEOMETRY');
             });
@@ -409,7 +411,7 @@ describe('Mysqlx.Resultset.ColumnMetaData wrapper', () => {
                 const wrap = columnMetadata(proto);
                 const getCharset = td.replace(wrap, 'getCharset');
 
-                td.when(getCharset()).thenReturn('binary');
+                td.when(getCharset()).thenReturn(collations[0].charset);
 
                 return expect(wrap.isBinary()).to.be.true;
             });
@@ -423,10 +425,11 @@ describe('Mysqlx.Resultset.ColumnMetaData wrapper', () => {
             });
 
             it('returns false if the column does not have a binary charset', () => {
+                // non-binary collations in the list start from the second item (min = 1)
+                const collation = collations[Math.floor(Math.random() * (collations.length - 1) + 1)];
                 const proto = new ResultsetStub.ColumnMetaData();
 
-                td.when(proto.getCollation()).thenReturn('foo');
-                td.when(collations.find('foo')).thenReturn({ charset: 'utf8mb4' });
+                td.when(proto.getCollation()).thenReturn(collation.id);
 
                 return expect(columnMetadata(proto).isBinary()).to.be.false;
             });
