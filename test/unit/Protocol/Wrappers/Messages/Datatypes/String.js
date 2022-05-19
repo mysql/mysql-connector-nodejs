@@ -79,18 +79,15 @@ describe('Mysqlx.Datatypes.Scalar.String wrapper', () => {
     });
 
     context('toJSON()', () => {
-        it('returns a textual representation of a Mysqlx.Datatypes.Scalar.Octets stub instance', () => {
-            // pick a random collection from the list [0...collations.length - 1]
-            const collation = collations[Math.floor(Math.random() * collations.length)];
-            const toString = td.function();
-            const proto = new StringStub();
-            proto.setValue('foo');
-            proto.setCollation(collation.id);
+        it('returns a textual representation of a Mysqlx.Datatypes.Scalar.String stub instance', () => {
+            const message = str(new StringStub());
+            const getCollationId = td.replace(message, 'getCollationId');
+            const toString = td.replace(message, 'toString');
 
+            td.when(getCollationId()).thenReturn('foo');
             td.when(toString()).thenReturn('bar');
-            td.when(bytes('foo')).thenReturn({ toString });
 
-            expect(str(proto).toJSON()).to.deep.equal({ collation: collation.id, value: 'bar' });
+            expect(message.toJSON()).to.deep.equal({ collation: 'foo', value: 'bar' });
         });
     });
 
