@@ -43,7 +43,7 @@ describe('connecting to the MySQL server using IPv6', () => {
     const baseConfig = { schema: undefined, socket: undefined };
 
     beforeEach('resolve IPv6 address', () => {
-        return fixtures.getIPv6Address({ host: config.host, port: config.port })
+        return fixtures.getIPv6Address(config.host)
             .then(address => {
                 host = address;
             });

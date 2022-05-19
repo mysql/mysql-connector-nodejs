@@ -198,7 +198,7 @@ describe('connection failures', () => {
                         return expect.fail();
                     })
                     .catch(err => {
-                        return fixtures.getIPv4Address({ host: serverShutdownConfig.host })
+                        return fixtures.getIPv4Address(serverShutdownConfig.host)
                             .then(address => {
                                 expect(err.code).to.equal('ECONNREFUSED');
                                 expect(err.address).to.equal(address);

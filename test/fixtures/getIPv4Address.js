@@ -32,10 +32,17 @@
 
 const dns = require('dns').promises;
 
-module.exports = function ({ host } = {}) {
-    return dns.lookup(host, { family: 4 })
-        .then(({ address }) => address)
-        // Ultimately, if the IPv4 address cannot be obtained, it should be
-        // "undefined".
+const RECORD_FAMILY = 4;
+
+module.exports = function (host) {
+    // If the IPv4 address cannot be obtained, it should be "undefined".
+    return dns.lookup(host, { family: RECORD_FAMILY })
+        .then(({ address, family }) => {
+            if (family !== RECORD_FAMILY) {
+                return;
+            }
+
+            return address;
+        })
         .catch(() => undefined);
 };

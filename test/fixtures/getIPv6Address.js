@@ -31,29 +31,18 @@
 'use strict';
 
 const dns = require('dns').promises;
-const getIPv4Address = require('./getIPv4Address');
 
-module.exports = function ({ host, port } = {}) {
-    // The host can be a common name, IPv4 or IPv6 address.
-    // "dns.lookup()"" does not work with IP addresses, so we first need to
-    // ensure we use the resolved common name instead.
-    // So, we can start by retrieving the IPv4 address.
-    return getIPv4Address({ host })
-        .then(address => {
-            // Then we use the IPv4 address to obtain the common name.
-            return dns.lookupService(address, port);
-        })
-        .then(({ hostname }) => {
-            // We can then use the common name to finally obtain any available
-            // IPv6 address. Of course, if the original host is already
-            // provided as a common name, there is one extra step involved,
-            // but, at least, we tried our best to obtain an address.
-            return dns.lookup(hostname, { family: 6 });
-        })
-        .then(({ address }) => {
+const RECORD_FAMILY = 6;
+
+module.exports = function (host) {
+    // If the IPv6 address cannot be obtained, it should be "undefined".
+    return dns.lookup(host, { family: RECORD_FAMILY })
+        .then(({ address, family }) => {
+            if (family !== RECORD_FAMILY) {
+                return;
+            }
+
             return address;
         })
-        // Ultimately, if the IPv6 address cannot be obtained, it should be
-        // "undefined".
         .catch(() => undefined);
 };

@@ -78,7 +78,7 @@ describe('connecting to the MySQL server using DNS SRV', () => {
         }];
 
         beforeEach('setup fake DNS server in the current host', () => {
-            return fixtures.getIPv4Address({ host: os.hostname() })
+            return fixtures.getIPv4Address(os.hostname())
                 .then(host => {
                     return fixtures.createRecordServer({ host, service: baseConfig.host, records });
                 })
@@ -121,7 +121,7 @@ describe('connecting to the MySQL server using DNS SRV', () => {
         let originalServers, fakeServer;
 
         beforeEach('setup fake DNS server in the current host', () => {
-            return fixtures.getIPv4Address({ host: os.hostname() })
+            return fixtures.getIPv4Address(os.hostname())
                 .then(host => {
                     return fixtures.createRecordServer({ host, service: baseConfig.host, records: [] });
                 })

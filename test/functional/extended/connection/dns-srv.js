@@ -49,7 +49,7 @@ describe('connecting to the MySQL server using DNS SRV', () => {
 
             return mysqlx.getSession(`mysqlx+srv://${srvConfig.user}:${srvConfig.password}@${srvConfig.host}`)
                 .then(session => {
-                    return fixtures.getIPv4Address({ host: session.inspect().host })
+                    return fixtures.getIPv4Address(session.inspect().host)
                         .then(address => {
                             expect(address).to.equal(endpoint.address);
                             return session.close();
@@ -71,7 +71,7 @@ describe('connecting to the MySQL server using DNS SRV', () => {
 
                 return mysqlx.getSession(srvConfig)
                     .then(session => {
-                        return fixtures.getIPv4Address({ host: session.inspect().host })
+                        return fixtures.getIPv4Address(session.inspect().host)
                             .then(address => {
                                 expect(address).to.equal(endpoints[0].address);
                                 return session.close();
@@ -84,7 +84,7 @@ describe('connecting to the MySQL server using DNS SRV', () => {
                         return mysqlx.getSession(srvConfig);
                     })
                     .then(session => {
-                        return fixtures.getIPv4Address({ host: session.inspect().host })
+                        return fixtures.getIPv4Address(session.inspect().host)
                             .then(address => {
                                 expect(address).to.equal(endpoints[1].address);
                                 return session.close();
@@ -97,7 +97,7 @@ describe('connecting to the MySQL server using DNS SRV', () => {
                         return mysqlx.getSession(srvConfig);
                     })
                     .then(session => {
-                        return fixtures.getIPv4Address({ host: session.inspect().host })
+                        return fixtures.getIPv4Address(session.inspect().host)
                             .then(address => {
                                 expect(address).to.equal(endpoints[0].address);
                                 return session.close();
@@ -124,7 +124,7 @@ describe('connecting to the MySQL server using DNS SRV', () => {
 
                 return pool.getSession()
                     .then(session => {
-                        return fixtures.getIPv4Address({ host: session.inspect().host });
+                        return fixtures.getIPv4Address(session.inspect().host);
                     })
                     .then(address => {
                         expect(address).to.equal(endpoints[0].address);
@@ -136,7 +136,7 @@ describe('connecting to the MySQL server using DNS SRV', () => {
                         return pool.getSession();
                     })
                     .then(session => {
-                        return fixtures.getIPv4Address({ host: session.inspect().host });
+                        return fixtures.getIPv4Address(session.inspect().host);
                     })
                     .then(address => {
                         expect(address).to.equal(endpoints[1].address);
@@ -148,7 +148,7 @@ describe('connecting to the MySQL server using DNS SRV', () => {
                         return pool.getSession();
                     })
                     .then(session => {
-                        return fixtures.getIPv4Address({ host: session.inspect().host });
+                        return fixtures.getIPv4Address(session.inspect().host);
                     })
                     .then(address => {
                         expect(address).to.equal(endpoints[0].address);
