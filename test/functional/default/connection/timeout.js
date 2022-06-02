@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,6 +35,7 @@
 const config = require('../../../config');
 const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
+const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const net = require('net');
 const os = require('os');
@@ -93,25 +94,10 @@ describe('connecting to servers with a given timeout', () => {
 
         beforeEach('create fake server', () => {
             server = net.createServer();
-
-            server.on('connection', socket => {
-                server.on('close', () => socket.destroy());
-                socket.pause();
-            });
         });
 
-        afterEach('close fake server', done => {
-            // If the server is not listening, there is nothing to do.
-            if (!server.listening) {
-                return done();
-            }
-
-            // Make sure the server does not accept any new connections.
-            server.close(done);
-            // The callback on "close" is only called after all
-            // connections are closed, so we need to make sure that
-            // happens.
-            server.emit('close');
+        afterEach('close fake server', () => {
+            return fixtures.destroyServerSocket(server);
         });
 
         context('using a Unix socket', () => {
@@ -255,51 +241,10 @@ describe('connecting to servers with a given timeout', () => {
         beforeEach('create fake servers', () => {
             primary = net.createServer();
             secondary = net.createServer();
-
-            [primary, secondary].forEach(server => {
-                server.on('connection', socket => {
-                    primary.on('close', () => socket.destroy());
-                    socket.pause();
-                });
-            });
         });
 
-        afterEach('close fake servers', done => {
-            // If the servers are not listening, there is nothing to do.
-            if (!secondary.listening && !primary.listening) {
-                return done();
-            }
-
-            // If only the primary is listening.
-            if (!secondary.listening) {
-                // We prevent it from accepting new connections.
-                primary.close(done);
-                // And close the existing ones.
-                primary.emit('close');
-                return;
-            }
-
-            // By this point both the primary and secondary should be
-            // listening.
-            secondary.close(err => {
-                if (!err) {
-                    return primary.close(done);
-                }
-
-                // Even if there is an error, we should try to close
-                // the primary as well.
-                return primary.close(err => {
-                    if (err) {
-                        return done(err);
-                    }
-
-                    return done(err);
-                });
-            });
-
-            [primary, secondary].forEach(server => {
-                server.emit('close');
-            });
+        afterEach('close fake servers', () => {
+            return Promise.all([fixtures.destroyServerSocket(primary), fixtures.destroyServerSocket(secondary)]);
         });
 
         context('using a Unix socket', () => {
@@ -331,8 +276,9 @@ describe('connecting to servers with a given timeout', () => {
                             return expect.fail();
                         })
                         .catch(err => {
+                            const elapsedTime = Date.now() - beforeTest;
                             // The timeout check restarts for each endpoint.
-                            expect(Date.now()).to.be.at.least(beforeTest + connectTimeout * 2);
+                            expect(elapsedTime).to.be.at.least(connectTimeout * timeoutConfig.endpoints.length);
                             return expect(err.message).to.equal(error);
                         });
                 });
@@ -354,8 +300,9 @@ describe('connecting to servers with a given timeout', () => {
                             return expect.fail();
                         })
                         .catch(err => {
+                            const elapsedTime = Date.now() - beforeTest;
                             // The timeout check restarts for each endpoint.
-                            expect(Date.now()).to.be.at.least(beforeTest + connectTimeout * 2);
+                            expect(elapsedTime).to.be.at.least(connectTimeout * timeoutConfig.endpoints.length);
                             return expect(err.message).to.equal(error);
                         });
                 });
@@ -421,8 +368,9 @@ describe('connecting to servers with a given timeout', () => {
                             return expect.fail();
                         })
                         .catch(err => {
+                            const elapsedTime = Date.now() - beforeTest;
                             // The timeout check restarts for each endpoint.
-                            expect(Date.now()).to.be.at.least(beforeTest + connectTimeout * 2);
+                            expect(elapsedTime).to.be.at.least(connectTimeout * timeoutConfig.endpoints.length);
                             return expect(err.message).to.equal(error);
                         });
                 });
@@ -440,8 +388,9 @@ describe('connecting to servers with a given timeout', () => {
                             return expect.fail();
                         })
                         .catch(err => {
+                            const elapsedTime = Date.now() - beforeTest;
                             // The timeout check restarts for each endpoint.
-                            expect(Date.now()).to.be.at.least(beforeTest + connectTimeout * 2);
+                            expect(elapsedTime).to.be.at.least(connectTimeout * timeoutConfig.endpoints.length);
                             return expect(err.message).to.equal(error);
                         });
                 });

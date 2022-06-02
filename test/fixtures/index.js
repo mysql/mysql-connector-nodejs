@@ -38,6 +38,7 @@ module.exports = {
     createSchema: require('./createSchema'),
     createUser: require('./createUser'),
     deregisterService: require('./deregisterService'),
+    destroyServerSocket: require('./destroyServerSocket'),
     dropSchema: require('./dropSchema'),
     dropUser: require('./dropUser'),
     getIPv4Address: require('./getIPv4Address'),
