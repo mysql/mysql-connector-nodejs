@@ -43,58 +43,47 @@ const assertIgnoredWhitespaces = (expr) => {
 
 describe('ExprParser', () => {
     context('expr', () => {
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in an intervalExpr', () => {
+        it('ignores any leading or trailing whitespace in an intervalExpr', () => {
             return assertIgnoredWhitespaces('CURTIME() + INTERVAL 2 HOUR');
         });
 
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in a mulDivExpr', () => {
+        it('ignores any leading or trailing whitespace in a mulDivExpr', () => {
             return assertIgnoredWhitespaces('2 * 4');
         });
 
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in a addSubExpr', () => {
+        it('ignores any leading or trailing whitespace in a addSubExpr', () => {
             return assertIgnoredWhitespaces('1 + 1');
         });
 
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in a shiftExpr', () => {
+        it('ignores any leading or trailing whitespace in a shiftExpr', () => {
             return assertIgnoredWhitespaces('2 >> 1');
         });
 
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in a bitExpr', () => {
+        it('ignores any leading or trailing whitespace in a bitExpr', () => {
             return assertIgnoredWhitespaces('1 ^ 1');
         });
 
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in a shiftExpr', () => {
+        it('ignores any leading or trailing whitespace in a shiftExpr', () => {
             return assertIgnoredWhitespaces('2 >> 1');
         });
 
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in a compExpr', () => {
+        it('ignores any leading or trailing whitespace in a compExpr', () => {
             return assertIgnoredWhitespaces('foo = :v');
         });
 
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in a shiftExpr', () => {
+        it('ignores any leading or trailing whitespace in a shiftExpr', () => {
             return assertIgnoredWhitespaces('2 >> 1');
         });
 
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in an ilriExpr', () => {
+        it('ignores any leading or trailing whitespace in an ilriExpr', () => {
             return assertIgnoredWhitespaces('TRUE IS NOT FALSE');
         });
 
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in an andExpr', () => {
+        it('ignores any leading or trailing whitespace in an andExpr', () => {
             return assertIgnoredWhitespaces('foo = "bar" AND baz = "qux"');
         });
 
-        // TODO(Rui): BUG#29795595
-        it.skip('ignores any leading or trailing whitespace in an orExpr', () => {
+        it('ignores any leading or trailing whitespace in an orExpr', () => {
             return assertIgnoredWhitespaces('foo = "bar" OR baz = "qux"');
         });
 
