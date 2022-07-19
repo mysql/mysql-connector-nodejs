@@ -59,38 +59,39 @@ describe('Mysqlx.Expr.Expr wrapper', () => {
     context('class methods', () => {
         context('create()', () => {
             it('parses a raw X DevAPI expression string without placeholder assigments', () => {
-                const exprData = { output: 'bar', placeholders: ['baz'] };
+                const exprData = { type: 'expr', value: 'bar', placeholders: ['baz'] };
                 const placeholderAssignments = { baz: 'qux' };
                 const wrapsValueOf = td.function();
-                const scalarValueOf = td.function();
+                const encode = td.replace(expr, 'encode');
 
-                td.when(wraps('bar')).thenReturn({ valueOf: wrapsValueOf });
-                td.when(wrapsValueOf()).thenReturn('quux');
+                td.when(wraps('baz')).thenReturn({ valueOf: wrapsValueOf });
+                td.when(wrapsValueOf()).thenReturn('qux');
                 td.when(parser.parse('foo'), { ignoreExtraArgs: true }).thenReturn(exprData);
-                td.when(scalar.create('qux')).thenReturn({ valueOf: scalarValueOf });
-                td.when(scalarValueOf()).thenReturn('qux');
+                td.when(encode('bar')).thenReturn('baz');
 
                 const e = expr.create('foo', { toParse: true, toPrepare: true });
 
-                expect(e.valueOf()).to.equal('quux');
+                expect(e.valueOf()).to.equal('qux');
                 return expect(e.getPlaceholderArgs(placeholderAssignments)).to.be.an('array').and.be.empty;
             });
 
             it('parses a raw X DevAPI expression string with placeholder assignments', () => {
-                const exprData = { output: 'bar', placeholders: ['baz'] };
+                const exprData = { type: 'expr', value: 'bar', placeholders: ['baz'] };
                 const placeholderAssignments = { baz: 'qux' };
                 const wrapsValueOf = td.function();
                 const scalarValueOf = td.function();
+                const encode = td.replace(expr, 'encode');
 
-                td.when(wraps('bar')).thenReturn({ valueOf: wrapsValueOf });
-                td.when(wrapsValueOf()).thenReturn('quux');
+                td.when(wraps('baz')).thenReturn({ valueOf: wrapsValueOf });
+                td.when(wrapsValueOf()).thenReturn('qux');
                 td.when(parser.parse('foo'), { ignoreExtraArgs: true }).thenReturn(exprData);
+                td.when(encode('bar')).thenReturn('baz');
                 td.when(scalar.create('qux')).thenReturn({ valueOf: scalarValueOf });
                 td.when(scalarValueOf()).thenReturn('qux');
 
                 const e = expr.create('foo', { toParse: true });
 
-                expect(e.valueOf()).to.equal('quux');
+                expect(e.valueOf()).to.equal('qux');
                 expect(e.getPlaceholderArgs(placeholderAssignments)).to.deep.equal(['qux']);
             });
 

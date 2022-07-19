@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -58,10 +58,13 @@ describe('Mysqlx.Expr.ColumnIdentifier wrapper', () => {
     context('class methods', () => {
         context('create()', () => {
             it('returns a Mysqlx.Expr.ColumnIdentifier wrap instance parsing a provided name', () => {
-                td.when(parser.parse('foo', { type: parser.Type.COLUMN_OR_PATH })).thenReturn({ getIdentifier: () => 'bar' });
-                td.when(wraps('bar')).thenReturn({ valueOf: () => 'baz' });
+                const encode = td.replace(columnIdentifier, 'encode');
 
-                expect(columnIdentifier.create('foo').valueOf()).to.equal('baz');
+                td.when(parser.parse('foo', { type: parser.Type.COLUMN_OR_PATH })).thenReturn({ value: 'bar' });
+                td.when(encode('bar')).thenReturn('baz');
+                td.when(wraps('baz')).thenReturn({ valueOf: () => 'qux' });
+
+                expect(columnIdentifier.create('foo').valueOf()).to.equal('qux');
             });
         });
     });

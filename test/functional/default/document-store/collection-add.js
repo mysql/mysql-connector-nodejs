@@ -226,6 +226,27 @@ describe('adding documents to a collection', () => {
         });
     });
 
+    // JavaScript can happily store Number.MAX_SAFE_INTEGER + 1 and Number.MAX_SAFE_INTEGER - 1.
+    context('unsafe numbers', () => {
+        it('saves the numbers as strings', () => {
+            const unsafePositive = Number.MAX_SAFE_INTEGER + 1;
+            const unsafeNegative = Number.MIN_SAFE_INTEGER - 1;
+            const doc = { unsafePositive, unsafeNegative };
+            const want = { unsafePositive: `${unsafePositive}`, unsafeNegative: `${unsafeNegative}` };
+
+            return collection.add(doc)
+                .execute()
+                .then(() => {
+                    return collection.find()
+                        .fields('unsafePositive', 'unsafeNegative')
+                        .execute();
+                })
+                .then(res => {
+                    return expect(res.fetchOne()).to.deep.equal(want);
+                });
+        });
+    });
+
     context('BUG#29179767 JavaScript Date converted to empty object', () => {
         it('saves a JavaScript Date as a valid JSON value', () => {
             const now = (new Date()).toJSON();

@@ -64,7 +64,7 @@
   },
   "dependencies": {
     "google-protobuf": "3.19.4",
-    "parsimmon": "1.16.0"
+    "parsimmon": "1.18.1"
   },
   "engines": {
     "node": ">=14.0.0"

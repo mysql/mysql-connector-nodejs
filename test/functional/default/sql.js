@@ -741,6 +741,22 @@ describe('raw SQL', () => {
                         expect(columns[1].getType()).to.equal('BIGINT');
                     });
             });
+
+            it('returns unsafe values as strings', () => {
+                const unsafe = Number.MIN_SAFE_INTEGER - 1;
+
+                return session.sql('INSERT INTO test (value1) VALUES (?)')
+                    .bind(unsafe)
+                    .execute()
+                    .then(() => {
+                        return session.sql('SELECT value1 from test')
+                            .execute();
+                    })
+                    .then(res => {
+                        expect(res.fetchOne()).to.deep.equal([-1]);
+                        return expect(res.fetchOne()).to.deep.equal([`${unsafe}`]);
+                    });
+            });
         });
 
         context('UNSIGNED BIGINT', () => {
@@ -758,6 +774,22 @@ describe('raw SQL', () => {
                 return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('UNSIGNED BIGINT'));
+            });
+
+            it('returns unsafe values as strings', () => {
+                const unsafe = Number.MAX_SAFE_INTEGER + 1;
+
+                return session.sql('INSERT INTO test VALUES (?)')
+                    .bind(unsafe)
+                    .execute()
+                    .then(() => {
+                        return session.sql('SELECT * from test')
+                            .execute();
+                    })
+                    .then(res => {
+                        expect(res.fetchOne()).to.deep.equal([1]);
+                        return expect(res.fetchOne()).to.deep.equal([`${unsafe}`]);
+                    });
             });
         });
 

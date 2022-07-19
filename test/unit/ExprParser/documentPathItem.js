@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,38 +32,19 @@
 
 /* eslint-env node, mocha */
 
-const Expr = require('../../../lib/Protocol/Stubs/mysqlx_expr_pb').Expr;
+const Parser = require('../../../lib/ExprParser');
 const expect = require('chai').expect;
-const mysqlx = require('../../../');
-const pkg = require('../../../package.json');
 
-describe('client API entrypoint', () => {
-    context('parsing an X DevAPI expression', () => {
-        it('returns a document-mode expression by default', () => {
-            const expression = mysqlx.expr('foo');
-            const typed = new Expr(expression.toArray());
+describe('ExprParser', () => {
+    context('documentPathItem', () => {
+        const type = Parser.Type.DOCUMENT_PATH_ITEM;
 
-            // string describes an identifier document path
-            expect(typed.getType()).to.equal(1);
-            const documentPath = typed.getIdentifier().getDocumentPathList();
-            expect(documentPath[0].getType(1)).to.equal(1);
-            expect(documentPath[0].getValue()).to.equal('foo');
-        });
-
-        it('returns a table-mode expression if explicitely requested', () => {
-            const expression = mysqlx.expr('foo', { mode: mysqlx.Mode.TABLE });
-            const typed = new Expr(expression.toArray());
-
-            // string describes an identifier name
-            expect(typed.getType()).to.equal(1);
-            expect(typed.getIdentifier().getDocumentPathList()).to.have.lengthOf(0);
-            expect(typed.getIdentifier().getName()).to.equal('foo');
-        });
-    });
-
-    context('checking the client version', () => {
-        it('returns the current npm package version', () => {
-            expect(mysqlx.getVersion()).to.equal(pkg.version);
+        it('parses valid document path components', () => {
+            expect(Parser.parse('**', { type })).to.deep.equal({ type: 'doubleAsterisk' });
+            expect(Parser.parse('[*]', { type })).to.deep.equal({ type: 'arrayIndexAsterisk' });
+            expect(Parser.parse('.*', { type })).to.deep.equal({ type: 'memberAsterisk' });
+            expect(Parser.parse('[3]', { type })).to.deep.equal({ type: 'arrayIndex', value: 3 });
+            expect(Parser.parse('.foo', { type })).to.deep.equal({ type: 'member', value: 'foo' });
         });
     });
 });

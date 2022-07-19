@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -184,6 +184,31 @@ describe('inserting data into a table', () => {
                 .catch(err => {
                     expect(err.info).to.include.keys('code');
                     expect(err.info.code).to.equal(errors.ER_X_BAD_INSERT_DATA);
+                });
+        });
+    });
+
+    // JavaScript can happily store Number.MAX_SAFE_INTEGER + 1 and Number.MAX_SAFE_INTEGER - 1.
+    context('unsafe numbers', () => {
+        beforeEach('add BIGINT columns', () => {
+            return session.sql('ALTER TABLE test ADD COLUMN (unsafePositive BIGINT UNSIGNED, unsafeNegative BIGINT SIGNED)')
+                .execute();
+        });
+
+        it('saves the numbers as strings', () => {
+            const unsafePositive = Number.MAX_SAFE_INTEGER + 1;
+            const unsafeNegative = Number.MIN_SAFE_INTEGER - 1;
+            const want = [`${unsafePositive}`, `${unsafeNegative}`];
+
+            return table.insert('unsafePositive', 'unsafeNegative')
+                .values(unsafePositive, unsafeNegative)
+                .execute()
+                .then(() => {
+                    return table.select('unsafePositive', 'unsafeNegative')
+                        .execute();
+                })
+                .then(res => {
+                    return expect(res.fetchOne()).to.deep.equal(want);
                 });
         });
     });
