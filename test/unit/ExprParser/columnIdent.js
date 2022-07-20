@@ -435,8 +435,7 @@ describe('ExprParser', () => {
             expect(() => Parser.parse("foo->'$foo.[1]'", { type, mode })).to.throw();
             expect(() => Parser.parse("foo->'$foo*[1]'", { type, mode })).to.throw();
             expect(() => Parser.parse("foo->'$foo.*[1]'", { type, mode })).to.throw();
-            // TODO(Rui): BUG#27361584
-            // expect(() => Parser.parse("foo->'$**'", { type, mode })).to.throw();
+            expect(() => Parser.parse("foo->'$**'", { type, mode })).to.throw();
             expect(() => Parser.parse("foo->'$foo**bar'", { type, mode })).to.throw();
             expect(() => Parser.parse("foo->'$foo.**bar'", { type, mode })).to.throw();
             expect(() => Parser.parse("doc->'foo**.bar'", { type, mode })).to.throw();

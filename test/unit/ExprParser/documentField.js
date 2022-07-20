@@ -189,8 +189,7 @@ describe('ExprParser', () => {
                 });
             });
 
-            // TODO(Rui): BUG#27361584
-            it.skip('fails to parse a path to multiple fields linked by a globstar', () => {
+            it('fails to parse a path to multiple fields linked by a globstar', () => {
                 expect(() => Parser.parse('$**', { type })).to.throw();
                 return expect(() => Parser.parse('$.foo**', { type })).to.throw();
             });
@@ -328,8 +327,7 @@ describe('ExprParser', () => {
                 });
             });
 
-            // TODO(Rui): BUG#27361584
-            it.skip('fails to parse a path to multiple fields linked by a globstar', () => {
+            it('fails to parse a path to multiple fields linked by a globstar', () => {
                 expect(() => Parser.parse('**', { type })).to.throw();
                 return expect(() => Parser.parse('foo**', { type })).to.throw();
             });
@@ -341,17 +339,14 @@ describe('ExprParser', () => {
                 expect(() => Parser.parse('.doc', { type })).to.throw();
                 expect(() => Parser.parse('**', { type })).to.throw();
                 expect(() => Parser.parse('**foo', { type })).to.throw();
-                // TODO(Rui): BUG#27361584
-                // expect(() => Parser.parse('_**', { type })).to.throw();
+                expect(() => Parser.parse('_**', { type })).to.throw();
                 expect(() => Parser.parse('_**[*]_**._', { type })).to.throw();
                 expect(() => Parser.parse('_**[*]._.**._', { type })).to.throw();
                 expect(() => Parser.parse('_**[*]_.**._', { type })).to.throw();
-                // TODO(Rui): BUG#27361584
-                // expect(() => Parser.parse('$.foo**', { type })).to.throw();
+                expect(() => Parser.parse('$.foo**', { type })).to.throw();
                 expect(() => Parser.parse('$.foo.**.bar', { type })).to.throw();
                 expect(() => Parser.parse('$.foo[**]', { type })).to.throw();
-                // TODO(Rui): BUG#27361584
-                // expect(() => Parser.parse('$**', { type })).to.throw();
+                expect(() => Parser.parse('$**', { type })).to.throw();
                 expect(() => Parser.parse('$.**', { type })).to.throw();
                 expect(() => Parser.parse('$.**bar', { type })).to.throw();
                 expect(() => Parser.parse('$.**".bar"', { type })).to.throw();
