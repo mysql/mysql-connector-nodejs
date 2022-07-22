@@ -37,7 +37,7 @@ const ScalarStub = require('../../../../lib/Protocol/Stubs/mysqlx_datatypes_pb')
 const expect = require('chai').expect;
 const mysqlx = require('../../../../');
 
-describe('X DevAPI expression encoder for literals', () => {
+describe('X DevAPI expression encoder for function calls', () => {
     it('returns a valid protobuf message for function calls with schema identifiers', () => {
         let proto = mysqlx.expr('foo.bar("baz", "qux")');
         expect(proto.getType()).to.equal(ExprStub.Expr.Type.FUNC_CALL);
@@ -179,6 +179,25 @@ describe('X DevAPI expression encoder for literals', () => {
         expect(args[3].getLiteral().getType()).to.equal(ScalarStub.Scalar.Type.V_UINT);
         expect(args[3].getLiteral().getVUnsignedInt()).to.equal(2);
         expect(args[4].getLiteral().getType()).to.equal(ScalarStub.Scalar.Type.V_STRING);
-        return expect(Buffer.from(args[4].getLiteral().getVString().getValue()).toString()).to.equal(']');
+        expect(Buffer.from(args[4].getLiteral().getVString().getValue()).toString()).to.equal(']');
+
+        const options = { mode: mysqlx.Mode.TABLE };
+
+        proto = mysqlx.expr("foo->>'$.bar'", options);
+        expect(proto.getType()).to.equal(ExprStub.Expr.Type.FUNC_CALL);
+
+        fn = proto.getFunctionCall();
+        functionName = fn.getName();
+        expect(functionName.getName()).to.equal('json_unquote');
+
+        params = fn.getParamList();
+        expect(params).to.have.lengthOf(1);
+        fstParam = params[0].getIdentifier();
+        expect(fstParam.getName()).to.equal('foo');
+
+        const documentPath = fstParam.getDocumentPathList();
+        expect(documentPath).to.have.lengthOf(1);
+        expect(documentPath[0].getType()).to.equal(ExprStub.DocumentPathItem.Type.MEMBER);
+        return expect(documentPath[0].getValue()).to.equal('bar');
     });
 });

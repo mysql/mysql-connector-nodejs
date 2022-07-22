@@ -340,7 +340,7 @@ describe('X DevAPI expression encoder for identifiers', () => {
         // eslint-disable-next-line no-unused-expressions
         expect(identifier.getDocumentPathList()).to.be.an('array').and.be.empty;
 
-        proto = mysqlx.expr("foo.bar.baz->>'$.qux'", options);
+        proto = mysqlx.expr("foo.bar.baz->'$.qux'", options);
         expect(proto.getType()).to.equal(ExprStub.Expr.Type.IDENT);
 
         identifier = proto.getIdentifier();
@@ -445,15 +445,6 @@ describe('X DevAPI expression encoder for identifiers', () => {
         expect(documentPath[1].getType()).to.equal(ExprStub.DocumentPathItem.Type.MEMBER);
         expect(documentPath[1].getValue()).to.equal('bar');
         expect(documentPath[2].getType()).to.equal(ExprStub.DocumentPathItem.Type.ARRAY_INDEX_ASTERISK);
-
-        proto = mysqlx.expr("doc->>'$.foo'", options);
-        expect(proto.getType()).to.equal(ExprStub.Expr.Type.IDENT);
-        expect(proto.getIdentifier().getName()).to.equal('doc');
-
-        documentPath = proto.getIdentifier().getDocumentPathList();
-        expect(documentPath).to.have.lengthOf(1);
-        expect(documentPath[0].getType()).to.equal(ExprStub.DocumentPathItem.Type.MEMBER);
-        expect(documentPath[0].getValue()).to.equal('foo');
 
         proto = mysqlx.expr('doc->\'$." ".bar\'', options);
         expect(proto.getType()).to.equal(ExprStub.Expr.Type.IDENT);

@@ -50,7 +50,7 @@ describe('ExprParser', () => {
             });
         });
 
-        it('parses an identifier containing the column name and a document path', () => {
+        it('parses an identifier containing the column name and a document path using a json_extract shortcut', () => {
             const singleMemberAsterisk = {
                 type: 'columnIdent',
                 value: {
@@ -60,7 +60,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo->'$.*'", { type, mode })).to.deep.equal(singleMemberAsterisk);
-            expect(Parser.parse("foo->>'$.*'", { type, mode })).to.deep.equal(singleMemberAsterisk);
 
             const singleMember = {
                 type: 'columnIdent',
@@ -74,7 +73,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo->'$.bar'", { type, mode })).to.deep.equal(singleMember);
-            expect(Parser.parse("foo->>'$.bar'", { type, mode })).to.deep.equal(singleMember);
 
             const doubleMember = {
                 type: 'columnIdent',
@@ -91,7 +89,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo->'$.bar.baz'", { type, mode })).to.deep.equal(doubleMember);
-            expect(Parser.parse("foo->>'$.bar.baz'", { type, mode })).to.deep.equal(doubleMember);
 
             const singleArrayIndex = {
                 type: 'columnIdent',
@@ -108,7 +105,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo->'$.bar[3]'", { type, mode })).to.deep.equal(singleArrayIndex);
-            expect(Parser.parse("foo->>'$.bar[3]'", { type, mode })).to.deep.equal(singleArrayIndex);
 
             const singleArrayIndexAsterisk = {
                 type: 'columnIdent',
@@ -124,7 +120,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo->'$.bar[*]'", { type, mode })).to.deep.equal(singleArrayIndexAsterisk);
-            expect(Parser.parse("foo->>'$.bar[*]'", { type, mode })).to.deep.equal(singleArrayIndexAsterisk);
 
             const doubleAsterisk = {
                 type: 'columnIdent',
@@ -143,6 +138,143 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo->'$.bar**.baz'", { type, mode })).to.deep.equal(doubleAsterisk);
+        });
+
+        it('parses an identifier containing the column name and a document path using a json_unquote shortcut', () => {
+            const singleMemberAsterisk = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{ type: 'memberAsterisk' }],
+                            name: 'foo'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo->>'$.*'", { type, mode })).to.deep.equal(singleMemberAsterisk);
+
+            const singleMember = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'bar'
+                            }],
+                            name: 'foo'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo->>'$.bar'", { type, mode })).to.deep.equal(singleMember);
+
+            const doubleMember = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'bar'
+                            }, {
+                                type: 'member',
+                                value: 'baz'
+                            }],
+                            name: 'foo'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo->>'$.bar.baz'", { type, mode })).to.deep.equal(doubleMember);
+
+            const singleArrayIndex = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'bar'
+                            }, {
+                                type: 'arrayIndex',
+                                value: 3
+                            }],
+                            name: 'foo'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo->>'$.bar[3]'", { type, mode })).to.deep.equal(singleArrayIndex);
+
+            const singleArrayIndexAsterisk = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'bar'
+                            }, {
+                                type: 'arrayIndexAsterisk'
+                            }],
+                            name: 'foo'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo->>'$.bar[*]'", { type, mode })).to.deep.equal(singleArrayIndexAsterisk);
+
+            const doubleAsterisk = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'bar'
+                            }, {
+                                type: 'doubleAsterisk'
+                            }, {
+                                type: 'member',
+                                value: 'baz'
+                            }],
+                            name: 'foo'
+                        }
+                    }]
+                }
+            };
+
             return expect(Parser.parse("foo->>'$.bar**.baz'", { type, mode })).to.deep.equal(doubleAsterisk);
         });
 
@@ -157,7 +289,7 @@ describe('ExprParser', () => {
             });
         });
 
-        it('parses an identifier containing the table and column names, and a document path', () => {
+        it('parses an identifier containing the table and column names, and a document path using a json_extract shortcut', () => {
             const singleMemberAsterisk = {
                 type: 'columnIdent',
                 value: {
@@ -168,7 +300,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo.bar->'$.*'", { type, mode })).to.deep.equal(singleMemberAsterisk);
-            expect(Parser.parse("foo.bar->>'$.*'", { type, mode })).to.deep.equal(singleMemberAsterisk);
 
             const singleMember = {
                 type: 'columnIdent',
@@ -183,7 +314,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo.bar->'$.baz'", { type, mode })).to.deep.equal(singleMember);
-            expect(Parser.parse("foo.bar->>'$.baz'", { type, mode })).to.deep.equal(singleMember);
 
             const doubleMember = {
                 type: 'columnIdent',
@@ -201,7 +331,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo.bar->'$.baz.qux'", { type, mode })).to.deep.equal(doubleMember);
-            expect(Parser.parse("foo.bar->>'$.baz.qux'", { type, mode })).to.deep.equal(doubleMember);
 
             const singleArrayIndex = {
                 type: 'columnIdent',
@@ -219,7 +348,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo.bar->'$.baz[3]'", { type, mode })).to.deep.equal(singleArrayIndex);
-            expect(Parser.parse("foo.bar->>'$.baz[3]'", { type, mode })).to.deep.equal(singleArrayIndex);
 
             const singleArrayIndexAsterisk = {
                 type: 'columnIdent',
@@ -236,7 +364,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo.bar->'$.baz[*]'", { type, mode })).to.deep.equal(singleArrayIndexAsterisk);
-            expect(Parser.parse("foo.bar->>'$.baz[*]'", { type, mode })).to.deep.equal(singleArrayIndexAsterisk);
 
             const doubleAsterisk = {
                 type: 'columnIdent',
@@ -255,7 +382,150 @@ describe('ExprParser', () => {
                 }
             };
 
-            expect(Parser.parse("foo.bar->'$.baz**.qux'", { type, mode })).to.deep.equal(doubleAsterisk);
+            return expect(Parser.parse("foo.bar->'$.baz**.qux'", { type, mode })).to.deep.equal(doubleAsterisk);
+        });
+
+        it('parses an identifier containing the table and column names, and a document path using a json_unquote shortcut', () => {
+            const singleMemberAsterisk = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{ type: 'memberAsterisk' }],
+                            name: 'bar',
+                            table: 'foo'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo.bar->>'$.*'", { type, mode })).to.deep.equal(singleMemberAsterisk);
+
+            const singleMember = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'baz'
+                            }],
+                            name: 'bar',
+                            table: 'foo'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo.bar->>'$.baz'", { type, mode })).to.deep.equal(singleMember);
+
+            const doubleMember = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'baz'
+                            }, {
+                                type: 'member',
+                                value: 'qux'
+                            }],
+                            name: 'bar',
+                            table: 'foo'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo.bar->>'$.baz.qux'", { type, mode })).to.deep.equal(doubleMember);
+
+            const singleArrayIndex = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'baz'
+                            }, {
+                                type: 'arrayIndex',
+                                value: 3
+                            }],
+                            name: 'bar',
+                            table: 'foo'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo.bar->>'$.baz[3]'", { type, mode })).to.deep.equal(singleArrayIndex);
+
+            const singleArrayIndexAsterisk = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'baz'
+                            }, {
+                                type: 'arrayIndexAsterisk'
+                            }],
+                            name: 'bar',
+                            table: 'foo'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo.bar->>'$.baz[*]'", { type, mode })).to.deep.equal(singleArrayIndexAsterisk);
+
+            const doubleAsterisk = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'baz'
+                            }, {
+                                type: 'doubleAsterisk'
+                            }, {
+                                type: 'member',
+                                value: 'qux'
+                            }],
+                            name: 'bar',
+                            table: 'foo'
+                        }
+                    }]
+                }
+            };
+
             return expect(Parser.parse("foo.bar->>'$.baz**.qux'", { type, mode })).to.deep.equal(doubleAsterisk);
         });
 
@@ -271,7 +541,7 @@ describe('ExprParser', () => {
             });
         });
 
-        it('parses an identifier containing the schema, table and column names, and a document path', () => {
+        it('parses an identifier containing the schema, table and column names, and a document path using a json_extract shortcut', () => {
             const singleMemberAsterisk = {
                 type: 'columnIdent',
                 value: {
@@ -285,7 +555,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo.bar.baz->'$.*'", { type, mode })).to.deep.equal(singleMemberAsterisk);
-            expect(Parser.parse("foo.bar.baz->>'$.*'", { type, mode })).to.deep.equal(singleMemberAsterisk);
 
             const singleMember = {
                 type: 'columnIdent',
@@ -301,7 +570,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo.bar.baz->'$.qux'", { type, mode })).to.deep.equal(singleMember);
-            expect(Parser.parse("foo.bar.baz->>'$.qux'", { type, mode })).to.deep.equal(singleMember);
 
             const doubleMember = {
                 type: 'columnIdent',
@@ -320,7 +588,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo.bar.baz->'$.qux.quux'", { type, mode })).to.deep.equal(doubleMember);
-            expect(Parser.parse("foo.bar.baz->>'$.qux.quux'", { type, mode })).to.deep.equal(doubleMember);
 
             const singleArrayIndex = {
                 type: 'columnIdent',
@@ -339,7 +606,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo.bar.baz->'$.qux[3]'", { type, mode })).to.deep.equal(singleArrayIndex);
-            expect(Parser.parse("foo.bar.baz->>'$.qux[3]'", { type, mode })).to.deep.equal(singleArrayIndex);
 
             const singleArrayIndexAsterisk = {
                 type: 'columnIdent',
@@ -357,7 +623,6 @@ describe('ExprParser', () => {
             };
 
             expect(Parser.parse("foo.bar.baz->'$.qux[*]'", { type, mode })).to.deep.equal(singleArrayIndexAsterisk);
-            expect(Parser.parse("foo.bar.baz->>'$.qux[*]'", { type, mode })).to.deep.equal(singleArrayIndexAsterisk);
 
             const doubleAsterisk = {
                 type: 'columnIdent',
@@ -377,7 +642,158 @@ describe('ExprParser', () => {
                 }
             };
 
-            expect(Parser.parse("foo.bar.baz->'$.qux**.quux'", { type, mode })).to.deep.equal(doubleAsterisk);
+            return expect(Parser.parse("foo.bar.baz->'$.qux**.quux'", { type, mode })).to.deep.equal(doubleAsterisk);
+        });
+
+        it('parses an identifier containing the schema, table and column names, and a document path using a json_unquote shortcut', () => {
+            const singleMemberAsterisk = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'memberAsterisk'
+                            }],
+                            name: 'baz',
+                            schema: 'foo',
+                            table: 'bar'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo.bar.baz->>'$.*'", { type, mode })).to.deep.equal(singleMemberAsterisk);
+
+            const singleMember = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'qux'
+                            }],
+                            name: 'baz',
+                            schema: 'foo',
+                            table: 'bar'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo.bar.baz->>'$.qux'", { type, mode })).to.deep.equal(singleMember);
+
+            const doubleMember = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'qux'
+                            }, {
+                                type: 'member',
+                                value: 'quux'
+                            }],
+                            name: 'baz',
+                            schema: 'foo',
+                            table: 'bar'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo.bar.baz->>'$.qux.quux'", { type, mode })).to.deep.equal(doubleMember);
+
+            const singleArrayIndex = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'qux'
+                            }, {
+                                type: 'arrayIndex',
+                                value: 3
+                            }],
+                            name: 'baz',
+                            schema: 'foo',
+                            table: 'bar'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo.bar.baz->>'$.qux[3]'", { type, mode })).to.deep.equal(singleArrayIndex);
+
+            const singleArrayIndexAsterisk = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'qux'
+                            }, {
+                                type: 'arrayIndexAsterisk'
+                            }],
+                            name: 'baz',
+                            schema: 'foo',
+                            table: 'bar'
+                        }
+                    }]
+                }
+            };
+
+            expect(Parser.parse("foo.bar.baz->>'$.qux[*]'", { type, mode })).to.deep.equal(singleArrayIndexAsterisk);
+
+            const doubleAsterisk = {
+                type: 'functionCall',
+                value: {
+                    name: {
+                        name: 'json_unquote'
+                    },
+                    params: [{
+                        type: 'columnIdent',
+                        value: {
+                            documentPath: [{
+                                type: 'member',
+                                value: 'qux'
+                            }, {
+                                type: 'doubleAsterisk'
+                            }, {
+                                type: 'member',
+                                value: 'quux'
+                            }],
+                            name: 'baz',
+                            schema: 'foo',
+                            table: 'bar'
+                        }
+                    }]
+                }
+            };
+
             return expect(Parser.parse("foo.bar.baz->>'$.qux**.quux'", { type, mode })).to.deep.equal(doubleAsterisk);
         });
 
