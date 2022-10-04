@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -36,117 +36,138 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 
 // subject under test needs to be reloaded with replacement fakes
-let limitExpr = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/LimitExpr');
+let LimitExpr = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/LimitExpr');
 
 describe('Mysqlx.Crud.LimitExpr wrapper', () => {
-    let CrudStub, expr, wraps;
+    // let CrudStub, expr, wraps;
 
-    beforeEach('create fakes', () => {
+    // beforeEach('create fakes', () => {
+    //     CrudStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_crud_pb');
+    //     expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
+    //     wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+    //     LimitExpr = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/LimitExpr');
+    // });
+
+    // afterEach('reset fakes', () => {
+    //     td.reset();
+    // });
+    let CrudStub;
+
+    beforeEach('replace dependencies with test doubles', () => {
         CrudStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_crud_pb');
-        expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        limitExpr = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/LimitExpr');
+        // reload module with the replacements
+        LimitExpr = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/LimitExpr');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns an empty wrap instance if the count is not defined', () => {
-                td.when(wraps(undefined)).thenReturn({ valueOf: () => 'foo' });
+            let Expr, Wraps;
 
-                expect(limitExpr.create().valueOf()).to.equal('foo');
+            beforeEach('replace dependencies with test doubles', () => {
+                Expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                LimitExpr = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/LimitExpr');
+            });
+
+            it('creates an empty Mysqlx.Crud.LimitExpr wrapper if the count is not defined', () => {
+                td.when(Wraps(undefined)).thenReturn({ valueOf: () => 'foo' });
+
+                expect(LimitExpr.create().valueOf()).to.equal('foo');
                 expect(td.explain(CrudStub.LimitExpr.prototype.setRowCount).callCount).to.equal(0);
                 expect(td.explain(CrudStub.LimitExpr.prototype.setOffset).callCount).to.equal(0);
             });
 
-            context('when the statement should be executed', () => {
-                it('returns a Mysqlx.Crud.LimitExpr wrap instance with the count if the offset is not defined', () => {
-                    const proto = new CrudStub.LimitExpr();
+            it('creates a Mysqlx.Crud.LimitExpr wrapper with the count if the offset is not defined', () => {
+                const count = 'foo';
+                const countExpr = `${count}_expr`;
+                const position = 0;
+                const proto = new CrudStub.LimitExpr();
+                const protoValue = 'bar';
 
-                    td.when(wraps(proto)).thenReturn({ valueOf: () => 'bar' });
-                    td.when(expr.create('foo', { isPlaceholder: false })).thenReturn({ valueOf: () => 'baz' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(Expr.create({ value: count, position, isLiteral: true })).thenReturn({ valueOf: () => countExpr });
 
-                    expect(limitExpr.create('foo').valueOf()).to.equal('bar');
-                    expect(td.explain(proto.setRowCount).callCount).to.equal(1);
-                    expect(td.explain(proto.setRowCount).calls[0].args[0]).to.equal('baz');
-                    expect(td.explain(proto.setOffset).callCount).to.equal(0);
-                });
-
-                it('returns a Mysqlx.Crud.LimitExpr wrap instance with both the count and offset', () => {
-                    const proto = new CrudStub.LimitExpr();
-
-                    td.when(wraps(proto)).thenReturn({ valueOf: () => 'baz' });
-                    td.when(expr.create('foo', { isPlaceholder: false })).thenReturn({ valueOf: () => 'qux' });
-                    td.when(expr.create('bar', { isPlaceholder: false })).thenReturn({ valueOf: () => 'quux' });
-
-                    expect(limitExpr.create('foo', 'bar').valueOf()).to.equal('baz');
-                    expect(td.explain(proto.setRowCount).callCount).to.equal(1);
-                    expect(td.explain(proto.setRowCount).calls[0].args[0]).to.equal('qux');
-                    expect(td.explain(proto.setOffset).callCount).to.equal(1);
-                    expect(td.explain(proto.setOffset).calls[0].args[0]).to.equal('quux');
-                });
+                expect(LimitExpr.create({ count, position }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setRowCount).callCount).to.equal(1);
+                expect(td.explain(proto.setRowCount).calls[0].args[0]).to.equal(countExpr);
+                expect(td.explain(proto.setOffset).callCount).to.equal(0);
             });
 
-            context('when the statement should be prepared', () => {
-                it('returns a Mysqlx.Crud.LimitExpr wrap instance with the count placeholder position if the offset is not defined', () => {
-                    const proto = new CrudStub.LimitExpr();
+            it('creates a Mysqlx.Crud.LimitExpr wrapper with both the count and offset', () => {
+                const count = 'foo';
+                const countExpr = `${count}_expr`;
+                const offset = 'bar';
+                const offsetExpr = `${offset}_expr`;
+                const position = 0;
+                const proto = new CrudStub.LimitExpr();
+                const protoValue = 'baz';
 
-                    td.when(wraps(proto)).thenReturn({ valueOf: () => 'bar' });
-                    td.when(expr.create(3, { isPlaceholder: true, toPrepare: true })).thenReturn({ valueOf: () => 'baz' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(Expr.create({ value: count, position: 0, isLiteral: true })).thenReturn({ valueOf: () => countExpr });
+                td.when(Expr.create({ value: offset, position: 1, isLiteral: true })).thenReturn({ valueOf: () => offsetExpr });
 
-                    expect(limitExpr.create('foo', { position: 3, toPrepare: true }).valueOf()).to.equal('bar');
-                    expect(td.explain(proto.setRowCount).callCount).to.equal(1);
-                    expect(td.explain(proto.setRowCount).calls[0].args[0]).to.equal('baz');
-                    expect(td.explain(proto.setOffset).callCount).to.equal(0);
-                });
-
-                it('returns a Mysqlx.Crud.LimitExpr wrap instance with both the count and offset placeholder positions', () => {
-                    const proto = new CrudStub.LimitExpr();
-
-                    td.when(wraps(proto)).thenReturn({ valueOf: () => 'baz' });
-                    td.when(expr.create(3, { isPlaceholder: true, toPrepare: true })).thenReturn({ valueOf: () => 'qux' });
-                    td.when(expr.create(4, { isPlaceholder: true, toPrepare: true })).thenReturn({ valueOf: () => 'quux' });
-
-                    expect(limitExpr.create('foo', 'bar', { position: 3, toPrepare: true }).valueOf()).to.equal('baz');
-                    expect(td.explain(proto.setRowCount).callCount).to.equal(1);
-                    expect(td.explain(proto.setRowCount).calls[0].args[0]).to.equal('qux');
-                    expect(td.explain(proto.setOffset).callCount).to.equal(1);
-                    expect(td.explain(proto.setOffset).calls[0].args[0]).to.equal('quux');
-                });
+                expect(LimitExpr.create({ count, offset, position }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setRowCount).callCount).to.equal(1);
+                expect(td.explain(proto.setRowCount).calls[0].args[0]).to.equal(countExpr);
+                expect(td.explain(proto.setOffset).callCount).to.equal(1);
+                expect(td.explain(proto.setOffset).calls[0].args[0]).to.equal(offsetExpr);
             });
         });
     });
 
     context('instance methods', () => {
         context('toJSON()', () => {
+            let Expr;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
+                // reload module with the replacements
+                LimitExpr = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/LimitExpr');
+            });
+
             it('returns nothing if the underlying protobuf instance is not available', () => {
                 // eslint-disable-next-line no-unused-expressions
-                expect(limitExpr().toJSON()).to.not.exist;
+                expect(LimitExpr().toJSON()).to.not.exist;
             });
 
             it('returns a textual representation of a Mysqlx.Crud.LimitExpr message', () => {
+                const count = 'foo';
+                const countExprProto = `${count}_expr_proto`;
+                const offset = 'bar';
+                const offsetExprProto = `${offset}_expr_proto`;
                 const proto = new CrudStub.LimitExpr();
 
-                td.when(proto.getRowCount()).thenReturn('p_foo');
-                td.when(expr('p_foo')).thenReturn({ toJSON: () => 'foo' });
+                td.when(proto.getRowCount()).thenReturn(countExprProto);
+                td.when(Expr(countExprProto)).thenReturn({ toJSON: () => count });
 
-                td.when(proto.getOffset()).thenReturn('p_bar');
-                td.when(expr('p_bar')).thenReturn({ toJSON: () => 'bar' });
+                td.when(proto.getOffset()).thenReturn(offsetExprProto);
+                td.when(Expr(offsetExprProto)).thenReturn({ toJSON: () => offset });
 
-                expect(limitExpr(proto).toJSON()).to.deep.equal({ row_count: 'foo', offset: 'bar' });
+                expect(LimitExpr(proto).toJSON()).to.deep.equal({ offset, row_count: count });
             });
         });
 
         context('valueOf()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                LimitExpr = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/LimitExpr');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new CrudStub.LimitExpr();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(limitExpr(proto).valueOf()).to.equal('foo');
+                expect(LimitExpr(proto).valueOf()).to.equal(expected);
             });
         });
     });

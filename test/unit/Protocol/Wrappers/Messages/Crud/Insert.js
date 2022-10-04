@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,128 +35,182 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let insert = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Insert');
+// subject under test needs to be reloaded with replacement test doubles
+let Insert = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Insert');
 
 describe('Mysqlx.Crud.Insert wrapper', () => {
-    let CrudStub, collection, column, list, polyglot, scalar, serializable, typedRow, wraps;
+    let CrudStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         CrudStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_crud_pb');
-        collection = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Collection');
-        column = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Column');
-        list = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/List');
-        polyglot = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Polyglot');
-        scalar = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Scalar');
-        serializable = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Serializable');
-        typedRow = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/TypedRow');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        insert = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Insert');
+        // reload module with the replacements
+        Insert = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Insert');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns a Mysqlx.Crud.Insert wrap instance', () => {
+            let Collection, Column, TypedRow, Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Collection = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Collection');
+                Column = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Column');
+                TypedRow = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/TypedRow');
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Insert = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Insert');
+            });
+
+            it('creates a Mysqlx.Crud.Insert wrapper with the given boundaries', () => {
                 const proto = new CrudStub.Insert();
-                const statement = { getCategory: td.function(), getTableName: td.function(), getSchema: td.function(), getColumns: td.function(), getItems: td.function(), isUpsert: td.function() };
+                const collection = 'foo';
+                const columns = ['bar', 'baz'];
+                const columnValues = columns.map(c => `${c}_value`);
+                const dataModel = 'qux';
+                const rows = ['quux', 'quuux'];
+                const typedRows = rows.map(r => `${r}_typed`);
+                const schemaName = 'quuuux';
+                const tableName = 'quuuuux';
+                const protoValue = 'quuuuuux';
+                const upsert = 'quuuuuuux';
+                const statement = { columns, dataModel, rows, schemaName, tableName, upsert };
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(Collection.create({ name: tableName, schemaName })).thenReturn({ valueOf: () => collection });
+                td.when(Column.create(columns[0])).thenReturn({ valueOf: () => columnValues[0] });
+                td.when(Column.create(columns[1])).thenReturn({ valueOf: () => columnValues[1] });
+                td.when(TypedRow.create(rows[0])).thenReturn({ valueOf: () => typedRows[0] });
+                td.when(TypedRow.create(rows[1])).thenReturn({ valueOf: () => typedRows[1] });
 
-                td.when(statement.getTableName()).thenReturn('s_bar');
-                td.when(statement.getSchema()).thenReturn('s_baz');
-                td.when(collection.create('s_bar', 's_baz')).thenReturn({ valueOf: () => 'bar.baz' });
-
-                td.when(statement.getCategory()).thenReturn('qux');
-
-                td.when(statement.getColumns()).thenReturn(['s_quux', 's_quuz']);
-                td.when(column.create('s_quux')).thenReturn({ valueOf: () => 'quux' });
-                td.when(column.create('s_quuz')).thenReturn({ valueOf: () => 'quuz' });
-
-                td.when(statement.getItems()).thenReturn(['s_corge', 's_grault']);
-                td.when(typedRow.create('s_corge')).thenReturn({ valueOf: () => 'corge' });
-                td.when(typedRow.create('s_grault')).thenReturn({ valueOf: () => 'grault' });
-
-                td.when(statement.isUpsert()).thenReturn('garply');
-
-                expect(insert.create(statement, { toPrepare: true }).valueOf()).to.equal('foo');
+                expect(Insert.create(statement).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setCollection).callCount).to.equal(1);
-                expect(td.explain(proto.setCollection).calls[0].args[0]).to.equal('bar.baz');
+                expect(td.explain(proto.setCollection).calls[0].args[0]).to.equal(collection);
                 expect(td.explain(proto.setDataModel).callCount).to.equal(1);
-                expect(td.explain(proto.setDataModel).calls[0].args[0]).to.equal('qux');
+                expect(td.explain(proto.setDataModel).calls[0].args[0]).to.equal(dataModel);
                 expect(td.explain(proto.setProjectionList).callCount).to.equal(1);
-                expect(td.explain(proto.setProjectionList).calls[0].args[0]).to.deep.equal(['quux', 'quuz']);
+                expect(td.explain(proto.setProjectionList).calls[0].args[0]).to.deep.equal(columnValues);
                 expect(td.explain(proto.setRowList).callCount).to.equal(1);
-                expect(td.explain(proto.setRowList).calls[0].args[0]).to.deep.equal(['corge', 'grault']);
+                expect(td.explain(proto.setRowList).calls[0].args[0]).to.deep.equal(typedRows);
                 expect(td.explain(proto.setUpsert).callCount).to.equal(1);
-                expect(td.explain(proto.setUpsert).calls[0].args[0]).to.equal('garply');
+                expect(td.explain(proto.setUpsert).calls[0].args[0]).to.equal(upsert);
             });
         });
     });
 
     context('instance methods', () => {
         context('getDataModel()', () => {
+            let Polyglot;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Polyglot = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Polyglot');
+                // reload module with the replacements
+                Insert = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Insert');
+            });
+
             it('returns the name of the underlying data model', () => {
                 const proto = new CrudStub.Insert();
-                const getDataModel = td.function();
+                const expected = 'foo';
 
-                td.when(polyglot(proto)).thenReturn({ getDataModel });
-                td.when(getDataModel()).thenReturn('foo');
+                td.when(Polyglot(proto)).thenReturn({ getDataModel: () => expected });
 
-                expect(insert(proto).getDataModel()).to.equal('foo');
+                expect(Insert(proto).getDataModel()).to.equal('foo');
             });
         });
 
         context('serialize()', () => {
+            let Serializable;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Serializable = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Serializable');
+                // reload module with the replacements
+                Insert = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Insert');
+            });
+
             it('returns a raw network buffer of the underlying protobuf message', () => {
                 const proto = new CrudStub.Insert();
+                const expected = 'foo';
 
-                td.when(serializable(proto)).thenReturn({ serialize: () => 'foo' });
+                td.when(Serializable(proto)).thenReturn({ serialize: () => expected });
 
-                expect(insert(proto).serialize()).to.equal('foo');
+                expect(Insert(proto).serialize()).to.equal(expected);
             });
         });
 
         context('toJSON()', () => {
+            let Collection, Column, List, Polyglot, Scalar, TypedRow;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Collection = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Collection');
+                Column = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Column');
+                List = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/List');
+                Polyglot = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Polyglot');
+                Scalar = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Scalar');
+                TypedRow = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/TypedRow');
+                // reload module with the replacements
+                Insert = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Insert');
+            });
+
             it('returns a textual representation of a Mysqlx.Crud.Insert message', () => {
+                const args = ['foo', 'bar'];
+                const argListProto = args.map(a => `${a}_proto`);
+                const collection = 'foo';
+                const collectionProto = `${collection}_proto`;
+                const dataModel = 'bar';
+                const projection = ['baz', 'qux'];
+                const columnListProto = projection.map(c => `${c}_proto`);
+                const columnList = projection.map(c => `${c}_wrap`);
                 const proto = new CrudStub.Insert();
+                const row = ['quux', 'quuux'];
+                const rowProto = row.map(r => `${r}_proto`);
+                const scalarList = args.map(s => `${s}_scalar`);
+                const valueList = row.map(r => `${r}_wrap`);
+                const upsert = 'quuuux';
 
-                td.when(proto.getCollection()).thenReturn('p_foo');
-                td.when(collection('p_foo')).thenReturn({ toJSON: () => 'foo' });
+                td.when(proto.getCollection()).thenReturn(collectionProto);
+                td.when(Collection(collectionProto)).thenReturn({ toJSON: () => collection });
 
-                td.when(polyglot(proto)).thenReturn({ getDataModel: () => 'bar' });
+                td.when(Polyglot(proto)).thenReturn({ getDataModel: () => dataModel });
 
-                td.when(proto.getProjectionList()).thenReturn(['p_baz', 'p_qux']);
-                td.when(column('p_baz')).thenReturn('pp_baz');
-                td.when(column('p_qux')).thenReturn('pp_qux');
-                td.when(list(['pp_baz', 'pp_qux'])).thenReturn({ toJSON: () => ['baz', 'qux'] });
+                td.when(proto.getProjectionList()).thenReturn(columnListProto);
+                td.when(Column(columnListProto[0])).thenReturn(columnList[0]);
+                td.when(Column(columnListProto[1])).thenReturn(columnList[1]);
+                td.when(List(columnList)).thenReturn({ toJSON: () => projection });
 
-                td.when(proto.getRowList()).thenReturn(['p_quux', 'p_quuz']);
-                td.when(typedRow('p_quux')).thenReturn('pp_quux');
-                td.when(typedRow('p_quuz')).thenReturn('pp_quuz');
-                td.when(list(['pp_quux', 'pp_quuz'])).thenReturn({ toJSON: () => ['quux', 'quuz'] });
+                td.when(proto.getRowList()).thenReturn(rowProto);
+                td.when(TypedRow(rowProto[0])).thenReturn(valueList[0]);
+                td.when(TypedRow(rowProto[1])).thenReturn(valueList[1]);
+                td.when(List(valueList)).thenReturn({ toJSON: () => row });
 
-                td.when(proto.getArgsList()).thenReturn(['p_corge', 'p_grault']);
-                td.when(scalar('p_corge')).thenReturn('pp_corge');
-                td.when(scalar('p_grault')).thenReturn('pp_grault');
-                td.when(list(['pp_corge', 'pp_grault'])).thenReturn({ toJSON: () => ['corge', 'grault'] });
+                td.when(proto.getArgsList()).thenReturn(argListProto);
+                td.when(Scalar(argListProto[0])).thenReturn(scalarList[0]);
+                td.when(Scalar(argListProto[1])).thenReturn(scalarList[1]);
+                td.when(List(scalarList)).thenReturn({ toJSON: () => args });
 
-                td.when(proto.getUpsert()).thenReturn('garply');
+                td.when(proto.getUpsert()).thenReturn(upsert);
 
-                expect(insert(proto).toJSON()).to.deep.equal({ collection: 'foo', data_model: 'bar', projection: ['baz', 'qux'], row: ['quux', 'quuz'], args: ['corge', 'grault'], upsert: 'garply' });
+                expect(Insert(proto).toJSON()).to.deep.equal({ collection, data_model: dataModel, projection, row, args, upsert });
             });
         });
 
         context('valueOf()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Insert = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Insert');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new CrudStub.Insert();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(insert(proto).valueOf()).to.equal('foo');
+                expect(Insert(proto).valueOf()).to.equal(expected);
             });
         });
     });

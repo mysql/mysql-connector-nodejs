@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,83 +35,104 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let typedRow = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/TypedRow');
+// subject under test needs to be reloaded with replacement test doubles
+let TypedRow = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/TypedRow');
 
 describe('Mysqlx.Crud.Insert.TypedRow wrapper', () => {
-    let CrudStub, expr, wraps;
+    let CrudStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         CrudStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_crud_pb');
-        expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        typedRow = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/TypedRow');
+        // reload module with the replacements
+        TypedRow = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/TypedRow');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns a Mysqlx.Crud.Insert.TypedRow wrap instance for a single value', () => {
-                const proto = new CrudStub.Insert.TypedRow();
+            let Expr, Wraps;
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'bar' });
-                td.when(expr.create('foo')).thenReturn({ valueOf: () => 'baz' });
-
-                expect(typedRow.create('foo').valueOf()).to.equal('bar');
-                expect(td.explain(proto.setFieldList).callCount).to.equal(1);
-                expect(td.explain(proto.setFieldList).calls[0].args[0]).to.deep.equal(['baz']);
+            beforeEach('replace dependencies with test doubles', () => {
+                Expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                TypedRow = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/TypedRow');
             });
 
-            it('returns a Mysqlx.Crud.Insert.TypedRow wrap instance for a list of values', () => {
+            it('creates Mysqlx.Crud.Insert.TypedRow wrapper for a single value (e.g. a documentOrJSON definition)', () => {
+                const documentOrJSON = { value: 'foo' };
+                const valueExprProto = `${documentOrJSON}_proto`;
                 const proto = new CrudStub.Insert.TypedRow();
+                const protoValue = 'bar';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'bar' });
-                td.when(expr.create('foo')).thenReturn({ valueOf: () => 'baz' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(Expr.create({ value: documentOrJSON.value })).thenReturn({ valueOf: () => valueExprProto });
 
-                expect(typedRow.create(['foo']).valueOf()).to.equal('bar');
+                expect(TypedRow.create(documentOrJSON).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setFieldList).callCount).to.equal(1);
-                expect(td.explain(proto.setFieldList).calls[0].args[0]).to.deep.equal(['baz']);
+                expect(td.explain(proto.setFieldList).calls[0].args[0]).to.deep.equal([valueExprProto]);
             });
 
-            it('returns a Mysqlx.Crud.Insert.TypedRow without any undefined value', () => {
+            it('creates a Mysqlx.Crud.Insert.TypedRow wrapper for a an array of values (e.g. the column values of a table row)', () => {
+                // ensure undefined values are ignored
+                const columnValues = [{ value: 'foo' }, {}, { value: 'bar' }];
+                const valueExprProtos = columnValues.filter(({ value }) => typeof value !== 'undefined').map(({ value }) => `${value}_proto`);
                 const proto = new CrudStub.Insert.TypedRow();
+                const protoValue = 'baz';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'bar' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(Expr.create({ ...columnValues[0] })).thenReturn({ valueOf: () => valueExprProtos[0] });
+                td.when(Expr.create({ ...columnValues[2] })).thenReturn({ valueOf: () => valueExprProtos[1] });
 
-                expect(typedRow.create(undefined).valueOf()).to.equal('bar');
+                expect(TypedRow.create(columnValues).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setFieldList).callCount).to.equal(1);
-                expect(td.explain(proto.setFieldList).calls[0].args[0]).to.deep.equal([]);
-
-                // call count has increased
-                expect(typedRow.create([undefined]).valueOf()).to.equal('bar');
-                expect(td.explain(proto.setFieldList).callCount).to.equal(2);
-                expect(td.explain(proto.setFieldList).calls[1].args[0]).to.deep.equal([]);
+                expect(td.explain(proto.setFieldList).calls[0].args[0]).to.deep.equal(valueExprProtos);
             });
         });
     });
 
     context('instance methods', () => {
         context('toJSON()', () => {
+            let Expr;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
+                // reload module with the replacements
+                TypedRow = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/TypedRow');
+            });
+
             it('returns a textual representation of a Mysqlx.Crud.Insert.TypedRow message', () => {
+                const field = ['foo', 'bar'];
+                const fieldListProto = field.map(f => `${f}_proto`);
                 const proto = new CrudStub.Insert.TypedRow();
 
-                td.when(proto.getFieldList()).thenReturn(['foo']);
-                td.when(expr('foo')).thenReturn({ toJSON: () => 'bar' });
+                td.when(proto.getFieldList()).thenReturn(fieldListProto);
+                td.when(Expr(fieldListProto[0])).thenReturn({ toJSON: () => field[0] });
+                td.when(Expr(fieldListProto[1])).thenReturn({ toJSON: () => field[1] });
 
-                expect(typedRow(proto).toJSON()).to.deep.equal({ field: ['bar'] });
+                expect(TypedRow(proto).toJSON()).to.deep.equal({ field });
             });
         });
 
         context('valueOf()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                TypedRow = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/TypedRow');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new CrudStub.Insert.TypedRow();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(typedRow(proto).valueOf()).to.equal('foo');
+                expect(TypedRow(proto).valueOf()).to.equal(expected);
             });
         });
     });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,86 +32,153 @@
 
 /* eslint-env node, mocha */
 
-const ExprStub = require('../../../../../../lib/Protocol/Stubs/mysqlx_expr_pb').Expr;
-const parserType = require('../../../../../../lib/ExprParser').Type.SORT_EXPR;
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let order = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Order');
+// subject under test needs to be reloaded with replacement test doubles
+let Order = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Order');
 
 describe('Mysqlx.Crud.Order wrapper', () => {
-    let CrudStub, expr, wraps;
+    let CrudStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         CrudStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_crud_pb');
-        expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        order = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Order');
+        // reload module with the replacements
+        Order = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Order');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns a Mysqlx.Crud.Order wrap instance given a raw string', () => {
-                td.when(expr.create('foo', { type: parserType })).thenReturn('bar');
-                td.when(wraps('bar')).thenReturn({ valueOf: () => 'baz' });
+            let CrudStub, Expr, Wraps;
 
-                expect(order.create('foo').valueOf()).to.equal('baz');
-                expect(td.explain(CrudStub.Order.prototype.setExpr).callCount).to.equal(0);
+            beforeEach('replace dependencies with test doubles', () => {
+                CrudStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_crud_pb');
+                Expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Order = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Order');
             });
 
-            it('returns a Mysqlx.Crud.Order wrapper given an expression object', () => {
+            it('creates a Mysqlx.Crud.Order wrapper given a sortExpr containing a column id expression', () => {
+                const expr = 'foo';
+                const exprProto = `${expr}_proto`;
                 const proto = new CrudStub.Order();
-                const input = new ExprStub();
+                const protoValue = 'bar';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Expr.create({ value: expr })).thenReturn({ valueOf: () => exprProto });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
 
-                expect(order.create(input).valueOf()).to.equal('foo');
+                expect(Order.create({ expr }).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setExpr).callCount).to.equal(1);
-                expect(td.explain(proto.setExpr).calls[0].args[0]).to.equal(input);
+                expect(td.explain(proto.setExpr).calls[0].args[0]).to.equal(exprProto);
+            });
+
+            it('creates a Mysqlx.Crud.Order wrapper given a sortExpr containing a column id expression and a case-insensitive direction', () => {
+                const expr = 'foo';
+                const exprProto = `${expr}_proto`;
+                const proto = new CrudStub.Order();
+                const protoValue = 'bar';
+
+                td.when(Expr.create({ value: expr })).thenReturn({ valueOf: () => exprProto });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+
+                let direction = 'ASC';
+
+                expect(Order.create({ expr, direction }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setExpr).callCount).to.equal(1);
+                expect(td.explain(proto.setExpr).calls[0].args[0]).to.equal(exprProto);
+                expect(td.explain(proto.setDirection).callCount).to.equal(1);
+                expect(td.explain(proto.setDirection).calls[0].args[0]).to.equal(CrudStub.Order.Direction.ASC);
+
+                direction = 'DESC';
+
+                expect(Order.create({ expr, direction }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setExpr).callCount).to.equal(2); // call count has increased
+                expect(td.explain(proto.setExpr).calls[1].args[0]).to.equal(exprProto);
+                expect(td.explain(proto.setDirection).callCount).to.equal(2); // call count has increased
+                expect(td.explain(proto.setDirection).calls[1].args[0]).to.equal(CrudStub.Order.Direction.DESC);
+
+                direction = 'asc';
+
+                expect(Order.create({ expr, direction }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setExpr).callCount).to.equal(3); // call count has increased
+                expect(td.explain(proto.setExpr).calls[2].args[0]).to.equal(exprProto);
+                expect(td.explain(proto.setDirection).callCount).to.equal(3); // call count has increased
+                expect(td.explain(proto.setDirection).calls[2].args[0]).to.equal(CrudStub.Order.Direction.ASC);
+
+                direction = 'desc';
+
+                expect(Order.create({ expr, direction }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setExpr).callCount).to.equal(4); // call count has increased
+                expect(td.explain(proto.setExpr).calls[3].args[0]).to.equal(exprProto);
+                expect(td.explain(proto.setDirection).callCount).to.equal(4); // call count has increased
+                expect(td.explain(proto.setDirection).calls[3].args[0]).to.equal(CrudStub.Order.Direction.DESC);
             });
         });
     });
 
     context('instance methods', () => {
         context('getDirection()', () => {
-            it('returns the ordering direction identifier', () => {
+            it('returns the Ordering direction identifier', () => {
                 const proto = new CrudStub.Order();
+                let expected = 'ASC';
 
                 td.when(proto.getDirection()).thenReturn(CrudStub.Order.Direction.ASC);
-                expect(order(proto).getDirection()).to.equal('ASC');
+                expect(Order(proto).getDirection()).to.equal(expected);
+
+                expected = 'DESC';
 
                 td.when(proto.getDirection()).thenReturn(CrudStub.Order.Direction.DESC);
-                expect(order(proto).getDirection()).to.equal('DESC');
+                expect(Order(proto).getDirection()).to.equal(expected);
             });
         });
 
         context('toJSON()', () => {
+            let Expr;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
+                // reload module with the replacements
+                Order = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Order');
+            });
+
             it('returns a textual representation of a Mysqlx.Crud.Order message', () => {
+                const direction = 'foo';
+                const expr = 'bar';
+                const exprProto = `${expr}_proto`;
                 const proto = new CrudStub.Order();
 
-                const wrap = order(proto);
+                const wrap = Order(proto);
                 const getDirection = td.replace(wrap, 'getDirection');
 
-                td.when(proto.getExpr()).thenReturn('p_foo');
-                td.when(expr('p_foo')).thenReturn({ toJSON: () => 'foo' });
-                td.when(getDirection()).thenReturn('bar');
+                td.when(proto.getExpr()).thenReturn(exprProto);
+                td.when(Expr(exprProto)).thenReturn({ toJSON: () => expr });
+                td.when(getDirection()).thenReturn(direction);
 
-                expect(wrap.toJSON()).to.deep.equal({ expr: 'foo', direction: 'bar' });
+                expect(wrap.toJSON()).to.deep.equal({ expr, direction });
             });
         });
 
         context('valueOf()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Order = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Order');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new CrudStub.Order();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(order(proto).valueOf()).to.equal('foo');
+                expect(Order(proto).valueOf()).to.equal(expected);
             });
         });
     });

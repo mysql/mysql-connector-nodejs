@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,48 +32,73 @@
 
 /* eslint-env node, mocha */
 
+const dataModel = require('../../../lib/Protocol/Stubs/mysqlx_crud_pb').DataModel.TABLE;
 const expect = require('chai').expect;
-const tableOrdering = require('../../../lib/DevAPI/TableOrdering');
 const td = require('testdouble');
 
-describe('TableOrdering', () => {
+// subject under test needs to be reloaded with test doubles
+let TableOrdering = require('../../../lib/DevAPI/TableOrdering');
+
+describe('TableOrdering mixin', () => {
+    let SortExprStr;
+
+    beforeEach('replace dependencies with test doubles', () => {
+        SortExprStr = td.replace('../../../lib/DevAPI/SortExprStr');
+        // reload module with the replacements
+        TableOrdering = require('../../../lib/DevAPI/TableOrdering');
+    });
+
+    afterEach('restore original dependencies', () => {
+        td.reset();
+    });
+
     context('orderBy()', () => {
-        let forceRestart;
+        it('appends parsed order expressions in table mode provided as multiple arguments to the statement order list', () => {
+            const forceRestart = td.function();
+            const getValue = td.function();
+            const orderList = ['foo'];
+            const sortExprStrs = ['bar', 'baz'];
+            const sortExprs = ['qux', 'quux'];
+            const expected = [...orderList, ...sortExprs];
+            // Adds order expressions beforehand to ensure those are not removed.
+            const statement = TableOrdering({ orderList, preparable: { forceRestart } });
 
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
+            td.when(SortExprStr({ dataModel, value: sortExprStrs[0] })).thenReturn({ getValue });
+            td.when(SortExprStr({ dataModel, value: sortExprStrs[1] })).thenReturn({ getValue });
+            td.when(getValue()).thenReturn(sortExprs[1]);
+            td.when(getValue(), { times: 1 }).thenReturn(sortExprs[0]);
+
+            statement.orderBy(sortExprStrs[0], sortExprStrs[1]);
+
+            // If it is a prepared statement, it needs to be prepared again
+            // because the boundaries have changed.
+            expect(td.explain(forceRestart).callCount).to.equal(1);
+
+            expect(orderList).to.deep.equal(expected);
         });
 
-        afterEach('reset fakes', () => {
-            td.reset();
-        });
+        it('appends parsed order expressions provided as an array to the statement order list', () => {
+            const forceRestart = td.function();
+            const getValue = td.function();
+            const orderList = ['foo'];
+            const sortExprStrs = ['bar', 'baz'];
+            const sortExprs = ['qux', 'quux'];
+            const expected = [...orderList, ...sortExprs];
+            // Adds order expressions beforehand to ensure those are not removed.
+            const statement = TableOrdering({ orderList, preparable: { forceRestart } });
 
-        it('forces an associated statement to be re-prepared', () => {
-            const statement = tableOrdering({ preparable: { forceRestart } });
+            td.when(SortExprStr({ dataModel, value: sortExprStrs[0] })).thenReturn({ getValue });
+            td.when(SortExprStr({ dataModel, value: sortExprStrs[1] })).thenReturn({ getValue });
+            td.when(getValue()).thenReturn(sortExprs[1]);
+            td.when(getValue(), { times: 1 }).thenReturn(sortExprs[0]);
 
-            statement.orderBy();
+            statement.orderBy(sortExprStrs);
 
-            return expect(td.explain(forceRestart).callCount).to.equal(1);
-        });
+            // If it is a prepared statement, it needs to be prepared again
+            // because the boundaries have changed.
+            expect(td.explain(forceRestart).callCount).to.equal(1);
 
-        it('accepts multiple values as arguments', () => {
-            const statement = tableOrdering({ preparable: { forceRestart } });
-            statement.setOrderings = td.function();
-
-            statement.orderBy('foo', 'bar');
-
-            expect(td.explain(statement.setOrderings).callCount).to.equal(1);
-            return expect(td.explain(statement.setOrderings).calls[0].args[0]).to.deep.equal(['foo', 'bar']);
-        });
-
-        it('accepts a single array of values as argument', () => {
-            const statement = tableOrdering({ preparable: { forceRestart } });
-            statement.setOrderings = td.function();
-
-            statement.orderBy(['foo', 'bar']);
-
-            expect(td.explain(statement.setOrderings).callCount).to.equal(1);
-            return expect(td.explain(statement.setOrderings).calls[0].args[0]).to.deep.equal(['foo', 'bar']);
+            expect(orderList).to.deep.equal(expected);
         });
     });
 });

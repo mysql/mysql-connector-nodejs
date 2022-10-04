@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('bitExpr', () => {
-        const type = Parser.Type.BIT_EXPR;
+        const parser = Parser({ type: Parser.Type.BIT_EXPR });
 
         it('parses a bitwise AND and its parameters', () => {
-            return expect(Parser.parse('29 & 15', { type })).to.deep.equal({
+            return expect(parser.parse('29 & 15')).to.deep.equal({
                 type: 'bitExpr',
                 value: {
                     name: '&',
@@ -56,7 +56,7 @@ describe('ExprParser', () => {
         });
 
         it('parses a bitwise OR and its parameters', () => {
-            return expect(Parser.parse('29 | 15', { type })).to.deep.equal({
+            return expect(parser.parse('29 | 15')).to.deep.equal({
                 type: 'bitExpr',
                 value: {
                     name: '|',
@@ -72,7 +72,7 @@ describe('ExprParser', () => {
         });
 
         it('parses a bitwise XOR and its parameters', () => {
-            return expect(Parser.parse('1 ^ 1', { type })).to.deep.equal({
+            return expect(parser.parse('1 ^ 1')).to.deep.equal({
                 type: 'bitExpr',
                 value: {
                     name: '^',
@@ -88,7 +88,7 @@ describe('ExprParser', () => {
         });
 
         it('parses composable bitwise functions and their parameters with the correct precedence', () => {
-            return expect(Parser.parse('29 | 15 & 1', { type })).to.deep.equal({
+            return expect(parser.parse('29 | 15 & 1')).to.deep.equal({
                 type: 'bitExpr',
                 value: {
                     name: '|',

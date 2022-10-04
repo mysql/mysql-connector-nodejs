@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,19 +32,55 @@
 
 /* eslint-env node, mocha */
 
+const dataModel = require('../../../lib/Protocol/Stubs/mysqlx_crud_pb').DataModel.TABLE;
 const expect = require('chai').expect;
-const tableFiltering = require('../../../lib/DevAPI/TableFiltering');
+const td = require('testdouble');
+
+// subject under test needs to be reloaded with test doubles
+let TableFiltering = require('../../../lib/DevAPI/TableFiltering');
 
 describe('TableFiltering', () => {
+    let Preparing, forceRestart;
+
+    beforeEach('replace dependencies with test doubles', () => {
+        Preparing = td.replace('../../../lib/DevAPI/Preparing');
+        forceRestart = td.function();
+
+        td.when(Preparing()).thenReturn({ forceRestart });
+        // reload module with the replacements
+        TableFiltering = require('../../../lib/DevAPI/TableFiltering');
+    });
+
+    afterEach('restore original dependencies', () => {
+        td.reset();
+    });
+
     context('where()', () => {
-        it('sets an empty criteria expression if no arguments are provided', () => {
-            return expect(tableFiltering().where().getCriteria()).to.be.empty;
+        let Expr;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Expr = td.replace('../../../lib/DevAPI/Expr');
+            // reload module with the replacements
+            TableFiltering = require('../../../lib/DevAPI/TableFiltering');
         });
 
-        it('sets the given criteria expression', () => {
-            // eslint-disable-next-line no-unused-expressions
-            expect(tableFiltering().where('').getCriteria()).to.be.empty;
-            return expect(tableFiltering().where('foo').getCriteria()).to.equal('foo');
+        it('sets the statement filtering criteria using an X DevAPI expression for the given input', () => {
+            const constraints = {};
+            const criteria = 'foo';
+            const forceRestart = td.function();
+            const getValue = td.function();
+            const searchConditionStr = 'bar';
+
+            td.when(Expr({ dataModel, value: searchConditionStr })).thenReturn({ getValue });
+            td.when(getValue()).thenReturn(criteria);
+
+            TableFiltering({ constraints, preparable: { forceRestart } }).where(searchConditionStr);
+
+            // If it is a prepared statement, it needs to be prepared again
+            // because the boundaries have changed.
+            expect(td.explain(forceRestart).callCount).to.equal(1);
+
+            expect(constraints).to.deep.equal({ criteria });
         });
     });
 });

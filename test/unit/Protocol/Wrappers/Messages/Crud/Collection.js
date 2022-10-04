@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,36 +35,45 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let collection = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Collection');
+// subject under test needs to be reloaded with test doubles
+let Collection = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Collection');
 
 describe('Mysqlx.Crud.Collection wrapper', () => {
-    let CrudStub, wraps;
+    let CrudStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         CrudStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_crud_pb');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        collection = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Collection');
+        // reload module with the replacements
+        Collection = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Collection');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns a Mysqlx.Crud.Collection wrapper instance', () => {
+            let wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Collection = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Collection');
+            });
+
+            it('creates a Mysqlx.Crud.Collection wrapper instance with a given table name and schema name', () => {
+                const name = 'foo';
                 const proto = new CrudStub.Collection();
-                const schema = { getName: td.function() };
+                const protoValue = 'bar';
+                const schemaName = 'baz';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'bar' });
-                td.when(schema.getName()).thenReturn('baz');
+                td.when(wraps(proto)).thenReturn({ valueOf: () => protoValue });
 
-                expect(collection.create('foo', schema).valueOf()).to.equal('bar');
+                expect(Collection.create({ name, schemaName }).valueOf()).to.deep.equal(protoValue);
                 expect(td.explain(proto.setName).callCount).to.equal(1);
-                expect(td.explain(proto.setName).calls[0].args[0]).to.equal('foo');
+                expect(td.explain(proto.setName).calls[0].args[0]).to.equal(name);
                 expect(td.explain(proto.setSchema).callCount).to.equal(1);
-                expect(td.explain(proto.setSchema).calls[0].args[0]).to.equal('baz');
+                expect(td.explain(proto.setSchema).calls[0].args[0]).to.equal(schemaName);
             });
         });
     });
@@ -73,20 +82,30 @@ describe('Mysqlx.Crud.Collection wrapper', () => {
         context('toJSON()', () => {
             it('returns a textual representation of a Mysqlx.Crud.Collection message', () => {
                 const proto = new CrudStub.Collection();
+                const expected = 'foo';
 
-                td.when(proto.toObject()).thenReturn('foo');
+                td.when(proto.toObject()).thenReturn(expected);
 
-                expect(collection(proto).toJSON()).to.deep.equal('foo');
+                expect(Collection(proto).toJSON()).to.deep.equal(expected);
             });
         });
 
         context('valueOf()', () => {
+            let wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Collection = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Collection');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new CrudStub.Collection();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(collection(proto).valueOf()).to.equal('foo');
+                expect(Collection(proto).valueOf()).to.equal(expected);
             });
         });
     });

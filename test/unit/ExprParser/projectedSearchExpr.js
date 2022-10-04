@@ -37,41 +37,35 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('projectedSearchExpr', () => {
-        const type = Parser.Type.PROJECTED_SEARCH_EXPR;
+        const parser = Parser({ type: Parser.Type.PROJECTED_SEARCH_EXPR });
 
         it('parses a field identifier without an alias in a projection', () => {
-            return expect(Parser.parse('foo', { type })).to.deep.equal({
-                type: 'projectedSearchExpr',
-                value: {
-                    source: {
-                        type: 'documentField',
-                        value: {
-                            documentPath: [{
-                                type: 'member',
-                                value: 'foo'
-                            }]
-                        }
-                    },
-                    alias: 'foo'
-                }
+            return expect(parser.parse('foo')).to.deep.equal({
+                source: {
+                    type: 'documentField',
+                    value: {
+                        documentPath: [{
+                            type: 'member',
+                            value: 'foo'
+                        }]
+                    }
+                },
+                alias: undefined
             });
         });
 
         it('parses a field identifier with an alias in a projection', () => {
-            return expect(Parser.parse('foo as bar', { type })).to.deep.equal({
-                type: 'projectedSearchExpr',
-                value: {
-                    source: {
-                        type: 'documentField',
-                        value: {
-                            documentPath: [{
-                                type: 'member',
-                                value: 'foo'
-                            }]
-                        }
-                    },
-                    alias: 'bar'
-                }
+            return expect(parser.parse('foo as bar')).to.deep.equal({
+                source: {
+                    type: 'documentField',
+                    value: {
+                        documentPath: [{
+                            type: 'member',
+                            value: 'foo'
+                        }]
+                    }
+                },
+                alias: 'bar'
             });
         });
     });

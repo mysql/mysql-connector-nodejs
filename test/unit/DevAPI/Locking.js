@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -44,8 +44,8 @@ describe('Locking', () => {
     it('sets the default lock type and mode', () => {
         const query = locking();
 
-        expect(query.getRowLock()).to.equal(locking.Type.NONE);
-        expect(query.getRowLock()).to.equal(locking.LockContention.DEFAULT);
+        expect(query.getLock_()).to.equal(locking.Type.NONE);
+        expect(query.getLock_()).to.equal(locking.LockContention.DEFAULT);
     });
 
     context('lockShared()', () => {
@@ -61,20 +61,20 @@ describe('Locking', () => {
         it('allows the default locking mode', () => {
             const query = locking().lockShared();
 
-            expect(query.getRowLock()).to.equal(locking.Type.SHARED_LOCK);
-            expect(query.getLockContention()).to.equal(locking.LockContention.DEFAULT);
+            expect(query.getLock_()).to.equal(locking.Type.SHARED_LOCK);
+            expect(query.getLockOptions_()).to.equal(locking.LockContention.DEFAULT);
         });
 
         it('sets a valid given locking mode', () => {
             const query = locking().lockShared(locking.LockContention.NOWAIT);
 
-            expect(query.getRowLock()).to.equal(locking.Type.SHARED_LOCK);
-            expect(query.getLockContention()).to.equal(locking.LockContention.NOWAIT);
+            expect(query.getLock_()).to.equal(locking.Type.SHARED_LOCK);
+            expect(query.getLockOptions_()).to.equal(locking.LockContention.NOWAIT);
 
             query.lockShared(locking.LockContention.SKIP_LOCKED);
 
-            expect(query.getRowLock()).to.equal(locking.Type.SHARED_LOCK);
-            expect(query.getLockContention()).to.equal(locking.LockContention.SKIP_LOCKED);
+            expect(query.getLock_()).to.equal(locking.Type.SHARED_LOCK);
+            expect(query.getLockOptions_()).to.equal(locking.LockContention.SKIP_LOCKED);
         });
 
         it('throws an error if the locking mode is not valid', () => {
@@ -95,20 +95,20 @@ describe('Locking', () => {
         it('allows the default locking mode', () => {
             const query = locking().lockExclusive();
 
-            expect(query.getRowLock()).to.equal(locking.Type.EXCLUSIVE_LOCK);
-            expect(query.getLockContention()).to.equal(locking.LockContention.DEFAULT);
+            expect(query.getLock_()).to.equal(locking.Type.EXCLUSIVE_LOCK);
+            expect(query.getLockOptions_()).to.equal(locking.LockContention.DEFAULT);
         });
 
         it('sets a valid given locking mode', () => {
             const query = locking().lockExclusive(locking.LockContention.NOWAIT);
 
-            expect(query.getRowLock()).to.equal(locking.Type.EXCLUSIVE_LOCK);
-            expect(query.getLockContention()).to.equal(locking.LockContention.NOWAIT);
+            expect(query.getLock_()).to.equal(locking.Type.EXCLUSIVE_LOCK);
+            expect(query.getLockOptions_()).to.equal(locking.LockContention.NOWAIT);
 
             query.lockExclusive(locking.LockContention.SKIP_LOCKED);
 
-            expect(query.getRowLock()).to.equal(locking.Type.EXCLUSIVE_LOCK);
-            expect(query.getLockContention()).to.equal(locking.LockContention.SKIP_LOCKED);
+            expect(query.getLock_()).to.equal(locking.Type.EXCLUSIVE_LOCK);
+            expect(query.getLockOptions_()).to.equal(locking.LockContention.SKIP_LOCKED);
         });
 
         it('throws an error if the locking mode is not valid', () => {

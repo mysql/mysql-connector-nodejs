@@ -37,70 +37,70 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('castType', () => {
-        const type = Parser.Type.CAST_TYPE;
+        const parser = Parser({ type: Parser.Type.CAST_TYPE });
 
         it('parses an INTEGER type spec', () => {
-            expect(Parser.parse('SIGNED', { type })).to.deep.equal({ type: 'castType', value: 'SIGNED' });
-            expect(Parser.parse('signed', { type })).to.deep.equal({ type: 'castType', value: 'SIGNED' });
-            expect(Parser.parse('SIGNED INTEGER', { type })).to.deep.equal({ type: 'castType', value: 'SIGNED' });
-            expect(Parser.parse('signed integer', { type })).to.deep.equal({ type: 'castType', value: 'SIGNED' });
-            expect(Parser.parse('UNSIGNED', { type })).to.deep.equal({ type: 'castType', value: 'UNSIGNED' });
-            expect(Parser.parse('unsigned', { type })).to.deep.equal({ type: 'castType', value: 'UNSIGNED' });
-            expect(Parser.parse('UNSIGNED INTEGER', { type })).to.deep.equal({ type: 'castType', value: 'UNSIGNED' });
-            return expect(Parser.parse('unsigned INTEGER', { type })).to.deep.equal({ type: 'castType', value: 'UNSIGNED' });
+            expect(parser.parse('SIGNED')).to.deep.equal({ type: 'castType', value: 'SIGNED' });
+            expect(parser.parse('signed')).to.deep.equal({ type: 'castType', value: 'SIGNED' });
+            expect(parser.parse('SIGNED INTEGER')).to.deep.equal({ type: 'castType', value: 'SIGNED' });
+            expect(parser.parse('signed integer')).to.deep.equal({ type: 'castType', value: 'SIGNED' });
+            expect(parser.parse('UNSIGNED')).to.deep.equal({ type: 'castType', value: 'UNSIGNED' });
+            expect(parser.parse('unsigned')).to.deep.equal({ type: 'castType', value: 'UNSIGNED' });
+            expect(parser.parse('UNSIGNED INTEGER')).to.deep.equal({ type: 'castType', value: 'UNSIGNED' });
+            return expect(parser.parse('unsigned INTEGER')).to.deep.equal({ type: 'castType', value: 'UNSIGNED' });
         });
 
         it('parses a CHAR type spec', () => {
-            expect(Parser.parse('CHAR', { type })).to.deep.equal({ type: 'castType', value: 'CHAR' });
-            expect(Parser.parse('char', { type })).to.deep.equal({ type: 'castType', value: 'CHAR' });
-            expect(Parser.parse('CHAR(3)', { type })).to.deep.equal({ type: 'castType', value: 'CHAR(3)' });
-            return expect(Parser.parse('char(3)', { type })).to.deep.equal({ type: 'castType', value: 'CHAR(3)' });
+            expect(parser.parse('CHAR')).to.deep.equal({ type: 'castType', value: 'CHAR' });
+            expect(parser.parse('char')).to.deep.equal({ type: 'castType', value: 'CHAR' });
+            expect(parser.parse('CHAR(3)')).to.deep.equal({ type: 'castType', value: 'CHAR(3)' });
+            return expect(parser.parse('char(3)')).to.deep.equal({ type: 'castType', value: 'CHAR(3)' });
         });
 
         it('parses a BINARY type spec', () => {
-            expect(Parser.parse('BINARY', { type })).to.deep.equal({ type: 'castType', value: 'BINARY' });
-            expect(Parser.parse('binary', { type })).to.deep.equal({ type: 'castType', value: 'BINARY' });
-            expect(Parser.parse('BINARY(3)', { type })).to.deep.equal({ type: 'castType', value: 'BINARY(3)' });
-            return expect(Parser.parse('binary(3)', { type })).to.deep.equal({ type: 'castType', value: 'BINARY(3)' });
+            expect(parser.parse('BINARY')).to.deep.equal({ type: 'castType', value: 'BINARY' });
+            expect(parser.parse('binary')).to.deep.equal({ type: 'castType', value: 'BINARY' });
+            expect(parser.parse('BINARY(3)')).to.deep.equal({ type: 'castType', value: 'BINARY(3)' });
+            return expect(parser.parse('binary(3)')).to.deep.equal({ type: 'castType', value: 'BINARY(3)' });
         });
 
         it('parses a DECIMAL type spec', () => {
-            expect(Parser.parse('DECIMAL', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL' });
-            expect(Parser.parse('decimal', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL' });
-            expect(Parser.parse('DECIMAL(3)', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3)' });
-            expect(Parser.parse('decimal(3)', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3)' });
-            expect(Parser.parse('DECIMAL(3, 5)', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('decimal(3, 5)', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('DECIMAL(3,5)', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('decimal(3,5)', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('DECIMAL( 3, 5 )', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('decimal( 3, 5 )', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('DECIMAL(3,5 )', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('decimal(3,5 )', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('DECIMAL( 3,5)', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('decimal( 3,5)', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('DECIMAL( 3, 5)', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
-            expect(Parser.parse('decimal( 3, 5)', { type })).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('DECIMAL')).to.deep.equal({ type: 'castType', value: 'DECIMAL' });
+            expect(parser.parse('decimal')).to.deep.equal({ type: 'castType', value: 'DECIMAL' });
+            expect(parser.parse('DECIMAL(3)')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3)' });
+            expect(parser.parse('decimal(3)')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3)' });
+            expect(parser.parse('DECIMAL(3, 5)')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('decimal(3, 5)')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('DECIMAL(3,5)')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('decimal(3,5)')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('DECIMAL( 3, 5 )')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('decimal( 3, 5 )')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('DECIMAL(3,5 )')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('decimal(3,5 )')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('DECIMAL( 3,5)')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('decimal( 3,5)')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('DECIMAL( 3, 5)')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
+            expect(parser.parse('decimal( 3, 5)')).to.deep.equal({ type: 'castType', value: 'DECIMAL(3,5)' });
         });
 
         it('parses a TIME type spec', () => {
-            expect(Parser.parse('TIME', { type })).to.deep.equal({ type: 'castType', value: 'TIME' });
-            expect(Parser.parse('time', { type })).to.deep.equal({ type: 'castType', value: 'TIME' });
+            expect(parser.parse('TIME')).to.deep.equal({ type: 'castType', value: 'TIME' });
+            expect(parser.parse('time')).to.deep.equal({ type: 'castType', value: 'TIME' });
         });
 
         it('parses a DATETIME type spec', () => {
-            expect(Parser.parse('DATETIME', { type })).to.deep.equal({ type: 'castType', value: 'DATETIME' });
-            expect(Parser.parse('datetime', { type })).to.deep.equal({ type: 'castType', value: 'DATETIME' });
+            expect(parser.parse('DATETIME')).to.deep.equal({ type: 'castType', value: 'DATETIME' });
+            expect(parser.parse('datetime')).to.deep.equal({ type: 'castType', value: 'DATETIME' });
         });
 
         it('parses a DATE type spec', () => {
-            expect(Parser.parse('DATE', { type })).to.deep.equal({ type: 'castType', value: 'DATE' });
-            expect(Parser.parse('date', { type })).to.deep.equal({ type: 'castType', value: 'DATE' });
+            expect(parser.parse('DATE')).to.deep.equal({ type: 'castType', value: 'DATE' });
+            expect(parser.parse('date')).to.deep.equal({ type: 'castType', value: 'DATE' });
         });
 
         it('parses a JSON type spec', () => {
-            expect(Parser.parse('JSON', { type })).to.deep.equal({ type: 'castType', value: 'JSON' });
-            expect(Parser.parse('json', { type })).to.deep.equal({ type: 'castType', value: 'JSON' });
+            expect(parser.parse('JSON')).to.deep.equal({ type: 'castType', value: 'JSON' });
+            expect(parser.parse('json')).to.deep.equal({ type: 'castType', value: 'JSON' });
         });
     });
 });

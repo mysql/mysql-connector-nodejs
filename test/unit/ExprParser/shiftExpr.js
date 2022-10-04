@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('shiftExpr', () => {
-        const type = Parser.Type.SHIFT_EXPR;
+        const parser = Parser({ type: Parser.Type.SHIFT_EXPR });
 
         it('parses a left shift function and its parameters', () => {
-            return expect(Parser.parse('1 << 2', { type })).to.deep.equal({
+            return expect(parser.parse('1 << 2')).to.deep.equal({
                 type: 'shiftExpr',
                 value: {
                     name: '<<',
@@ -56,7 +56,7 @@ describe('ExprParser', () => {
         });
 
         it('parses a right-shift function and its parameters', () => {
-            return expect(Parser.parse('4 >> 2', { type })).to.deep.equal({
+            return expect(parser.parse('4 >> 2')).to.deep.equal({
                 type: 'shiftExpr',
                 value: {
                     name: '>>',
@@ -72,7 +72,7 @@ describe('ExprParser', () => {
         });
 
         it('parses composable bit shift functions and their parameters', () => {
-            return expect(Parser.parse('4 >> 2 << 1', { type })).to.deep.equal({
+            return expect(parser.parse('4 >> 2 << 1')).to.deep.equal({
                 type: 'shiftExpr',
                 value: {
                     name: '<<',
@@ -97,7 +97,7 @@ describe('ExprParser', () => {
         });
 
         it('parses composable functions with the correct precedence', () => {
-            expect(Parser.parse('4 >> 1 + 1', { type })).to.deep.equal({
+            expect(parser.parse('4 >> 1 + 1')).to.deep.equal({
                 type: 'shiftExpr',
                 value: {
                     name: '>>',

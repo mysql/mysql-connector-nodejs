@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -38,7 +38,7 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const path = require('path');
 
-describe('relational table select', () => {
+describe('selecting rows from a table using CRUD', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
     let session, schema, table;
@@ -218,6 +218,30 @@ describe('relational table select', () => {
             return table.select('name', 'age')
                 .execute(row => actual.push(row))
                 .then(() => expect(actual).to.deep.include.members(expected));
+        });
+
+        it('includes columns with a given alias', async () => {
+            const expected = [['bar', 23], ['foo', 42]];
+
+            const got = await table.select('name as theName', 'age as theAge')
+                .orderBy('age')
+                .execute();
+
+            const columns = got.getColumns();
+
+            expect(columns[0].getColumnLabel()).to.equal('theName');
+            expect(columns[1].getColumnLabel()).to.equal('theAge');
+            expect(got.fetchAll()).to.deep.equal(expected);
+        });
+
+        it('transforms the colum format with a computed projection', async () => {
+            const expected = [[{ theName: 'bar', theAge: 23 }], [{ theName: 'foo', theAge: 42 }]];
+
+            const got = await table.select(mysqlx.expr('{ "theName": name, "theAge": age }', { mode: mysqlx.Mode.TABLE }))
+                .orderBy('age')
+                .execute();
+
+            expect(got.fetchAll()).to.deep.equal(expected);
         });
     });
 

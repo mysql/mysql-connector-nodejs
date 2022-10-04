@@ -37,7 +37,7 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('jsonDoc', () => {
-        const type = Parser.Type.JSON_DOC;
+        const parser = Parser({ type: Parser.Type.JSON_DOC });
 
         it('parses a JSON document containing primitive values', () => {
             const doc = {
@@ -48,7 +48,7 @@ describe('ExprParser', () => {
                 quuz: null
             };
 
-            return expect(Parser.parse(JSON.stringify(doc), { type })).to.deep.equal({
+            return expect(parser.parse(JSON.stringify(doc))).to.deep.equal({
                 type: 'jsonDoc',
                 value: {
                     foo: {
@@ -82,7 +82,7 @@ describe('ExprParser', () => {
                 }
             };
 
-            return expect(Parser.parse(JSON.stringify(doc), { type })).to.deep.equal({
+            return expect(parser.parse(JSON.stringify(doc))).to.deep.equal({
                 type: 'jsonDoc',
                 value: {
                     foo: {
@@ -105,7 +105,7 @@ describe('ExprParser', () => {
                 }
             };
 
-            return expect(Parser.parse(JSON.stringify(doc), { type })).to.deep.equal({
+            return expect(parser.parse(JSON.stringify(doc))).to.deep.equal({
                 type: 'jsonDoc',
                 value: {
                     foo: {

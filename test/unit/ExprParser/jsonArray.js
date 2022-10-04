@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('jsonArray', () => {
-        const type = Parser.Type.JSON_ARRAY;
+        const parser = Parser({ type: Parser.Type.JSON_ARRAY });
 
         it('parses a JSON array containing primitive values', () => {
-            return expect(Parser.parse('["foo", true, 1, 1.234, null]', { type })).to.deep.equal({
+            return expect(parser.parse('["foo", true, 1, 1.234, null]')).to.deep.equal({
                 type: 'jsonArray',
                 value: [{
                     type: 'literal',
@@ -62,7 +62,7 @@ describe('ExprParser', () => {
         });
 
         it('parses a JSON array containing JSON objects', () => {
-            return expect(Parser.parse('[{ "foo": "bar" }, { "baz": { "qux": "quux" } }]', { type })).to.deep.equal({
+            return expect(parser.parse('[{ "foo": "bar" }, { "baz": { "qux": "quux" } }]')).to.deep.equal({
                 type: 'jsonArray',
                 value: [{
                     type: 'jsonDoc',
@@ -90,7 +90,7 @@ describe('ExprParser', () => {
         });
 
         it('parses a JSON array containing other JSON arrays', () => {
-            return expect(Parser.parse('[["foo", "bar"], [{ "baz": "qux" }, { "quux": "quuz" }]]', { type })).to.deep.equal({
+            return expect(parser.parse('[["foo", "bar"], [{ "baz": "qux" }, { "quux": "quuz" }]]')).to.deep.equal({
                 type: 'jsonArray',
                 value: [{
                     type: 'jsonArray',

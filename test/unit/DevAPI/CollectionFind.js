@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,38 +32,109 @@
 
 /* eslint-env node, mocha */
 
+const dataModel = require('../../../lib/Protocol/Stubs/mysqlx_crud_pb').DataModel.DOCUMENT;
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let collectionFind = require('../../../lib/DevAPI/CollectionFind');
+// subject under test needs to be reloaded with test doubles
+let CollectionFind = require('../../../lib/DevAPI/CollectionFind');
 
 describe('CollectionFind', () => {
-    let preparing, toArray;
+    let Preparing;
 
-    beforeEach('create fakes', () => {
-        preparing = td.function();
-        toArray = td.function();
-
-        td.replace('../../../lib/DevAPI/Preparing', preparing);
-        collectionFind = require('../../../lib/DevAPI/CollectionFind');
+    beforeEach('replace dependencies with test doubles', () => {
+        Preparing = td.replace('../../../lib/DevAPI/Preparing');
+        // reload module with the replacements
+        CollectionFind = require('../../../lib/DevAPI/CollectionFind');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
+    context('bind()', () => {
+        let Binding;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Binding = td.replace('../../../lib/DevAPI/Binding');
+            // reload module with the replacements
+            CollectionFind = require('../../../lib/DevAPI/CollectionFind');
+        });
+
+        it('calls the bind() method provided by the Binding mixin', () => {
+            const connection = 'foo';
+            const expected = 'bar';
+            const bind = td.function();
+            const placeholder = 'baz';
+            const value = 'qux';
+
+            td.when(Binding()).thenReturn({ bind });
+            td.when(bind(placeholder, value)).thenReturn(expected);
+
+            expect(CollectionFind({ connection }).bind(placeholder, value)).to.equal(expected);
+        });
+    });
+
     context('execute()', () => {
-        it('fails if the connection is not open', () => {
-            const getError = td.function();
-            const isOpen = td.function();
-            const connection = { getError, isOpen };
-            const error = new Error('foobar');
+        let Result;
 
-            td.when(isOpen()).thenReturn(false);
-            td.when(getError()).thenReturn(error);
+        beforeEach('replace dependencies with test doubles', () => {
+            Result = td.replace('../../../lib/DevAPI/DocResult');
+            // reload module with the replacements
+            CollectionFind = require('../../../lib/DevAPI/CollectionFind');
+        });
 
-            return collectionFind(connection).execute()
+        it('executes a CollectionFind statement and returns a DocResult instance with the details provided by the server', () => {
+            const context = 'foo';
+            const crudFind = td.function();
+            const connection = { getClient: () => ({ crudFind }), isIdle: () => false, isOpen: () => true };
+            const details = 'bar';
+            const execute = td.function();
+            const expected = 'baz';
+
+            td.when(Preparing({ connection })).thenReturn({ execute });
+
+            const statement = CollectionFind({ connection });
+
+            td.when(crudFind(statement, undefined)).thenReturn(context);
+            td.when(execute(td.matchers.argThat(fn => fn() === context), undefined)).thenResolve(details);
+            td.when(Result(details)).thenReturn(expected);
+
+            return statement.execute()
+                .then(got => expect(got).to.equal(expected));
+        });
+
+        it('executes a CollectionFind statement with a given cursor and returns a DocResult instance with the details provided by the server', () => {
+            const crudFind = td.function();
+            const connection = { getClient: () => ({ crudFind }), isIdle: () => false, isOpen: () => true };
+            const dataCursor = td.function();
+            const details = 'foo';
+            const execute = td.function();
+            const expected = 'bar';
+            const row = ['baz'];
+            const statementContext = 'qux';
+            const cursorContext = 'quux';
+            const cursorContextMatcher = td.matchers.argThat(fn => fn(row) === cursorContext);
+            const statementContextMatcher = td.matchers.argThat(fn => fn() === statementContext);
+
+            td.when(Preparing({ connection })).thenReturn({ execute });
+
+            const statement = CollectionFind({ connection });
+
+            td.when(dataCursor(row[0])).thenReturn(cursorContext);
+            td.when(crudFind(statement, cursorContextMatcher)).thenReturn(statementContext);
+            td.when(execute(statementContextMatcher, cursorContextMatcher)).thenResolve(details);
+            td.when(Result(details)).thenReturn(expected);
+
+            return statement.execute(dataCursor)
+                .then(got => expect(got).to.equal(expected));
+        });
+
+        it('fails to execute the CollectionFind statement when the connection is not open', () => {
+            const error = new Error('foo');
+            const connection = { getError: () => error, isOpen: () => false };
+
+            return CollectionFind({ connection }).execute()
                 .then(() => {
                     return expect.fail();
                 })
@@ -72,284 +143,217 @@ describe('CollectionFind', () => {
                 });
         });
 
-        it('fails if the connection is expired', () => {
-            const getError = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { getError, isIdle, isOpen };
-            const error = new Error('foobar');
+        it('fails to execute the CollectionFind statement when the connection has expired', () => {
+            const error = new Error('foo');
+            const connection = { getError: () => error, isIdle: () => true, isOpen: () => true };
 
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(true);
-            td.when(getError()).thenReturn(error);
-
-            return collectionFind(connection).execute()
+            return CollectionFind({ connection }).execute()
                 .then(() => {
                     return expect.fail();
                 })
                 .catch(err => {
                     expect(err).to.deep.equal(error);
-                });
-        });
-
-        it('wraps an operation without a cursor in a preparable instance', () => {
-            const execute = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { isIdle, isOpen };
-            const row = { toArray };
-            const state = { results: [[row]] };
-
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(toArray()).thenReturn(['foo']);
-            td.when(execute(td.matchers.isA(Function), undefined)).thenResolve(state);
-            td.when(preparing({ connection })).thenReturn({ execute });
-
-            return collectionFind(connection).execute()
-                .then(actual => {
-                    return expect(actual.fetchOne()).to.equal('foo');
-                });
-        });
-
-        it('wraps an operation with a cursor in a preparable instance', () => {
-            const execute = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { isIdle, isOpen };
-            const expected = ['foo'];
-            const state = { warnings: expected };
-
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(execute(td.matchers.isA(Function), td.matchers.isA(Function))).thenResolve(state);
-            td.when(preparing({ connection })).thenReturn({ execute });
-
-            return collectionFind(connection).execute(td.callback())
-                .then(actual => {
-                    return expect(actual.getWarnings()).to.deep.equal(expected);
                 });
         });
     });
 
     context('fields()', () => {
-        let parseFlexibleParamList, projecting, forceRestart, setProjections;
+        let ProjectedDocumentExprStr;
 
-        beforeEach('create fakes', () => {
-            parseFlexibleParamList = td.function();
-            projecting = td.function();
-            forceRestart = td.function();
-            setProjections = td.function();
-
-            td.replace('../../../lib/DevAPI/Projecting', projecting);
-            td.replace('../../../lib/DevAPI/Util/parseFlexibleParamList', parseFlexibleParamList);
-
-            collectionFind = require('../../../lib/DevAPI/CollectionFind');
+        beforeEach('replace dependencies with test doubles', () => {
+            ProjectedDocumentExprStr = td.replace('../../../lib/DevAPI/ProjectedDocumentExprStr');
+            // reload module with the replacements
+            CollectionFind = require('../../../lib/DevAPI/CollectionFind');
         });
 
-        it('sets projections provided as an array', () => {
+        it('appends the field expressions to the statement projection list', () => {
             const connection = 'foo';
+            const forceRestart = td.function();
+            const projectionList = ['bar'];
+            const projectedDocumentExprStr = 'baz';
+            const projectedDocumentExpr = 'qux';
+            const getValue = () => projectedDocumentExpr;
+            const expected = [...projectionList, projectedDocumentExpr];
 
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-            td.when(projecting()).thenReturn({ setProjections });
-            td.when(parseFlexibleParamList([['foo', 'bar']])).thenReturn(['baz', 'qux']);
+            td.when(Preparing({ connection })).thenReturn({ forceRestart });
+            td.when(ProjectedDocumentExprStr(projectedDocumentExprStr)).thenReturn({ getValue });
 
-            collectionFind(connection).fields(['foo', 'bar']);
+            // Adds some operations beforehand to ensure those are not removed.
+            CollectionFind({ connection, projectionList }).fields(projectedDocumentExprStr);
 
-            expect(td.explain(setProjections).callCount).to.equal(1);
-            return expect(td.explain(setProjections).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
-        });
+            // If it is a prepared statement, it needs to be prepared again
+            // because the boundaries have changed.
+            expect(td.explain(forceRestart).callCount).to.equal(1);
 
-        it('sets projections provided as multiple arguments', () => {
-            const connection = 'foo';
-
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-            td.when(projecting()).thenReturn({ setProjections });
-            td.when(parseFlexibleParamList(['foo', 'bar'])).thenReturn(['baz', 'qux']);
-
-            collectionFind(connection).fields('foo', 'bar');
-
-            expect(td.explain(setProjections).callCount).to.equal(1);
-            return expect(td.explain(setProjections).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
+            expect(projectionList).to.deep.equal(expected);
         });
     });
 
     context('groupBy()', () => {
-        let forceRestart;
+        let Grouping;
 
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            Grouping = td.replace('../../../lib/DevAPI/Grouping');
+            // reload module with the replacements
+            CollectionFind = require('../../../lib/DevAPI/CollectionFind');
         });
 
-        it('mixes in Grouping with the proper state', () => {
+        it('calls the groupBy() method provided by the Grouping mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            const expected = 'bar';
+            const groupBy = td.function();
+            const preparable = 'baz';
+            const searchExprStrList = 'qux';
 
-            collectionFind(connection).groupBy('foo');
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Grouping({ dataModel, preparable })).thenReturn({ groupBy });
+            td.when(groupBy(searchExprStrList)).thenReturn(expected);
 
-            return expect(td.explain(forceRestart).callCount).equal(1);
+            expect(CollectionFind({ connection }).groupBy(searchExprStrList)).to.equal(expected);
+        });
+    });
+
+    context('having()', () => {
+        let Grouping;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Grouping = td.replace('../../../lib/DevAPI/Grouping');
+            // reload module with the replacements
+            CollectionFind = require('../../../lib/DevAPI/CollectionFind');
         });
 
-        it('is fluent', () => {
+        it('calls the having() method provided by the Grouping mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            const expected = 'bar';
+            const having = td.function();
+            const preparable = 'baz';
+            const searchConditionStr = 'qux';
 
-            const query = collectionFind(connection).groupBy();
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Grouping({ dataModel, preparable })).thenReturn({ having });
+            td.when(having(searchConditionStr)).thenReturn(expected);
 
-            expect(query.groupBy).to.be.a('function');
-        });
-
-        it('sets the grouping columns provided as an array', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const grouping = ['foo', 'bar'];
-            const query = collectionFind(connection).groupBy(grouping);
-
-            expect(query.getGroupings()).to.deep.equal(grouping);
-        });
-
-        it('sets the grouping columns provided as an array', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const grouping = ['foo', 'bar'];
-            const query = collectionFind(connection).groupBy(grouping[0], grouping[1]);
-
-            expect(query.getGroupings()).to.deep.equal(grouping);
+            expect(CollectionFind({ connection }).having(searchConditionStr)).to.equal(expected);
         });
     });
 
     context('limit()', () => {
-        let forceReprepare;
+        let Skipping;
 
-        beforeEach('create fakes', () => {
-            forceReprepare = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            Skipping = td.replace('../../../lib/DevAPI/Skipping');
+            // reload module with the replacements
+            CollectionFind = require('../../../lib/DevAPI/CollectionFind');
         });
 
-        it('mixes in Limiting with the proper state', () => {
+        it('calls the limit() method provided by the Skipping mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceReprepare });
+            const expected = 'bar';
+            const limit = td.function();
+            const preparable = 'baz';
+            const size = 3;
 
-            collectionFind(connection).limit(1);
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Skipping({ preparable })).thenReturn({ limit });
+            td.when(limit(size)).thenReturn(expected);
 
-            return expect(td.explain(forceReprepare).callCount).equal(1);
-        });
-
-        it('is fluent', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceReprepare });
-
-            const query = collectionFind(connection).limit(1);
-
-            return expect(query.limit).to.be.a('function');
-        });
-
-        it('sets a default offset implicitely', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceReprepare });
-
-            const query = collectionFind(connection).limit(1);
-
-            return expect(query.getOffset()).to.equal(0);
-        });
-    });
-
-    context('lockShared()', () => {
-        let forceRestart;
-
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
-        });
-
-        it('mixes in Locking with the proper state', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            collectionFind(connection).lockShared();
-
-            return expect(td.explain(forceRestart).callCount).equal(1);
-        });
-
-        it('is fluent', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const query = collectionFind(connection).groupBy();
-
-            expect(query.lockShared).to.be.a('function');
+            expect(CollectionFind({ connection }).limit(size)).to.equal(expected);
         });
     });
 
     context('lockExclusive()', () => {
-        let forceRestart;
+        let Locking;
 
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            Locking = td.replace('../../../lib/DevAPI/Locking');
+            // reload module with the replacements
+            CollectionFind = require('../../../lib/DevAPI/CollectionFind');
         });
 
-        it('mixes in Locking with the proper state', () => {
+        it('calls the lockExclusive() method provided by the Locking mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            const expected = 'bar';
+            const lockExclusive = td.function();
+            const preparable = 'baz';
+            const lockContention = 'qux';
 
-            collectionFind(connection).lockExclusive();
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Locking({ preparable })).thenReturn({ lockExclusive });
+            td.when(lockExclusive(lockContention)).thenReturn(expected);
 
-            return expect(td.explain(forceRestart).callCount).equal(1);
+            expect(CollectionFind({ connection }).lockExclusive(lockContention)).to.equal(expected);
+        });
+    });
+
+    context('lockShared()', () => {
+        let Locking;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Locking = td.replace('../../../lib/DevAPI/Locking');
+            // reload module with the replacements
+            CollectionFind = require('../../../lib/DevAPI/CollectionFind');
         });
 
-        it('is fluent', () => {
+        it('calls the lockShared() method provided by the Locking mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            const expected = 'bar';
+            const lockShared = td.function();
+            const preparable = 'baz';
+            const lockContention = 'qux';
 
-            const query = collectionFind(connection).groupBy();
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Locking({ preparable })).thenReturn({ lockShared });
+            td.when(lockShared(lockContention)).thenReturn(expected);
 
-            expect(query.lockExclusive).to.be.a('function');
+            expect(CollectionFind({ connection }).lockShared(lockContention)).to.equal(expected);
+        });
+    });
+
+    context('offset()', () => {
+        let Skipping;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Skipping = td.replace('../../../lib/DevAPI/Skipping');
+            // reload module with the replacements
+            CollectionFind = require('../../../lib/DevAPI/CollectionFind');
+        });
+
+        it('calls the offset() method provided by the Skipping mixin', () => {
+            const connection = 'foo';
+            const expected = 'bar';
+            const offset = td.function();
+            const preparable = 'baz';
+            const size = 3;
+
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Skipping({ preparable })).thenReturn({ offset });
+            td.when(offset(size)).thenReturn(expected);
+
+            expect(CollectionFind({ connection }).offset(size)).to.equal(expected);
         });
     });
 
     context('sort()', () => {
-        let forceRestart;
+        let Ordering;
 
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            Ordering = td.replace('../../../lib/DevAPI/CollectionOrdering');
+            // reload module with the replacements
+            CollectionFind = require('../../../lib/DevAPI/CollectionFind');
         });
 
-        it('mixes in CollectionOrdering with the proper state', () => {
+        it('calls the sort() method provided by the CollectionOrdering mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            const expected = 'bar';
+            const preparable = 'baz';
+            const sort = td.function();
+            const sortExpr = 'qux';
 
-            collectionFind(connection).sort();
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Ordering({ preparable })).thenReturn({ sort });
+            td.when(sort(sortExpr)).thenReturn(expected);
 
-            return expect(td.explain(forceRestart).callCount).equal(1);
-        });
-
-        it('is fluent', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const query = collectionFind(connection).sort();
-
-            return expect(query.sort).to.be.a('function');
-        });
-
-        it('sets the order parameters provided as an array', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const parameters = ['foo desc', 'bar desc'];
-            const query = collectionFind(connection).sort(parameters);
-
-            return expect(query.getOrderings()).to.deep.equal(parameters);
-        });
-
-        it('sets the order parameters provided as multiple arguments', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const parameters = ['foo desc', 'bar desc'];
-            const query = collectionFind(connection).sort(parameters[0], parameters[1]);
-
-            return expect(query.getOrderings()).to.deep.equal(parameters);
+            expect(CollectionFind({ connection }).sort(sortExpr)).to.equal(expected);
         });
     });
 });

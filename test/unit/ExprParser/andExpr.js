@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('andExpr', () => {
-        const type = Parser.Type.AND_EXPR;
+        const parser = Parser({ type: Parser.Type.AND_EXPR });
 
         it('parses logical AND operators and corresponding parameters', () => {
-            expect(Parser.parse('foo = :v1 AND bar = :v2', { type })).to.deep.equal({
+            expect(parser.parse('foo = :v1 AND bar = :v2')).to.deep.equal({
                 type: 'andExpr',
                 value: {
                     name: '&&',
@@ -58,10 +58,7 @@ describe('ExprParser', () => {
                                 }
                             }, {
                                 type: 'placeholder',
-                                value: {
-                                    name: 'v1',
-                                    position: 0
-                                }
+                                value: 'v1'
                             }]
                         }
                     }, {
@@ -78,17 +75,14 @@ describe('ExprParser', () => {
                                 }
                             }, {
                                 type: 'placeholder',
-                                value: {
-                                    name: 'v2',
-                                    position: 1
-                                }
+                                value: 'v2'
                             }]
                         }
                     }]
                 }
             });
 
-            return expect(Parser.parse('foo = :v1 AND bar = :v2 AND baz = :v3', { type })).to.deep.equal({
+            return expect(parser.parse('foo = :v1 AND bar = :v2 AND baz = :v3')).to.deep.equal({
                 type: 'andExpr',
                 value: {
                     name: '&&',
@@ -110,10 +104,7 @@ describe('ExprParser', () => {
                                         }
                                     }, {
                                         type: 'placeholder',
-                                        value: {
-                                            name: 'v1',
-                                            position: 0
-                                        }
+                                        value: 'v1'
                                     }]
                                 }
                             }, {
@@ -130,10 +121,7 @@ describe('ExprParser', () => {
                                         }
                                     }, {
                                         type: 'placeholder',
-                                        value: {
-                                            name: 'v2',
-                                            position: 1
-                                        }
+                                        value: 'v2'
                                     }]
                                 }
                             }]
@@ -152,10 +140,7 @@ describe('ExprParser', () => {
                                 }
                             }, {
                                 type: 'placeholder',
-                                value: {
-                                    name: 'v3',
-                                    position: 2
-                                }
+                                value: 'v3'
                             }]
                         }
                     }]
@@ -164,7 +149,7 @@ describe('ExprParser', () => {
         });
 
         it('parses composable operators with the correct precedence', () => {
-            expect(Parser.parse("TRUE IS NOT FALSE AND 'foobar' LIKE '%foo%'", { type })).to.deep.equal({
+            expect(parser.parse("TRUE IS NOT FALSE AND 'foobar' LIKE '%foo%'")).to.deep.equal({
                 type: 'andExpr',
                 value: {
                     name: '&&',
@@ -196,7 +181,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            return expect(Parser.parse("foo REGEXP '[0-9]+' AND bar = 'baz'", { type })).to.deep.equal({
+            return expect(parser.parse("foo REGEXP '[0-9]+' AND bar = 'baz'")).to.deep.equal({
                 type: 'andExpr',
                 value: {
                     name: '&&',

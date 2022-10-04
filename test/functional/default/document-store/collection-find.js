@@ -41,7 +41,7 @@ const mysqlx = require('../../../..');
 const path = require('path');
 const warnings = require('../../../../lib/constants/warnings');
 
-describe('finding documents in collections', () => {
+describe('finding documents in collections using CRUD', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
     let schema, session, collection;
@@ -190,6 +190,50 @@ describe('finding documents in collections', () => {
                 .bind({ size: 42 })
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        context('with a list of placeholders', () => {
+            it('returns documents that match a criteria specified as a string', async () => {
+                const expected = [{ _id: 'foo', foo: 'bar', size: 42 }];
+
+                const got = await collection.find('size in [:s1, :s2, :s3]')
+                    .bind({ s1: 42, s2: 50, s3: 57 })
+                    .execute();
+
+                expect(got.fetchAll()).to.deep.equal(expected);
+            });
+
+            it('returns documents that match a criteria specified as an X DevAPI expression', async () => {
+                const expected = [{ _id: 'foo', foo: 'bar', size: 42 }];
+
+                const got = await collection.find(mysqlx.expr('size in [:s1, :s2, :s3]'))
+                    .bind({ s1: 42, s2: 50, s3: 57 })
+                    .execute();
+
+                expect(got.fetchAll()).to.deep.equal(expected);
+            });
+        });
+
+        context('with a JSON object containing placeholders', () => {
+            it('returns documents that match a criteria specified as a string', async () => {
+                const expected = [{ _id: 'foo', foo: 'bar', size: 42 }];
+
+                const got = await collection.find('size in json_extract({ "keys": [:s1, :s2, :s3] }, "$.keys[*]")')
+                    .bind({ s1: 42, s2: 50, s3: 57 })
+                    .execute();
+
+                expect(got.fetchAll()).to.deep.equal(expected);
+            });
+
+            it('returns documents that match a criteria specified as an X DevAPI expression', async () => {
+                const expected = [{ _id: 'foo', foo: 'bar', size: 42 }];
+
+                const got = await collection.find(mysqlx.expr('size in json_extract({ "keys": [:s1, :s2, :s3] }, "$.keys[*]")'))
+                    .bind({ s1: 42, s2: 50, s3: 57 })
+                    .execute();
+
+                expect(got.fetchAll()).to.deep.equal(expected);
+            });
         });
 
         context('BUG#33940584', () => {

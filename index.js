@@ -30,10 +30,10 @@
 
 'use strict';
 
+const Expr = require('./lib/DevAPI/Expr');
 const authenticationManager = require('./lib/Authentication/AuthenticationManager');
 const client = require('./lib/DevAPI/Client');
 const errors = require('./lib/constants/errors');
-const expr = require('./lib/Protocol/Wrappers/Messages/Expr/Expr');
 const locking = require('./lib/DevAPI/Locking');
 const mysql41Auth = require('./lib/Authentication/MySQL41Auth');
 const parseUri = require('./lib/DevAPI/Util/URIParser');
@@ -137,9 +137,10 @@ exports.getClient = function (connection = {}, options = {}) {
 };
 
 /**
- * Additional parser options.
+ * Additional options to configure the X DevAPI expression parser.
  * @typedef {Object} ParserOptions
- * @prop {module:mysqlx~Mode} [mode] - the parsing mode
+ * @prop {module:mysqlx~DataModel} [mode] - Data model that determines specific parsing
+ * rules that apply to document fields or column identifiers.
  */
 
 /**
@@ -148,8 +149,8 @@ exports.getClient = function (connection = {}, options = {}) {
  * @param {module:mysqlx~ParserOptions} [options] - additional options
  * @return {proto.Mysqlx.Expr.Expr} The protobuf object version.
  */
-exports.expr = function (value, options) {
-    return expr.create(value, Object.assign({}, options, { toParse: true })).valueOf();
+exports.expr = function (value, { mode = query.Type.DOCUMENT } = {}) {
+    return Expr({ dataModel: mode, value });
 };
 
 /**
@@ -161,9 +162,20 @@ exports.getVersion = function () {
 };
 
 /**
- * Database entity types.
+ * Enum that specifies the existing data model options.
+ * @readonly
+ * @name DataModel
+ * @enum {number}
+ * @example
+ * TABLE
+ * DOCUMENT
+ */
+
+/**
+ * Data model that determines if an X DevAPI expression identifier
+ * corresponds to table column name or a document field name.
  * @const
- * @type {Query.DataModel}
+ * @type {DataModel}
  * @example
  * mysqlx.Mode.TABLE
  * mysqlx.Mode.DOCUMENT
@@ -171,7 +183,7 @@ exports.getVersion = function () {
 exports.Mode = query.Type;
 
 /**
- * Locking modes.
+ * Locking modes.LockContention
  * @const
  * @type {Locking.LockContention}
  * @example

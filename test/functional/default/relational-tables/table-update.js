@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -39,7 +39,7 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const path = require('path');
 
-describe('updating data in a table', () => {
+describe('updating rows in a table using CRUD', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
     let session, schema, table;
@@ -110,6 +110,22 @@ describe('updating data in a table', () => {
             .execute()
             .then(() => table.select().orderBy('age ASC').execute(row => actual.push(row)))
             .then(() => expect(actual).to.deep.equal(expected));
+    });
+
+    // The API is deprecated, but it still needs to be tested for regressions.
+    it('updates the rows in a table that match the criteria defined with `update()`', async () => {
+        const expected = [['bar', 23], ['baz', 42], ['foo', 50]];
+
+        await table.update('name = :name')
+            .bind('name', 'foo')
+            .set('age', 50)
+            .execute();
+
+        const got = await table.select()
+            .orderBy('age ASC')
+            .execute();
+
+        expect(got.fetchAll()).to.deep.equal(expected);
     });
 
     it('updates a row using a value computed from some data in the table', () => {

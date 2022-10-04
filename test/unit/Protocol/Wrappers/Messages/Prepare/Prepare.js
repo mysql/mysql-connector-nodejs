@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -36,72 +36,111 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 
 // subject under test needs to be reloaded with replacement fakes
-let prepare = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Prepare');
+let Prepare = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Prepare');
 
 describe('Mysqlx.Prepare.Prepare wrapper', () => {
-    let PrepareStub, oneOfMessage, serializable, wraps;
+    let PrepareStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         PrepareStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_prepare_pb');
-        oneOfMessage = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/OneOfMessage');
-        serializable = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Serializable');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        prepare = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Prepare');
+        // reload module with the replacements
+        Prepare = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Prepare');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns a Mysqlx.Prepare.Prepare wrapper instance for a given statement object', () => {
+            let OneOfMessage, Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                PrepareStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_prepare_pb');
+                OneOfMessage = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/OneOfMessage');
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Prepare = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Prepare');
+            });
+
+            it('creates a Mysqlx.Prepare.Prepare wrapper for a given statement instance', () => {
+                const oneOfMessageProto = 'foo';
                 const proto = new PrepareStub.Prepare();
-                const statement = { getStatementId: td.function() };
+                const protoValue = 'bar';
+                const statementId = 'baz';
+                const statement = { getStatementId: () => statementId };
 
-                td.when(statement.getStatementId()).thenReturn('foo');
-                td.when(oneOfMessage.create(statement, { toPrepare: true })).thenReturn({ valueOf: () => 'bar' });
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'baz' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(OneOfMessage.create(statement, { toPrepare: true })).thenReturn({ valueOf: () => oneOfMessageProto });
 
-                expect(prepare.create(statement).valueOf()).to.equal('baz');
+                expect(Prepare.create(statement).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setStmtId).callCount).to.equal(1);
-                expect(td.explain(proto.setStmtId).calls[0].args[0]).to.equal('foo');
+                expect(td.explain(proto.setStmtId).calls[0].args[0]).to.equal(statementId);
                 expect(td.explain(proto.setStmt).callCount).to.equal(1);
-                expect(td.explain(proto.setStmt).calls[0].args[0]).to.equal('bar');
+                expect(td.explain(proto.setStmt).calls[0].args[0]).to.equal(oneOfMessageProto);
             });
         });
     });
 
     context('instance methods', () => {
+        let Serializable;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Serializable = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Serializable');
+            // reload module with the replacements
+            Prepare = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Prepare');
+        });
+
         context('serialize()', () => {
             it('returns a raw network buffer of the underlying protobuf message', () => {
                 const proto = new PrepareStub.Prepare();
+                const expected = 'foo';
 
-                td.when(serializable(proto)).thenReturn({ serialize: () => 'foo' });
+                td.when(Serializable(proto)).thenReturn({ serialize: () => expected });
 
-                expect(prepare(proto).serialize()).to.equal('foo');
+                expect(Prepare(proto).serialize()).to.equal(expected);
             });
         });
 
         context('toJSON()', () => {
+            let OneOfMessage;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                OneOfMessage = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/OneOfMessage');
+                // reload module with the replacements
+                Prepare = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Prepare');
+            });
+
             it('returns a textual representation of a Mysqlx.Prepare.Prepare message', () => {
                 const proto = new PrepareStub.Prepare();
+                const stmt = 'foo';
+                const stmtId = 'bar';
+                const stmtProto = `${stmt}_proto`;
 
-                td.when(proto.getStmtId()).thenReturn('foo');
-                td.when(proto.getStmt()).thenReturn('p_bar');
-                td.when(oneOfMessage('p_bar')).thenReturn({ toJSON: () => 'bar' });
+                td.when(proto.getStmtId()).thenReturn(stmtId);
+                td.when(proto.getStmt()).thenReturn(stmtProto);
+                td.when(OneOfMessage(stmtProto)).thenReturn({ toJSON: () => stmt });
 
-                expect(prepare(proto).toJSON()).to.deep.equal({ stmt_id: 'foo', stmt: 'bar' });
+                expect(Prepare(proto).toJSON()).to.deep.equal({ stmt_id: stmtId, stmt });
             });
         });
 
         context('valueOf()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Prepare = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Prepare');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new PrepareStub.Prepare();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(prepare(proto).valueOf()).to.equal('foo');
+                expect(Prepare(proto).valueOf()).to.equal(expected);
             });
         });
     });

@@ -38,7 +38,7 @@ const expect = require('chai').expect;
 const assertIgnoredWhitespaces = (expr) => {
     // try up to to 10 whitespaces
     const whitespaces = ' '.repeat(Math.floor(Math.random() * 10) + 1);
-    return expect(() => Parser.parse(`${whitespaces}${expr}${whitespaces}`, { type: Parser.Type.EXPR })).to.not.throw();
+    return expect(() => Parser({ type: Parser.Type.EXPR }).parse(`${whitespaces}${expr}${whitespaces}`)).to.not.throw();
 };
 
 describe('ExprParser', () => {
@@ -88,16 +88,16 @@ describe('ExprParser', () => {
         });
 
         it('fails to parse an expression containing "not" identifiers alongside operators with the same optional prefix', () => {
-            const type = Parser.Type.EXPR;
+            const parser = Parser({ type: Parser.Type.EXPR });
 
-            expect(() => Parser.parse('not in (1, 2, 3)', { type })).to.throw();
-            expect(() => Parser.parse('not not in (1, 2, 3)', { type }));
-            expect(() => Parser.parse("not like '%foo'", { type })).to.throw();
-            expect(() => Parser.parse("not not like '%foo'", { type })).to.throw();
-            expect(() => Parser.parse('not in [1, 2, 3]', { type })).to.throw();
-            expect(() => Parser.parse('not not in [1, 2, 3]', { type }));
-            expect(() => Parser.parse("not like '%foo'", { type })).to.throw();
-            return expect(() => Parser.parse("not not like '%foo'", { type })).to.throw();
+            expect(() => parser.parse('not in (1, 2, 3)')).to.throw();
+            expect(() => parser.parse('not not in (1, 2, 3)'));
+            expect(() => parser.parse("not like '%foo'")).to.throw();
+            expect(() => parser.parse("not not like '%foo'")).to.throw();
+            expect(() => parser.parse('not in [1, 2, 3]')).to.throw();
+            expect(() => parser.parse('not not in [1, 2, 3]'));
+            expect(() => parser.parse("not like '%foo'")).to.throw();
+            return expect(() => parser.parse("not not like '%foo'")).to.throw();
         });
     });
 });

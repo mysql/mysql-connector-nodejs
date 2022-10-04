@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,49 +32,131 @@
 
 /* eslint-env node, mocha */
 
+const dataModel = require('../../../lib/Protocol/Stubs/mysqlx_crud_pb').DataModel.TABLE;
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let tableSelect = require('../../../lib/DevAPI/TableSelect');
+// subject under test needs to be reloaded with test doubles
+let TableSelect = require('../../../lib/DevAPI/TableSelect');
 
 describe('TableSelect', () => {
-    let preparing, toArray;
+    let Preparing;
 
-    beforeEach('create fakes', () => {
-        preparing = td.function();
-        toArray = td.function();
-
-        td.replace('../../../lib/DevAPI/Preparing', preparing);
-        tableSelect = require('../../../lib/DevAPI/TableSelect');
+    beforeEach('replace dependencies with test doubles', () => {
+        Preparing = td.replace('../../../lib/DevAPI/Preparing');
+        // reload module with the replacements
+        TableSelect = require('../../../lib/DevAPI/TableSelect');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
+    context('bind()', () => {
+        let binding;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            binding = td.replace('../../../lib/DevAPI/Binding');
+            // reload module with the replacements
+            TableSelect = require('../../../lib/DevAPI/TableSelect');
+        });
+
+        it('calls the bind() method provided by the Binding mixin', () => {
+            const connection = 'foo';
+            const expected = 'bar';
+            const bind = td.function();
+            const placeholder = 'baz';
+            const value = 'qux';
+
+            td.when(binding()).thenReturn({ bind });
+            td.when(bind(placeholder, value)).thenReturn(expected);
+
+            expect(TableSelect({ connection }).bind(placeholder, value)).to.equal(expected);
+        });
+    });
+
     context('execute()', () => {
-        let columnWrapper, execute, getAlias;
+        let ColumnWrapper, Result;
 
-        beforeEach('create fakes', () => {
-            columnWrapper = td.function();
-            execute = td.function();
-            getAlias = td.function();
-
-            td.replace('../../../lib/DevAPI/Util/columnWrapper', columnWrapper);
-            tableSelect = require('../../../lib/DevAPI/TableSelect');
+        beforeEach('replace dependencies with test doubles', () => {
+            ColumnWrapper = td.replace('../../../lib/DevAPI/Util/columnWrapper');
+            Result = td.replace('../../../lib/DevAPI/RowResult');
+            // reload module with the replacements
+            TableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
-        it('fails if the connection is not open', () => {
-            const getError = td.function();
-            const isOpen = td.function();
-            const connection = { getError, isOpen };
-            const error = new Error('foobar');
+        it('executes a TableSelect statement and returns a RowResult instance with the details provided by the server', () => {
+            const context = 'foo';
+            const crudFind = td.function();
+            const connection = { getClient: () => ({ crudFind }), isIdle: () => false, isOpen: () => true };
+            const details = 'bar';
+            const execute = td.function();
+            const expected = 'baz';
 
-            td.when(isOpen()).thenReturn(false);
-            td.when(getError()).thenReturn(error);
+            td.when(Preparing({ connection })).thenReturn({ execute });
 
-            return tableSelect(connection).execute()
+            const statement = TableSelect({ connection });
+
+            td.when(crudFind(statement, undefined, undefined)).thenReturn(context);
+            td.when(execute(td.matchers.argThat(fn => fn() === context), undefined, undefined)).thenResolve(details);
+            td.when(Result(details)).thenReturn(expected);
+
+            return statement.execute()
+                .then(got => expect(got).to.equal(expected));
+        });
+
+        it('executes a TableSelect statement with a given cursor and returns a RowResult instance with the details provided by the server', () => {
+            const crudFind = td.function();
+            const connection = { getClient: () => ({ crudFind }), isIdle: () => false, isOpen: () => true };
+            const dataCursor = td.function();
+            const details = 'foo';
+            const execute = td.function();
+            const expected = 'bar';
+            const statementContext = 'baz';
+            const contextMatcher = td.matchers.argThat(fn => fn() === statementContext);
+
+            td.when(Preparing({ connection })).thenReturn({ execute });
+
+            const statement = TableSelect({ connection });
+
+            td.when(crudFind(statement, dataCursor), { ignoreExtraArgs: true }).thenReturn(statementContext);
+            td.when(execute(contextMatcher, dataCursor), { ignoreExtraArgs: true }).thenResolve(details);
+            td.when(Result(details)).thenReturn(expected);
+
+            return statement.execute(dataCursor)
+                .then(got => expect(got).to.equal(expected));
+        });
+
+        it('executes a TableSelect statement with a given metadata cursor and returns a RowResult instance with the details provided by the server', () => {
+            const crudFind = td.function();
+            const columnWrapper = 'foo';
+            const connection = { getClient: () => ({ crudFind }), isIdle: () => false, isOpen: () => true };
+            const dataCursor = td.function();
+            const details = 'bar';
+            const execute = td.function();
+            const expected = 'baz';
+            const metadataCursor = td.function();
+            const statementContext = 'qux';
+            const contextMatcher = td.matchers.argThat(fn => fn() === statementContext);
+
+            td.when(Preparing({ connection })).thenReturn({ execute });
+
+            const statement = TableSelect({ connection });
+
+            td.when(ColumnWrapper(metadataCursor)).thenReturn(columnWrapper);
+            td.when(crudFind(statement, dataCursor, columnWrapper)).thenReturn(statementContext);
+            td.when(execute(contextMatcher, dataCursor, columnWrapper)).thenResolve(details);
+            td.when(Result(details)).thenReturn(expected);
+
+            return statement.execute(dataCursor, metadataCursor)
+                .then(got => expect(got).to.equal(expected));
+        });
+
+        it('fails to execute the TableSelect statement when the connection is not open', () => {
+            const error = new Error('foo');
+            const connection = { getError: () => error, isOpen: () => false };
+
+            return TableSelect({ connection }).execute()
                 .then(() => {
                     return expect.fail();
                 })
@@ -83,287 +165,209 @@ describe('TableSelect', () => {
                 });
         });
 
-        it('fails if the connection is expired', () => {
-            const getError = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { getError, isIdle, isOpen };
-            const error = new Error('foobar');
+        it('fails to execute the TableSelect statement when the connection has expired', () => {
+            const error = new Error('foo');
+            const connection = { getError: () => error, isIdle: () => true, isOpen: () => true };
 
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(true);
-            td.when(getError()).thenReturn(error);
-
-            return tableSelect(connection).execute()
+            return TableSelect({ connection }).execute()
                 .then(() => {
                     return expect.fail();
                 })
                 .catch(err => {
                     expect(err).to.deep.equal(error);
-                });
-        });
-
-        it('wraps an operation without a cursor in a preparable instance', () => {
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { isIdle, isOpen };
-            const row = { toArray };
-            const state = { results: [[row]] };
-
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(toArray()).thenReturn(['foo']);
-            td.when(execute(td.matchers.isA(Function), undefined, undefined)).thenResolve(state);
-            td.when(preparing({ connection })).thenReturn({ execute });
-
-            return tableSelect(connection).execute()
-                .then(actual => {
-                    return expect(actual.fetchOne()).to.deep.equal(['foo']);
-                });
-        });
-
-        it('wraps an operation with a data cursor in a preparable instance', () => {
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { isIdle, isOpen };
-            const expected = ['foo'];
-            const state = { warnings: expected };
-
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(execute(td.matchers.isA(Function), 'bar', undefined)).thenResolve(state);
-            td.when(preparing({ connection })).thenReturn({ execute });
-
-            return tableSelect(connection).execute('bar')
-                .then(actual => {
-                    return expect(actual.getWarnings()).to.deep.equal(expected);
-                });
-        });
-
-        it('wraps an operation with both a data and metadata cursors in a preparable instance', () => {
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { isIdle, isOpen };
-            const expected = { getAlias };
-            const state = { metadata: [[expected]] };
-
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(getAlias()).thenReturn('qux');
-            td.when(columnWrapper('bar')).thenReturn('baz');
-            td.when(execute(td.matchers.isA(Function), 'foo', 'baz')).thenResolve(state);
-            td.when(preparing({ connection })).thenReturn({ execute });
-
-            return tableSelect(connection).execute('foo', 'bar')
-                .then(actual => {
-                    return expect(actual.getColumns()[0].getColumnLabel()).to.equal('qux');
                 });
         });
     });
 
     context('groupBy()', () => {
-        let forceRestart;
+        let Grouping;
 
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            Grouping = td.replace('../../../lib/DevAPI/Grouping');
+            // reload module with the replacements
+            TableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
-        it('mixes in Grouping with the proper state', () => {
+        it('calls the groupBy() method provided by the Grouping mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            const expected = 'bar';
+            const groupBy = td.function();
+            const preparable = 'baz';
+            const searchExprStrList = 'qux';
 
-            tableSelect(connection).groupBy();
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Grouping({ dataModel, preparable })).thenReturn({ groupBy });
+            td.when(groupBy(searchExprStrList)).thenReturn(expected);
 
-            return expect(td.explain(forceRestart).callCount).equal(1);
+            expect(TableSelect({ connection }).groupBy(searchExprStrList)).to.equal(expected);
+        });
+    });
+
+    context('having()', () => {
+        let Grouping;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Grouping = td.replace('../../../lib/DevAPI/Grouping');
+            // reload module with the replacements
+            TableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
-        it('is fluent', () => {
+        it('calls the having() method provided by the Grouping mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            const expected = 'bar';
+            const having = td.function();
+            const preparable = 'baz';
+            const searchConditionStr = 'qux';
 
-            const query = tableSelect(connection).groupBy();
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Grouping({ dataModel, preparable })).thenReturn({ having });
+            td.when(having(searchConditionStr)).thenReturn(expected);
 
-            expect(query.groupBy).to.be.a('function');
-        });
-
-        it('sets the grouping columns provided as an array', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const grouping = ['foo', 'bar'];
-            const query = tableSelect(connection).groupBy(grouping);
-
-            expect(query.getGroupings()).to.deep.equal(grouping);
-        });
-
-        it('sets the grouping columns provided as an array', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const grouping = ['foo', 'bar'];
-            const query = tableSelect(connection).groupBy(grouping[0], grouping[1]);
-
-            expect(query.getGroupings()).to.deep.equal(grouping);
+            expect(TableSelect({ connection }).having(searchConditionStr)).to.equal(expected);
         });
     });
 
     context('limit()', () => {
-        let forceReprepare;
+        let Skipping;
 
-        beforeEach('create fakes', () => {
-            forceReprepare = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            Skipping = td.replace('../../../lib/DevAPI/Skipping');
+            // reload module with the replacements
+            TableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
-        it('mixes in Limiting with the proper state', () => {
+        it('calls the limit() method provided by the Skipping mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceReprepare });
+            const expected = 'bar';
+            const limit = td.function();
+            const preparable = 'baz';
+            const size = 3;
 
-            tableSelect(connection).limit(1);
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Skipping({ preparable })).thenReturn({ limit });
+            td.when(limit(size)).thenReturn(expected);
 
-            return expect(td.explain(forceReprepare).callCount).equal(1);
-        });
-
-        it('is fluent', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceReprepare });
-
-            const query = tableSelect(connection).limit(1);
-
-            return expect(query.limit).to.be.a('function');
-        });
-
-        it('sets a default offset implicitely', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceReprepare });
-
-            const query = tableSelect(connection).limit(1);
-
-            return expect(query.getOffset()).to.equal(0);
-        });
-    });
-
-    context('lockShared()', () => {
-        let forceRestart;
-
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
-        });
-
-        it('mixes in Locking with the proper state', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            tableSelect(connection).lockShared();
-
-            return expect(td.explain(forceRestart).callCount).equal(1);
-        });
-
-        it('is fluent', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const query = tableSelect(connection).groupBy();
-
-            expect(query.lockShared).to.be.a('function');
+            expect(TableSelect({ connection }).limit(size)).to.equal(expected);
         });
     });
 
     context('lockExclusive()', () => {
-        let forceRestart;
+        let Locking;
 
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            Locking = td.replace('../../../lib/DevAPI/Locking');
+            // reload module with the replacements
+            TableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
-        it('mixes in Locking with the proper state', () => {
+        it('calls the lockExclusive() method provided by the Locking mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            const expected = 'bar';
+            const lockExclusive = td.function();
+            const preparable = 'baz';
+            const lockContention = 'qux';
 
-            tableSelect(connection).lockExclusive();
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Locking({ preparable })).thenReturn({ lockExclusive });
+            td.when(lockExclusive(lockContention)).thenReturn(expected);
 
-            return expect(td.explain(forceRestart).callCount).equal(1);
+            expect(TableSelect({ connection }).lockExclusive(lockContention)).to.equal(expected);
+        });
+    });
+
+    context('lockShared()', () => {
+        let Locking;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Locking = td.replace('../../../lib/DevAPI/Locking');
+            // reload module with the replacements
+            TableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
-        it('is fluent', () => {
+        it('calls the lockShared() method provided by the Locking mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            const expected = 'bar';
+            const lockShared = td.function();
+            const preparable = 'baz';
+            const lockContention = 'qux';
 
-            const query = tableSelect(connection).groupBy();
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Locking({ preparable })).thenReturn({ lockShared });
+            td.when(lockShared(lockContention)).thenReturn(expected);
 
-            expect(query.lockExclusive).to.be.a('function');
+            expect(TableSelect({ connection }).lockShared(lockContention)).to.equal(expected);
+        });
+    });
+
+    context('offset()', () => {
+        let Skipping;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Skipping = td.replace('../../../lib/DevAPI/Skipping');
+            // reload module with the replacements
+            TableSelect = require('../../../lib/DevAPI/TableSelect');
+        });
+
+        it('calls the offset() method provided by the Skipping mixin', () => {
+            const connection = 'foo';
+            const expected = 'bar';
+            const offset = td.function();
+            const preparable = 'baz';
+            const size = 3;
+
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Skipping({ preparable })).thenReturn({ offset });
+            td.when(offset(size)).thenReturn(expected);
+
+            expect(TableSelect({ connection }).offset(size)).to.equal(expected);
         });
     });
 
     context('orderBy()', () => {
-        let forceRestart;
+        let Ordering;
 
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            Ordering = td.replace('../../../lib/DevAPI/TableOrdering');
+            // reload module with the replacements
+            TableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
-        it('mixes in TableOrdering with the proper state', () => {
+        it('calls the orderBy() method provided by the TableOrdering mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            const expected = 'bar';
+            const preparable = 'baz';
+            const orderBy = td.function();
+            const sortExpr = 'qux';
 
-            tableSelect(connection).orderBy();
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Ordering({ preparable })).thenReturn({ orderBy });
+            td.when(orderBy(sortExpr)).thenReturn(expected);
 
-            return expect(td.explain(forceRestart).callCount).equal(1);
-        });
-
-        it('is fluent', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const query = tableSelect(connection).orderBy();
-
-            expect(query.orderBy).to.be.a('function');
-        });
-
-        it('sets the order parameters provided as an array', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const parameters = ['foo desc', 'bar desc'];
-            const query = tableSelect(connection).orderBy(parameters);
-
-            expect(query.getOrderings()).to.deep.equal(parameters);
-        });
-
-        it('sets the order parameters provided as multiple arguments', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const parameters = ['foo desc', 'bar desc'];
-            const query = tableSelect(connection).orderBy(parameters[0], parameters[1]);
-
-            expect(query.getOrderings()).to.deep.equal(parameters);
+            expect(TableSelect({ connection }).orderBy(sortExpr)).to.equal(expected);
         });
     });
 
     context('where()', () => {
-        let forceRestart;
+        let Filtering;
 
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            Filtering = td.replace('../../../lib/DevAPI/TableFiltering');
+            // reload module with the replacements
+            TableSelect = require('../../../lib/DevAPI/TableSelect');
         });
 
-        it('mixes in TableFiltering with the proper state', () => {
+        it('calls the where() method provided by the Filtering mixin', () => {
             const connection = 'foo';
+            const expected = 'bar';
+            const where = td.function();
+            const preparable = 'baz';
+            const searchExprStrList = 'qux';
 
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Filtering({ preparable })).thenReturn({ where });
+            td.when(where(searchExprStrList)).thenReturn(expected);
 
-            tableSelect(connection).where();
-
-            expect(td.explain(forceRestart).callCount).to.equal(1);
-        });
-
-        it('sets the query criteria', () => {
-            const connection = 'foo';
-            const criteria = 'bar';
-
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            expect(tableSelect(connection).where(criteria).getCriteria()).to.equal(criteria);
+            expect(TableSelect({ connection }).where(searchExprStrList)).to.equal(expected);
         });
     });
 });

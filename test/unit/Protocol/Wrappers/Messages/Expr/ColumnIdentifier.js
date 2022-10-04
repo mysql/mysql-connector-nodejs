@@ -35,20 +35,21 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let columnIdentifier = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/ColumnIdentifier');
+// subject under test needs to be reloaded with replacement test doubles
+let ColumnIdentifier = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/ColumnIdentifier');
 
 describe('Mysqlx.Expr.ColumnIdentifier wrapper', () => {
-    let ExprStub, documentPathItem, list, optionalString, parser, wraps;
+    let ExprStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         ExprStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_expr_pb');
-        documentPathItem = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/DocumentPathItem');
-        list = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/List');
-        optionalString = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/OptionalString');
-        parser = td.replace('../../../../../../lib/ExprParser');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        columnIdentifier = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/ColumnIdentifier');
+        // documentPathItem = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/DocumentPathItem');
+        // list = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/List');
+        // optionalString = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/OptionalString');
+        // parser = td.replace('../../../../../../lib/ExprParser');
+        // wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+        // reload module with the replacements
+        ColumnIdentifier = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/ColumnIdentifier');
     });
 
     afterEach('reset fakes', () => {
@@ -57,48 +58,99 @@ describe('Mysqlx.Expr.ColumnIdentifier wrapper', () => {
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns a Mysqlx.Expr.ColumnIdentifier wrap instance parsing a provided name', () => {
-                const encode = td.replace(columnIdentifier, 'encode');
+            let DocumentPathItem, Wraps;
 
-                td.when(parser.parse('foo', { type: parser.Type.COLUMN_OR_PATH })).thenReturn({ value: 'bar' });
-                td.when(encode('bar')).thenReturn('baz');
-                td.when(wraps('baz')).thenReturn({ valueOf: () => 'qux' });
+            beforeEach('replace dependencies with test doubles', () => {
+                DocumentPathItem = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/DocumentPathItem');
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                ColumnIdentifier = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/ColumnIdentifier');
+            });
 
-                expect(columnIdentifier.create('foo').valueOf()).to.equal('qux');
+            it('creates a Mysqlx.Expr.ColumnIdentifier wrapper with a given column or field name components', () => {
+                const documentPath = ['foo', 'bar'];
+                const documentPathProtoList = documentPath.map(item => `${item}_proto`);
+                const name = 'baz';
+                const proto = new ExprStub.ColumnIdentifier();
+                const protoValue = 'qux';
+                const schema = 'quux';
+                const table = 'quux';
+
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(DocumentPathItem.create(documentPath[0])).thenReturn({ valueOf: () => documentPathProtoList[0] });
+                td.when(DocumentPathItem.create(documentPath[1])).thenReturn({ valueOf: () => documentPathProtoList[1] });
+
+                expect(ColumnIdentifier.create({ documentPath, name, schema, table }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setDocumentPathList).callCount).to.equal(1);
+                expect(td.explain(proto.setDocumentPathList).calls[0].args[0]).to.deep.equal(documentPathProtoList);
+                expect(td.explain(proto.setName).callCount).to.equal(1);
+                expect(td.explain(proto.setName).calls[0].args[0]).to.equal(name);
+                expect(td.explain(proto.setTableName).callCount).to.equal(1);
+                expect(td.explain(proto.setTableName).calls[0].args[0]).to.equal(table);
+                expect(td.explain(proto.setSchemaName).callCount).to.equal(1);
+                expect(td.explain(proto.setSchemaName).calls[0].args[0]).to.equal(schema);
             });
         });
     });
 
     context('instance methods', () => {
         context('toJSON()', () => {
+            let DocumentPathItem, List, OptionalString;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                DocumentPathItem = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/DocumentPathItem');
+                List = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/List');
+                OptionalString = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/OptionalString');
+                // reload module with the replacements
+                ColumnIdentifier = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/ColumnIdentifier');
+            });
+
             it('returns a textual representation of a Mysqlx.Expr.ColumnIdentifier message', () => {
+                const documentPath = ['foo', 'bar'];
+                const documentPathWrapperList = documentPath.map(item => `${item}_wrap`);
+                const documentPathProtoList = documentPath.map(item => `${item}_proto`);
+                const name = 'baz';
+                const optionalName = `${name}_opt`;
+                const schemaName = 'qux';
+                const optionalSchemaName = `${schemaName}_opt`;
+                const tableName = 'quux';
+                const optionalTableName = `${tableName}_opt`;
                 const proto = new ExprStub.ColumnIdentifier();
 
-                td.when(proto.getDocumentPathList()).thenReturn(['p_foo', 'p_bar']);
-                td.when(documentPathItem('p_foo')).thenReturn('d_foo');
-                td.when(documentPathItem('p_bar')).thenReturn('d_bar');
-                td.when(list(['d_foo', 'd_bar'])).thenReturn({ toJSON: () => ['foo', 'bar'] });
+                td.when(proto.getDocumentPathList()).thenReturn(documentPathProtoList);
+                td.when(DocumentPathItem(documentPathProtoList[0])).thenReturn(documentPathWrapperList[0]);
+                td.when(DocumentPathItem(documentPathProtoList[1])).thenReturn(documentPathWrapperList[1]);
+                td.when(List(documentPathWrapperList)).thenReturn({ toJSON: () => documentPath });
 
-                td.when(proto.getName()).thenReturn('p_baz');
-                td.when(optionalString('p_baz')).thenReturn({ toJSON: () => 'baz' });
+                td.when(proto.getName()).thenReturn(optionalName);
+                td.when(OptionalString(optionalName)).thenReturn({ toJSON: () => name });
 
-                td.when(proto.getTableName()).thenReturn('p_qux');
-                td.when(optionalString('p_qux')).thenReturn({ toJSON: () => 'qux' });
+                td.when(proto.getTableName()).thenReturn(optionalTableName);
+                td.when(OptionalString(optionalTableName)).thenReturn({ toJSON: () => tableName });
 
-                td.when(proto.getSchemaName()).thenReturn('p_quux');
-                td.when(optionalString('p_quux')).thenReturn({ toJSON: () => 'quux' });
+                td.when(proto.getSchemaName()).thenReturn(optionalSchemaName);
+                td.when(OptionalString(optionalSchemaName)).thenReturn({ toJSON: () => schemaName });
 
-                expect(columnIdentifier(proto).toJSON()).to.deep.equal({ document_path: ['foo', 'bar'], name: 'baz', table_name: 'qux', schema_name: 'quux' });
+                expect(ColumnIdentifier(proto).toJSON()).to.deep.equal({ document_path: documentPath, name, table_name: tableName, schema_name: schemaName });
             });
         });
 
         context('valueOf()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                ColumnIdentifier = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/ColumnIdentifier');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new ExprStub.ColumnIdentifier();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(columnIdentifier(proto).valueOf()).to.equal('foo');
+                expect(ColumnIdentifier(proto).valueOf()).to.equal(expected);
             });
         });
     });

@@ -37,14 +37,14 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('documentPathItem', () => {
-        const type = Parser.Type.DOCUMENT_PATH_ITEM;
+        const parser = Parser({ type: Parser.Type.DOCUMENT_PATH_ITEM });
 
         it('parses valid document path components', () => {
-            expect(Parser.parse('**', { type })).to.deep.equal({ type: 'doubleAsterisk' });
-            expect(Parser.parse('[*]', { type })).to.deep.equal({ type: 'arrayIndexAsterisk' });
-            expect(Parser.parse('.*', { type })).to.deep.equal({ type: 'memberAsterisk' });
-            expect(Parser.parse('[3]', { type })).to.deep.equal({ type: 'arrayIndex', value: 3 });
-            expect(Parser.parse('.foo', { type })).to.deep.equal({ type: 'member', value: 'foo' });
+            expect(parser.parse('**')).to.deep.equal({ type: 'doubleAsterisk' });
+            expect(parser.parse('[*]')).to.deep.equal({ type: 'arrayIndexAsterisk' });
+            expect(parser.parse('.*')).to.deep.equal({ type: 'memberAsterisk' });
+            expect(parser.parse('[3]')).to.deep.equal({ type: 'arrayIndex', value: 3 });
+            expect(parser.parse('.foo')).to.deep.equal({ type: 'member', value: 'foo' });
         });
     });
 });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,20 +35,106 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let documentPathItem = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/DocumentPathItem');
+// subject under test needs to be reloaded with replacement test doubles
+let DocumentPathItem = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/DocumentPathItem');
 
 describe('Mysqlx.Expr.DocumentPathItem wrapper', () => {
-    let ExprStub, wraps;
+    let ExprStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         ExprStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_expr_pb');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        documentPathItem = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/DocumentPathItem');
+        // reload module with the replacements
+        DocumentPathItem = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/DocumentPathItem');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
+    });
+
+    context('class methods', () => {
+        context('create()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                DocumentPathItem = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/DocumentPathItem');
+            });
+
+            it('creates a Mysqlx.Expr.DocumentPathItem wrapper for a field with a given name', () => {
+                const proto = new ExprStub.DocumentPathItem();
+                const protoValue = 'foo';
+                const type = 'member';
+                const value = 'bar';
+
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+
+                expect(DocumentPathItem.create({ type, value }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setType).callCount).to.equal(1);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(ExprStub.DocumentPathItem.Type.MEMBER);
+                expect(td.explain(proto.setValue).callCount).to.equal(1);
+                expect(td.explain(proto.setValue).calls[0].args[0]).to.equal(value);
+                expect(td.explain(proto.setIndex).callCount).to.equal(0);
+            });
+
+            it('creates a Mysqlx.Expr.DocumentPathItem wrapper for a field wildcard', () => {
+                const proto = new ExprStub.DocumentPathItem();
+                const protoValue = 'foo';
+                const type = 'memberAsterisk';
+
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+
+                expect(DocumentPathItem.create({ type }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setType).callCount).to.equal(1);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(ExprStub.DocumentPathItem.Type.MEMBER_ASTERISK);
+                expect(td.explain(proto.setValue).callCount).to.equal(0);
+                expect(td.explain(proto.setIndex).callCount).to.equal(0);
+            });
+
+            it('creates a Mysqlx.Expr.DocumentPathItem wrapper for an element at a given array index', () => {
+                const proto = new ExprStub.DocumentPathItem();
+                const protoValue = 'foo';
+                const type = 'arrayIndex';
+                const value = 'bar';
+
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+
+                expect(DocumentPathItem.create({ type, value }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setType).callCount).to.equal(1);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(ExprStub.DocumentPathItem.Type.ARRAY_INDEX);
+                expect(td.explain(proto.setIndex).callCount).to.equal(1);
+                expect(td.explain(proto.setIndex).calls[0].args[0]).to.equal(value);
+                expect(td.explain(proto.setValue).callCount).to.equal(0);
+            });
+
+            it('creates a Mysqlx.Expr.DocumentPathItem wrapper for an array index wildcard', () => {
+                const proto = new ExprStub.DocumentPathItem();
+                const protoValue = 'foo';
+                const type = 'arrayIndexAsterisk';
+
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+
+                expect(DocumentPathItem.create({ type }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setType).callCount).to.equal(1);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(ExprStub.DocumentPathItem.Type.ARRAY_INDEX_ASTERISK);
+                expect(td.explain(proto.setValue).callCount).to.equal(0);
+                expect(td.explain(proto.setIndex).callCount).to.equal(0);
+            });
+
+            it('creates a Mysqlx.Expr.DocumentPathItem wrapper for a globstar', () => {
+                const proto = new ExprStub.DocumentPathItem();
+                const protoValue = 'foo';
+                const type = 'doubleAsterisk';
+
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+
+                expect(DocumentPathItem.create({ type }).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setType).callCount).to.equal(1);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(ExprStub.DocumentPathItem.Type.DOUBLE_ASTERISK);
+                expect(td.explain(proto.setValue).callCount).to.equal(0);
+                expect(td.explain(proto.setIndex).callCount).to.equal(0);
+            });
+        });
     });
 
     context('instance methods', () => {
@@ -58,22 +144,22 @@ describe('Mysqlx.Expr.DocumentPathItem wrapper', () => {
 
                 td.when(proto.getType()).thenReturn(0);
                 // eslint-disable-next-line no-unused-expressions
-                expect(documentPathItem(proto).getType()).to.not.exist;
+                expect(DocumentPathItem(proto).getType()).to.not.exist;
 
                 td.when(proto.getType()).thenReturn(ExprStub.DocumentPathItem.Type.MEMBER);
-                expect(documentPathItem(proto).getType()).to.equal('MEMBER');
+                expect(DocumentPathItem(proto).getType()).to.equal('MEMBER');
 
                 td.when(proto.getType()).thenReturn(ExprStub.DocumentPathItem.Type.MEMBER_ASTERISK);
-                expect(documentPathItem(proto).getType()).to.equal('MEMBER_ASTERISK');
+                expect(DocumentPathItem(proto).getType()).to.equal('MEMBER_ASTERISK');
 
                 td.when(proto.getType()).thenReturn(ExprStub.DocumentPathItem.Type.ARRAY_INDEX);
-                expect(documentPathItem(proto).getType()).to.equal('ARRAY_INDEX');
+                expect(DocumentPathItem(proto).getType()).to.equal('ARRAY_INDEX');
 
                 td.when(proto.getType()).thenReturn(ExprStub.DocumentPathItem.Type.ARRAY_INDEX_ASTERISK);
-                expect(documentPathItem(proto).getType()).to.equal('ARRAY_INDEX_ASTERISK');
+                expect(DocumentPathItem(proto).getType()).to.equal('ARRAY_INDEX_ASTERISK');
 
                 td.when(proto.getType()).thenReturn(ExprStub.DocumentPathItem.Type.DOUBLE_ASTERISK);
-                expect(documentPathItem(proto).getType()).to.equal('DOUBLE_ASTERISK');
+                expect(DocumentPathItem(proto).getType()).to.equal('DOUBLE_ASTERISK');
             });
         });
 
@@ -81,7 +167,7 @@ describe('Mysqlx.Expr.DocumentPathItem wrapper', () => {
             it('returns a textual representation of a Mysqlx.Expr.DocumentPathItem message', () => {
                 const proto = new ExprStub.DocumentPathItem();
 
-                const wrapper = documentPathItem(proto);
+                const wrapper = DocumentPathItem(proto);
                 const getType = td.replace(wrapper, 'getType');
 
                 td.when(getType()).thenReturn('foo');
@@ -95,12 +181,21 @@ describe('Mysqlx.Expr.DocumentPathItem wrapper', () => {
         });
 
         context('valueOf()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                DocumentPathItem = require('../../../../../../lib/Protocol/Wrappers/Messages/Expr/DocumentPathItem');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new ExprStub.DocumentPathItem();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(documentPathItem(proto).valueOf()).to.equal('foo');
+                expect(DocumentPathItem(proto).valueOf()).to.equal(expected);
             });
         });
     });

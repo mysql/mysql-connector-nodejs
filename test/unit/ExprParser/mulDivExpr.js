@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('mulDivExpr', () => {
-        const type = Parser.Type.MUL_DIV_EXPR;
+        const parser = Parser({ type: Parser.Type.MUL_DIV_EXPR });
 
         it('parses multiplication functions', () => {
-            return expect(Parser.parse('3 * 4', { type })).to.deep.equal({
+            return expect(parser.parse('3 * 4')).to.deep.equal({
                 type: 'mulDivExpr',
                 value: {
                     name: '*',
@@ -56,7 +56,7 @@ describe('ExprParser', () => {
         });
 
         it('parses division functions', () => {
-            expect(Parser.parse('10 / 2', { type })).to.deep.equal({
+            expect(parser.parse('10 / 2')).to.deep.equal({
                 type: 'mulDivExpr',
                 value: {
                     name: '/',
@@ -70,7 +70,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            return expect(Parser.parse('8 div 4', { type })).to.deep.equal({
+            return expect(parser.parse('8 div 4')).to.deep.equal({
                 type: 'mulDivExpr',
                 value: {
                     name: '/',
@@ -86,7 +86,7 @@ describe('ExprParser', () => {
         });
 
         it('parses remainder functions', () => {
-            return expect(Parser.parse('4 % 2', { type })).to.deep.equal({
+            return expect(parser.parse('4 % 2')).to.deep.equal({
                 type: 'mulDivExpr',
                 value: {
                     name: '%',
@@ -102,7 +102,7 @@ describe('ExprParser', () => {
         });
 
         it('parses composable functions', () => {
-            return expect(Parser.parse('3 * 4 / 2', { type })).to.deep.equal({
+            return expect(parser.parse('3 * 4 / 2')).to.deep.equal({
                 type: 'mulDivExpr',
                 value: {
                     name: '/',

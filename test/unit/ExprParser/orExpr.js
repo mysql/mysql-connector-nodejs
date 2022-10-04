@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('orExpr', () => {
-        const type = Parser.Type.OR_EXPR;
+        const parser = Parser({ type: Parser.Type.OR_EXPR });
 
         it('parses logical OR operators and corresponding parameters', () => {
-            expect(Parser.parse('foo = :v1 OR bar = :v2', { type })).to.deep.equal({
+            expect(parser.parse('foo = :v1 OR bar = :v2')).to.deep.equal({
                 type: 'orExpr',
                 value: {
                     name: '||',
@@ -58,10 +58,7 @@ describe('ExprParser', () => {
                                 }
                             }, {
                                 type: 'placeholder',
-                                value: {
-                                    name: 'v1',
-                                    position: 0
-                                }
+                                value: 'v1'
                             }]
                         }
                     }, {
@@ -78,17 +75,14 @@ describe('ExprParser', () => {
                                 }
                             }, {
                                 type: 'placeholder',
-                                value: {
-                                    name: 'v2',
-                                    position: 1
-                                }
+                                value: 'v2'
                             }]
                         }
                     }]
                 }
             });
 
-            return expect(Parser.parse('foo = :v1 OR bar = :v2 OR baz = :v3', { type })).to.deep.equal({
+            return expect(parser.parse('foo = :v1 OR bar = :v2 OR baz = :v3')).to.deep.equal({
                 type: 'orExpr',
                 value: {
                     name: '||',
@@ -110,10 +104,7 @@ describe('ExprParser', () => {
                                         }
                                     }, {
                                         type: 'placeholder',
-                                        value: {
-                                            name: 'v1',
-                                            position: 0
-                                        }
+                                        value: 'v1'
                                     }]
                                 }
                             }, {
@@ -130,10 +121,7 @@ describe('ExprParser', () => {
                                         }
                                     }, {
                                         type: 'placeholder',
-                                        value: {
-                                            name: 'v2',
-                                            position: 1
-                                        }
+                                        value: 'v2'
                                     }]
                                 }
                             }]
@@ -152,10 +140,7 @@ describe('ExprParser', () => {
                                 }
                             }, {
                                 type: 'placeholder',
-                                value: {
-                                    name: 'v3',
-                                    position: 2
-                                }
+                                value: 'v3'
                             }]
                         }
                     }]
@@ -164,7 +149,7 @@ describe('ExprParser', () => {
         });
 
         it('parses composable operators with the correct precedence', () => {
-            return expect(Parser.parse('foo = :v1 OR bar = :v2 AND baz = :v3', { type })).to.deep.equal({
+            return expect(parser.parse('foo = :v1 OR bar = :v2 AND baz = :v3')).to.deep.equal({
                 type: 'orExpr',
                 value: {
                     name: '||',
@@ -182,10 +167,7 @@ describe('ExprParser', () => {
                                 }
                             }, {
                                 type: 'placeholder',
-                                value: {
-                                    name: 'v1',
-                                    position: 0
-                                }
+                                value: 'v1'
                             }]
                         }
                     }, {
@@ -206,10 +188,7 @@ describe('ExprParser', () => {
                                         }
                                     }, {
                                         type: 'placeholder',
-                                        value: {
-                                            name: 'v2',
-                                            position: 1
-                                        }
+                                        value: 'v2'
                                     }]
                                 }
                             }, {
@@ -226,10 +205,7 @@ describe('ExprParser', () => {
                                         }
                                     }, {
                                         type: 'placeholder',
-                                        value: {
-                                            name: 'v3',
-                                            position: 2
-                                        }
+                                        value: 'v3'
                                     }]
                                 }
                             }]

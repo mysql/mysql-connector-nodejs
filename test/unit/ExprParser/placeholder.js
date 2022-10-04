@@ -37,15 +37,12 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('placeholder', () => {
-        const type = Parser.Type.PLACEHOLDER;
+        const parser = Parser({ type: Parser.Type.PLACEHOLDER });
 
         it('parses a named placeholder', () => {
-            return expect(Parser.parse(':foo', { type })).to.deep.equal({
+            return expect(parser.parse(':foo')).to.deep.equal({
                 type: 'placeholder',
-                value: {
-                    name: 'foo',
-                    position: 0
-                }
+                value: 'foo'
             });
         });
     });

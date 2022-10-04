@@ -38,7 +38,7 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const path = require('path');
 
-describe('adding documents to a collection', () => {
+describe('adding documents to a collection using CRUD', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
     let schema, session, collection;
@@ -76,32 +76,98 @@ describe('adding documents to a collection', () => {
     });
 
     context('with a single call', () => {
-        it('saves documents provided as an array', () => {
-            const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
-            const actual = [];
+        context('using JavaScript Object literals', () => {
+            it('saves documents provided as an array', () => {
+                const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
+                const actual = [];
 
-            return collection
-                .add(documents)
-                .execute()
-                .then(() => collection.find().execute(doc => actual.push(doc)))
-                .then(() => {
-                    expect(actual).to.have.lengthOf(documents.length);
-                    actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'age', 'name'));
-                });
+                return collection
+                    .add(documents)
+                    .execute()
+                    .then(() => collection.find().execute(doc => actual.push(doc)))
+                    .then(() => {
+                        expect(actual).to.have.lengthOf(documents.length);
+                        actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'age', 'name'));
+                    });
+            });
+
+            it('saves documents provided as multiple arguments', () => {
+                const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
+                const actual = [];
+
+                return collection
+                    .add(documents[0], documents[1])
+                    .execute()
+                    .then(() => collection.find().execute(doc => actual.push(doc)))
+                    .then(() => {
+                        expect(actual).to.have.lengthOf(documents.length);
+                        actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'age', 'name'));
+                    });
+            });
         });
 
-        it('saves documents provided as multiple arguments', () => {
-            const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
-            const actual = [];
+        context('using JSON strings', () => {
+            it('saves documents provided as an array', () => {
+                const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
 
-            return collection
-                .add(documents[0], documents[1])
-                .execute()
-                .then(() => collection.find().execute(doc => actual.push(doc)))
-                .then(() => {
-                    expect(actual).to.have.lengthOf(documents.length);
-                    actual.forEach(doc => expect(doc).to.have.all.keys('_id', 'age', 'name'));
-                });
+                return collection
+                    .add(documents.map(d => JSON.stringify(d)))
+                    .execute()
+                    .then(() => collection.find().execute())
+                    .then(res => {
+                        res.fetchAll().forEach((doc, i) => {
+                            expect(doc.name).to.equal(documents[i].name);
+                            expect(doc.age).to.equal(documents[i].age);
+                        });
+                    });
+            });
+
+            it('saves documents provided as multiple arguments', () => {
+                const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
+
+                return collection
+                    .add(JSON.stringify(documents[0]), JSON.stringify(documents[1]))
+                    .execute()
+                    .then(() => collection.find().execute())
+                    .then(res => {
+                        res.fetchAll().forEach((doc, i) => {
+                            expect(doc.name).to.equal(documents[i].name);
+                            expect(doc.age).to.equal(documents[i].age);
+                        });
+                    });
+            });
+        });
+
+        context('using X DevAPI expressions', () => {
+            it('saves documents provided as an array', () => {
+                const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
+
+                return collection
+                    .add(documents.map(d => mysqlx.expr(JSON.stringify(d))))
+                    .execute()
+                    .then(() => collection.find().execute())
+                    .then(res => {
+                        res.fetchAll().forEach((doc, i) => {
+                            expect(doc.name).to.equal(documents[i].name);
+                            expect(doc.age).to.equal(documents[i].age);
+                        });
+                    });
+            });
+
+            it('saves documents provided as multiple arguments', () => {
+                const documents = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
+
+                return collection
+                    .add(mysqlx.expr(JSON.stringify(documents[0])), mysqlx.expr(JSON.stringify(documents[1])))
+                    .execute()
+                    .then(() => collection.find().execute())
+                    .then(res => {
+                        res.fetchAll().forEach((doc, i) => {
+                            expect(doc.name).to.equal(documents[i].name);
+                            expect(doc.age).to.equal(documents[i].age);
+                        });
+                    });
+            });
         });
     });
 

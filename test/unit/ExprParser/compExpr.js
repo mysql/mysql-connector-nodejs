@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('compExpr', () => {
-        const type = Parser.Type.COMP_EXPR;
+        const parser = Parser({ type: Parser.Type.COMP_EXPR });
 
         it('parses an equal operator and the corresponding operands', () => {
-            expect(Parser.parse('foo = :v', { type })).to.deep.equal({
+            expect(parser.parse('foo = :v')).to.deep.equal({
                 type: 'compExpr',
                 value: {
                     name: '==',
@@ -54,15 +54,12 @@ describe('ExprParser', () => {
                         }
                     }, {
                         type: 'placeholder',
-                        value: {
-                            name: 'v',
-                            position: 0
-                        }
+                        value: 'v'
                     }]
                 }
             });
 
-            return expect(Parser.parse('foo == bar', { type })).to.deep.equal({
+            return expect(parser.parse('foo == bar')).to.deep.equal({
                 type: 'compExpr',
                 value: {
                     name: '==',
@@ -88,7 +85,7 @@ describe('ExprParser', () => {
         });
 
         it('parses a not equal operator and the corresponding operands', () => {
-            expect(Parser.parse('foo != "bar"', { type })).to.deep.equal({
+            expect(parser.parse('foo != "bar"')).to.deep.equal({
                 type: 'compExpr',
                 value: {
                     name: '!=',
@@ -107,7 +104,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            return expect(Parser.parse('foo <> bar', { type })).to.deep.equal({
+            return expect(parser.parse('foo <> bar')).to.deep.equal({
                 type: 'compExpr',
                 value: {
                     name: '!=',
@@ -133,7 +130,7 @@ describe('ExprParser', () => {
         });
 
         it('parses an great than operator and the corresponding operands', () => {
-            return expect(Parser.parse('2 > 1', { type })).to.deep.equal({
+            return expect(parser.parse('2 > 1')).to.deep.equal({
                 type: 'compExpr',
                 value: {
                     name: '>',
@@ -149,7 +146,7 @@ describe('ExprParser', () => {
         });
 
         it('parses an great than or equal operator and the corresponding operands', () => {
-            return expect(Parser.parse('1 >= 1', { type })).to.deep.equal({
+            return expect(parser.parse('1 >= 1')).to.deep.equal({
                 type: 'compExpr',
                 value: {
                     name: '>=',
@@ -165,7 +162,7 @@ describe('ExprParser', () => {
         });
 
         it('parses an less than operator and the corresponding operands', () => {
-            return expect(Parser.parse('1.234 < 2', { type })).to.deep.equal({
+            return expect(parser.parse('1.234 < 2')).to.deep.equal({
                 type: 'compExpr',
                 value: {
                     name: '<',
@@ -181,7 +178,7 @@ describe('ExprParser', () => {
         });
 
         it('parses an less than or equal operator and the corresponding operands', () => {
-            return expect(Parser.parse(`${Number.MAX_SAFE_INTEGER + 1} <= ${Number.MAX_SAFE_INTEGER + 2}`, { type })).to.deep.equal({
+            return expect(parser.parse(`${Number.MAX_SAFE_INTEGER + 1} <= ${Number.MAX_SAFE_INTEGER + 2}`)).to.deep.equal({
                 type: 'compExpr',
                 value: {
                     name: '<=',

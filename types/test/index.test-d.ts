@@ -33,7 +33,7 @@ import { expectType } from 'tsd';
 import * as mysqlx from '../';
 import Client from '../lib/DevAPI/Client';
 import Session from '../lib/DevAPI/Session';
-import { Expr } from '../lib/Protocol/Expr';
+import { Expr } from '../lib/DevAPI/Expr';
 
 async function test (): Promise<void> {
     // getSession()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,134 +32,160 @@
 
 /* eslint-env node, mocha */
 
+const dataModel = require('../../../lib/Protocol/Stubs/mysqlx_crud_pb').DataModel.DOCUMENT;
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let collectionAdd = require('../../../lib/DevAPI/CollectionAdd');
+// subject under test needs to be reloaded with test doubles
+let CollectionAdd = require('../../../lib/DevAPI/CollectionAdd');
 
-describe('CollectionAdd', () => {
+describe('CollectionAdd statement', () => {
+    afterEach('restore original dependencies', () => {
+        td.reset();
+    });
+
     context('add()', () => {
-        it('is fluent', () => {
-            const query = collectionAdd().add({});
+        let DocumentOrJSON;
 
-            expect(query.add({})).to.deep.equal(query);
+        beforeEach('replace dependencies with test doubles', () => {
+            DocumentOrJSON = td.replace('../../../lib/DevAPI/DocumentOrJSON');
+            // reload module with the replacements
+            CollectionAdd = require('../../../lib/DevAPI/CollectionAdd');
         });
 
-        it('includes the documents provided as an array', () => {
-            const expected = [{ foo: 'bar' }, { foo: 'baz' }];
-            const query = collectionAdd().add(expected);
+        it('appends documents provided in an array to the list of rows to be inserted', () => {
+            const rows = [];
+            const documents = [{ name: 'foo' }, { name: 'bar' }];
+            const expected = documents.map(value => ({ value, isLiteral: true }));
+            const getValue = td.function();
+            const isLiteral = () => true;
 
-            expect(query.getItems()).to.deep.equal(expected);
+            td.when(DocumentOrJSON(documents[0])).thenReturn({ getValue, isLiteral });
+            td.when(DocumentOrJSON(documents[1])).thenReturn({ getValue, isLiteral });
+            td.when(getValue()).thenReturn(documents[1]);
+            td.when(getValue(), { times: 1 }).thenReturn(documents[0]);
+
+            CollectionAdd({ rows }).add(documents);
+
+            return expect(rows).to.deep.equal(expected);
         });
 
-        it('includes all the documents provided as multiple arguments', () => {
-            const expected = [{ foo: 'bar' }, { foo: 'baz' }];
-            const query = collectionAdd().add(expected[0], expected[1]);
+        it('appends documents provided as multiple arguments to the list of rows to be inserted', () => {
+            const rows = [];
+            const documents = [{ name: 'foo' }, { name: 'bar' }];
+            const expected = documents.map(value => ({ value, isLiteral: true }));
+            const getValue = td.function();
+            const isLiteral = () => true;
 
-            expect(query.getItems()).to.deep.equal(expected);
+            td.when(DocumentOrJSON(documents[0])).thenReturn({ getValue, isLiteral });
+            td.when(DocumentOrJSON(documents[1])).thenReturn({ getValue, isLiteral });
+            td.when(getValue()).thenReturn(documents[1]);
+            td.when(getValue(), { times: 1 }).thenReturn(documents[0]);
+
+            CollectionAdd({ rows }).add(documents[0], documents[1]);
+
+            return expect(rows).to.deep.equal(expected);
         });
 
-        it('appends documents to existing ones', () => {
-            const expected = [{ foo: 'bar' }, { foo: 'baz' }];
-            const query = collectionAdd(null, null, null, [{ foo: 'bar' }]).add({ foo: 'baz' });
+        it('appends documents provided in different calls to the list of rows to be inserted', () => {
+            const rows = [];
+            const documents = [{ name: 'foo' }, { name: 'bar' }];
+            const expected = documents.map(value => ({ value, isLiteral: true }));
+            const getValue = td.function();
+            const isLiteral = () => true;
 
-            expect(query.getItems()).to.deep.equal(expected);
-        });
+            td.when(DocumentOrJSON(documents[0])).thenReturn({ getValue, isLiteral });
+            td.when(DocumentOrJSON(documents[1])).thenReturn({ getValue, isLiteral });
+            td.when(getValue()).thenReturn(documents[1]);
+            td.when(getValue(), { times: 1 }).thenReturn(documents[0]);
 
-        it('appends documents provided on multiple calls', () => {
-            const expected = [{ foo: 'bar' }, { foo: 'baz' }];
-            const query = collectionAdd().add({ foo: 'bar' }).add({ foo: 'baz' });
+            CollectionAdd({ rows }).add(documents[0]).add(documents[1]);
 
-            expect(query.getItems()).to.deep.equal(expected);
+            return expect(rows).to.deep.equal(expected);
         });
     });
 
     context('execute()', () => {
-        let result, crudInsert;
+        let Result;
 
-        beforeEach('create fakes', () => {
-            crudInsert = td.function();
-            result = td.function();
-
-            td.replace('../../../lib/DevAPI/Result', result);
-            collectionAdd = require('../../../lib/DevAPI/CollectionAdd');
+        beforeEach('replace dependencies with test doubles', () => {
+            Result = td.replace('../../../lib/DevAPI/Result');
+            // reload module with the replacements
+            CollectionAdd = require('../../../lib/DevAPI/CollectionAdd');
         });
 
-        afterEach('reset fakes', () => {
-            td.reset();
+        it('executes a CollectionAdd statement and returns a Result instance with the details provided by the server', () => {
+            const crudInsert = td.function();
+            const connection = { getClient: () => ({ crudInsert }), isIdle: () => false, isOpen: () => true };
+            const expected = 'bar';
+            const rows = 'baz';
+            const schemaName = 'qux';
+            const schema = { getName: () => schemaName };
+            const tableName = 'quux';
+            const details = 'quuz';
+
+            td.when(crudInsert({ dataModel, rows, schemaName, tableName, upsert: false })).thenResolve(details);
+            td.when(Result(details)).thenReturn(expected);
+
+            return CollectionAdd({ connection, rows, schema, tableName }).execute()
+                .then(got => expect(got).to.equal(expected));
         });
 
-        it('fails if the connection is not open', () => {
-            const getError = td.function();
-            const isOpen = td.function();
-            const connection = { getError, isOpen };
-            const error = new Error('foobar');
+        it('executes a CollectionAdd statement in upsert mode and returns a Result instance with the details provided by the server', () => {
+            const crudInsert = td.function();
+            const connection = { getClient: () => ({ crudInsert }), isIdle: () => false, isOpen: () => true };
+            const expected = 'bar';
+            const rows = 'baz';
+            const schemaName = 'qux';
+            const schema = { getName: () => schemaName };
+            const tableName = 'quux';
+            const details = 'quuz';
+            const upsert = true;
 
-            td.when(isOpen()).thenReturn(false);
-            td.when(getError()).thenReturn(error);
+            td.when(crudInsert({ dataModel, rows, schemaName, tableName, upsert })).thenResolve(details);
+            td.when(Result(details)).thenReturn(expected);
 
-            return collectionAdd(connection, null, null, { foo: 'bar' }).execute()
+            return CollectionAdd({ connection, rows, schema, tableName, upsert }).execute()
+                .then(got => expect(got).to.equal(expected));
+        });
+
+        it('does not execute the CollectionAdd statement when the list of rows to insert is empty', () => {
+            const crudInsert = td.function();
+            const connection = { getClient: () => ({ crudInsert }) };
+
+            return CollectionAdd({ connection }).execute()
+                .then(() => expect(td.explain(crudInsert).callCount).to.equal(0));
+        });
+
+        it('fails to execute the CollectionAdd statement when the connection is not open', () => {
+            const crudInsert = td.function();
+            const error = new Error('foo');
+            const connection = { getClient: () => ({ crudInsert }), getError: () => error, isOpen: () => false, isIdle: () => false };
+            const rows = 'bar';
+
+            return CollectionAdd({ connection, rows }).execute()
                 .then(() => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    expect(err).to.deep.equal(error);
+                    expect(td.explain(crudInsert).callCount).to.equal(0);
+                    return expect(err).to.deep.equal(error);
                 });
         });
 
-        it('fails if the connection is expired', () => {
-            const getError = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { getError, isIdle, isOpen };
-            const error = new Error('foobar');
+        it('fails to execute the CollectionAdd statement when the connection has expired', () => {
+            const crudInsert = td.function();
+            const error = new Error('foo');
+            const connection = { getClient: () => ({ crudInsert }), getError: () => error, isOpen: () => true, isIdle: () => true };
+            const rows = 'bar';
 
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(true);
-            td.when(getError()).thenReturn(error);
-
-            return collectionAdd(connection, null, null, { foo: 'bar' }).execute()
+            return CollectionAdd({ connection, rows }).execute()
                 .then(() => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    expect(err).to.deep.equal(error);
-                });
-        });
-
-        it('returns a Result instance containing the operation details', () => {
-            const expected = { done: true };
-            const state = { ok: true };
-            const getClient = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { getClient, isIdle, isOpen };
-
-            const query = collectionAdd(connection, 'bar', 'baz')
-                .add({ name: 'qux' })
-                .add({ name: 'quux' });
-
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(getClient()).thenReturn({ crudInsert });
-            td.when(result(state)).thenReturn(expected);
-            td.when(crudInsert(), { ignoreExtraArgs: true }).thenResolve(state);
-
-            return query.execute()
-                .then(actual => {
-                    return expect(actual).deep.equal(expected);
-                });
-        });
-
-        it('returns early if no documents were provided', () => {
-            const query = collectionAdd();
-
-            td.when(crudInsert(), { ignoreExtraArgs: true }).thenResolve();
-
-            return query.execute()
-                .then(() => {
-                    return expect(td.explain(crudInsert).callCount).to.equal(0);
+                    expect(td.explain(crudInsert).callCount).to.equal(0);
+                    return expect(err).to.deep.equal(error);
                 });
         });
     });

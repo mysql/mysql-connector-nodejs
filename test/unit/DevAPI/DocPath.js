@@ -32,25 +32,38 @@
 
 /* eslint-env node, mocha */
 
-const ExprStub = require('../../../../lib/Protocol/Stubs/mysqlx_expr_pb');
 const expect = require('chai').expect;
-const mysqlx = require('../../../../');
+const td = require('testdouble');
 
-describe('X DevAPI expression encoder for placeholders', () => {
-    it('returns a valid protobuf message for a named placeholder', () => {
-        const proto = mysqlx.expr(':foo');
-        expect(proto.getType()).to.equal(ExprStub.Expr.Type.PLACEHOLDER);
-        return expect(proto.getPosition()).to.equal(0);
+// subject under test needs to be reloaded with test doubles
+let DocPath = require('../../../lib/DevAPI/DocPath');
+
+describe('DocPath informal type', () => {
+    let Expr, ExprParser, parse;
+
+    beforeEach('replace dependencies with test doubles', () => {
+        Expr = td.replace('../../../lib/DevAPI/Expr');
+        ExprParser = td.replace('../../../lib/ExprParser');
+        parse = td.function();
+
+        td.when(ExprParser({ type: ExprParser.Type.DOCUMENT_FIELD })).thenReturn({ parse });
+
+        // reload module with the replacements
+        DocPath = require('../../../lib/DevAPI/DocPath');
     });
 
-    it('returns a valid protobuf message for multiple named placeholders', () => {
-        const proto = mysqlx.expr('[:foo, :bar]');
-        expect(proto.getType()).to.equal(ExprStub.Expr.Type.ARRAY);
+    context('getValue()', () => {
+        it('parses and returns a document path string', () => {
+            const docPath = 'foo';
+            const exprString = 'bar';
+            const getExpressionString = () => exprString;
+            const parsedExprStringValue = 'baz';
+            const parsedExprString = { value: parsedExprStringValue };
 
-        const values = proto.getArray().getValueList();
-        values.forEach((v, i) => {
-            expect(v.getType()).to.equal(ExprStub.Expr.Type.PLACEHOLDER);
-            expect(v.getPosition()).to.equal(i);
+            td.when(Expr({ value: docPath })).thenReturn({ getExpressionString });
+            td.when(parse(exprString)).thenReturn(parsedExprString);
+
+            return expect(DocPath(docPath).getValue()).to.equal(parsedExprStringValue);
         });
     });
 });

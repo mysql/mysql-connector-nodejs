@@ -39,7 +39,7 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const path = require('path');
 
-describe('inserting data into a table', () => {
+describe('inserting data into a table using CRUD', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
     let session, schema, table;

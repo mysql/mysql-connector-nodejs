@@ -28,24 +28,48 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/**
- * Types of protobuf expression objects.
- */
-declare const enum Type {
-    IDENT = 1,
-    LITERAL = 2,
-    VARIABLE = 3,
-    FUNC_CALL = 4,
-    OPERATOR = 5,
-    PLACEHOLDER = 6,
-    OBJECT = 7,
-    ARRAY = 8
-}
+'use strict';
 
-/**
- * Protobuf expression fingerprint.
- */
-export interface Expr {
-    getType: () => Type
-    [key: string]: any
-}
+const mysqlx = require('../index');
+const config = require('../test/config');
+
+const schemaName = config.schema || 'mysql-connector-nodejs_benchmark';
+const times = parseInt(process.argv[2]) || 10000;
+const label = `collection-add benchmark (${times} times)`;
+
+const doc = [{
+    literal: 'foo',
+    nestedArray: [{
+        nestedDoc: {
+            literal: true
+        }
+    }]
+}];
+
+const benchmark = async () => {
+    let session;
+
+    try {
+        session = await mysqlx.getSession(config);
+        let schema = session.getSchema(schemaName);
+
+        if (!(await schema.existsInDatabase())) {
+            schema = await session.createSchema(schemaName);
+        }
+
+        const collection = await schema.createCollection('benchmark_collection_add', { reuseExisting: true });
+        console.time(label);
+
+        const benchmark = collection.add(doc);
+
+        await Promise.allSettled([...Array(times)].map(() => benchmark.execute()));
+        console.timeEnd(label);
+    } finally {
+        if (session) {
+            await session.dropSchema(schemaName);
+            await session.close();
+        }
+    }
+};
+
+benchmark();

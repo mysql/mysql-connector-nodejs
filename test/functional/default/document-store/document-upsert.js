@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -39,7 +39,7 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const path = require('path');
 
-describe('single document upsert', () => {
+describe('upserting single documents in collections using CRUD', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
     let schema, session, collection;

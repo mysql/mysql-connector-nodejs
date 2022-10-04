@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -57,18 +57,22 @@ describe('Binding', () => {
         });
 
         it('does nothing if no argument is provided', () => {
-            expect(binding().bind().getBindings()).to.deep.equal({});
+            // eslint-disable-next-line no-unused-expressions
+            expect(binding().bind().getPlaceholders_()).to.be.an('array').and.be.empty;
+            return expect(binding().bind().getPlaceholderValues_()).to.be.an('array').and.be.empty;
         });
 
         context('using unordered mapping dictionaries', () => {
             it('replaces duplicates', () => {
                 const query = binding().bind({ foo: 'qux' });
 
-                expect(query.getBindings()).to.deep.equal({ foo: 'qux' });
+                expect(query.getPlaceholders_()).to.deep.equal(['foo']);
+                expect(query.getPlaceholderValues_()).to.deep.equal(['qux']);
 
                 query.bind({ foo: 'quux' });
 
-                expect(query.getBindings()).to.deep.equal({ foo: 'quux' });
+                expect(query.getPlaceholders_()).to.deep.equal(['foo']);
+                return expect(query.getPlaceholderValues_()).to.deep.equal(['quux']);
             });
         });
 
@@ -76,18 +80,21 @@ describe('Binding', () => {
             it('replaces duplicates', () => {
                 const query = binding().bind('foo', 'qux');
 
-                expect(query.getBindings()).to.deep.equal({ foo: 'qux' });
+                expect(query.getPlaceholders_()).to.deep.equal(['foo']);
+                expect(query.getPlaceholderValues_()).to.deep.equal(['qux']);
 
                 query.bind('foo', 'quux');
 
-                expect(query.getBindings()).to.deep.equal({ foo: 'quux' });
+                expect(query.getPlaceholders_()).to.deep.equal(['foo']);
+                expect(query.getPlaceholderValues_()).to.deep.equal(['quux']);
             });
         });
 
         it('mixes and match both type of parameters', () => {
             const query = binding().bind('foo', 'qux').bind({ bar: 'quux' });
 
-            expect(query.getBindings()).to.deep.equal({ foo: 'qux', bar: 'quux' });
+            expect(query.getPlaceholders_()).to.deep.equal(['foo', 'bar']);
+            expect(query.getPlaceholderValues_()).to.deep.equal(['qux', 'quux']);
         });
     });
 });

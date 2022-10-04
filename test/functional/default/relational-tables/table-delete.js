@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -38,7 +38,7 @@ const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 
-describe('deleting data from a table', () => {
+describe('deleting data from a table using CRUD', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
     let session, schema, table;
@@ -122,12 +122,12 @@ describe('deleting data from a table', () => {
     });
 
     context('with filtering condition', () => {
+        // The API is deprecated, but it still needs to be tested for regressions.
         it('removes the rows from a table that match the criteria defined without `where()`', () => {
             const expected = [['bar', 23], ['baz', 42]];
             const actual = [];
 
-            return table.delete()
-                .where('name = "foo"')
+            return table.delete('name = "foo"')
                 .execute()
                 .then(() => {
                     return table

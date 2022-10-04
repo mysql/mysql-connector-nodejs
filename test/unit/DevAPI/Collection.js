@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -34,133 +34,173 @@
 
 const expect = require('chai').expect;
 const errors = require('../../../lib/constants/errors');
-const result = require('../../../lib/DevAPI/Result');
-const statement = require('../../../lib/DevAPI/Statement');
 const td = require('testdouble');
 
-describe('Collection', () => {
-    let databaseObject, collection, execute, sqlExecute;
+// subject under test needs to be reloaded with test doubles
+let Collection = require('../../../lib/DevAPI/Collection');
 
-    beforeEach('create fakes', () => {
-        databaseObject = td.function();
-        execute = td.function();
-        sqlExecute = td.function();
-        sqlExecute.Namespace = statement.Type;
+describe('Collection factory function', () => {
+    let DatabaseObject;
 
-        td.replace('../../../lib/DevAPI/DatabaseObject', databaseObject);
-        td.replace('../../../lib/DevAPI/SqlExecute', sqlExecute);
-        collection = require('../../../lib/DevAPI/Collection');
+    beforeEach('replace dependencies with test doubles', () => {
+        DatabaseObject = td.replace('../../../lib/DevAPI/DatabaseObject');
+        // reload module with the replacements
+        Collection = require('../../../lib/DevAPI/Collection');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
-    context('mixins', () => {
-        it('mixes the DatabaseObject blueprint', () => {
+    context('add()', () => {
+        let CollectionAdd;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            CollectionAdd = td.replace('../../../lib/DevAPI/CollectionAdd');
+            // reload module with the replacements
+            Collection = require('../../../lib/DevAPI/Collection');
+        });
+
+        it('creates a CollectionAdd statement inserting documents provided as an array', () => {
+            const add = td.function();
             const connection = 'foo';
+            const documents = [{ name: 'bar' }, { name: 'baz' }];
+            const expected = 'qux';
+            const schema = 'quux';
+            const tableName = 'quuz';
 
-            collection(connection);
+            td.when(CollectionAdd({ connection, schema, tableName })).thenReturn({ add });
+            td.when(add(documents)).thenReturn(expected);
 
-            expect(td.explain(databaseObject).callCount).to.equal(1);
-            return expect(td.explain(databaseObject).calls[0].args).to.deep.equal([connection]);
+            return expect(Collection({ connection, schema, tableName }).add(documents)).to.equal(expected);
         });
-    });
 
-    context('getName()', () => {
-        it('returns the collection name', () => {
-            expect(collection(null, null, 'foobar').getName()).to.equal('foobar');
-        });
-    });
-
-    context('getSchema()', () => {
-        it('returns the instance of the collection schema', () => {
+        it('creates a CollectionAdd statement inserting documents provided as multiple arguments', () => {
+            const add = td.function();
             const connection = 'foo';
-            const getName = td.function();
-            const schema = { getName };
-            const coll = collection(connection, schema, 'bar');
+            const documents = [{ name: 'bar' }, { name: 'baz' }];
+            const expected = 'qux';
+            const schema = 'quux';
+            const tableName = 'quuz';
 
-            td.when(getName()).thenReturn('baz');
+            td.when(CollectionAdd({ connection, schema, tableName })).thenReturn({ add });
+            td.when(add(documents)).thenReturn(expected);
 
-            return expect(coll.getSchema().getName()).to.equal('baz');
+            return expect(Collection({ connection, schema, tableName }).add(documents[0], documents[1])).to.equal(expected);
         });
     });
 
-    context('existsInDatabase()', () => {
-        let getName, fetchAll;
+    context('addOrReplaceOne()', () => {
+        let CollectionAdd;
 
         beforeEach('create fakes', () => {
-            getName = td.function();
-            fetchAll = td.function();
+            CollectionAdd = td.replace('../../../lib/DevAPI/CollectionAdd');
+            // reload module with the replacements
+            Collection = require('../../../lib/DevAPI/Collection');
         });
 
-        it('returns true if the collection exists in the database', () => {
-            const schema = { getName };
-            const instance = collection('foo', schema, 'baz');
+        it('creates and executes a CollectionAdd statement replacing a given document', () => {
+            const add = td.function();
+            const connection = 'foo';
+            const doc = { name: 'bar' };
+            const execute = td.function();
+            const expected = 'baz';
+            const id = 'qux';
+            const schema = 'quux';
+            const tableName = 'quuz';
 
-            td.when(getName()).thenReturn('bar');
-            td.when(fetchAll()).thenReturn([['baz', 'COLLECTION']]);
-            td.when(execute()).thenResolve({ fetchAll });
-            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
+            td.when(CollectionAdd({ connection, schema, tableName, upsert: true })).thenReturn({ add });
+            td.when(add({ _id: id, ...doc })).thenReturn({ execute });
+            td.when(execute()).thenResolve(expected);
 
-            return instance.existsInDatabase()
-                .then(actual => expect(actual).to.be.true);
+            return Collection({ connection, schema, tableName }).addOrReplaceOne(id, doc)
+                .then(got => expect(got).to.equal(expected));
         });
 
-        it('returns false if a regular table with the same name exists in the database', () => {
-            const schema = { getName };
-            const instance = collection('foo', schema, 'baz');
+        it('sanitizes the document id that is being used for the replacement', () => {
+            const add = td.function();
+            const connection = 'foo';
+            const doc = { name: 'bar' };
+            const execute = td.function();
+            const expected = 'baz';
+            const id = 'qu"x';
+            const schema = 'quux';
+            const tableName = 'quuz';
 
-            td.when(getName()).thenReturn('bar');
-            td.when(fetchAll()).thenReturn([['baz', 'TABLE']]);
-            td.when(execute()).thenResolve({ fetchAll });
-            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
+            td.when(CollectionAdd({ connection, schema, tableName, upsert: true })).thenReturn({ add });
+            td.when(add({ _id: 'qu\\"x', ...doc })).thenReturn({ execute });
+            td.when(execute()).thenResolve(expected);
 
-            return instance.existsInDatabase()
-                .then(actual => expect(actual).to.be.false);
+            return Collection({ connection, schema, tableName }).addOrReplaceOne(id, doc)
+                .then(got => expect(got).to.equal(expected));
         });
 
-        it('returns false if the collection does not exist in the database', () => {
-            const schema = { getName };
-            const instance = collection('foo', schema, 'baz');
+        it('creates and executes a CollectionAdd statement when the document contains the given id', () => {
+            const add = td.function();
+            const connection = 'foo';
+            const doc = { _id: 'bar', name: 'baz' };
+            const execute = td.function();
+            const expected = 'qux';
+            const schema = 'quux';
+            const tableName = 'quuz';
 
-            td.when(getName()).thenReturn('bar');
-            td.when(fetchAll()).thenReturn([]);
-            td.when(execute()).thenResolve({ fetchAll });
-            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
+            td.when(CollectionAdd({ connection, schema, tableName, upsert: true })).thenReturn({ add });
+            td.when(add(doc)).thenReturn({ execute });
+            td.when(execute()).thenResolve(expected);
 
-            return instance.existsInDatabase()
-                .then(actual => expect(actual).to.be.false);
+            return Collection({ connection, schema, tableName }).addOrReplaceOne(doc._id, doc)
+                .then(got => expect(got).to.equal(expected));
+        });
+
+        it('fails to create a CollectionAdd statement when the document id and the given id do not match', () => {
+            return Collection().addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
+                });
         });
     });
 
     context('count()', () => {
-        it('returns the number of documents in a collection', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = collection('foo', schema, 'baz');
+        let SqlExecute;
 
-            td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback([1]))).thenResolve();
-            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
-
-            return instance.count()
-                .then(actual => expect(actual).to.equal(1));
+        beforeEach('replace dependencies with test doubles', () => {
+            SqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+            // reload module with the replacements
+            Collection = require('../../../lib/DevAPI/Collection');
         });
 
-        it('fails if an unexpected error is thrown', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = collection('foo', schema, 'baz');
-            const message = 'foobar';
-            const error = new Error(message);
-            error.info = { msg: message };
+        it('creates and executes an SqlExecute statement that counts the number of documents in a collection', () => {
+            const total = 3;
+            const connection = 'foo';
+            const execute = td.function();
+            const schemaName = 'bar';
+            const schema = { getName: () => schemaName };
+            const tableName = 'baz';
 
-            td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback([1]))).thenReject(error);
-            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
+            td.when(SqlExecute(connection, `SELECT COUNT(*) FROM \`${schemaName}\`.\`${tableName}\``)).thenReturn({ execute });
+            td.when(execute(td.callback([total]))).thenResolve();
 
-            return instance.count()
+            return Collection({ connection, schema, tableName }).count()
+                .then(actual => expect(actual).to.equal(total));
+        });
+
+        it('fails to execute an SqlExecute statement when the server reports an unexpected error', () => {
+            const connection = 'foo';
+            const execute = td.function();
+            const schemaName = 'bar';
+            const schema = { getName: () => schemaName };
+            const tableName = 'baz';
+            const errorMessage = 'qux';
+            const error = new Error(errorMessage);
+            error.info = { msg: errorMessage };
+
+            td.when(SqlExecute(), { ignoreExtraArgs: true }).thenReturn({ execute });
+            td.when(execute(), { ignoreExtraArgs: true }).thenReject(error);
+
+            return Collection({ connection, schema, tableName }).count()
                 .then(() => {
                     return expect.fail();
                 })
@@ -169,20 +209,21 @@ describe('Collection', () => {
                 });
         });
 
-        // TODO(Rui): Maybe this will become the job of the plugin at some point.
-        it('replaces "Table" by "Collection" on server error messages', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = collection('foo', schema, 'baz');
-            const message = "Table 'bar.baz' doesn't exist.";
-            const error = new Error(message);
-            error.info = { msg: message };
+        // Maybe this will become a responsability of the X Plugin at some point in the future.
+        it('replaces occurences of "Table" for "Collection" in server-reported error messages', () => {
+            const connection = 'foo';
+            const execute = td.function();
+            const schemaName = 'bar';
+            const schema = { getName: () => schemaName };
+            const tableName = 'baz';
+            const errorMessage = `Table '${schemaName}.${tableName}' doesn't exist.`;
+            const error = new Error(errorMessage);
+            error.info = { msg: errorMessage };
 
-            td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback([1]))).thenReject(error);
-            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
+            td.when(SqlExecute(), { ignoreExtraArgs: true }).thenReturn({ execute });
+            td.when(execute(), { ignoreExtraArgs: true }).thenReject(error);
 
-            return instance.count()
+            return Collection({ connection, schema, tableName }).count()
                 .then(() => {
                     expect.fail();
                 })
@@ -193,431 +234,75 @@ describe('Collection', () => {
         });
     });
 
-    context('inspect()', () => {
-        it('hides internals', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = collection(null, schema, 'bar');
-            const expected = { schema: 'foo', collection: 'bar' };
+    context('createIndex()', () => {
+        let SqlExecute;
 
-            td.when(getName()).thenReturn('foo');
-
-            expect(instance.inspect()).to.deep.equal(expected);
-        });
-    });
-
-    context('find()', () => {
-        it('returns an instance of CollectionFind', () => {
-            const query = collection().find();
-
-            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-collection-crud-functions.html
-            expect(query.fields).to.be.a('function');
-            expect(query.groupBy).to.be.a('function');
-            expect(query.having).to.be.a('function');
-            expect(query.sort).be.a('function');
-            expect(query.limit).be.a('function');
-            expect(query.offset).to.be.a('function');
-            expect(query.lockExclusive).to.be.a('function');
-            expect(query.lockShared).to.be.a('function');
-            expect(query.bind).be.a('function');
-            expect(query.execute).to.be.a('function');
-
-            /* eslint-disable no-unused-expressions */
-
-            // is not a CollectionAdd
-            expect(query.add).to.not.exist;
-
-            // is not a CollectionModify
-            expect(query.set).to.not.exist;
-            expect(query.arrayInsert).to.not.exist;
-            expect(query.arrayAppend).to.not.exist;
-            expect(query.unset).to.not.exist;
-            // TODO(Rui): arrayDelete() is deprecated
-            expect(query.arrayDelete).to.not.exist;
-            expect(query.patch).to.not.exist;
-
-            /* eslint-disable no-unused-expressions */
-        });
-    });
-
-    context('add()', () => {
-        it('returns an instance of CollectionAdd', () => {
-            const query = collection().add();
-
-            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-collection-crud-functions.html
-            expect(query.add).to.be.a('function');
-            expect(query.execute).to.be.a('function');
-
-            /* eslint-disable no-unused-expressions */
-
-            // is not a CollectionFind or CollectionRemove
-            expect(query.fields).to.not.exist;
-            expect(query.groupBy).to.not.exist;
-            expect(query.having).to.not.exist;
-            expect(query.sort).to.not.exist;
-            expect(query.limit).to.not.exist;
-            expect(query.offset).to.not.exist;
-            expect(query.lockExclusive).to.not.exist;
-            expect(query.lockShared).to.not.exist;
-            expect(query.bind).to.not.exist;
-
-            // is not a CollectionModify
-            expect(query.set).to.not.exist;
-            expect(query.arrayInsert).to.not.exist;
-            expect(query.arrayAppend).to.not.exist;
-            expect(query.unset).to.not.exist;
-            // TODO(Rui): arrayDelete() is deprecated
-            expect(query.arrayDelete).to.not.exist;
-            expect(query.patch).to.not.exist;
-
-            /* eslint-disable no-unused-expressions */
+        beforeEach('replace dependencies with test doubles', () => {
+            SqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+            // reload module with the replacements
+            Collection = require('../../../lib/DevAPI/Collection');
         });
 
-        it('acknowledges documents provided as an array', () => {
-            const documents = [{ foo: 'bar' }, { foo: 'baz' }];
-            const instance = collection().add(documents);
+        it('creates and executes a SqlExecute statement that creates a collection index with the given name', () => {
+            const connection = 'foo';
+            const execute = td.function();
+            const expected = true;
+            const indexName = 'bar';
+            const schemaName = 'baz';
+            const schema = { getName: () => schemaName };
+            const tableName = 'qux';
+            const documentField = '$.age';
+            const indexDatatype = 'TINYINT';
 
-            expect(instance.getItems()).to.deep.equal(documents);
-        });
+            const indexProperties = [{
+                name: indexName,
+                schema: schemaName,
+                collection: tableName,
+                unique: false,
+                type: 'INDEX',
+                constraint: [{ array: false, member: documentField, required: false, type: indexDatatype }]
+            }];
 
-        it('acknowledges documents provided as multiple arguments', () => {
-            const documents = [{ foo: 'bar' }, { foo: 'baz' }];
-            const instance = collection().add(documents[0], documents[1]);
+            const indexDefinition = { fields: [{ field: documentField, type: indexDatatype }] };
 
-            expect(instance.getItems()).to.deep.equal(documents);
-        });
-    });
-
-    context('modify()', () => {
-        it('returns an instance of CollectionModify', () => {
-            const query = collection().modify();
-
-            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-collection-crud-functions.html
-            expect(query.set).to.be.a('function');
-            expect(query.arrayInsert).to.be.a('function');
-            expect(query.arrayAppend).to.be.a('function');
-            expect(query.unset).to.be.a('function');
-            // TODO(Rui): arrayDelete() is deprecated
-            expect(query.arrayDelete).to.be.a('function');
-            expect(query.patch).to.be.a('function');
-            expect(query.sort).to.be.a('function');
-            expect(query.limit).to.be.a('function');
-            expect(query.bind).to.be.a('function');
-            expect(query.execute).to.be.a('function');
-
-            /* eslint-disable no-unused-expressions */
-
-            // is not a CollectionFind or CollectionRemove
-            expect(query.fields).to.not.exist;
-            expect(query.groupBy).to.not.exist;
-            expect(query.having).to.not.exist;
-            expect(query.offset).to.not.exist;
-            expect(query.lockExclusive).to.not.exist;
-            expect(query.lockShared).to.not.exist;
-
-            // is not a CollectionAdd
-            expect(query.add).to.not.exist;
-
-            /* eslint-disable no-unused-expressions */
-        });
-    });
-
-    context('remove()', () => {
-        it('returns an instance of CollectionRemove', () => {
-            const query = collection().remove();
-
-            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-collection-crud-functions.html
-            expect(query.sort).be.a('function');
-            expect(query.limit).be.a('function');
-            expect(query.bind).be.a('function');
-            expect(query.execute).to.be.a('function');
-
-            /* eslint-disable no-unused-expressions */
-
-            // is not a CollectionFind
-            expect(query.fields).to.not.exist;
-            expect(query.groupBy).to.not.exist;
-            expect(query.having).to.not.exist;
-            expect(query.offset).to.not.exist;
-            expect(query.lockExclusive).to.not.exist;
-            expect(query.lockShared).to.not.exist;
-
-            // is not a CollectionAdd
-            expect(query.add).to.not.exist;
-
-            // is not a CollectionModify
-            expect(query.set).to.not.exist;
-            expect(query.arrayInsert).to.not.exist;
-            expect(query.arrayAppend).to.not.exist;
-            expect(query.unset).to.not.exist;
-            // TODO(Rui): arrayDelete() is deprecated
-            expect(query.arrayDelete).to.not.exist;
-            expect(query.patch).to.not.exist;
-
-            /* eslint-disable no-unused-expressions */
-        });
-    });
-
-    context('replaceOne()', () => {
-        let bind, execute, set;
-
-        beforeEach('create fakes', () => {
-            bind = td.function();
-            execute = td.function();
-            set = td.function();
-
-            collection = require('../../../lib/DevAPI/Collection');
-        });
-
-        it('returns the result of executing a modify operation for a given document', () => {
-            const col = collection();
-            const modify = td.replace(col, 'modify');
-
-            td.when(modify('_id = :id')).thenReturn({ bind });
-            td.when(bind('id', 'foo')).thenReturn({ set });
-            td.when(set('$', 'bar')).thenReturn({ execute });
-            td.when(execute()).thenResolve('baz');
-
-            return col.replaceOne('foo', 'bar')
-                .then(res => {
-                    return expect(res).to.equal('baz');
-                });
-        });
-
-        it('allows "_id" properties equal to the document id', () => {
-            const col = collection();
-            const modify = td.replace(col, 'modify');
-
-            td.when(modify(), { ignoreExtraArgs: true }).thenReturn({ bind });
-            td.when(bind(), { ignoreExtraArgs: true }).thenReturn({ set });
-            td.when(set(), { ignoreExtraArgs: true }).thenReturn({ execute });
-            td.when(execute()).thenResolve('foo');
-
-            return col.replaceOne('bar', { _id: 'bar', name: 'baz' })
-                .then(res => {
-                    return expect(res).to.equal('foo');
-                });
-        });
-
-        it('fails if the "_id" property is defined and is not equal to the document id', () => {
-            return collection().replaceOne('foo', { _id: 'baz', name: 'bar' })
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
-                });
-        });
-
-        it('fails if an unexpected error is thrown when modifying the document', () => {
-            const col = collection();
-            const modify = td.replace(col, 'modify');
-            const error = new Error('foo');
-
-            td.when(modify(), { ignoreExtraArgs: true }).thenReturn({ bind });
-            td.when(bind(), { ignoreExtraArgs: true }).thenReturn({ set });
-            td.when(set(), { ignoreExtraArgs: true }).thenReturn({ execute });
-            td.when(execute()).thenReject(error);
-
-            return col.replaceOne('bar', { _id: 'bar', name: 'baz' })
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err).to.deep.equal(error);
-                });
-        });
-    });
-
-    context('addOrReplaceOne()', () => {
-        let collectionAdd, execute;
-
-        beforeEach('create fakes', () => {
-            execute = td.function();
-
-            collectionAdd = td.replace('../../../lib/DevAPI/CollectionAdd');
-            collection = require('../../../lib/DevAPI/Collection');
-        });
-
-        it('returns the result of executing a "upsert" operation for a given document', () => {
-            const expected = { ok: 'true' };
-            const name = 'foo';
-            const schema = 'baz';
-            const session = 'qux';
-            const instance = collection(session, schema, name);
-
+            td.when(SqlExecute(connection, 'create_collection_index', indexProperties, 'mysqlx')).thenReturn({ execute });
             td.when(execute()).thenResolve(expected);
-            td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
-            return instance.addOrReplaceOne('foo', { name: 'bar' })
-                .then(actual => expect(actual).to.deep.equal(expected));
+            return Collection({ connection, schema, tableName }).createIndex(indexName, indexDefinition)
+                .then(got => expect(got).to.equal(expected));
         });
 
-        it('escapes the id value', () => {
-            const expected = { ok: 'true' };
-            const name = 'foo';
-            const schema = 'baz';
-            const session = 'qux';
-            const instance = collection(session, schema, name);
+        it('creates and executes a SqlExecute statement that creates an multi-value collection index with the given name', () => {
+            const connection = 'foo';
+            const execute = td.function();
+            const expected = true;
+            const indexName = 'bar';
+            const schemaName = 'baz';
+            const schema = { getName: () => schemaName };
+            const tableName = 'qux';
+            const documentField = '$.tags';
+            const indexDatatype = 'CHAR';
 
+            const indexProperties = [{
+                name: indexName,
+                schema: schemaName,
+                collection: tableName,
+                unique: false,
+                type: 'INDEX',
+                constraint: [{ array: true, member: documentField, required: false, type: indexDatatype }]
+            }];
+
+            const indexDefinition = { fields: [{ field: documentField, type: indexDatatype, array: true }] };
+
+            td.when(SqlExecute(connection, 'create_collection_index', indexProperties, 'mysqlx')).thenReturn({ execute });
             td.when(execute()).thenResolve(expected);
-            td.when(collectionAdd(session, schema, name, [{ _id: 'fo\\"o', name: 'bar' }], { upsert: true })).thenReturn({ execute });
 
-            return instance.addOrReplaceOne('fo"o', { name: 'bar' })
-                .then(actual => expect(actual).to.deep.equal(expected));
+            return Collection({ connection, schema, tableName }).createIndex(indexName, indexDefinition)
+                .then(got => expect(got).to.equal(expected));
         });
 
-        it('allows "_id" properties equal to the document id', () => {
-            td.when(collectionAdd(), { ignoreExtraArgs: true }).thenReturn({ execute });
-            td.when(execute()).thenResolve('foo');
-
-            return collection().addOrReplaceOne('bar', { _id: 'bar', name: 'baz' })
-                .then(res => {
-                    return expect(res).to.equal('foo');
-                });
-        });
-
-        it('throws an error if the "_id" property is defined and is not equal to the document id', () => {
-            return collection().addOrReplaceOne('foo', { _id: 'baz', name: 'bar' })
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
-                });
-        });
-
-        it('fails if an unexpected error is thrown', () => {
-            const error = new Error('foobar');
-            const name = 'foo';
-            const schema = 'baz';
-            const session = 'qux';
-            const instance = collection(session, schema, name);
-
-            td.when(execute()).thenReject(error);
-            td.when(collectionAdd(session, schema, name, [{ _id: 'foo', name: 'bar' }], { upsert: true })).thenReturn({ execute });
-
-            return instance.addOrReplaceOne('foo', { name: 'bar' })
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err).to.deep.equal(error);
-                });
-        });
-    });
-
-    context('getOne()', () => {
-        let bind, collectionFind, execute;
-
-        beforeEach('create fakes', () => {
-            bind = td.function();
-            collectionFind = td.function();
-            execute = td.function();
-
-            td.replace('../../../lib/DevAPI/CollectionFind', collectionFind);
-        });
-
-        it('returns the document instance if it exists', () => {
-            const collectionName = 'foobar';
-            const documentId = 'foo';
-            const criteria = '_id = :id';
-            const expected = { _id: documentId, name: 'bar' };
-            const schema = 'baz';
-            const session = 'qux';
-
-            td.when(execute(td.callback(expected))).thenResolve();
-            td.when(bind('id', documentId)).thenReturn({ execute });
-            td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ bind });
-
-            collection = require('../../../lib/DevAPI/Collection');
-            const instance = collection(session, schema, collectionName);
-
-            return instance.getOne(documentId)
-                .then(actual => expect(actual).to.deep.equal(expected));
-        });
-
-        it('returns `null` if the document does not exist', () => {
-            const collectionName = 'foobar';
-            const documentId = 'foo';
-            const criteria = '_id = :id';
-            const schema = 'baz';
-            const session = 'qux';
-
-            td.when(execute(td.matchers.isA(Function))).thenResolve();
-            td.when(bind('id', documentId)).thenReturn({ execute });
-            td.when(collectionFind(session, schema, collectionName, criteria)).thenReturn({ bind });
-
-            collection = require('../../../lib/DevAPI/Collection');
-            const instance = collection(session, schema, collectionName);
-
-            return instance.getOne(documentId)
-                .then(actual => expect(actual).to.be.null);
-        });
-    });
-
-    context('removeOne()', () => {
-        let collectionRemove, execute;
-
-        beforeEach('create fakes', () => {
-            collectionRemove = td.function();
-            execute = td.function();
-
-            td.replace('../../../lib/DevAPI/CollectionRemove', collectionRemove);
-            collection = require('../../../lib/DevAPI/Collection');
-        });
-
-        it('returns the document instance if it exists', () => {
-            const documentId = 'foo';
-            const state = { rows_affected: 1 };
-            const expected = result(state);
-            const criteria = `_id = "${documentId}"`;
-            const instance = collection('bar', 'baz', 'qux');
-
-            td.when(execute()).thenResolve(expected);
-            td.when(collectionRemove('bar', 'baz', 'qux', criteria)).thenReturn({ execute });
-
-            return instance.removeOne(documentId)
-                .then(actual => expect(actual).to.deep.equal(expected));
-        });
-
-        it('escapes the id value', () => {
-            // eslint-disable-next-line no-useless-escape
-            const documentId = 'fo\"o';
-            const state = { rows_affected: 1 };
-            const expected = result(state);
-            const criteria = '_id = "fo\\"o"';
-            const instance = collection('bar', 'baz', 'qux');
-
-            td.when(execute()).thenResolve(expected);
-            td.when(collectionRemove('bar', 'baz', 'qux', criteria)).thenReturn({ execute });
-
-            return instance.removeOne(documentId)
-                .then(actual => expect(actual).to.deep.equal(expected));
-        });
-
-        it('fails if an unexpected error is thrown', () => {
-            const documentId = 'foo';
-            const criteria = `_id = "${documentId}"`;
-            const instance = collection('bar', 'baz', 'qux');
-            const error = new Error('bazqux');
-
-            td.when(execute()).thenReject(error);
-            td.when(collectionRemove('bar', 'baz', 'qux', criteria)).thenReturn({ execute });
-
-            return instance.removeOne(documentId)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err).to.deep.equal(error);
-                });
-        });
-    });
-
-    context('dropIndex()', () => {
-        it('does not accept an invalid index name', () => {
-            return collection().dropIndex()
+        it('fails to create an SqlExecute statement when the index name is not valid', () => {
+            return Collection().createIndex()
                 .then(() => {
                     return expect.fail();
                 })
@@ -626,47 +311,141 @@ describe('Collection', () => {
                 });
         });
 
-        it('accepts valid index name', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = collection('bar', schema, 'qux');
-
-            td.when(getName()).thenReturn('baz');
-            td.when(execute()).thenResolve(true);
-            td.when(sqlExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
-
-            return instance.dropIndex('index')
-                .then(actual => expect(actual).to.be.true);
+        it('fails to create an SqlExecute statement when the index definition does not include a valid field list', () => {
+            return Collection().createIndex('foo', {})
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+                });
         });
 
-        it('silently succeeds if the index does not exist', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = collection('bar', schema, 'qux');
-
-            const error = new Error();
-            error.info = { code: 1091 };
-
-            td.when(getName()).thenReturn('baz');
-            td.when(execute()).thenReject(error);
-            td.when(sqlExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
-
-            return instance.dropIndex('index')
-                .then(actual => expect(actual).to.be.false);
+        it('fails to create an SqlExecute statement when the index definition includes an empty field list', () => {
+            return Collection().createIndex('foo', { fields: [] })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+                });
         });
 
-        it('fails with any unexpected error returned by the server', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = collection('bar', schema, 'qux');
+        it('fails to create an SqlExecute statement when the index definition includes an invalid field', () => {
+            return Collection().createIndex('foo', { fields: [{ field: null, type: null }] })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+                });
+        });
 
-            const error = new Error('foobar');
+        it('fails to create an SqlExecute statement when the index definition includes a missing field', () => {
+            return Collection().createIndex('foo', { fields: [{ type: 'TINYINT' }] })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+                });
+        });
 
-            td.when(getName()).thenReturn('baz');
+        it('fails to create an SqlExecute statement when the index definition includes a field without a datatype', () => {
+            return Collection().createIndex('foo', { fields: [{ field: '$.age' }] })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+                });
+        });
+
+        // The X Plugin is not capable of creating unique indexes.
+        it('fails to create an SqlExecute statement when the index definition enables uniqueness', () => {
+            return Collection().createIndex('foo', { fields: [{ field: '$.age', type: 'INT' }], unique: true })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_UNIQUE_INDEX);
+                });
+        });
+    });
+
+    context('dropIndex()', () => {
+        let SqlExecute;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            SqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+            // reload module with the replacements
+            Collection = require('../../../lib/DevAPI/Collection');
+        });
+
+        context('when it exists', () => {
+            it('creates and executes an SqlExecute statement to delete a collection index with the given name', () => {
+                const connection = 'foo';
+                const execute = td.function();
+                const expected = true;
+                const indexName = 'bar';
+                const schemaName = 'baz';
+                const schema = { getName: () => schemaName };
+                const tableName = 'qux';
+                const indexProperties = [{ name: indexName, schema: schemaName, collection: tableName }];
+
+                td.when(SqlExecute(connection, 'drop_collection_index', indexProperties, 'mysqlx')).thenReturn({ execute });
+                td.when(execute()).thenResolve(expected);
+
+                return Collection({ connection, schema, tableName }).dropIndex(indexName)
+                    .then(got => expect(got).to.equal(expected));
+            });
+        });
+
+        context('when it does not exist', () => {
+            it('creates and executes an SqlExecute statement to delete a collection index with the given name', () => {
+                const connection = 'foo';
+                const execute = td.function();
+                const indexName = 'bar';
+                const schemaName = 'baz';
+                const schema = { getName: () => schemaName };
+                const tableName = 'qux';
+                const indexProperties = [{ name: indexName, schema: schemaName, collection: tableName }];
+
+                const error = new Error();
+                error.info = { code: errors.ER_CANT_DROP_FIELD_OR_KEY };
+
+                td.when(SqlExecute(connection, 'drop_collection_index', indexProperties, 'mysqlx')).thenReturn({ execute });
+                td.when(execute()).thenReject(error);
+
+                return Collection({ connection, schema, tableName }).dropIndex(indexName)
+                    .then(got => expect(got).to.be.false);
+            });
+        });
+
+        it('fails to create an SqlExecute statement when the index name is not valid', () => {
+            return Collection().dropIndex()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_NAME);
+                });
+        });
+
+        it('fails to execute an SqlExecute statement when the server reports an unexpected error', () => {
+            const connection = 'foo';
+            const indexName = 'bar';
+            const error = new Error('baz');
+            const execute = td.function();
+            const schemaName = 'baz';
+            const schema = { getName: () => schemaName };
+            const tableName = 'qux';
+            const indexProperties = [{ name: indexName, schema: schemaName, collection: tableName }];
+
+            td.when(SqlExecute(connection, 'drop_collection_index', indexProperties, 'mysqlx')).thenReturn({ execute });
             td.when(execute()).thenReject(error);
-            td.when(sqlExecute('bar', 'drop_collection_index', [{ name: 'index', schema: 'baz', collection: 'qux' }], 'mysqlx')).thenReturn({ execute });
 
-            return instance.dropIndex('index')
+            return Collection({ connection, schema, tableName }).dropIndex(indexName)
                 .then(() => {
                     return expect.fail();
                 })
@@ -676,167 +455,299 @@ describe('Collection', () => {
         });
     });
 
-    context('createIndex()', () => {
-        context('succeeds with a valid index name and a valid', () => {
-            let getName;
+    context('existsInDatabase()', () => {
+        let SqlExecute;
 
-            beforeEach('setup fakes', () => {
-                getName = td.function();
-            });
+        beforeEach('replace dependencies with test doubles', () => {
+            SqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+            // reload module with the replacements
+            Collection = require('../../../lib/DevAPI/Collection');
+        });
 
-            it('regular index definition', () => {
-                const instance = collection('bar', { getName }, 'qux');
+        it('creates and executes a SqlExecute statement that returns true if the collection exists in the database', () => {
+            const connection = 'foo';
+            const execute = td.function();
+            const schemaName = 'bar';
+            const schema = { getName: () => schemaName };
+            const tableName = 'baz';
 
-                const args = [{
-                    name: 'index',
-                    schema: 'baz',
-                    collection: 'qux',
-                    unique: false,
-                    type: 'INDEX',
-                    constraint: [{ array: false, member: '$.age', required: false, type: 'TINYINT' }]
-                }];
+            td.when(SqlExecute(connection, 'list_objects', [{ schema: schemaName, pattern: tableName }], 'mysqlx')).thenReturn({ execute });
+            td.when(execute()).thenResolve({ fetchAll: () => [[tableName, 'COLLECTION']] });
 
-                const index = {
-                    fields: [{
-                        field: '$.age',
-                        type: 'TINYINT'
-                    }]
-                };
+            return Collection({ connection, schema, tableName }).existsInDatabase()
+                .then(actual => expect(actual).to.be.true);
+        });
 
-                td.when(getName()).thenReturn('baz');
-                td.when(execute()).thenResolve(true);
-                td.when(sqlExecute('bar', 'create_collection_index', args, 'mysqlx')).thenReturn({ execute });
+        it('creates and executes a SqlExecute statement that returns false if the collection does not exist in the database', () => {
+            const connection = 'foo';
+            const execute = td.function();
+            const schemaName = 'bar';
+            const schema = { getName: () => schemaName };
+            const tableName = 'baz';
 
-                return instance.createIndex('index', index)
-                    .then(actual => expect(actual).to.be.true);
-            });
+            td.when(SqlExecute(connection, 'list_objects', [{ schema: schemaName, pattern: tableName }], 'mysqlx')).thenReturn({ execute });
+            td.when(execute()).thenResolve({ fetchAll: () => [] });
 
-            it('multi-value index definition', () => {
-                const instance = collection('bar', { getName }, 'qux');
+            return Collection({ connection, schema, tableName }).existsInDatabase()
+                .then(actual => expect(actual).to.be.false);
+        });
 
-                const args = [{
-                    name: 'index',
-                    schema: 'baz',
-                    collection: 'qux',
-                    unique: false,
-                    type: 'INDEX',
-                    constraint: [{ array: true, member: '$.tags', required: false, type: 'CHAR' }]
-                }];
+        it('creates and executes a SqlExecute statement that returns false if a table with the same name exists in the database', () => {
+            const connection = 'foo';
+            const execute = td.function();
+            const schemaName = 'bar';
+            const schema = { getName: () => schemaName };
+            const tableName = 'baz';
 
-                const index = {
-                    fields: [{
-                        field: '$.tags',
-                        type: 'CHAR',
-                        array: true
-                    }]
-                };
+            td.when(SqlExecute(connection, 'list_objects', [{ schema: schemaName, pattern: tableName }], 'mysqlx')).thenReturn({ execute });
+            td.when(execute()).thenResolve({ fetchAll: () => [[tableName, 'TABLE']] });
 
-                td.when(getName()).thenReturn('baz');
-                td.when(execute()).thenResolve(true);
-                td.when(sqlExecute('bar', 'create_collection_index', args, 'mysqlx')).thenReturn({ execute });
+            return Collection({ connection, schema, tableName }).existsInDatabase()
+                .then(actual => expect(actual).to.be.false);
+        });
+    });
 
-                return instance.createIndex('index', index)
-                    .then(actual => expect(actual).to.be.true);
+    context('find()', () => {
+        let CollectionFind, Expr;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            CollectionFind = td.replace('../../../lib/DevAPI/CollectionFind');
+            Expr = td.replace('../../../lib/DevAPI/Expr');
+
+            // reload module with the replacements
+            Collection = require('../../../lib/DevAPI/Collection');
+        });
+
+        it('creates a CollectionFind statement with a parsed version of the given criteria expression', () => {
+            const connection = 'foo';
+            const criteria = 'bar';
+            const schemaName = 'baz';
+            const schema = { getName: () => schemaName };
+            const searchConditionStr = 'qux';
+            const tableName = 'quux';
+            const statement = 'quuz';
+
+            td.when(Expr({ value: searchConditionStr })).thenReturn({ getValue: () => criteria });
+            td.when(CollectionFind({ connection, criteria, schema, tableName })).thenReturn(statement);
+
+            return expect(Collection({ connection, schema, tableName }).find(searchConditionStr)).to.equal(statement);
+        });
+    });
+
+    context('getName()', () => {
+        it('returns the collection name', () => {
+            expect(Collection({ tableName: 'foo' }).getName()).to.equal('foo');
+        });
+    });
+
+    context('getOne()', () => {
+        context('when it does not exist in the local cache', () => {
+            it('creates and executes a CollectionFind statement to retrieve a document with the given id', () => {
+                const bind = td.function();
+                const expected = 'foo';
+                const execute = td.function();
+                const id = 'bar';
+
+                const instance = Collection();
+                const find = td.replace(instance, 'find');
+
+                td.when(find('_id = :id')).thenReturn({ bind });
+                td.when(bind('id', id)).thenReturn({ execute });
+                td.when(execute(td.callback(expected))).thenResolve();
+
+                return instance.getOne(id)
+                    .then(got => expect(got).to.equal(expected));
             });
         });
 
-        context('fails with', () => {
-            it('an invalid index name', () => {
-                return collection().createIndex()
-                    .then(() => {
-                        return expect.fail();
-                    })
-                    .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_NAME);
+        context('when it already exists in the local cache', () => {
+            it('executes a CollectionFind statement to retrieve a document with the given id', () => {
+                const bind = td.function();
+                const getOneStatement = { bind };
+                const expected = 'foo';
+                const execute = td.function();
+                const id = '';
+
+                const instance = Collection({ getOneStatement });
+                const find = td.replace(instance, 'find');
+
+                td.when(bind('id', id)).thenReturn({ execute });
+                td.when(execute(td.callback(expected))).thenResolve();
+
+                return instance.getOne(id)
+                    .then(got => {
+                        expect(td.explain(find).callCount).to.equal(0);
+                        return expect(got).to.equal(expected);
                     });
             });
+        });
 
-            it('an index definition without a valid field list', () => {
-                return collection().createIndex('index', {})
-                    .then(() => {
-                        return expect.fail();
-                    })
-                    .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
+        it('resolves to a null document when the id is not provided', () => {
+            return Collection().getOne()
+                .then(got => expect(got).to.be.null);
+        });
+    });
+
+    context('getSession()', () => {
+        it('returns the associated session instance', () => {
+            const connection = 'foo';
+            const session = 'bar';
+            const getSession = () => session;
+
+            td.when(DatabaseObject(connection)).thenReturn({ getSession });
+
+            expect(Collection({ connection }).getSession()).to.deep.equal(session);
+        });
+    });
+
+    context('getSchema()', () => {
+        it('returns the instance of the collection schema', () => {
+            const schemaName = 'foo';
+            const schema = { getName: () => schemaName };
+            const instance = Collection({ schema });
+
+            expect(instance.getSchema()).to.equal(schema);
+            return expect(instance.getSchema().getName()).to.equal(schemaName);
+        });
+    });
+
+    context('inspect()', () => {
+        it('returns a stringified object containing the collection details', () => {
+            const schemaName = 'foo';
+            const schema = { getName: () => schemaName };
+            const tableName = 'bar';
+            const expected = { schema: schemaName, collection: tableName };
+
+            expect(Collection({ schema, tableName }).inspect()).to.deep.equal(expected);
+        });
+    });
+
+    context('modify()', () => {
+        let CollectionModify, Expr;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            CollectionModify = td.replace('../../../lib/DevAPI/CollectionModify');
+            Expr = td.replace('../../../lib/DevAPI/Expr');
+
+            // reload module with the replacements
+            Collection = require('../../../lib/DevAPI/Collection');
+        });
+
+        it('creates a CollectionModify statement with a parsed version of the given criteria expression', () => {
+            const connection = 'foo';
+            const criteria = 'bar';
+            const schemaName = 'baz';
+            const schema = { getName: () => schemaName };
+            const searchConditionStr = 'qux';
+            const tableName = 'quux';
+            const statement = 'quuz';
+
+            td.when(Expr({ value: searchConditionStr })).thenReturn({ getValue: () => criteria });
+            td.when(CollectionModify({ connection, criteria, schema, tableName })).thenReturn(statement);
+
+            return expect(Collection({ connection, schema, tableName }).modify(searchConditionStr)).to.equal(statement);
+        });
+    });
+
+    context('remove()', () => {
+        let CollectionRemove, Expr;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            CollectionRemove = td.replace('../../../lib/DevAPI/CollectionRemove');
+            Expr = td.replace('../../../lib/DevAPI/Expr');
+
+            // reload module with the replacements
+            Collection = require('../../../lib/DevAPI/Collection');
+        });
+
+        it('creates a CollectionRemove statement with a parsed version of the given criteria expression', () => {
+            const connection = 'foo';
+            const criteria = 'bar';
+            const schemaName = 'baz';
+            const schema = { getName: () => schemaName };
+            const searchConditionStr = 'qux';
+            const tableName = 'quux';
+            const statement = 'quuz';
+
+            td.when(Expr({ value: searchConditionStr })).thenReturn({ getValue: () => criteria });
+            td.when(CollectionRemove({ connection, criteria, schema, tableName })).thenReturn(statement);
+
+            return expect(Collection({ connection, schema, tableName }).remove(searchConditionStr)).to.equal(statement);
+        });
+    });
+
+    context('removeOne()', () => {
+        context('when it does not exist in the local cache', () => {
+            it('creates and executes a CollectionRemove statement to retrieve a document with the given id', () => {
+                const bind = td.function();
+                const expected = 'foo';
+                const execute = td.function();
+                const id = 'bar';
+
+                const instance = Collection();
+                const remove = td.replace(instance, 'remove');
+
+                td.when(remove('_id = :id')).thenReturn({ bind });
+                td.when(bind('id', id)).thenReturn({ execute });
+                td.when(execute()).thenResolve(expected);
+
+                return instance.removeOne(id)
+                    .then(got => expect(got).to.equal(expected));
+            });
+        });
+
+        context('when it already exists in the local cache', () => {
+            it('executes a CollectionRemove statement to retrieve a document with the given id', () => {
+                const bind = td.function();
+                const removeOneStatement = { bind };
+                const expected = 'foo';
+                const execute = td.function();
+                const id = '';
+
+                const instance = Collection({ removeOneStatement });
+                const remove = td.replace(instance, 'remove');
+
+                td.when(bind('id', id)).thenReturn({ execute });
+                td.when(execute()).thenResolve(expected);
+
+                return instance.removeOne(id)
+                    .then(got => {
+                        expect(td.explain(remove).callCount).to.equal(0);
+                        return expect(got).to.equal(expected);
                     });
             });
+        });
+    });
 
-            it('an index definition with an empty field list', () => {
-                return collection().createIndex('index', { fields: [] })
-                    .then(() => {
-                        return expect.fail();
-                    })
-                    .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
-                    });
-            });
+    context('replaceOne()', () => {
+        it('creates and executes a CollectionModify statement to retrieve a document with the given id', () => {
+            const bind = td.function();
+            const doc = { name: 'foo' };
+            const expected = 'bar';
+            const execute = td.function();
+            const id = 'baz';
+            const set = td.function();
 
-            it('an index definition with an invalid field definition', () => {
-                const index = {
-                    fields: [{
-                        field: null,
-                        type: null
-                    }]
-                };
+            const instance = Collection();
+            const modify = td.replace(instance, 'modify');
 
-                return collection().createIndex('index', index)
-                    .then(() => {
-                        return expect.fail();
-                    })
-                    .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
-                    });
-            });
+            td.when(modify('_id = :id')).thenReturn({ bind });
+            td.when(bind('id', id)).thenReturn({ set });
+            td.when(set('$', doc)).thenReturn({ execute });
+            td.when(execute()).thenResolve(expected);
 
-            it('an index definition with any of the field definitions missing the document field', () => {
-                const index = {
-                    fields: [{
-                        type: 'TINYINT'
-                    }]
-                };
+            return instance.replaceOne(id, doc)
+                .then(got => expect(got).to.equal(expected));
+        });
 
-                return collection().createIndex('index', index)
-                    .then(() => {
-                        return expect.fail();
-                    })
-                    .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
-                    });
-            });
-
-            it('an index definition with any of the field definitions missing its type', () => {
-                const index = {
-                    fields: [{
-                        field: '$.age'
-                    }]
-                };
-
-                return collection().createIndex('index', index)
-                    .then(() => {
-                        return expect.fail();
-                    })
-                    .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_BAD_INDEX_DEFINITION);
-                    });
-            });
-
-            it('an index definition enabling uniqueness', () => {
-                const index = {
-                    fields: [{
-                        field: '$.age',
-                        type: 'INT'
-                    }],
-                    unique: true
-                };
-
-                return collection().createIndex('index', index)
-                    .then(() => {
-                        return expect.fail();
-                    })
-                    .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_UNIQUE_INDEX);
-                    });
-            });
+        it('fails to create a CollectionModify statement when the document id and the given id do not match', () => {
+            return Collection().replaceOne('foo', { _id: 'baz', name: 'bar' })
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_DOCUMENT_ID_MISMATCH);
+                });
         });
     });
 });

@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('unaryOp', () => {
-        const type = Parser.Type.UNARY_OP;
+        const parser = Parser({ type: Parser.Type.UNARY_OP });
 
         it('parses a unary operator name and parameter', () => {
-            expect(Parser.parse('NOT TRUE', { type })).to.deep.equal({
+            expect(parser.parse('NOT TRUE')).to.deep.equal({
                 type: 'unaryOp',
                 value: {
                     name: 'not',
@@ -51,7 +51,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse('!TRUE', { type })).to.deep.equal({
+            expect(parser.parse('!TRUE')).to.deep.equal({
                 type: 'unaryOp',
                 value: {
                     name: '!',
@@ -62,7 +62,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse('NOT TRUE', { type })).to.deep.equal({
+            expect(parser.parse('NOT TRUE')).to.deep.equal({
                 type: 'unaryOp',
                 value: {
                     name: 'not',
@@ -73,7 +73,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse('~foo', { type })).to.deep.equal({
+            expect(parser.parse('~foo')).to.deep.equal({
                 type: 'unaryOp',
                 value: {
                     name: '~',
@@ -89,7 +89,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse('+foo', { type })).to.deep.equal({
+            expect(parser.parse('+foo')).to.deep.equal({
                 type: 'unaryOp',
                 value: {
                     name: 'sign_plus',
@@ -105,7 +105,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse('-foo', { type })).to.deep.equal({
+            expect(parser.parse('-foo')).to.deep.equal({
                 type: 'unaryOp',
                 value: {
                     name: 'sign_minus',

@@ -28,8 +28,8 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
+import { Expr } from '../DevAPI/Expr';
 import { Scalar } from '../Protocol/Datatypes';
-import { Expr } from '../Protocol/Expr';
 
 /**
  * Supported types for CRUD-style update values.

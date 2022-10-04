@@ -56,7 +56,7 @@ precommit()
 
         console.error('Missing or wrong copyright notice header was fixed for the following files:\n');
         filesChanged.forEach(file => console.error(`- ${file}`));
-        console.error('\nChanges must added to the index and commited again.');
+        console.error('\nChanges must be added to the index and commited again.');
 
         return process.exit(1);
     });

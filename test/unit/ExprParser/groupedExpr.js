@@ -37,29 +37,23 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('groupedExpr', () => {
-        const type = Parser.Type.GROUPED_EXPR;
+        const parser = Parser({ type: Parser.Type.GROUPED_EXPR });
 
         it('parses a literal expression in a group', () => {
-            return expect(Parser.parse('("foo")', { type })).to.deep.equal({
-                type: 'groupedExpr',
-                value: {
-                    type: 'literal',
-                    value: 'foo'
-                }
+            return expect(parser.parse('("foo")')).to.deep.equal({
+                type: 'literal',
+                value: 'foo'
             });
         });
 
         it('parses an identifier expression in a group', () => {
-            return expect(Parser.parse('(foo)', { type })).to.deep.equal({
-                type: 'groupedExpr',
+            return expect(parser.parse('(foo)')).to.deep.equal({
+                type: 'documentField',
                 value: {
-                    type: 'documentField',
-                    value: {
-                        documentPath: [{
-                            type: 'member',
-                            value: 'foo'
-                        }]
-                    }
+                    documentPath: [{
+                        type: 'member',
+                        value: 'foo'
+                    }]
                 }
             });
         });

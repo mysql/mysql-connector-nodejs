@@ -37,11 +37,11 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('documentField', () => {
-        const type = Parser.Type.DOCUMENT_FIELD;
+        const parser = Parser({ type: Parser.Type.DOCUMENT_FIELD });
 
         context('when the field identifier contains the scope', () => {
             it('parses the root path to a field in a document', () => {
-                return expect(Parser.parse('$', { type })).to.deep.equal({
+                return expect(parser.parse('$')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: []
@@ -50,7 +50,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to all top-level fields in a document', () => {
-                return expect(Parser.parse('$.*', { type })).to.deep.equal({
+                return expect(parser.parse('$.*')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -74,11 +74,11 @@ describe('ExprParser', () => {
                     }
                 };
 
-                expect(Parser.parse('$.foo.bar', { type })).to.deep.equal(path);
+                expect(parser.parse('$.foo.bar')).to.deep.equal(path);
             });
 
             it('parses the path to an array element', () => {
-                return expect(Parser.parse('$.foo[3]', { type })).to.deep.equal({
+                return expect(parser.parse('$.foo[3]')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -93,7 +93,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to all the elements of an array', () => {
-                expect(Parser.parse('$.foo[*]', { type })).to.deep.equal({
+                expect(parser.parse('$.foo[*]')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -107,7 +107,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to a specific field within an array', () => {
-                return expect(Parser.parse('$.foo[3].bar', { type })).to.deep.equal({
+                return expect(parser.parse('$.foo[3].bar')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -125,7 +125,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to a specific field within multiple array elements', () => {
-                return expect(Parser.parse('$.foo[*].bar', { type })).to.deep.equal({
+                return expect(parser.parse('$.foo[*].bar')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -142,7 +142,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to all fields within the range of a wildcard', () => {
-                return expect(Parser.parse('$.foo.*', { type })).to.deep.equal({
+                return expect(parser.parse('$.foo.*')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -156,7 +156,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to a specific field within the range of a wildcard', () => {
-                return expect(Parser.parse('$.foo.*.bar', { type })).to.deep.equal({
+                return expect(parser.parse('$.foo.*.bar')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -173,7 +173,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to a specific field linked by a globstar', () => {
-                return expect(Parser.parse('$.foo**.bar', { type })).to.deep.equal({
+                return expect(parser.parse('$.foo**.bar')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -190,18 +190,18 @@ describe('ExprParser', () => {
             });
 
             it('fails to parse a path to multiple fields linked by a globstar', () => {
-                expect(() => Parser.parse('$**', { type })).to.throw();
-                return expect(() => Parser.parse('$.foo**', { type })).to.throw();
+                expect(() => parser.parse('$**')).to.throw();
+                return expect(() => parser.parse('$.foo**')).to.throw();
             });
         });
 
         context('when the field identifier does not contain the scope', () => {
             it('fails to parse the path to all top-level fields in a document', () => {
-                return expect(() => Parser.parse('*', { type })).to.throw();
+                return expect(() => parser.parse('*')).to.throw();
             });
 
             it('parses the path to a nested field in a document', () => {
-                expect(Parser.parse('foo.bar', { type })).to.deep.equal({
+                expect(parser.parse('foo.bar')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -216,7 +216,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to an array element', () => {
-                return expect(Parser.parse('foo[3]', { type })).to.deep.equal({
+                return expect(parser.parse('foo[3]')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -231,7 +231,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to all the elements of an array', () => {
-                expect(Parser.parse('foo[*]', { type })).to.deep.equal({
+                expect(parser.parse('foo[*]')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -245,7 +245,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to a specific field within an array', () => {
-                return expect(Parser.parse('foo[3].bar', { type })).to.deep.equal({
+                return expect(parser.parse('foo[3].bar')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -263,7 +263,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to a specific field within multiple array elements', () => {
-                return expect(Parser.parse('foo[*].bar', { type })).to.deep.equal({
+                return expect(parser.parse('foo[*].bar')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -280,7 +280,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to all fields within the range of a wildcard', () => {
-                return expect(Parser.parse('foo.*', { type })).to.deep.equal({
+                return expect(parser.parse('foo.*')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -294,7 +294,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to a specific field within the range of a wildcard', () => {
-                return expect(Parser.parse('foo.*.bar', { type })).to.deep.equal({
+                return expect(parser.parse('foo.*.bar')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -311,7 +311,7 @@ describe('ExprParser', () => {
             });
 
             it('parses the path to a specific field linked by a globstar', () => {
-                return expect(Parser.parse('foo**.bar', { type })).to.deep.equal({
+                return expect(parser.parse('foo**.bar')).to.deep.equal({
                     type: 'documentField',
                     value: {
                         documentPath: [{
@@ -328,38 +328,38 @@ describe('ExprParser', () => {
             });
 
             it('fails to parse a path to multiple fields linked by a globstar', () => {
-                expect(() => Parser.parse('**', { type })).to.throw();
-                return expect(() => Parser.parse('foo**', { type })).to.throw();
+                expect(() => parser.parse('**')).to.throw();
+                return expect(() => parser.parse('foo**')).to.throw();
             });
         });
 
         context('when the field is not valid', () => {
             it('throws the corresponding parsing error', () => {
-                expect(() => Parser.parse('$.', { type })).to.throw();
-                expect(() => Parser.parse('.doc', { type })).to.throw();
-                expect(() => Parser.parse('**', { type })).to.throw();
-                expect(() => Parser.parse('**foo', { type })).to.throw();
-                expect(() => Parser.parse('_**', { type })).to.throw();
-                expect(() => Parser.parse('_**[*]_**._', { type })).to.throw();
-                expect(() => Parser.parse('_**[*]._.**._', { type })).to.throw();
-                expect(() => Parser.parse('_**[*]_.**._', { type })).to.throw();
-                expect(() => Parser.parse('$.foo**', { type })).to.throw();
-                expect(() => Parser.parse('$.foo.**.bar', { type })).to.throw();
-                expect(() => Parser.parse('$.foo[**]', { type })).to.throw();
-                expect(() => Parser.parse('$**', { type })).to.throw();
-                expect(() => Parser.parse('$.**', { type })).to.throw();
-                expect(() => Parser.parse('$.**bar', { type })).to.throw();
-                expect(() => Parser.parse('$.**".bar"', { type })).to.throw();
-                expect(() => Parser.parse('$.**.bar', { type })).to.throw();
-                expect(() => Parser.parse('$.foo..bar', { type })).to.throw();
-                expect(() => Parser.parse('"foo".bar', { type })).to.throw();
-                expect(() => Parser.parse('$**.bar()', { type })).to.throw();
-                expect(() => Parser.parse('[<foo, bar>]', { type })).to.throw();
-                expect(() => Parser.parse('[<"foo", 1>]', { type })).to.throw();
-                expect(() => Parser.parse('{<foobar>}', { type })).to.throw();
+                expect(() => parser.parse('$.')).to.throw();
+                expect(() => parser.parse('.doc')).to.throw();
+                expect(() => parser.parse('**')).to.throw();
+                expect(() => parser.parse('**foo')).to.throw();
+                expect(() => parser.parse('_**')).to.throw();
+                expect(() => parser.parse('_**[*]_**._')).to.throw();
+                expect(() => parser.parse('_**[*]._.**._')).to.throw();
+                expect(() => parser.parse('_**[*]_.**._')).to.throw();
+                expect(() => parser.parse('$.foo**')).to.throw();
+                expect(() => parser.parse('$.foo.**.bar')).to.throw();
+                expect(() => parser.parse('$.foo[**]')).to.throw();
+                expect(() => parser.parse('$**')).to.throw();
+                expect(() => parser.parse('$.**')).to.throw();
+                expect(() => parser.parse('$.**bar')).to.throw();
+                expect(() => parser.parse('$.**".bar"')).to.throw();
+                expect(() => parser.parse('$.**.bar')).to.throw();
+                expect(() => parser.parse('$.foo..bar')).to.throw();
+                expect(() => parser.parse('"foo".bar')).to.throw();
+                expect(() => parser.parse('$**.bar()')).to.throw();
+                expect(() => parser.parse('[<foo, bar>]')).to.throw();
+                expect(() => parser.parse('[<"foo", 1>]')).to.throw();
+                expect(() => parser.parse('{<foobar>}')).to.throw();
                 // valid expressions in table mode
-                expect(() => Parser.parse("doc->'$.foo'")).to.throw();
-                return expect(() => Parser.parse("foo.bar->'$.foo'")).to.throw();
+                expect(() => parser.parse("doc->'$.foo'")).to.throw();
+                return expect(() => parser.parse("foo.bar->'$.foo'")).to.throw();
             });
         });
     });

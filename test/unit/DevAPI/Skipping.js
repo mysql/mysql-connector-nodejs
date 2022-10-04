@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -40,7 +40,7 @@ const td = require('testdouble');
 describe('Skipping', () => {
     context('offset()', () => {
         it('sets the offset value', () => {
-            expect(skipping().offset(10).getOffset()).to.equal(10);
+            expect(skipping().offset(10).getOffset_()).to.equal(10);
         });
 
         it('forces an associated statement to be re-prepared the first time its called', () => {
@@ -61,22 +61,22 @@ describe('Skipping', () => {
 
     context('limit()', () => {
         it('sets a default `offset` value if one argument is provided', () => {
-            expect(skipping().limit(10).getOffset()).to.equal(0);
+            expect(skipping().limit(10).getOffset_()).to.equal(0);
         });
 
         // deprecated
         it('sets limit `row_count` and `offset` properties', () => {
             const query = skipping().limit(10, 10);
 
-            expect(query.getCount()).to.equal(10);
-            expect(query.getOffset()).to.equal(10);
+            expect(query.getCount_()).to.equal(10);
+            expect(query.getOffset_()).to.equal(10);
         });
 
         it('re-uses a previous offset when setting a new limit', () => {
             const query = skipping({ count: 1, offset: 1 }).limit(2);
 
-            expect(query.getCount()).to.equal(2);
-            expect(query.getOffset()).to.equal(1);
+            expect(query.getCount_()).to.equal(2);
+            expect(query.getOffset_()).to.equal(1);
         });
 
         it('throws an error if the limit offset is not valid', () => {

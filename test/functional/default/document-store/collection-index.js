@@ -38,7 +38,7 @@ const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 
-describe('collection indexes', () => {
+describe('creating indices in collections using CRUD', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
     let schema, session, collection;

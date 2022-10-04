@@ -39,7 +39,7 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const path = require('path');
 
-describe('modifying documents in a collection', () => {
+describe('modifying documents in a collection using CRUD', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
     let schema, session, collection;
@@ -138,6 +138,53 @@ describe('modifying documents in a collection', () => {
                 .execute()
                 .then(() => collection.find().execute(doc => actual.push(doc)))
                 .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('updates properties using a computed value dependent on the existing one', async () => {
+            const expected = [{ _id: '1', name: 'foobar' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
+
+            await collection.modify('name = :name')
+                .bind('name', 'foo')
+                .set('name', mysqlx.expr('concat(name, "bar")'))
+                .execute();
+
+            const got = await collection.find().execute();
+            expect(got.fetchAll()).to.deep.equal(expected);
+        });
+    });
+
+    context('adding elements in array fields', () => {
+        beforeEach('add some documents to the collection', async () => {
+            await collection
+                .add({ _id: '1', names: ['foo', 'bar'] })
+                .add({ _id: '2', names: ['baz', 'qux'] })
+                .execute();
+        });
+
+        it('appends an alement to the array in the corresponding field', async () => {
+            await collection.modify('_id = :id')
+                .bind('id', '1')
+                .arrayAppend('names', 'baz')
+                .execute();
+
+            const got = await collection.find('_id = :id')
+                .bind('id', '1')
+                .execute();
+
+            expect(got.fetchOne()).to.deep.equal({ _id: '1', names: ['foo', 'bar', 'baz'] });
+        });
+
+        it('inserts an element at a given index of the array in the corresponding field', async () => {
+            await collection.modify('_id = :id')
+                .bind('id', '2')
+                .arrayInsert('names[1]', 'foo')
+                .execute();
+
+            const got = await collection.find('_id = :id')
+                .bind('id', '2')
+                .execute();
+
+            expect(got.fetchOne()).to.deep.equal({ _id: '2', names: ['baz', 'foo', 'qux'] });
         });
     });
 

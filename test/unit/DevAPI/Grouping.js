@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -33,61 +33,98 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
-const grouping = require('../../../lib/DevAPI/Grouping');
 const td = require('testdouble');
 
-describe('Grouping', () => {
-    afterEach('reset fakes', () => {
+// subject under test needs to be reloaded with test doubles
+let Grouping = require('../../../lib/DevAPI/Grouping');
+
+describe('Grouping mixin', () => {
+    let Expr;
+
+    beforeEach('replace dependencies with test doubles', () => {
+        Expr = td.replace('../../../lib/DevAPI/Expr');
+        // reload module with the replacements
+        Grouping = require('../../../lib/DevAPI/Grouping');
+    });
+
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('groupBy()', () => {
-        it('forces an associated statement to be re-prepared', () => {
+        it('appends parsed order expressions provided as multiple arguments to the statement aggregation list', () => {
+            const dataModel = 'foo';
             const forceRestart = td.function();
-            const statement = grouping({ preparable: { forceRestart } });
+            const getValue = td.function();
+            const groupingList = ['bar'];
+            const searchExprStrList = ['baz', 'qux'];
+            const searchExprList = ['quux', 'quuz'];
+            const expected = [...groupingList, ...searchExprList];
+            // Adds order expressions beforehand to ensure those are not removed.
+            const statement = Grouping({ dataModel, groupingList, preparable: { forceRestart } });
 
-            statement.groupBy('foo');
+            td.when(Expr({ dataModel, value: searchExprStrList[0] })).thenReturn({ getValue });
+            td.when(Expr({ dataModel, value: searchExprStrList[1] })).thenReturn({ getValue });
+            td.when(getValue()).thenReturn(searchExprList[1]);
+            td.when(getValue(), { times: 1 }).thenReturn(searchExprList[0]);
 
-            return expect(td.explain(forceRestart).callCount).to.equal(1);
-        });
-    });
+            statement.groupBy(searchExprStrList[0], searchExprStrList[1]);
 
-    context('hasBaseGroupingCriteria()', () => {
-        it('returns true if the expression criteria does not need to be parsed', () => {
-            /* eslint-disable no-unused-expressions */
-            expect(grouping({ criteria: true }).hasBaseGroupingCriteria()).to.be.true;
-            expect(grouping({ criteria: '' }).hasBaseGroupingCriteria()).to.be.true;
-            expect(grouping({ criteria: 'true' }).hasBaseGroupingCriteria()).to.be.true;
-            /* eslint-enable no-unused-expressions */
-            return expect(grouping({ criteria: 'TRUE' }).hasBaseGroupingCriteria()).to.be.true;
-        });
+            // If it is a prepared statement, it needs to be prepared again
+            // because the boundaries have changed.
+            expect(td.explain(forceRestart).callCount).to.equal(1);
 
-        it('returns false if the expression criteria needs to be parsed', () => {
-            /* eslint-disable no-unused-expressions */
-            expect(grouping({ criteria: 'foo' }).hasBaseGroupingCriteria()).to.be.false;
-            expect(grouping({ criteria: 'false' }).hasBaseGroupingCriteria()).to.be.false;
-            /* eslint-enable no-unused-expressions */
-            return expect(grouping({ criteria: 'FALSE' }).hasBaseGroupingCriteria()).to.be.false;
+            expect(groupingList).to.deep.equal(expected);
         });
 
-        it('does not fail if the criteria is invalid', () => {
-            /* eslint-disable no-unused-expressions */
-            expect(() => grouping({ criteria: undefined }).hasBaseGroupingCriteria()).to.not.throw;
-            expect(() => grouping({ criteria: false }).hasBaseGroupingCriteria()).to.not.throw;
-            expect(() => grouping({ criteria: 1.23 }).hasBaseGroupingCriteria()).to.not.throw;
-            /* eslint-enable no-unused-expressions */
-            return expect(() => grouping({ criteria: [1, 2, 3] }).hasBaseGroupingCriteria()).to.not.throw;
+        it('appends parsed order expressions provided as an array to the statement aggregation list', () => {
+            const dataModel = 'foo';
+            const forceRestart = td.function();
+            const getValue = td.function();
+            const groupingList = ['bar'];
+            const searchExprStrList = ['baz', 'qux'];
+            const searchExprList = ['quux', 'quuz'];
+            const expected = [...groupingList, ...searchExprList];
+            // Adds order expressions beforehand to ensure those are not removed.
+            const statement = Grouping({ dataModel, groupingList, preparable: { forceRestart } });
+
+            td.when(Expr({ dataModel, value: searchExprStrList[0] })).thenReturn({ getValue });
+            td.when(Expr({ dataModel, value: searchExprStrList[1] })).thenReturn({ getValue });
+            td.when(getValue()).thenReturn(searchExprList[1]);
+            td.when(getValue(), { times: 1 }).thenReturn(searchExprList[0]);
+
+            statement.groupBy(searchExprStrList[0], searchExprStrList[1]);
+
+            // If it is a prepared statement, it needs to be prepared again
+            // because the boundaries have changed.
+            expect(td.explain(forceRestart).callCount).to.equal(1);
+
+            expect(groupingList).to.deep.equal(expected);
         });
     });
 
     context('having()', () => {
-        it('forces an associated statement to be re-prepared', () => {
+        it('sets the statement aggregation criteria', () => {
+            const dataModel = 'foo';
             const forceRestart = td.function();
-            const statement = grouping({ preparable: { forceRestart } });
+            const getValue = td.function();
+            const constraints = { criteria: 'bar' };
+            const criteria = 'baz';
+            const expected = { criteria };
+            const searchConditionStr = 'qux';
+            // Set an existing criteria to ensure it is replaced.
+            const statement = Grouping({ constraints, dataModel, preparable: { forceRestart } });
 
-            statement.having('foo');
+            td.when(Expr({ dataModel, value: searchConditionStr })).thenReturn({ getValue });
+            td.when(getValue()).thenReturn(criteria);
 
-            return expect(td.explain(forceRestart).callCount).to.equal(1);
+            statement.having(searchConditionStr);
+
+            // If it is a prepared statement, it needs to be prepared again
+            // because the boundaries have changed.
+            expect(td.explain(forceRestart).callCount).to.equal(1);
+
+            expect(constraints).to.deep.equal(expected);
         });
     });
 });

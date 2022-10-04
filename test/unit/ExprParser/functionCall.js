@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('functionCall', () => {
-        const type = Parser.Type.FUNCTION_CALL;
+        const parser = Parser({ type: Parser.Type.FUNCTION_CALL });
 
         it('parses a function call with a schema-qualified identifier', () => {
-            expect(Parser.parse('foo.bar("baz")', { type })).to.deep.equal({
+            expect(parser.parse('foo.bar("baz")')).to.deep.equal({
                 type: 'functionCall',
                 value: {
                     name: {
@@ -54,7 +54,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse('foo.bar(baz.qux(2.3))', { type })).to.deep.equal({
+            expect(parser.parse('foo.bar(baz.qux(2.3))')).to.deep.equal({
                 type: 'functionCall',
                 value: {
                     name: {
@@ -77,7 +77,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse('foo.bar(baz)', { type })).to.deep.equal({
+            expect(parser.parse('foo.bar(baz)')).to.deep.equal({
                 type: 'functionCall',
                 value: {
                     name: {
@@ -98,7 +98,7 @@ describe('ExprParser', () => {
         });
 
         it('parses a function call without a schema-qualified identifier', () => {
-            expect(Parser.parse('foo(false)', { type })).to.deep.equal({
+            expect(parser.parse('foo(false)')).to.deep.equal({
                 type: 'functionCall',
                 value: {
                     name: {
@@ -111,7 +111,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse('foo(bar(NULL))', { type })).to.deep.equal({
+            expect(parser.parse('foo(bar(NULL))')).to.deep.equal({
                 type: 'functionCall',
                 value: {
                     name: {
@@ -132,7 +132,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse('foo(:arg)', { type })).to.deep.equal({
+            expect(parser.parse('foo(:arg)')).to.deep.equal({
                 type: 'functionCall',
                 value: {
                     name: {
@@ -140,10 +140,7 @@ describe('ExprParser', () => {
                     },
                     params: [{
                         type: 'placeholder',
-                        value: {
-                            name: 'arg',
-                            position: 0
-                        }
+                        value: 'arg'
                     }]
                 }
             });

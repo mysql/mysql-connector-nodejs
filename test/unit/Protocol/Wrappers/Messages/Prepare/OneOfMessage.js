@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,88 +35,103 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let oneOfMessage = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/OneOfMessage');
+// subject under test needs to be reloaded with replacement test doubles
+let OneOfMessage = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/OneOfMessage');
 
 describe('Mysqlx.Prepare.Prepare.OneOfMessage wrapper', () => {
-    let PrepareStub, crudDelete, crudFind, crudUpdate, wraps;
+    let PrepareStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         PrepareStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_prepare_pb');
-        crudDelete = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Delete');
-        crudFind = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Find');
-        crudUpdate = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Update');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        oneOfMessage = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/OneOfMessage');
+        // reload module with the replacements
+        OneOfMessage = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/OneOfMessage');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns a Mysqlx.Prepare.Prepare.OneOfMessage wrap instance for a Mysqlx.Crud.Find message', () => {
+            let CrudFind, CrudDelete, CrudUpdate, Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                CrudDelete = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Delete');
+                CrudFind = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Find');
+                CrudUpdate = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Update');
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                OneOfMessage = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/OneOfMessage');
+            });
+
+            it('creates a Mysqlx.Prepare.Prepare.OneOfMessage wrapper for a Mysqlx.Crud.Find message', () => {
+                const crudFindProto = 'foo';
                 const proto = new PrepareStub.Prepare.OneOfMessage();
-                const statement = { getType: td.function() };
+                const protoValue = 'bar';
+                const type = PrepareStub.Prepare.OneOfMessage.Type.FIND;
+                const statement = { getType: () => type };
 
-                td.when(statement.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.FIND);
-                td.when(crudFind.create(statement, 'foo')).thenReturn({ valueOf: () => 'bar' });
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'baz' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(CrudFind.create(statement, { toPrepare: true })).thenReturn({ valueOf: () => crudFindProto });
 
-                expect(oneOfMessage.create(statement, 'foo').valueOf()).to.equal('baz');
+                expect(OneOfMessage.create(statement).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setType).callCount).to.equal(1);
-                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(PrepareStub.Prepare.OneOfMessage.Type.FIND);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(type);
                 expect(td.explain(proto.setFind).callCount).to.equal(1);
-                expect(td.explain(proto.setFind).calls[0].args[0]).to.equal('bar');
+                expect(td.explain(proto.setFind).calls[0].args[0]).to.equal(crudFindProto);
                 expect(td.explain(proto.setDelete).callCount).to.equal(0);
                 expect(td.explain(proto.setUpdate).callCount).to.equal(0);
             });
 
-            it('returns a Mysqlx.Prepare.Prepare.OneOfMessage wrapper for a Mysqlx.Crud.Update message', () => {
+            it('creates a Mysqlx.Prepare.Prepare.OneOfMessage wrapper for a Mysqlx.Crud.Update message', () => {
+                const crudUpdateProto = 'foo';
                 const proto = new PrepareStub.Prepare.OneOfMessage();
-                const statement = { getType: td.function() };
+                const protoValue = 'bar';
+                const type = PrepareStub.Prepare.OneOfMessage.Type.UPDATE;
+                const statement = { getType: () => type };
 
-                td.when(statement.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.UPDATE);
-                td.when(crudUpdate.create(statement, 'foo')).thenReturn({ valueOf: () => 'bar' });
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'baz' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(CrudUpdate.create(statement, { toPrepare: true })).thenReturn({ valueOf: () => crudUpdateProto });
 
-                expect(oneOfMessage.create(statement, 'foo').valueOf()).to.equal('baz');
+                expect(OneOfMessage.create(statement).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setType).callCount).to.equal(1);
-                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(PrepareStub.Prepare.OneOfMessage.Type.UPDATE);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(type);
                 expect(td.explain(proto.setUpdate).callCount).to.equal(1);
-                expect(td.explain(proto.setUpdate).calls[0].args[0]).to.equal('bar');
+                expect(td.explain(proto.setUpdate).calls[0].args[0]).to.equal(crudUpdateProto);
                 expect(td.explain(proto.setDelete).callCount).to.equal(0);
                 expect(td.explain(proto.setFind).callCount).to.equal(0);
             });
 
             it('returns a Mysqlx.Prepare.Prepare.OneOfMessage wrapper for a Mysqlx.Crud.Delete message', () => {
+                const crudDeleteProto = 'foo';
                 const proto = new PrepareStub.Prepare.OneOfMessage();
-                const statement = { getType: td.function() };
+                const protoValue = 'bar';
+                const type = PrepareStub.Prepare.OneOfMessage.Type.DELETE;
+                const statement = { getType: () => type };
 
-                td.when(statement.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.DELETE);
-                td.when(crudDelete.create(statement, 'foo')).thenReturn({ valueOf: () => 'bar' });
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'baz' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(CrudDelete.create(statement, { toPrepare: true })).thenReturn({ valueOf: () => crudDeleteProto });
 
-                expect(oneOfMessage.create(statement, 'foo').valueOf()).to.equal('baz');
+                expect(OneOfMessage.create(statement).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setType).callCount).to.equal(1);
-                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(PrepareStub.Prepare.OneOfMessage.Type.DELETE);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(type);
                 expect(td.explain(proto.setDelete).callCount).to.equal(1);
-                expect(td.explain(proto.setDelete).calls[0].args[0]).to.equal('bar');
+                expect(td.explain(proto.setDelete).calls[0].args[0]).to.equal(crudDeleteProto);
                 expect(td.explain(proto.setFind).callCount).to.equal(0);
                 expect(td.explain(proto.setUpdate).callCount).to.equal(0);
             });
 
-            it('returns a Mysqlx.Prepare.Prepare.OneOfMessage wrapper for an unknown message', () => {
+            it('creates an empty Mysqlx.Prepare.Prepare.OneOfMessage wrapper for an unknown message', () => {
                 const proto = new PrepareStub.Prepare.OneOfMessage();
-                const statement = { getType: td.function() };
+                const protoValue = 'foo';
+                const type = PrepareStub.Prepare.OneOfMessage.Type.UNKNOWN;
+                const statement = { getType: () => type };
 
-                td.when(statement.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.UNKNOWN);
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'bar' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
 
-                expect(oneOfMessage.create(statement, 'foo').valueOf()).to.equal('bar');
+                expect(OneOfMessage.create(statement).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setType).callCount).to.equal(1);
-                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(PrepareStub.Prepare.OneOfMessage.Type.UNKNOWN);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(type);
                 expect(td.explain(proto.setFind).callCount).to.equal(0);
                 expect(td.explain(proto.setDelete).callCount).to.equal(0);
                 expect(td.explain(proto.setUpdate).callCount).to.equal(0);
@@ -130,85 +145,116 @@ describe('Mysqlx.Prepare.Prepare.OneOfMessage wrapper', () => {
                 const proto = new PrepareStub.Prepare.OneOfMessage();
 
                 td.when(proto.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.FIND);
-                expect(oneOfMessage(proto).getType()).to.equal('FIND');
+                expect(OneOfMessage(proto).getType()).to.equal('FIND');
 
                 td.when(proto.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.INSERT);
-                expect(oneOfMessage(proto).getType()).to.equal('INSERT');
+                expect(OneOfMessage(proto).getType()).to.equal('INSERT');
 
                 td.when(proto.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.UPDATE);
-                expect(oneOfMessage(proto).getType()).to.equal('UPDATE');
+                expect(OneOfMessage(proto).getType()).to.equal('UPDATE');
 
                 td.when(proto.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.DELETE);
-                expect(oneOfMessage(proto).getType()).to.equal('DELETE');
+                expect(OneOfMessage(proto).getType()).to.equal('DELETE');
 
                 td.when(proto.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.STMT);
-                expect(oneOfMessage(proto).getType()).to.equal('STMT');
+                expect(OneOfMessage(proto).getType()).to.equal('STMT');
             });
         });
 
         context('toJSON()', () => {
-            it('returns a textual representation of Mysqlx.Prepare.Prepare.OneOfMessage for a Mysqlx.Crud.Find message', () => {
-                const proto = new PrepareStub.Prepare.OneOfMessage();
+            let CrudDelete, CrudFind, CrudUpdate;
 
-                const wrap = oneOfMessage(proto);
+            beforeEach('replace dependencies with test doubles', () => {
+                PrepareStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_prepare_pb');
+                CrudDelete = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Delete');
+                CrudFind = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Find');
+                CrudUpdate = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Update');
+                // reload module with the replacements
+                OneOfMessage = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/OneOfMessage');
+            });
+
+            it('returns a textual representation of Mysqlx.Prepare.Prepare.OneOfMessage for a Mysqlx.Crud.Find message', () => {
+                const find = 'foo';
+                const findProto = `${find}_proto`;
+                const proto = new PrepareStub.Prepare.OneOfMessage();
+                const type = 'foo';
+
+                const wrap = OneOfMessage(proto);
                 const getType = td.replace(wrap, 'getType');
 
-                td.when(getType()).thenReturn('foo');
+                td.when(getType()).thenReturn(type);
                 td.when(proto.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.FIND);
-                td.when(proto.getFind()).thenReturn('p_bar');
-                td.when(crudFind('p_bar')).thenReturn({ toJSON: () => 'bar' });
+                td.when(proto.getFind()).thenReturn(findProto);
+                td.when(CrudFind(findProto)).thenReturn({ toJSON: () => find });
 
-                expect(wrap.toJSON()).to.deep.equal({ type: 'foo', find: 'bar' });
+                expect(wrap.toJSON()).to.deep.equal({ type, find });
             });
 
             it('returns a textual representation of Mysqlx.Prepare.Prepare.OneOfMessage for a Mysqlx.Crud.Update message', () => {
                 const proto = new PrepareStub.Prepare.OneOfMessage();
+                const type = 'foo';
+                const update = 'bar';
+                const updateProto = `${update}_bar`;
 
-                const wrap = oneOfMessage(proto);
+                const wrap = OneOfMessage(proto);
                 const getType = td.replace(wrap, 'getType');
 
-                td.when(getType()).thenReturn('foo');
+                td.when(getType()).thenReturn(type);
                 td.when(proto.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.UPDATE);
-                td.when(proto.getUpdate()).thenReturn('p_bar');
-                td.when(crudUpdate('p_bar')).thenReturn({ toJSON: () => 'bar' });
+                td.when(proto.getUpdate()).thenReturn(updateProto);
+                td.when(CrudUpdate(updateProto)).thenReturn({ toJSON: () => update });
 
-                expect(wrap.toJSON()).to.deep.equal({ type: 'foo', update: 'bar' });
+                expect(wrap.toJSON()).to.deep.equal({ type, update });
             });
 
             it('returns a textual representation of Mysqlx.Prepare.Prepare.OneOfMessage for a Mysqlx.Crud.Delete message', () => {
+                // "delete" is a keyword
+                const deleteJSON = 'foo';
+                const deleteProto = `${deleteJSON}_proto`;
                 const proto = new PrepareStub.Prepare.OneOfMessage();
+                const type = 'bar';
 
-                const wrap = oneOfMessage(proto);
+                const wrap = OneOfMessage(proto);
                 const getType = td.replace(wrap, 'getType');
 
-                td.when(getType()).thenReturn('foo');
+                td.when(getType()).thenReturn(type);
                 td.when(proto.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.DELETE);
-                td.when(proto.getDelete()).thenReturn('p_bar');
-                td.when(crudDelete('p_bar')).thenReturn({ toJSON: () => 'bar' });
+                td.when(proto.getDelete()).thenReturn(deleteProto);
+                td.when(CrudDelete(deleteProto)).thenReturn({ toJSON: () => deleteJSON });
 
-                expect(wrap.toJSON()).to.deep.equal({ type: 'foo', delete: 'bar' });
+                expect(wrap.toJSON()).to.deep.equal({ type, delete: deleteJSON });
             });
 
             it('returns an incomplete representation of Mysqlx.Prepare.Prepare.OneOfMessage for an unknown message', () => {
                 const proto = new PrepareStub.Prepare.OneOfMessage();
+                const type = 'foo';
 
-                const wrap = oneOfMessage(proto);
+                const wrap = OneOfMessage(proto);
                 const getType = td.replace(wrap, 'getType');
 
-                td.when(getType()).thenReturn('foo');
+                td.when(getType()).thenReturn(type);
                 td.when(proto.getType()).thenReturn(PrepareStub.Prepare.OneOfMessage.Type.UNKNOWN);
 
-                expect(wrap.toJSON()).to.deep.equal({ type: 'foo' });
+                expect(wrap.toJSON()).to.deep.equal({ type });
             });
         });
 
         context('valueOf()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                OneOfMessage = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/OneOfMessage');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new PrepareStub.Prepare.OneOfMessage();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(oneOfMessage(proto).valueOf()).to.equal('foo');
+                expect(OneOfMessage(proto).valueOf()).to.equal(expected);
             });
         });
     });

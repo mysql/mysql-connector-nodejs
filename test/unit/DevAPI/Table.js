@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -33,364 +33,402 @@
 /* eslint-env node, mocha */
 
 const expect = require('chai').expect;
+const errors = require('../../../lib/constants/errors');
 const td = require('testdouble');
 const warnings = require('../../../lib/constants/warnings');
 
-describe('Table', () => {
-    let databaseObject, execute, sqlExecute, table, warning;
+// subject under test needs to be reloaded with test doubles
+let Table = require('../../../lib/DevAPI/Table');
 
-    beforeEach('create fakes', () => {
-        execute = td.function();
-        warning = td.function();
+describe('Table factory function', () => {
+    let DatabaseObject;
 
-        databaseObject = td.replace('../../../lib/DevAPI/DatabaseObject');
-        sqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
-
-        const logger = td.replace('../../../lib/logger');
-        td.when(logger('api:table')).thenReturn({ warning });
-
-        table = require('../../../lib/DevAPI/Table');
+    beforeEach('replace dependencies with test doubles', () => {
+        DatabaseObject = td.replace('../../../lib/DevAPI/DatabaseObject');
+        // reload module with the replacements
+        Table = require('../../../lib/DevAPI/Table');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
-    context('mixins', () => {
-        it('mixes the DatabaseObject blueprint', () => {
+    context('count()', () => {
+        let SqlExecute;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            SqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+            // reload module with the replacements
+            Table = require('../../../lib/DevAPI/Table');
+        });
+
+        it('creates and executes an SqlExecute statement that counts the number of documents in a table', () => {
+            const total = 3;
             const connection = 'foo';
+            const escapeIdentifier = td.replace(Table, 'escapeIdentifier');
+            const escapedSchemaName = 'bar';
+            const escapedTableName = 'baz';
+            const execute = td.function();
+            const schemaName = 'qux';
+            const schema = { getName: () => schemaName };
+            const tableName = 'quux';
 
-            table(connection);
+            td.when(escapeIdentifier(schemaName)).thenReturn(escapedSchemaName);
+            td.when(escapeIdentifier(tableName)).thenReturn(escapedTableName);
+            td.when(SqlExecute(connection, `SELECT COUNT(*) FROM ${escapedSchemaName}.${escapedTableName}`)).thenReturn({ execute });
+            td.when(execute(td.callback([total]))).thenResolve();
 
-            expect(td.explain(databaseObject).callCount).to.equal(1);
-            return expect(td.explain(databaseObject).calls[0].args).to.deep.equal([connection]);
+            return Table({ connection, schema, tableName }).count()
+                .then(actual => expect(actual).to.equal(total));
+        });
+    });
+
+    context('delete()', () => {
+        let Logger, TableDelete, warning;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Logger = td.replace('../../../lib/logger');
+            TableDelete = td.replace('../../../lib/DevAPI/TableDelete');
+            warning = td.function();
+
+            td.when(Logger('api:table')).thenReturn({ warning });
+
+            // reload module with the replacements
+            Table = require('../../../lib/DevAPI/Table');
+        });
+
+        it('creates a TableDelete statement when no criteria is given', () => {
+            const connection = 'foo';
+            const schema = 'bar';
+            const tableName = 'baz';
+            const expected = 'qux';
+            const where = td.function();
+
+            td.when(TableDelete({ connection, schema, tableName })).thenReturn({ where });
+            td.when(where(undefined)).thenReturn(expected);
+
+            expect(Table({ connection, schema, tableName }).delete()).to.equal(expected);
+        });
+
+        it('creates a TableDelete statement to delete all rows that match a given criteria and logs a warning', () => {
+            const connection = 'foo';
+            const schema = 'bar';
+            const tableName = 'baz';
+            const expected = 'qux';
+            const searchConditionStr = 'quux';
+            const where = td.function();
+            const warningMessage = warnings.MESSAGES.WARN_DEPRECATED_TABLE_DELETE_EXPR_ARGUMENT;
+            const warningOptions = { code: warnings.CODES.DEPRECATION, type: warnings.TYPES.DEPRECATION };
+
+            td.when(TableDelete({ connection, schema, tableName })).thenReturn({ where });
+            td.when(where(searchConditionStr)).thenReturn(expected);
+
+            expect(Table({ connection, schema, tableName }).delete(searchConditionStr)).to.equal(expected);
+            expect(td.explain(warning).callCount).to.equal(1);
+            expect(td.explain(warning).calls[0].args).to.deep.equal(['delete', warningMessage, warningOptions]);
+        });
+    });
+
+    context('existsInDatabase()', () => {
+        let SqlExecute;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            SqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+            // reload module with the replacements
+            Table = require('../../../lib/DevAPI/Table');
+        });
+
+        it('creates and executes a SqlExecute statement that returns true if the table exists in the database', () => {
+            const connection = 'foo';
+            const execute = td.function();
+            const schemaName = 'bar';
+            const schema = { getName: () => schemaName };
+            const tableName = 'baz';
+
+            td.when(SqlExecute(connection, 'list_objects', [{ schema: schemaName, pattern: tableName }], 'mysqlx')).thenReturn({ execute });
+            td.when(execute()).thenResolve({ fetchAll: () => [[tableName, 'TABLE']] });
+
+            return Table({ connection, schema, tableName }).existsInDatabase()
+                .then(actual => expect(actual).to.be.true);
+        });
+
+        it('creates and executes a SqlExecute statement that returns false if the table does not exist in the database', () => {
+            const connection = 'foo';
+            const execute = td.function();
+            const schemaName = 'bar';
+            const schema = { getName: () => schemaName };
+            const tableName = 'baz';
+
+            td.when(SqlExecute(connection, 'list_objects', [{ schema: schemaName, pattern: tableName }], 'mysqlx')).thenReturn({ execute });
+            td.when(execute()).thenResolve({ fetchAll: () => [] });
+
+            return Table({ connection, schema, tableName }).existsInDatabase()
+                .then(actual => expect(actual).to.be.false);
         });
     });
 
     context('getName()', () => {
         it('returns the table name', () => {
-            const instance = table(null, null, 'foobar');
+            expect(Table({ tableName: 'foo' }).getName()).to.equal('foo');
+        });
+    });
 
-            expect(instance.getName()).to.equal('foobar');
+    context('getSession()', () => {
+        it('returns the associated session instance', () => {
+            const connection = 'foo';
+            const session = 'bar';
+            const getSession = () => session;
+
+            td.when(DatabaseObject(connection)).thenReturn({ getSession });
+
+            expect(Table({ connection }).getSession()).to.deep.equal(session);
         });
     });
 
     context('getSchema()', () => {
-        it('returns the instance of the table schema', () => {
-            const connection = 'foo';
-            const getName = td.function();
-            const schema = { getName };
-            const coll = table(connection, schema, 'bar');
+        it('returns the instance of the collection schema', () => {
+            const schemaName = 'foo';
+            const schema = { getName: () => schemaName };
+            const instance = Table({ schema });
 
-            td.when(getName()).thenReturn('baz');
-
-            return expect(coll.getSchema().getName()).to.equal('baz');
-        });
-    });
-
-    context('existsInDatabase()', () => {
-        let fetchAll, getName;
-
-        beforeEach('create fakes', () => {
-            fetchAll = td.function();
-            getName = td.function();
-        });
-
-        it('returns true if the table exists in database', () => {
-            const schema = { getName };
-            const instance = table('foo', schema, 'baz');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(fetchAll()).thenReturn([['baz', 'TABLE']]);
-            td.when(execute()).thenResolve({ fetchAll });
-            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
-
-            return instance.existsInDatabase()
-                .then(actual => expect(actual).to.be.true);
-        });
-
-        it('returns false if a collection with the same name exists in the database', () => {
-            const schema = { getName };
-            const instance = table('foo', schema, 'baz');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(fetchAll()).thenReturn([['baz', 'COLLECTION']]);
-            td.when(execute()).thenResolve({ fetchAll });
-            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
-
-            return instance.existsInDatabase()
-                .then(actual => expect(actual).to.be.false);
-        });
-
-        it('returns false if the table does not exist in database', () => {
-            const schema = { getName };
-            const instance = table('foo', schema, 'baz');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(fetchAll()).thenReturn([]);
-            td.when(execute()).thenResolve({ fetchAll });
-            td.when(sqlExecute('foo', 'list_objects', [{ schema: 'bar', pattern: 'baz' }], 'mysqlx')).thenReturn({ execute });
-
-            return instance.existsInDatabase()
-                .then(actual => expect(actual).to.be.false);
-        });
-    });
-
-    context('isView()', () => {
-        it('returns true if the table exists in database', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = table('foo', schema, 'baz');
-            const query = 'SELECT COUNT(*) cnt FROM information_schema.VIEWS WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
-
-            td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback(['bar']))).thenResolve();
-            td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
-
-            return instance.isView()
-                .then(actual => expect(actual).to.be.true);
-        });
-
-        it('returns false if the table does not exist in database', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = table('foo', schema, 'baz');
-            const query = 'SELECT COUNT(*) cnt FROM information_schema.VIEWS WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
-
-            td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback([]))).thenResolve();
-            td.when(sqlExecute('foo', query, ['def', 'bar', 'baz'])).thenReturn({ execute });
-
-            return instance.isView()
-                .then(actual => expect(actual).to.be.false);
-        });
-    });
-
-    context('select()', () => {
-        it('returns an instance of TableSelect', () => {
-            const query = table().select();
-
-            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-table-crud-functions.html
-            expect(query.where).to.be.a('function');
-            expect(query.groupBy).to.be.a('function');
-            expect(query.having).to.be.a('function');
-            expect(query.orderBy).to.be.a('function');
-            expect(query.limit).to.be.a('function');
-            expect(query.offset).to.be.a('function');
-            expect(query.lockExclusive).to.be.a('function');
-            expect(query.lockShared).to.be.a('function');
-            expect(query.bind).to.be.a('function');
-            expect(query.execute).to.be.a('function');
-
-            /* eslint-disable no-unused-expressions */
-
-            // is not a TableInsert
-            expect(query.insert).to.not.exist;
-            expect(query.values).to.not.exist;
-
-            // is not a TableUpdate
-            expect(query.set).to.not.exist;
-
-            /* eslint-disable no-unused-expressions */
-        });
-
-        it('sets the projection parameters provided as an array', () => {
-            const connection = 'foo';
-            const expressions = ['bar', 'baz'];
-            const instance = table(connection).select(expressions);
-
-            expect(instance.getProjections()).to.deep.equal(expressions);
-        });
-
-        it('sets the projection parameters provided as multiple arguments', () => {
-            const connection = 'foo';
-            const expressions = ['bar', 'baz'];
-            const instance = table(connection).select(expressions[0], expressions[1]);
-
-            expect(instance.getProjections()).to.deep.equal(expressions);
-        });
-    });
-
-    context('insert()', () => {
-        it('returns an instance of TableInsert', () => {
-            const query = table().insert([]);
-
-            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-table-crud-functions.html
-            expect(query.values).to.be.a('function');
-            expect(query.execute).to.be.a('function');
-
-            /* eslint-disable no-unused-expressions */
-
-            // is not a TableSelect or a TableDelete
-            expect(query.where).to.not.exist;
-            expect(query.orderBy).to.not.exist;
-            expect(query.limit).to.not.exist;
-            expect(query.bind).to.not.exist;
-            expect(query.groupBy).to.not.exist;
-            expect(query.having).to.not.exist;
-            expect(query.offset).to.not.exist;
-            expect(query.lockExclusive).to.not.exist;
-            expect(query.lockShared).to.not.exist;
-
-            // is not a TableUpdate
-            expect(query.set).to.not.exist;
-
-            /* eslint-disable no-unused-expressions */
-        });
-
-        it('sets column names provided as an array', () => {
-            const expressions = ['foo', 'bar'];
-            const instance = table().insert(expressions);
-
-            expect(instance.getColumns()).to.deep.equal(expressions);
-        });
-
-        it('sets column names provided as multiple arguments', () => {
-            const expressions = ['foo', 'bar'];
-            const instance = table().insert(expressions[0], expressions[1]);
-
-            expect(instance.getColumns()).to.deep.equal(expressions);
-        });
-
-        it('generates a deprecation message while setting column names provided as object keys', () => {
-            const expressions = ['foo', 'bar'];
-            const instance = table().insert({ foo: 'baz', bar: 'qux' });
-
-            expect(instance.getColumns()).to.deep.equal(expressions);
-            expect(td.explain(warning).callCount).to.equal(1);
-            return expect(td.explain(warning).calls[0].args).to.deep.equal(['insert', warnings.MESSAGES.WARN_DEPRECATED_TABLE_INSERT_OBJECT_ARGUMENT, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
-        });
-
-        it('throws an error if the columns are invalid', () => {
-            const instance = table();
-
-            expect(() => instance.insert()).to.throw(Error);
-        });
-    });
-
-    context('count()', () => {
-        it('returns the number of records found', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = table('foo', schema, 'baz');
-            const count = 3;
-
-            td.when(getName()).thenReturn('bar');
-            td.when(execute(td.callback([count]))).thenResolve();
-            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
-
-            return instance.count()
-                .then(actual => expect(actual).to.equal(count));
-        });
-
-        it('fails if an expected error is thrown', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = table('foo', schema, 'baz');
-            const error = new Error('foobar');
-
-            td.when(getName()).thenReturn('bar');
-            td.when(execute(), { ignoreExtraArgs: true }).thenReject(error);
-            td.when(sqlExecute('foo', 'SELECT COUNT(*) FROM `bar`.`baz`')).thenReturn({ execute });
-
-            return instance.count()
-                .then(() => expect.fail())
-                .catch(err => expect(err).to.deep.equal(error));
+            expect(instance.getSchema()).to.equal(schema);
+            expect(instance.getSchema().getName()).to.equal(schemaName);
         });
     });
 
     context('inspect()', () => {
-        it('hides internals', () => {
-            const getName = td.function();
-            const schema = { getName };
-            const instance = table(null, schema, 'bar');
-            const expected = { schema: 'foo', table: 'bar' };
+        it('returns a stringified object containing the collection details', () => {
+            const schemaName = 'foo';
+            const schema = { getName: () => schemaName };
+            const tableName = 'bar';
+            const expected = { schema: schemaName, table: tableName };
 
-            td.when(getName()).thenReturn('foo');
-
-            expect(instance.inspect()).to.deep.equal(expected);
+            expect(Table({ schema, tableName }).inspect()).to.deep.equal(expected);
         });
     });
 
-    context('delete()', () => {
-        it('returns an instance of TableDelete', () => {
-            const query = table().delete();
+    context('insert()', () => {
+        let TableInsert, Logger, warning;
 
-            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-table-crud-functions.html
-            expect(query.where).to.be.a('function');
-            expect(query.orderBy).to.be.a('function');
-            expect(query.limit).to.be.a('function');
-            expect(query.bind).to.be.a('function');
-            expect(query.execute).to.be.a('function');
+        beforeEach('replace dependencies with test doubles', () => {
+            Logger = td.replace('../../../lib/logger');
+            TableInsert = td.replace('../../../lib/DevAPI/TableInsert');
+            warning = td.function();
 
-            /* eslint-disable no-unused-expressions */
+            td.when(Logger('api:table')).thenReturn({ warning });
 
-            // is not a TableSelect or a TableDelete
-            expect(query.groupBy).to.not.exist;
-            expect(query.having).to.not.exist;
-            expect(query.offset).to.not.exist;
-            expect(query.lockExclusive).to.not.exist;
-            expect(query.lockShared).to.not.exist;
-
-            // is not a TableInsert
-            expect(query.insert).to.not.exist;
-            expect(query.values).to.not.exist;
-
-            // is not a TableUpdate
-            expect(query.set).to.not.exist;
-
-            /* eslint-disable no-unused-expressions */
+            // reload module with the replacements
+            Table = require('../../../lib/DevAPI/Table');
         });
 
-        it('generates a deprecation message if an argument is provided', () => {
-            table().delete('foo');
+        it('creates a TableInsert statement to insert values in the columns provided as an array', () => {
+            const connection = 'foo';
+            const tableFields = ['bar', 'baz'];
+            const expected = 'qux';
+            const schema = 'quux';
+            const tableName = 'quuz';
 
+            td.when(TableInsert({ connection, schema, tableName, columns: tableFields })).thenReturn(expected);
+
+            expect(Table({ connection, schema, tableName }).insert(tableFields)).to.equal(expected);
+        });
+
+        it('creates a TableInsert statement to insert values in the columns provided as multiple arguments', () => {
+            const connection = 'foo';
+            const tableFields = ['bar', 'baz'];
+            const expected = 'qux';
+            const schema = 'quux';
+            const tableName = 'quuz';
+
+            td.when(TableInsert({ connection, schema, tableName, columns: tableFields })).thenReturn(expected);
+
+            expect(Table({ connection, schema, tableName }).insert(tableFields[0], tableFields[1])).to.equal(expected);
+        });
+
+        it('creates a TableInsert statement to insert values in the columns provided by an key-value map and logs a warning', () => {
+            const connection = 'foo';
+            const columnValues = ['bar', 'baz'];
+            const expected = 'qux';
+            const schema = 'quux';
+            const tableFields = ['quuz', 'corge'];
+            const keyValuePairs = { [tableFields[0]]: columnValues[0], [tableFields[1]]: columnValues[1] };
+            const tableName = 'grault';
+            const values = td.function();
+            const warningMessage = warnings.MESSAGES.WARN_DEPRECATED_TABLE_INSERT_OBJECT_ARGUMENT;
+            const warningOptions = { code: warnings.CODES.DEPRECATION, type: warnings.TYPES.DEPRECATION };
+
+            td.when(TableInsert({ connection, schema, tableName, columns: tableFields })).thenReturn({ values });
+            td.when(values(columnValues)).thenReturn(expected);
+
+            expect(Table({ connection, schema, tableName }).insert(keyValuePairs)).to.equal(expected);
             expect(td.explain(warning).callCount).to.equal(1);
-            return expect(td.explain(warning).calls[0].args).to.deep.equal(['delete', warnings.MESSAGES.WARN_DEPRECATED_TABLE_DELETE_EXPR_ARGUMENT, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
+            expect(td.explain(warning).calls[0].args).to.deep.equal(['insert', warningMessage, warningOptions]);
+        });
+
+        it('throws an error when a table field is not a valid expression or key-value map', () => {
+            // insert('foo', undefined) should work because it the same as insert('foo')
+            [1, true, false, [['foo']], {}, null].forEach(invalid => {
+                expect(() => Table().insert(invalid)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TABLE_INSERT_ARGUMENT);
+                expect(() => Table().insert('foo', invalid)).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TABLE_INSERT_ARGUMENT);
+            });
+
+            // insert('foo', undefined) or insert('foo', []) are the same as insert('foo')
+            expect(() => Table().insert()).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TABLE_INSERT_ARGUMENT);
+            expect(() => Table().insert([])).to.throw(errors.MESSAGES.ER_DEVAPI_BAD_TABLE_INSERT_ARGUMENT);
+        });
+    });
+
+    context('isView()', () => {
+        let SqlExecute;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            SqlExecute = td.replace('../../../lib/DevAPI/SqlExecute');
+            // reload module with the replacements
+            Table = require('../../../lib/DevAPI/Table');
+        });
+
+        it('creates and executes a SqlExecute statement returning true if the corresponding database table is a view', () => {
+            const connection = 'foo';
+            const count = 1;
+            const execute = td.function();
+            const schemaName = 'bar';
+            const schema = { getName: () => schemaName };
+            const sqlStatement = 'SELECT COUNT(*) cnt FROM information_schema.VIEWS WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
+            const tableName = 'baz';
+
+            td.when(SqlExecute(connection, sqlStatement, ['def', schemaName, tableName])).thenReturn({ execute });
+            td.when(execute(td.callback([count]))).thenResolve();
+
+            return Table({ connection, schema, tableName }).isView()
+                .then(got => expect(got).to.be.true);
+        });
+
+        it('creates and executes a SqlExecute statement returning true if the corresponding database table is not a view', () => {
+            const connection = 'foo';
+            const execute = td.function();
+            const schemaName = 'bar';
+            const schema = { getName: () => schemaName };
+            const sqlStatement = 'SELECT COUNT(*) cnt FROM information_schema.VIEWS WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? HAVING COUNT(*) = 1';
+            const tableName = 'baz';
+
+            td.when(SqlExecute(connection, sqlStatement, ['def', schemaName, tableName])).thenReturn({ execute });
+            td.when(execute(td.callback([]))).thenResolve();
+
+            return Table({ connection, schema, tableName }).isView()
+                .then(got => expect(got).to.be.false);
+        });
+    });
+
+    context('select()', () => {
+        let ProjectedSearchExprStr, TableSelect;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            ProjectedSearchExprStr = td.replace('../../../lib/DevAPI/ProjectedSearchExprStr');
+            TableSelect = td.replace('../../../lib/DevAPI/TableSelect');
+            // reload module with the replacements
+            Table = require('../../../lib/DevAPI/Table');
+        });
+
+        it('creates a TableSelect statement with a projection list containing the field expressions provided as an array', () => {
+            const connection = 'foo';
+            const expected = 'bar';
+            const getValue = td.function();
+            const schema = 'bar';
+            const tableName = 'baz';
+            const projectedSearchExprStrList = ['qux', 'quux'];
+            const projectionList = ['quuz', 'corge'];
+
+            td.when(ProjectedSearchExprStr(projectedSearchExprStrList[0])).thenReturn({ getValue });
+            td.when(ProjectedSearchExprStr(projectedSearchExprStrList[1])).thenReturn({ getValue });
+            td.when(getValue()).thenReturn(projectionList[1]);
+            td.when(getValue(), { times: 1 }).thenReturn(projectionList[0]);
+            td.when(TableSelect({ connection, projectionList, schema, tableName })).thenReturn(expected);
+
+            expect(Table({ connection, schema, tableName }).select(projectedSearchExprStrList)).to.equal(expected);
+        });
+
+        it('creates a TableSelect statement with a projection list containing the field expressions provided as different arguments', () => {
+            const connection = 'foo';
+            const expected = 'bar';
+            const getValue = td.function();
+            const schema = 'bar';
+            const tableName = 'baz';
+            const projectedSearchExprStrList = ['qux', 'quux'];
+            const projectionList = ['quuz', 'corge'];
+
+            td.when(ProjectedSearchExprStr(projectedSearchExprStrList[0])).thenReturn({ getValue });
+            td.when(ProjectedSearchExprStr(projectedSearchExprStrList[1])).thenReturn({ getValue });
+            td.when(getValue()).thenReturn(projectionList[1]);
+            td.when(getValue(), { times: 1 }).thenReturn(projectionList[0]);
+            td.when(TableSelect({ connection, projectionList, schema, tableName })).thenReturn(expected);
+
+            expect(Table({ connection, schema, tableName }).select(projectedSearchExprStrList[0], projectedSearchExprStrList[1])).to.equal(expected);
         });
     });
 
     context('update()', () => {
-        it('returns an instance of TableUpdate', () => {
-            const query = table().update();
+        let Logger, TableUpdate, warning;
 
-            // as defined by https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-table-crud-functions.html
-            expect(query.set).to.be.a('function');
-            expect(query.where).to.be.a('function');
-            expect(query.orderBy).to.be.a('function');
-            expect(query.limit).to.be.a('function');
-            expect(query.bind).to.be.a('function');
-            expect(query.execute).to.be.a('function');
+        beforeEach('replace dependencies with test doubles', () => {
+            Logger = td.replace('../../../lib/logger');
+            TableUpdate = td.replace('../../../lib/DevAPI/TableUpdate');
+            warning = td.function();
 
-            /* eslint-disable no-unused-expressions */
+            td.when(Logger('api:table')).thenReturn({ warning });
 
-            // is not a TableSelect
-            expect(query.groupBy).to.not.exist;
-            expect(query.having).to.not.exist;
-            expect(query.offset).to.not.exist;
-            expect(query.lockExclusive).to.not.exist;
-            expect(query.lockShared).to.not.exist;
-
-            // is not a TableInsert
-            expect(query.insert).to.not.exist;
-            expect(query.values).to.not.exist;
-
-            /* eslint-disable no-unused-expressions */
+            // reload module with the replacements
+            Table = require('../../../lib/DevAPI/Table');
         });
 
-        it('generates a deprecation message if an argument is provided', () => {
-            table().update('foo');
+        it('creates a TableUpdate statement when no criteria is given', () => {
+            const connection = 'foo';
+            const schema = 'bar';
+            const tableName = 'baz';
+            const expected = 'qux';
+            const where = td.function();
 
+            td.when(TableUpdate({ connection, schema, tableName })).thenReturn({ where });
+            td.when(where(undefined)).thenReturn(expected);
+
+            expect(Table({ connection, schema, tableName }).update()).to.equal(expected);
+        });
+
+        it('creates a TableUpdate statement to delete all rows that match a given criteria and logs a warning', () => {
+            const connection = 'foo';
+            const schema = 'bar';
+            const tableName = 'baz';
+            const expected = 'qux';
+            const searchConditionStr = 'quux';
+            const where = td.function();
+            const warningMessage = warnings.MESSAGES.WARN_DEPRECATED_TABLE_UPDATE_EXPR_ARGUMENT;
+            const warningOptions = { code: warnings.CODES.DEPRECATION, type: warnings.TYPES.DEPRECATION };
+
+            td.when(TableUpdate({ connection, schema, tableName })).thenReturn({ where });
+            td.when(where(searchConditionStr)).thenReturn(expected);
+
+            expect(Table({ connection, schema, tableName }).update(searchConditionStr)).to.equal(expected);
             expect(td.explain(warning).callCount).to.equal(1);
-            return expect(td.explain(warning).calls[0].args).to.deep.equal(['update', warnings.MESSAGES.WARN_DEPRECATED_TABLE_UPDATE_EXPR_ARGUMENT, { type: warnings.TYPES.DEPRECATION, code: warnings.CODES.DEPRECATION }]);
+            expect(td.explain(warning).calls[0].args).to.deep.equal(['update', warningMessage, warningOptions]);
         });
     });
 
-    context('escapeIdentifier()', () => {
-        it('escapes and wrap the identifier with a set of backticks', () => {
-            expect(table.escapeIdentifier('foo')).to.equal('`foo`');
-            expect(table.escapeIdentifier('fo`o')).to.equal('`fo``o`');
-            expect(table.escapeIdentifier('fo``o-ba``r')).to.equal('`fo````o-ba````r`');
+    context('Table.escapeIdentifier()', () => {
+        let escapeQuotes;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            escapeQuotes = td.replace('../../../lib/DevAPI/Util/escapeQuotes');
+            // reload module with the replacements
+            Table = require('../../../lib/DevAPI/Table');
+        });
+
+        it('escapes an identifier and wraps it within backticks', () => {
+            const value = 'foo';
+            const escapedValue = 'bar';
+            const expected = `\`${escapedValue}\``;
+
+            td.when(escapeQuotes(value)).thenReturn(escapedValue);
+
+            expect(Table.escapeIdentifier(value)).to.equal(expected);
         });
     });
 });

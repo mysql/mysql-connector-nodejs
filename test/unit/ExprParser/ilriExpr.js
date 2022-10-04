@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('ilriExpr', () => {
-        const type = Parser.Type.ILRI_EXPR;
+        const parser = Parser({ type: Parser.Type.ILRI_EXPR });
 
         it('parses boolean test functions and the corresponding parameters', () => {
-            expect(Parser.parse('false IS NOT false', { type })).to.deep.equal({
+            expect(parser.parse('false IS NOT false')).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'is_not',
@@ -54,7 +54,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            return expect(Parser.parse('foo IS TRUE', { type })).to.deep.equal({
+            return expect(parser.parse('foo IS TRUE')).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'is',
@@ -75,7 +75,7 @@ describe('ExprParser', () => {
         });
 
         it('parses existence functions and the corresponding parameters', () => {
-            expect(Parser.parse("'foo' IN ('foo','bar')", { type })).to.deep.equal({
+            expect(parser.parse("'foo' IN ('foo','bar')")).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'in',
@@ -92,7 +92,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            return expect(Parser.parse('foo NOT IN (1, 2)', { type })).to.deep.equal({
+            return expect(parser.parse('foo NOT IN (1, 2)')).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'not_in',
@@ -116,7 +116,7 @@ describe('ExprParser', () => {
         });
 
         it('parses list lookup functions and the corresponding parameters', () => {
-            expect(Parser.parse('1 IN [foo, bar]', { type })).to.deep.equal({
+            expect(parser.parse('1 IN [foo, bar]')).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'cont_in',
@@ -146,7 +146,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            return expect(Parser.parse('foo NOT IN [1, 2]', { type })).to.deep.equal({
+            return expect(parser.parse('foo NOT IN [1, 2]')).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'not_cont_in',
@@ -173,7 +173,7 @@ describe('ExprParser', () => {
         });
 
         it('parses similarity functions and the corresponding parameters', () => {
-            expect(Parser.parse("foo LIKE '%bar%'", { type })).to.deep.equal({
+            expect(parser.parse("foo LIKE '%bar%'")).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'like',
@@ -192,7 +192,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse("'foobar' NOT LIKE '%baz%'", { type })).to.deep.equal({
+            expect(parser.parse("'foobar' NOT LIKE '%baz%'")).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'not_like',
@@ -206,7 +206,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            return expect(Parser.parse("'foo%' LIKE 'foo!%' ESCAPE '!'", { type })).to.deep.equal({
+            return expect(parser.parse("'foo%' LIKE 'foo!%' ESCAPE '!'")).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'like',
@@ -225,7 +225,7 @@ describe('ExprParser', () => {
         });
 
         it('parses range functions and the corresponding parameters', () => {
-            expect(Parser.parse('2 BETWEEN 1 AND 3', { type })).to.deep.equal({
+            expect(parser.parse('2 BETWEEN 1 AND 3')).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'between',
@@ -242,7 +242,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            return expect(Parser.parse('5 NOT BETWEEN 8 AND 10', { type })).to.deep.equal({
+            return expect(parser.parse('5 NOT BETWEEN 8 AND 10')).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'between_not',
@@ -261,7 +261,7 @@ describe('ExprParser', () => {
         });
 
         it('parses regular expression matching functions and the corresponding parameters', () => {
-            expect(Parser.parse("'foo' REGEXP '.*'", { type })).to.deep.equal({
+            expect(parser.parse("'foo' REGEXP '.*'")).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'regexp',
@@ -275,7 +275,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            expect(Parser.parse("'foo' NOT REGEXP '[0-9]+'", { type })).to.deep.equal({
+            expect(parser.parse("'foo' NOT REGEXP '[0-9]+'")).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'not_regexp',
@@ -291,7 +291,7 @@ describe('ExprParser', () => {
         });
 
         it('parses overlap checking functions and the corresponding parameters', () => {
-            expect(Parser.parse('[1, 2] OVERLAPS [1, 2, 3]', { type })).to.deep.equal({
+            expect(parser.parse('[1, 2] OVERLAPS [1, 2, 3]')).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'overlaps',
@@ -320,7 +320,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            return expect(Parser.parse('[4, 5] NOT OVERLAPS [1, 2]', { type })).to.deep.equal({
+            return expect(parser.parse('[4, 5] NOT OVERLAPS [1, 2]')).to.deep.equal({
                 type: 'ilriExpr',
                 value: {
                     name: 'not_overlaps',

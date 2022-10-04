@@ -37,10 +37,10 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('addSubExpr', () => {
-        const type = Parser.Type.ADD_SUB_EXPR;
+        const parser = Parser({ type: Parser.Type.ADD_SUB_EXPR });
 
         it('parses addition functions', () => {
-            return expect(Parser.parse('1.234 + 1.234', { type })).to.deep.equal({
+            return expect(parser.parse('1.234 + 1.234')).to.deep.equal({
                 type: 'addSubExpr',
                 value: {
                     name: '+',
@@ -56,7 +56,7 @@ describe('ExprParser', () => {
         });
 
         it('parses subtraction functions', () => {
-            return expect(Parser.parse(`${Number.MIN_SAFE_INTEGER} - 10`, { type })).to.deep.equal({
+            return expect(parser.parse(`${Number.MIN_SAFE_INTEGER} - 10`)).to.deep.equal({
                 type: 'addSubExpr',
                 value: {
                     name: '-',
@@ -72,7 +72,7 @@ describe('ExprParser', () => {
         });
 
         it('parses composable functions', () => {
-            return expect(Parser.parse('3 + 5 - 2', { type })).to.deep.equal({
+            return expect(parser.parse('3 + 5 - 2')).to.deep.equal({
                 type: 'addSubExpr',
                 value: {
                     name: '-',
@@ -97,7 +97,7 @@ describe('ExprParser', () => {
         });
 
         it('parses composable functions with the correct precedence', () => {
-            expect(Parser.parse('2 * 2 - 1', { type })).to.deep.equal({
+            expect(parser.parse('2 * 2 - 1')).to.deep.equal({
                 type: 'addSubExpr',
                 value: {
                     name: '-',
@@ -120,7 +120,7 @@ describe('ExprParser', () => {
                 }
             });
 
-            return expect(Parser.parse('3 + 5 * 2', { type })).to.deep.equal({
+            return expect(parser.parse('3 + 5 * 2')).to.deep.equal({
                 type: 'addSubExpr',
                 value: {
                     name: '+',

@@ -37,7 +37,7 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('castOp', () => {
-        const type = Parser.Type.CAST_OP;
+        const parser = Parser({ type: Parser.Type.CAST_OP });
 
         it('parses the name and arguments in a CAST function', () => {
             const expected = {
@@ -59,10 +59,10 @@ describe('ExprParser', () => {
                 }
             };
 
-            expect(Parser.parse('CAST(foo AS JSON)', { type })).to.deep.equal(expected);
-            expect(Parser.parse('cast(foo AS JSON)', { type })).to.deep.equal(expected);
-            expect(Parser.parse('CAST( foo AS JSON )', { type })).to.deep.equal(expected);
-            return expect(Parser.parse('cast( foo AS JSON )', { type })).to.deep.equal(expected);
+            expect(parser.parse('CAST(foo AS JSON)')).to.deep.equal(expected);
+            expect(parser.parse('cast(foo AS JSON)')).to.deep.equal(expected);
+            expect(parser.parse('CAST( foo AS JSON )')).to.deep.equal(expected);
+            return expect(parser.parse('cast( foo AS JSON )')).to.deep.equal(expected);
         });
     });
 });

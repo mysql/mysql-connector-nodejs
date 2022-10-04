@@ -37,59 +37,59 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('literal', () => {
-        const type = Parser.Type.LITERAL;
+        const parser = Parser({ type: Parser.Type.LITERAL });
 
         it('parses double-quoted strings as JavaScript strings', () => {
-            return expect(Parser.parse('"foo"', { type })).to.deep.equal({ type: 'literal', value: 'foo' });
+            return expect(parser.parse('"foo"')).to.deep.equal({ type: 'literal', value: 'foo' });
         });
 
         it('parses single-quoted strings as JavaScript strings', () => {
-            return expect(Parser.parse("'bar'", { type })).to.deep.equal({ type: 'literal', value: 'bar' });
+            return expect(parser.parse("'bar'")).to.deep.equal({ type: 'literal', value: 'bar' });
         });
 
         it('parses safe integers as JavaScript numbers', () => {
-            return expect(Parser.parse('1', { type })).to.deep.equal({ type: 'literal', value: 1 });
+            return expect(parser.parse('1')).to.deep.equal({ type: 'literal', value: 1 });
         });
 
         it('parses positive unsafe integers as JavaScript strings', () => {
             const unsafeInteger = `${Number.MAX_SAFE_INTEGER + 1}`;
-            return expect(Parser.parse(unsafeInteger, { type })).to.deep.equal({ type: 'literal', value: unsafeInteger });
+            return expect(parser.parse(unsafeInteger)).to.deep.equal({ type: 'literal', value: unsafeInteger });
         });
 
         it('parses negative safe integers as JavaScript numbers', () => {
-            return expect(Parser.parse('-1', { type })).to.deep.equal({ type: 'literal', value: -1 });
+            return expect(parser.parse('-1')).to.deep.equal({ type: 'literal', value: -1 });
         });
 
         it('parses negative unsafe integers as JavaScript strings', () => {
             const unsafeInteger = `${Number.MIN_SAFE_INTEGER - 1}`;
-            return expect(Parser.parse(unsafeInteger, { type })).to.deep.equal({ type: 'literal', value: unsafeInteger });
+            return expect(parser.parse(unsafeInteger)).to.deep.equal({ type: 'literal', value: unsafeInteger });
         });
 
         it('parses positive safe decimal values as JavaScript numbers', () => {
-            return expect(Parser.parse('1.11111111', { type })).to.deep.equal({ type: 'literal', value: 1.11111111 });
+            return expect(parser.parse('1.11111111')).to.deep.equal({ type: 'literal', value: 1.11111111 });
         });
 
         it('parses positive unsafe decimal values as JavaScript strings', () => {
-            return expect(Parser.parse('1.23456789123456789', { type })).to.deep.equal({ type: 'literal', value: '1.23456789123456789' });
+            return expect(parser.parse('1.23456789123456789')).to.deep.equal({ type: 'literal', value: '1.23456789123456789' });
         });
 
         it('parses negative safe decimal values as JavaScript numbers', () => {
-            return expect(Parser.parse('-1.11111111', { type })).to.deep.equal({ type: 'literal', value: -1.11111111 });
+            return expect(parser.parse('-1.11111111')).to.deep.equal({ type: 'literal', value: -1.11111111 });
         });
 
         it('parses negative unsafe decimal values as JavaScript strings', () => {
-            return expect(Parser.parse('-1.23456789123456789', { type })).to.deep.equal({ type: 'literal', value: '-1.23456789123456789' });
+            return expect(parser.parse('-1.23456789123456789')).to.deep.equal({ type: 'literal', value: '-1.23456789123456789' });
         });
 
         it('parses booleans values as JavaScript booleans', () => {
-            expect(Parser.parse('true', { type })).to.deep.equal({ type: 'literal', value: true });
-            expect(Parser.parse('TRUE', { type })).to.deep.equal({ type: 'literal', value: true });
-            expect(Parser.parse('false', { type })).to.deep.equal({ type: 'literal', value: false });
-            return expect(Parser.parse('FALSE', { type })).to.deep.equal({ type: 'literal', value: false });
+            expect(parser.parse('true')).to.deep.equal({ type: 'literal', value: true });
+            expect(parser.parse('TRUE')).to.deep.equal({ type: 'literal', value: true });
+            expect(parser.parse('false')).to.deep.equal({ type: 'literal', value: false });
+            return expect(parser.parse('FALSE')).to.deep.equal({ type: 'literal', value: false });
         });
 
         it('parses NULL values as a JavaScript null', () => {
-            expect(Parser.parse('null', { type })).to.deep.equal({ type: 'literal', value: null });
+            expect(parser.parse('null')).to.deep.equal({ type: 'literal', value: null });
         });
     });
 });

@@ -46,7 +46,7 @@ import TableSelect from './lib/DevAPI/TableSelect';
 import TableUpdate from './lib/DevAPI/TableUpdate';
 import Schema, { CreateCollectionOptions, ValidationOptions } from './lib/DevAPI/Schema';
 import Session from './lib/DevAPI/Session';
-import { Expr } from './lib/Protocol/Expr';
+import { Expr } from './lib/DevAPI/Expr';
 import { Options as ConnectionOptions } from './lib/DevAPI/Connection';
 import { Options as PoolingOptions } from './lib/DevAPI/ConnectionPool';
 import { Type } from './lib/DevAPI/Query';

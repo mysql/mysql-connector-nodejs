@@ -28,7 +28,7 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-import { Expr } from '../Protocol/Expr';
+import { Expr } from '../DevAPI/Expr';
 import Binding from './Binding';
 import Ordering from './CollectionOrdering';
 import DocResult from './DocResult';

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -36,38 +36,41 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 
 // subject under test needs to be reloaded with replacement fakes
-let column = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Column');
+let Column = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Column');
 
 describe('Mysqlx.Crud.Column wrapper', () => {
-    let CrudStub, wraps;
+    let CrudStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         CrudStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_crud_pb');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        column = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Column');
+        // reload module with the replacements
+        Column = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Column');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns a Mysqlx.Crud.Column wrap instance with a given name', () => {
-                const proto = new CrudStub.Column();
+            let wraps;
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'bar' });
-
-                expect(column.create('foo').valueOf()).to.equal('bar');
-                expect(td.explain(proto.setName).callCount).to.equal(1);
-                expect(td.explain(proto.setName).calls[0].args[0]).to.equal('foo');
+            beforeEach('replace dependencies with test doubles', () => {
+                wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Column = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Column');
             });
 
-            it('returns an empty wrap if no argument is provided', () => {
-                td.when(wraps(undefined)).thenReturn({ valueOf: () => 'foo' });
+            it('creates Mysqlx.Crud.Column wrap instance with a given name', () => {
+                const name = 'foo';
+                const proto = new CrudStub.Column();
+                const protoValue = 'bar';
 
-                expect(column.create().valueOf()).to.equal('foo');
-                expect(td.explain(CrudStub.Column.prototype.setName).callCount).to.equal(0);
+                td.when(wraps(proto)).thenReturn({ valueOf: () => protoValue });
+
+                expect(Column.create(name).valueOf()).to.deep.equal(protoValue);
+                expect(td.explain(proto.setName).callCount).to.equal(1);
+                expect(td.explain(proto.setName).calls[0].args[0]).to.equal(name);
             });
         });
     });
@@ -76,20 +79,30 @@ describe('Mysqlx.Crud.Column wrapper', () => {
         context('toJSON()', () => {
             it('returns a textual representation of a Mysqlx.Crud.Column message', () => {
                 const proto = new CrudStub.Column();
+                const expected = { name: 'foo' };
 
-                td.when(proto.getName()).thenReturn('foo');
+                td.when(proto.getName()).thenReturn(expected.name);
 
-                expect(column(proto).toJSON()).to.deep.equal({ name: 'foo' });
+                expect(Column(proto).toJSON()).to.deep.equal(expected);
             });
         });
 
         context('valueOf()', () => {
+            let wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Column = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Column');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new CrudStub.Column();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(column(proto).valueOf()).to.equal('foo');
+                expect(Column(proto).valueOf()).to.equal(expected);
             });
         });
     });

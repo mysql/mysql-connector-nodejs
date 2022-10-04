@@ -37,111 +37,81 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('jsonKeyValue', () => {
-        const type = Parser.Type.JSON_KEY_VALUE;
+        const parser = Parser({ type: Parser.Type.JSON_KEY_VALUE });
 
         it('parses a JSON key mapping to a literal value', () => {
-            expect(Parser.parse('"foo": "bar"', { type })).to.deep.equal({
-                type: 'jsonKeyValue',
-                value: {
-                    foo: {
-                        type: 'literal',
-                        value: 'bar'
-                    }
+            expect(parser.parse('"foo": "bar"')).to.deep.equal({
+                foo: {
+                    type: 'literal',
+                    value: 'bar'
                 }
             });
 
-            expect(Parser.parse('"foo": 3', { type })).to.deep.equal({
-                type: 'jsonKeyValue',
-                value: {
-                    foo: {
-                        type: 'literal',
-                        value: 3
-                    }
+            expect(parser.parse('"foo": 3')).to.deep.equal({
+                foo: {
+                    type: 'literal',
+                    value: 3
                 }
             });
 
-            expect(Parser.parse('"foo": -1', { type })).to.deep.equal({
-                type: 'jsonKeyValue',
-                value: {
-                    foo: {
-                        type: 'literal',
-                        value: -1
-                    }
+            expect(parser.parse('"foo": -1')).to.deep.equal({
+                foo: {
+                    type: 'literal',
+                    value: -1
                 }
             });
 
-            expect(Parser.parse('"foo": 1.234', { type })).to.deep.equal({
-                type: 'jsonKeyValue',
-                value: {
-                    foo: {
-                        type: 'literal',
-                        value: 1.234
-                    }
+            expect(parser.parse('"foo": 1.234')).to.deep.equal({
+                foo: {
+                    type: 'literal',
+                    value: 1.234
                 }
             });
 
-            expect(Parser.parse(`"foo": ${Number.MAX_SAFE_INTEGER + 1}`, { type })).to.deep.equal({
-                type: 'jsonKeyValue',
-                value: {
-                    foo: {
-                        type: 'literal',
-                        value: `${Number.MAX_SAFE_INTEGER + 1}`
-                    }
+            expect(parser.parse(`"foo": ${Number.MAX_SAFE_INTEGER + 1}`)).to.deep.equal({
+                foo: {
+                    type: 'literal',
+                    value: `${Number.MAX_SAFE_INTEGER + 1}`
                 }
             });
 
-            expect(Parser.parse(`"foo": ${Number.MIN_SAFE_INTEGER - 1}`, { type })).to.deep.equal({
-                type: 'jsonKeyValue',
-                value: {
-                    foo: {
-                        type: 'literal',
-                        value: `${Number.MIN_SAFE_INTEGER - 1}`
-                    }
+            expect(parser.parse(`"foo": ${Number.MIN_SAFE_INTEGER - 1}`)).to.deep.equal({
+                foo: {
+                    type: 'literal',
+                    value: `${Number.MIN_SAFE_INTEGER - 1}`
                 }
             });
 
-            expect(Parser.parse('"foo": true', { type })).to.deep.equal({
-                type: 'jsonKeyValue',
-                value: {
-                    foo: {
-                        type: 'literal',
-                        value: true
-                    }
+            expect(parser.parse('"foo": true')).to.deep.equal({
+                foo: {
+                    type: 'literal',
+                    value: true
                 }
             });
 
-            expect(Parser.parse('"foo": false', { type })).to.deep.equal({
-                type: 'jsonKeyValue',
-                value: {
-                    foo: {
-                        type: 'literal',
-                        value: false
-                    }
+            expect(parser.parse('"foo": false')).to.deep.equal({
+                foo: {
+                    type: 'literal',
+                    value: false
                 }
             });
 
-            return expect(Parser.parse('"foo": null', { type })).to.deep.equal({
-                type: 'jsonKeyValue',
-                value: {
-                    foo: {
-                        type: 'literal',
-                        value: null
-                    }
+            return expect(parser.parse('"foo": null')).to.deep.equal({
+                foo: {
+                    type: 'literal',
+                    value: null
                 }
             });
         });
 
         it('parses a JSON key mapping to an object value', () => {
-            return expect(Parser.parse('"foo": { "bar": "baz" }', { type })).to.deep.equal({
-                type: 'jsonKeyValue',
-                value: {
-                    foo: {
-                        type: 'jsonDoc',
-                        value: {
-                            bar: {
-                                type: 'literal',
-                                value: 'baz'
-                            }
+            return expect(parser.parse('"foo": { "bar": "baz" }')).to.deep.equal({
+                foo: {
+                    type: 'jsonDoc',
+                    value: {
+                        bar: {
+                            type: 'literal',
+                            value: 'baz'
                         }
                     }
                 }

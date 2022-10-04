@@ -36,7 +36,7 @@ const Parser = require('../../../lib/ExprParser');
 const expect = require('chai').expect;
 
 const assertDateIntervalExpr = (expr, { datetimeFunction, interval, unit }) => {
-    expect(Parser.parse(expr, { type: Parser.Type.INTERVAL_EXPR })).to.deep.equal({
+    expect(Parser({ type: Parser.Type.INTERVAL_EXPR }).parse(expr)).to.deep.equal({
         type: 'intervalExpr',
         value: {
             name: datetimeFunction,
@@ -60,7 +60,7 @@ const assertDateIntervalExpr = (expr, { datetimeFunction, interval, unit }) => {
 };
 
 const assertTimeIntervalExpr = (expr, { datetimeFunction, interval, unit }) => {
-    expect(Parser.parse(expr, { type: Parser.Type.INTERVAL_EXPR })).to.deep.equal({
+    expect(Parser({ type: Parser.Type.INTERVAL_EXPR }).parse(expr)).to.deep.equal({
         type: 'intervalExpr',
         value: {
             name: datetimeFunction,
@@ -101,8 +101,6 @@ const assertTimeSubExpr = (expr, { interval, unit }) => {
 
 describe('ExprParser', () => {
     context('intervalExpr', () => {
-        const type = Parser.Type.INTERVAL_EXPR;
-
         it('parses datetime functions in the microsecond range', () => {
             assertTimeAddExpr('CURTIME() + INTERVAL 12345 MICROSECOND', { interval: 12345, unit: 'MICROSECOND' });
             return assertTimeSubExpr('CURTIME() - INTERVAL 12345 MICROSECOND', { interval: 12345, unit: 'MICROSECOND' });
@@ -215,7 +213,7 @@ describe('ExprParser', () => {
 
         it('parses composable datetime functions', () => {
             // date_add(date_add(CURDATE(), 2, "MONTH"), 25, "SECOND")
-            return expect(Parser.parse('CURDATE() + INTERVAL 2 MONTH + INTERVAL 25 SECOND', { type })).to.deep.equal({
+            return expect(Parser({ type: Parser.Type.INTERVAL_EXPR }).parse('CURDATE() + INTERVAL 2 MONTH + INTERVAL 25 SECOND')).to.deep.equal({
                 type: 'intervalExpr',
                 value: {
                     name: 'date_add',

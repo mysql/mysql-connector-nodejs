@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -36,116 +36,180 @@ const expect = require('chai').expect;
 const td = require('testdouble');
 
 // subject under test needs to be reloaded with replacement fakes
-let execute = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Execute');
+let Execute = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Execute');
 
 describe('Mysqlx.Prepare.Execute wrapper', () => {
-    let PrepareStub, any, expr, list, serializable, wraps;
+    let PrepareStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         PrepareStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_prepare_pb');
-        any = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
-        expr = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Expr/Expr');
-        list = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/List');
-        serializable = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Serializable');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        execute = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Execute');
+        // reload module with the replacements
+        Execute = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Execute');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns a Mysqlx.Prepare.Execute wrap instance appending count to the list of args', () => {
-                const proto = new PrepareStub.Execute();
-                const statement = { getCriteria: td.function(), getBindings: td.function(), getCount: td.function(), getOffset: td.function(), getStatementId: td.function() };
-                const getPlaceholderArgs = td.function();
+            let Any, Wraps;
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
-
-                td.when(statement.getCriteria()).thenReturn('bar');
-                td.when(expr.create('bar', { toParse: true })).thenReturn({ getPlaceholderArgs });
-                td.when(statement.getBindings()).thenReturn('s_baz');
-                td.when(getPlaceholderArgs('s_baz')).thenReturn(['p_baz']);
-                td.when(any.create('p_baz')).thenReturn({ valueOf: () => 'baz' });
-
-                td.when(statement.getCount()).thenReturn('s_qux');
-                td.when(any.create('s_qux')).thenReturn({ valueOf: () => 'qux' });
-
-                td.when(statement.getOffset()).thenReturn();
-
-                td.when(statement.getStatementId()).thenReturn('quux');
-
-                expect(execute.create(statement).valueOf()).to.equal('foo');
-                expect(td.explain(proto.setStmtId).callCount).to.equal(1);
-                expect(td.explain(proto.setStmtId).calls[0].args[0]).to.equal('quux');
-                expect(td.explain(proto.setArgsList).callCount).to.equal(1);
-                expect(td.explain(proto.setArgsList).calls[0].args[0]).to.deep.equal(['baz', 'qux']);
+            beforeEach('replace dependencies with test doubles', () => {
+                Any = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Execute = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Execute');
             });
 
-            it('returns a Mysqlx.Prepare.Execute wrap instance appending count and offset to the list of args', () => {
+            it('creates a Mysqlx.Prepare.Execute wrapper with a a list of placeholder values', () => {
+                const placeholderValues = ['foo', 'bar'];
+                const placeholderProtoValues = placeholderValues.map(p => `${p}_proto`);
                 const proto = new PrepareStub.Execute();
-                const statement = { getCriteria: td.function(), getBindings: td.function(), getCount: td.function(), getOffset: td.function(), getStatementId: td.function() };
-                const getPlaceholderArgs = td.function();
+                const protoValue = 'baz';
+                const statementId = 'qux';
+                const statement = {
+                    getCount_: () => undefined,
+                    getPlaceholderValues_: () => placeholderValues,
+                    getStatementId: () => statementId
+                };
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(Any.create(placeholderValues[0])).thenReturn({ valueOf: () => placeholderProtoValues[0] });
+                td.when(Any.create(placeholderValues[1])).thenReturn({ valueOf: () => placeholderProtoValues[1] });
 
-                td.when(statement.getCriteria()).thenReturn('bar');
-                td.when(expr.create('bar', { toParse: true })).thenReturn({ getPlaceholderArgs });
-                td.when(statement.getBindings()).thenReturn('s_baz');
-                td.when(getPlaceholderArgs('s_baz')).thenReturn(['p_baz']);
-                td.when(any.create('p_baz')).thenReturn({ valueOf: () => 'baz' });
-
-                td.when(statement.getCount()).thenReturn('s_qux');
-                td.when(any.create('s_qux')).thenReturn({ valueOf: () => 'qux' });
-
-                td.when(statement.getOffset()).thenReturn('s_quux');
-                td.when(any.create('s_quux')).thenReturn({ valueOf: () => 'quux' });
-
-                td.when(statement.getStatementId()).thenReturn('quuz');
-
-                expect(execute.create(statement).valueOf()).to.equal('foo');
+                expect(Execute.create(statement).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setStmtId).callCount).to.equal(1);
-                expect(td.explain(proto.setStmtId).calls[0].args[0]).to.equal('quuz');
+                expect(td.explain(proto.setStmtId).calls[0].args[0]).to.equal(statementId);
                 expect(td.explain(proto.setArgsList).callCount).to.equal(1);
-                expect(td.explain(proto.setArgsList).calls[0].args[0]).to.deep.equal(['baz', 'qux', 'quux']);
+                expect(td.explain(proto.setArgsList).calls[0].args[0]).to.deep.equal(placeholderProtoValues);
+            });
+
+            it('creates a Mysqlx.Prepare.Execute wrapper adding a limit row count to list of placeholder values', () => {
+                const count = 'foo';
+                const countProto = `${count}_proto`;
+                const placeholderValues = ['bar', 'baz'];
+                const placeholderProtoValues = placeholderValues.map(p => `${p}_proto`);
+                const expected = [...placeholderProtoValues, countProto];
+                const proto = new PrepareStub.Execute();
+                const protoValue = 'qux';
+                const statementId = 'quux';
+                const statement = {
+                    getCount_: () => count,
+                    getOffset_: () => undefined,
+                    getPlaceholderValues_: () => placeholderValues,
+                    getStatementId: () => statementId
+                };
+
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(Any.create(placeholderValues[0])).thenReturn({ valueOf: () => placeholderProtoValues[0] });
+                td.when(Any.create(placeholderValues[1])).thenReturn({ valueOf: () => placeholderProtoValues[1] });
+                td.when(Any.create(count)).thenReturn({ valueOf: () => countProto });
+
+                expect(Execute.create(statement).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setStmtId).callCount).to.equal(1);
+                expect(td.explain(proto.setStmtId).calls[0].args[0]).to.equal(statementId);
+                expect(td.explain(proto.setArgsList).callCount).to.equal(1);
+                expect(td.explain(proto.setArgsList).calls[0].args[0]).to.deep.equal(expected);
+            });
+
+            it('creates a Mysqlx.Prepare.Execute wrapper adding a limit row count and offset to the list of placeholder values', () => {
+                const count = 'foo';
+                const countProto = `${count}_proto`;
+                const offset = 'bar';
+                const offsetProto = `${offset}_proto`;
+                const placeholderValues = ['baz', 'qux'];
+                const placeholderProtoValues = placeholderValues.map(p => `${p}_proto`);
+                const expected = [...placeholderProtoValues, countProto, offsetProto];
+                const proto = new PrepareStub.Execute();
+                const protoValue = 'quux';
+                const statementId = 'quuux';
+                const statement = {
+                    getCount_: () => count,
+                    getOffset_: () => offset,
+                    getPlaceholderValues_: () => placeholderValues,
+                    getStatementId: () => statementId
+                };
+
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(Any.create(placeholderValues[0])).thenReturn({ valueOf: () => placeholderProtoValues[0] });
+                td.when(Any.create(placeholderValues[1])).thenReturn({ valueOf: () => placeholderProtoValues[1] });
+                td.when(Any.create(count)).thenReturn({ valueOf: () => countProto });
+                td.when(Any.create(offset)).thenReturn({ valueOf: () => offsetProto });
+
+                expect(Execute.create(statement).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setStmtId).callCount).to.equal(1);
+                expect(td.explain(proto.setStmtId).calls[0].args[0]).to.equal(statementId);
+                expect(td.explain(proto.setArgsList).callCount).to.equal(1);
+                expect(td.explain(proto.setArgsList).calls[0].args[0]).to.deep.equal(expected);
             });
         });
     });
 
     context('instance methods', () => {
         context('serialize()', () => {
+            let Serializable;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Serializable = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Serializable');
+                // reload module with the replacements
+                Execute = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Execute');
+            });
+
             it('returns a raw network buffer of the underlying protobuf message', () => {
                 const proto = new PrepareStub.Execute();
+                const expected = 'foo';
 
-                td.when(serializable(proto)).thenReturn({ serialize: () => 'foo' });
+                td.when(Serializable(proto)).thenReturn({ serialize: () => expected });
 
-                expect(execute(proto).serialize()).to.equal('foo');
+                expect(Execute(proto).serialize()).to.equal(expected);
             });
         });
 
         context('toJSON()', () => {
+            let Any, List;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                PrepareStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_prepare_pb');
+                Any = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
+                List = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/List');
+                // reload module with the replacements
+                Execute = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Execute');
+            });
+
             it('returns a textual representation of a Mysqlx.Prepare.Execute message', () => {
+                const args = ['foo', 'bar'];
+                const argsProtoList = args.map(a => `${a}_proto`);
+                const argsAnyList = args.map(a => `${a}_any`);
                 const proto = new PrepareStub.Execute();
+                const statementId = 'baz';
 
-                td.when(proto.getStmtId()).thenReturn('foo');
-                td.when(proto.getArgsList()).thenReturn(['p_bar', 'p_baz']);
-                td.when(any('p_bar')).thenReturn('a_bar');
-                td.when(any('p_baz')).thenReturn('a_baz');
-                td.when(list(['a_bar', 'a_baz'])).thenReturn({ toJSON: () => ['bar', 'baz'] });
+                td.when(proto.getStmtId()).thenReturn(statementId);
+                td.when(proto.getArgsList()).thenReturn(argsProtoList);
+                td.when(Any(argsProtoList[0])).thenReturn(argsAnyList[0]);
+                td.when(Any(argsProtoList[1])).thenReturn(argsAnyList[1]);
+                td.when(List(argsAnyList)).thenReturn({ toJSON: () => args });
 
-                expect(execute(proto).toJSON()).to.deep.equal({ stmt_id: 'foo', args: ['bar', 'baz'] });
+                expect(Execute(proto).toJSON()).to.deep.equal({ stmt_id: statementId, args });
             });
         });
 
         context('valueOf()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Execute = require('../../../../../../lib/Protocol/Wrappers/Messages/Prepare/Execute');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new PrepareStub.Execute();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(execute(proto).valueOf()).to.equal('foo');
+                expect(Execute(proto).valueOf()).to.equal(expected);
             });
         });
     });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -57,11 +57,11 @@ describe('Limiting', () => {
 
     context('limit()', () => {
         it('does not have default thresholds', () => {
-            return expect(limiting().getCount()).to.not.exist;
+            return expect(limiting().getCount_()).to.not.exist;
         });
 
         it('sets limit `row_count` if one argument is provided', () => {
-            return expect(limiting().limit(10).getCount()).to.equal(10);
+            return expect(limiting().limit(10).getCount_()).to.equal(10);
         });
 
         it('forces an associated statement to be re-prepared the first time its called', () => {

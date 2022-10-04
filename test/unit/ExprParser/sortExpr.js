@@ -37,41 +37,35 @@ const expect = require('chai').expect;
 
 describe('ExprParser', () => {
     context('sortExpr', () => {
-        const type = Parser.Type.SORT_EXPR;
+        const parser = Parser({ type: Parser.Type.SORT_EXPR });
 
         it('parses an ascending sort clause', () => {
-            return expect(Parser.parse('foo ASC', { type })).to.deep.equal({
-                type: 'sortExpr',
-                value: {
-                    expr: {
-                        type: 'documentField',
-                        value: {
-                            documentPath: [{
-                                type: 'member',
-                                value: 'foo'
-                            }]
-                        }
-                    },
-                    direction: 1
-                }
+            return expect(parser.parse('foo ASC')).to.deep.equal({
+                expr: {
+                    type: 'documentField',
+                    value: {
+                        documentPath: [{
+                            type: 'member',
+                            value: 'foo'
+                        }]
+                    }
+                },
+                direction: 'ASC'
             });
         });
 
         it('parses a descending sort clause', () => {
-            return expect(Parser.parse('foo DESC', { type })).to.deep.equal({
-                type: 'sortExpr',
-                value: {
-                    expr: {
-                        type: 'documentField',
-                        value: {
-                            documentPath: [{
-                                type: 'member',
-                                value: 'foo'
-                            }]
-                        }
-                    },
-                    direction: 2
-                }
+            return expect(parser.parse('foo DESC')).to.deep.equal({
+                expr: {
+                    type: 'documentField',
+                    value: {
+                        documentPath: [{
+                            type: 'member',
+                            value: 'foo'
+                        }]
+                    }
+                },
+                direction: 'DESC'
             });
         });
     });

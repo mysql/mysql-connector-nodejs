@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,104 +32,103 @@
 
 /* eslint-env node, mocha */
 
+const dataModel = require('../../../lib/Protocol/Stubs/mysqlx_crud_pb').DataModel.TABLE;
 const errors = require('../../../lib/constants/errors');
 const expect = require('chai').expect;
 const td = require('testdouble');
-const updating = require('../../../lib/DevAPI/Updating');
+const util = require('util');
+const updateType = require('../../../lib/Protocol/Stubs/mysqlx_crud_pb').UpdateOperation.UpdateType.SET;
 
-// subject under test needs to be reloaded with replacement fakes
-let tableUpdate = require('../../../lib/DevAPI/TableUpdate');
+// subject under test needs to be reloaded with test doubles
+let TableUpdate = require('../../../lib/DevAPI/TableUpdate');
 
 describe('TableUpdate', () => {
-    let preparing;
+    let Preparing;
 
-    beforeEach('create fakes', () => {
-        preparing = td.function();
-
-        td.replace('../../../lib/DevAPI/Preparing', preparing);
-        tableUpdate = require('../../../lib/DevAPI/TableUpdate');
+    beforeEach('replace dependencies with test doubles', () => {
+        Preparing = td.replace('../../../lib/DevAPI/Preparing');
+        // reload module with the replacements
+        TableUpdate = require('../../../lib/DevAPI/TableUpdate');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
-    context('execute()', () => {
-        it('fails if a filtering criteria expression is not provided', () => {
-            return tableUpdate().execute()
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA);
-                });
+    context('bind()', () => {
+        let binding;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            binding = td.replace('../../../lib/DevAPI/Binding');
+            // reload module with the replacements
+            TableUpdate = require('../../../lib/DevAPI/TableUpdate');
         });
 
-        it('fails if the filtering criteria expression is empty', () => {
-            return tableUpdate(null, null, null, '').execute()
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA);
-                });
-        });
-
-        it('fails if the filtering criteria expression is not valid', () => {
-            return tableUpdate(null, null, null, ' ').execute()
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA);
-                });
-        });
-
-        it('fails if the filtering criteria expression is undefined', () => {
+        it('calls the bind() method provided by the Binding mixin', () => {
             const connection = 'foo';
+            const expected = 'bar';
+            const bind = td.function();
+            const placeholder = 'baz';
+            const value = 'qux';
+
+            td.when(binding()).thenReturn({ bind });
+            td.when(bind(placeholder, value)).thenReturn(expected);
+
+            expect(TableUpdate({ connection }).bind(placeholder, value)).to.equal(expected);
+        });
+    });
+
+    context('execute()', () => {
+        let Result;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Result = td.replace('../../../lib/DevAPI/Result');
+            // reload module with the replacements
+            TableUpdate = require('../../../lib/DevAPI/TableUpdate');
+        });
+
+        it('executes a TableUpdate statement and returns a Result instance with the details provided by the server', () => {
+            const context = 'foo';
+            const crudModify = td.function();
+            const connection = { getClient: () => ({ crudModify }), isIdle: () => false, isOpen: () => true };
+            const criteria = 'bar';
+            const details = 'baz';
+            const execute = td.function();
+            const expected = 'qux';
             const forceRestart = td.function();
 
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            td.when(Preparing({ connection })).thenReturn({ execute, forceRestart });
 
-            return tableUpdate(connection).where().execute()
+            const statement = TableUpdate({ connection }).where(criteria);
+
+            td.when(crudModify(statement)).thenReturn(context);
+            td.when(execute(td.matchers.argThat(fn => fn() === context))).thenResolve(details);
+            td.when(Result(details)).thenReturn(expected);
+
+            return statement.execute()
+                .then(got => expect(got).to.equal(expected));
+        });
+
+        it('fails to execute the statement when the filtering criteria is not defined', () => {
+            return TableUpdate().execute()
                 .then(() => {
                     return expect.fail();
                 })
                 .catch(err => {
-                    return expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA);
+                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_MISSING_TABLE_CRITERIA));
                 });
         });
 
-        it('fails if the connection is not open', () => {
-            const getError = td.function();
-            const isOpen = td.function();
-            const connection = { getError, isOpen };
-            const error = new Error('foobar');
+        it('fails to execute the TableUpdate statement when the connection is not open', () => {
+            const criteria = 'foo';
+            const error = new Error('bar');
+            const connection = { getError: () => error, isOpen: () => false };
+            const forceRestart = td.function();
 
-            td.when(isOpen()).thenReturn(false);
-            td.when(getError()).thenReturn(error);
+            td.when(Preparing({ connection })).thenReturn({ forceRestart });
 
-            return tableUpdate(connection, null, null, 'true').execute()
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    expect(err).to.deep.equal(error);
-                });
-        });
-
-        it('fails if the connection is expired', () => {
-            const getError = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { getError, isIdle, isOpen };
-            const error = new Error('foobar');
-
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(true);
-            td.when(getError()).thenReturn(error);
-
-            return tableUpdate(connection, null, null, 'true').execute()
+            return TableUpdate({ connection }).where(criteria)
+                .execute()
                 .then(() => {
                     return expect.fail();
                 })
@@ -138,161 +137,133 @@ describe('TableUpdate', () => {
                 });
         });
 
-        it('wraps the operation in a preparable instance', () => {
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const execute = td.function();
-            const connection = { isIdle, isOpen };
-            const expected = ['bar'];
-            const state = { warnings: expected };
+        it('fails to execute the TableUpdate statement when the connection has expired', () => {
+            const criteria = 'foo';
+            const error = new Error('bar');
+            const connection = { getError: () => error, isIdle: () => true, isOpen: () => true };
+            const forceRestart = td.function();
 
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(execute(td.matchers.isA(Function))).thenResolve(state);
-            td.when(preparing({ connection })).thenReturn({ execute });
+            td.when(Preparing({ connection })).thenReturn({ forceRestart });
 
-            return tableUpdate(connection, null, null, 'true').execute()
-                .then(actual => {
-                    return expect(actual.getWarnings()).to.deep.equal(expected);
+            return TableUpdate({ connection }).where(criteria)
+                .execute()
+                .then(() => {
+                    return expect.fail();
+                })
+                .catch(err => {
+                    expect(err).to.deep.equal(error);
                 });
         });
     });
 
     context('limit()', () => {
-        let forceReprepare;
+        let limiting;
 
-        beforeEach('create fakes', () => {
-            forceReprepare = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            limiting = td.replace('../../../lib/DevAPI/Limiting');
+            // reload module with the replacements
+            TableUpdate = require('../../../lib/DevAPI/TableUpdate');
         });
 
-        it('mixes in Limiting with the proper state', () => {
+        it('calls the limit() method provided by the Limiting mixin', () => {
             const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceReprepare });
+            const expected = 'bar';
+            const limit = td.function();
+            const preparable = 'baz';
+            const size = 3;
 
-            tableUpdate(connection).limit(1);
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(limiting({ preparable })).thenReturn({ limit });
+            td.when(limit(size)).thenReturn(expected);
 
-            return expect(td.explain(forceReprepare).callCount).equal(1);
-        });
-
-        it('is fluent', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceReprepare });
-
-            const query = tableUpdate(connection).limit(1);
-
-            return expect(query.limit).to.be.a('function');
-        });
-    });
-
-    context('orderBy()', () => {
-        let forceRestart;
-
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
-        });
-
-        it('mixes in TableOrdering with the proper state', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            tableUpdate(connection).orderBy();
-
-            return expect(td.explain(forceRestart).callCount).equal(1);
-        });
-
-        it('is fluent', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const query = tableUpdate(connection).orderBy();
-
-            expect(query.orderBy).to.be.a('function');
-        });
-
-        it('sets the order parameters provided as an array', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const parameters = ['foo desc', 'bar desc'];
-            const query = tableUpdate(connection).orderBy(parameters);
-
-            expect(query.getOrderings()).to.deep.equal(parameters);
-        });
-
-        it('sets the order parameters provided as multiple arguments', () => {
-            const connection = 'foo';
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const parameters = ['foo desc', 'bar desc'];
-            const query = tableUpdate(connection).orderBy(parameters[0], parameters[1]);
-
-            expect(query.getOrderings()).to.deep.equal(parameters);
+            expect(TableUpdate({ connection }).limit(size)).to.equal(expected);
         });
     });
 
     context('set()', () => {
-        let forceRestart;
+        let TableField, ExprOrLiteral;
 
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            TableField = td.replace('../../../lib/DevAPI/TableField');
+            ExprOrLiteral = td.replace('../../../lib/DevAPI/ExprOrLiteral');
+            // reload module with the replacements
+            TableUpdate = require('../../../lib/DevAPI/TableUpdate');
         });
 
-        it('forces the statement to be reprepared', () => {
+        it('adds the appropriate ITEM_SET operation to the list of update operations that need to be executed', () => {
             const connection = 'foo';
+            const tableField = 'bar';
+            const exprOrLiteral = 'baz';
+            const forceRestart = td.function();
+            const getValue = td.function();
+            const isLiteral = () => true;
+            const operationList = ['qux'];
+            const source = 'quux';
+            const value = 'quuz';
+            const expected = operationList.concat([{ source: source, type: updateType, value, isLiteral: true }]);
 
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            td.when(Preparing({ connection })).thenReturn({ forceRestart });
+            td.when(ExprOrLiteral({ dataModel, value: exprOrLiteral })).thenReturn({ getValue, isLiteral });
+            td.when(TableField(tableField)).thenReturn({ getValue });
+            td.when(getValue()).thenReturn(value);
+            td.when(getValue(), { times: 1 }).thenReturn(source);
 
-            tableUpdate(connection).set('bar', 'baz');
+            // Adds some operations beforehand to ensure those are not removed.
+            TableUpdate({ connection, operationList }).set(tableField, exprOrLiteral);
 
-            return expect(td.explain(forceRestart).callCount).to.equal(1);
+            // If it is a prepared statement, it needs to be prepared again
+            // because the boundaries have changed.
+            expect(td.explain(forceRestart).callCount).to.equal(1);
+
+            expect(operationList).to.deep.equal(expected);
+        });
+    });
+
+    context('orderBy()', () => {
+        let Ordering;
+
+        beforeEach('replace dependencies with test doubles', () => {
+            Ordering = td.replace('../../../lib/DevAPI/TableOrdering');
+            // reload module with the replacements
+            TableUpdate = require('../../../lib/DevAPI/TableUpdate');
         });
 
-        it('updates the operation list with the correct operation', () => {
+        it('calls the orderBy() method provided by the TableOrdering mixin', () => {
             const connection = 'foo';
-            const expected = [{ source: 'bar', type: updating.Operation.SET, value: 'baz' }];
+            const expected = 'bar';
+            const preparable = 'baz';
+            const orderBy = td.function();
+            const sortExpr = 'qux';
 
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Ordering({ preparable })).thenReturn({ orderBy });
+            td.when(orderBy(sortExpr)).thenReturn(expected);
 
-            return expect(tableUpdate(connection).set('bar', 'baz').getOperations()).to.deep.equal(expected);
-        });
-
-        it('does not delete any previously added operation', () => {
-            const connection = 'foo';
-            const existing = [{ foo: 'bar' }];
-            const expected = existing.concat([{ source: 'bar', type: updating.Operation.SET, value: 'baz' }]);
-
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            const query = tableUpdate(connection);
-
-            return expect(query.setOperations(existing).set('bar', 'baz').getOperations()).to.deep.equal(expected);
+            expect(TableUpdate({ connection }).orderBy(sortExpr)).to.equal(expected);
         });
     });
 
     context('where()', () => {
-        let forceRestart;
+        let Filtering;
 
-        beforeEach('create fakes', () => {
-            forceRestart = td.function();
+        beforeEach('replace dependencies with test doubles', () => {
+            Filtering = td.replace('../../../lib/DevAPI/TableFiltering');
+            // reload module with the replacements
+            TableUpdate = require('../../../lib/DevAPI/TableUpdate');
         });
 
-        it('mixes in TableFiltering with the proper state', () => {
+        it('calls the where() method provided by the Filtering mixin', () => {
             const connection = 'foo';
+            const expected = 'bar';
+            const where = td.function();
+            const preparable = 'baz';
+            const searchExprStrList = 'qux';
 
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
+            td.when(Preparing({ connection })).thenReturn(preparable);
+            td.when(Filtering({ preparable })).thenReturn({ where });
+            td.when(where(searchExprStrList)).thenReturn(expected);
 
-            tableUpdate(connection).where();
-
-            expect(td.explain(forceRestart).callCount).to.equal(1);
-        });
-
-        it('sets the query criteria', () => {
-            const connection = 'foo';
-            const criteria = 'bar';
-
-            td.when(preparing({ connection })).thenReturn({ forceRestart });
-
-            expect(tableUpdate(connection).where(criteria).getCriteria()).to.equal(criteria);
+            expect(TableUpdate({ connection }).where(searchExprStrList)).to.equal(expected);
         });
     });
 });

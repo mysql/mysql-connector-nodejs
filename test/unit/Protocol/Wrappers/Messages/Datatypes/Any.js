@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -36,68 +36,96 @@ const DatatypesStub = require('../../../../../../lib/Protocol/Stubs/mysqlx_datat
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let any = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
+// subjects under test need to be reloaded with replacement test doubles
+let Any = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
 
-describe('Mysqlx.Datatypes.Scalar.Any wrapper', () => {
-    let scalar;
-
-    beforeEach('create fakes', () => {
-        scalar = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Scalar');
-        any = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
-    });
-
-    afterEach('reset fakes', () => {
+describe('Mysqlx.Datatypes.Any wrapper', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
-        let valueOf;
-
-        beforeEach('create fakes', () => {
-            valueOf = td.function();
-        });
-
         context('create()', () => {
-            it('creates and wraps a Mysqlx.Datatypes.Scalar for the corresponding JavaScript values', () => {
-                const scalarProto = new DatatypesStub.Scalar();
+            let DatatypesStub, Scalar, Wraps;
 
-                td.when(valueOf()).thenReturn(scalarProto);
-                td.when(scalar.create('foo')).thenReturn({ valueOf });
-                td.when(scalar.canEncode('foo')).thenReturn(true);
-
-                const proto = any.create('foo').valueOf();
-                expect(proto.getType()).to.equal(DatatypesStub.Any.Type.SCALAR);
-                expect(proto.getScalar()).to.equal(scalarProto);
+            beforeEach('replace dependencies with test doubles', () => {
+                DatatypesStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_datatypes_pb');
+                Scalar = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Scalar');
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Any = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
             });
 
-            it('creates and wraps a Mysqlx.Datatypes.Object for plain JavaScript objects', () => {
-                const scalarProto = new DatatypesStub.Scalar();
+            it('creates a Mysqlx.Datatypes.Any wrapper with a Mysqlx.Datatypes.Scalar for values that can be encoded as so', () => {
+                const proto = new DatatypesStub.Any();
+                const protoValue = 'foo';
+                const scalarProto = 'bar';
+                const value = 'baz';
 
-                td.when(valueOf()).thenReturn(scalarProto);
-                td.when(scalar.create('foo')).thenReturn({ valueOf });
-                td.when(scalar.canEncode('foo')).thenReturn(true);
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                td.when(Scalar.create({ value })).thenReturn({ valueOf: () => scalarProto });
 
-                const proto = any.create({ name: 'foo' }).valueOf();
-                expect(proto.getType()).to.equal(DatatypesStub.Any.Type.OBJECT);
-                expect(proto.getObj().getFldList()).to.have.lengthOf(1);
-                expect(proto.getObj().getFldList()[0].getKey()).to.equal('name');
-                expect(proto.getObj().getFldList()[0].getValue().getType()).to.equal(DatatypesStub.Any.Type.SCALAR);
-                expect(proto.getObj().getFldList()[0].getValue().getScalar()).to.equal(scalarProto);
+                expect(Any.create(value).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setType).callCount).to.equal(1);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(DatatypesStub.Any.Type.SCALAR);
+                expect(td.explain(proto.setScalar).callCount).to.equal(1);
+                expect(td.explain(proto.setScalar).calls[0].args[0]).to.equal(scalarProto);
+                expect(td.explain(proto.setArray).callCount).to.equal(0);
+                expect(td.explain(proto.setObj).callCount).to.equal(0);
             });
 
-            it('creates and wraps a Mysqlx.Datatypes.Array for JavaScript arrays', () => {
-                const scalarProto = new DatatypesStub.Scalar();
+            it('creates a Mysqlx.Datatypes.Any wrapper with a Mysqlx.Datatypes.Object for plain JavaScript objects', () => {
+                const objectProto = new DatatypesStub.Object();
+                const objectProtoValue = 'foo';
+                const proto = new DatatypesStub.Any();
+                const protoValue = 'bar';
+                const scalarProto = 'baz';
+                const value = { name: 'qux' };
 
-                td.when(valueOf()).thenReturn(scalarProto);
-                td.when(scalar.create('foo')).thenReturn({ valueOf });
-                td.when(scalar.canEncode('foo')).thenReturn(true);
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                // The value cannot be encoded as a scalar, so the proto
+                // should be undefined.
+                td.when(Scalar.create({ value })).thenReturn({ valueOf: () => undefined });
+                // The Scalar.create() mock will also be used for the object
+                // values.
+                td.when(Scalar.create({ value: value.name })).thenReturn({ valueOf: () => scalarProto });
+                td.when(Wraps(objectProto)).thenReturn({ valueOf: () => objectProtoValue });
 
-                const proto = any.create(['foo']).valueOf();
-                expect(proto.getType()).to.equal(DatatypesStub.Any.Type.ARRAY);
-                expect(proto.getArray().getValueList()).to.have.lengthOf(1);
-                expect(proto.getArray().getValueList()[0].getType()).to.equal(DatatypesStub.Any.Type.SCALAR);
-                expect(proto.getArray().getValueList()[0].getScalar()).to.equal(scalarProto);
+                expect(Any.create(value).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setType).callCount).to.equal(2);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(DatatypesStub.Any.Type.OBJECT);
+                expect(td.explain(proto.setType).calls[1].args[0]).to.equal(DatatypesStub.Any.Type.SCALAR);
+                expect(td.explain(proto.setScalar).callCount).to.equal(1);
+                expect(td.explain(proto.setObj).callCount).to.equal(1);
+                expect(td.explain(proto.setObj).calls[0].args[0]).to.deep.equal(objectProtoValue);
+                expect(td.explain(proto.setArray).callCount).to.equal(0);
+            });
+
+            it('creates a Mysqlx.Datatypes.Any wrapper with a Mysqlx.Datatypes.Array for JavaScript arrays', () => {
+                const arrayProto = new DatatypesStub.Array();
+                const arrayProtoValue = 'foo';
+                const proto = new DatatypesStub.Any();
+                const protoValue = 'bar';
+                const scalarProto = 'baz';
+                const value = ['qux'];
+
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
+                // The value cannot be encoded as a scalar, so the proto
+                // should be undefined.
+                td.when(Scalar.create({ value })).thenReturn({ valueOf: () => undefined });
+                // The Scalar.create() mock will also be used for the array
+                // elements.
+                td.when(Scalar.create({ value: value[0] })).thenReturn({ valueOf: () => scalarProto });
+                td.when(Wraps(arrayProto)).thenReturn({ valueOf: () => arrayProtoValue });
+
+                expect(Any.create(value).valueOf()).to.equal(protoValue);
+                expect(td.explain(proto.setType).callCount).to.equal(2);
+                expect(td.explain(proto.setType).calls[0].args[0]).to.equal(DatatypesStub.Any.Type.ARRAY);
+                expect(td.explain(proto.setType).calls[1].args[0]).to.equal(DatatypesStub.Any.Type.SCALAR);
+                expect(td.explain(proto.setArray).callCount).to.equal(1);
+                expect(td.explain(proto.setArray).calls[0].args[0]).to.deep.equal(arrayProtoValue);
+                expect(td.explain(proto.setScalar).callCount).to.equal(1);
+                expect(td.explain(proto.setObj).callCount).to.equal(0);
             });
         });
     });
@@ -105,13 +133,21 @@ describe('Mysqlx.Datatypes.Scalar.Any wrapper', () => {
     context('instance methods', () => {
         context('getType()', () => {
             it('returns the textual representation of the type enum', () => {
-                expect(any(new DatatypesStub.Any([DatatypesStub.Any.Type.SCALAR])).getType()).to.equal('SCALAR');
-                expect(any(new DatatypesStub.Any([DatatypesStub.Any.Type.OBJECT])).getType()).to.equal('OBJECT');
-                expect(any(new DatatypesStub.Any([DatatypesStub.Any.Type.ARRAY])).getType()).to.equal('ARRAY');
+                expect(Any(new DatatypesStub.Any([DatatypesStub.Any.Type.SCALAR])).getType()).to.equal('SCALAR');
+                expect(Any(new DatatypesStub.Any([DatatypesStub.Any.Type.OBJECT])).getType()).to.equal('OBJECT');
+                expect(Any(new DatatypesStub.Any([DatatypesStub.Any.Type.ARRAY])).getType()).to.equal('ARRAY');
             });
         });
 
         context('toJSON()', () => {
+            let Scalar;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Scalar = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Scalar');
+                // reload module with the replacements
+                Any = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
+            });
+
             it('returns a textual representation of a Mysqlx.Datatypes.Any.Scalar for a corresponding value', () => {
                 const toJSON = td.function();
                 const scalarProto = new DatatypesStub.Scalar();
@@ -120,9 +156,9 @@ describe('Mysqlx.Datatypes.Scalar.Any wrapper', () => {
                 proto.setScalar(scalarProto);
 
                 td.when(toJSON()).thenReturn('foo');
-                td.when(scalar(scalarProto)).thenReturn({ toJSON });
+                td.when(Scalar(scalarProto)).thenReturn({ toJSON });
 
-                expect(any(proto).toJSON()).to.deep.equal({ type: 'SCALAR', scalar: 'foo' });
+                expect(Any(proto).toJSON()).to.deep.equal({ type: 'SCALAR', scalar: 'foo' });
             });
 
             it('returns a textual representation of a Mysqlx.Datatypes.Any stub instance for an object', () => {
@@ -144,9 +180,9 @@ describe('Mysqlx.Datatypes.Scalar.Any wrapper', () => {
                 proto.setObj(objectProto);
 
                 td.when(toJSON()).thenReturn('foo');
-                td.when(scalar(scalarProto)).thenReturn({ toJSON });
+                td.when(Scalar(scalarProto)).thenReturn({ toJSON });
 
-                expect(any(proto).toJSON()).to.deep.equal({ type: 'OBJECT', obj: { fld: [{ key: 'name', value: { type: 'SCALAR', scalar: 'foo' } }] } });
+                expect(Any(proto).toJSON()).to.deep.equal({ type: 'OBJECT', obj: { fld: [{ key: 'name', value: { type: 'SCALAR', scalar: 'foo' } }] } });
             });
 
             it('returns a textual representation of a Mysqlx.Datatypes.Any stub instance for an array', () => {
@@ -164,13 +200,21 @@ describe('Mysqlx.Datatypes.Scalar.Any wrapper', () => {
                 proto.setArray(arrayProto);
 
                 td.when(toJSON()).thenReturn('foo');
-                td.when(scalar(scalarProto)).thenReturn({ toJSON });
+                td.when(Scalar(scalarProto)).thenReturn({ toJSON });
 
-                expect(any(proto).toJSON()).to.deep.equal({ type: 'ARRAY', array: { value: [{ type: 'SCALAR', scalar: 'foo' }] } });
+                expect(Any(proto).toJSON()).to.deep.equal({ type: 'ARRAY', array: { value: [{ type: 'SCALAR', scalar: 'foo' }] } });
             });
         });
 
         context('toLiteral()', () => {
+            let Scalar;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Scalar = td.replace('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Scalar');
+                // reload module with the replacements
+                Any = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
+            });
+
             it('returns the output of the Scalar wrapper toLiteral method for the corresponding JavaScript values', () => {
                 const toLiteral = td.function();
                 const scalarProto = new DatatypesStub.Scalar();
@@ -179,9 +223,9 @@ describe('Mysqlx.Datatypes.Scalar.Any wrapper', () => {
                 proto.setScalar(scalarProto);
 
                 td.when(toLiteral()).thenReturn('foo');
-                td.when(scalar(scalarProto)).thenReturn({ toLiteral });
+                td.when(Scalar(scalarProto)).thenReturn({ toLiteral });
 
-                expect(any(proto).toLiteral()).to.equal('foo');
+                expect(Any(proto).toLiteral()).to.equal('foo');
             });
 
             it('returns a plain JavaScript object for a Mysqlx.Datatypes.Scalar.Object stub instance', () => {
@@ -203,9 +247,9 @@ describe('Mysqlx.Datatypes.Scalar.Any wrapper', () => {
                 proto.setObj(objectProto);
 
                 td.when(toLiteral()).thenReturn('foo');
-                td.when(scalar(scalarProto)).thenReturn({ toLiteral });
+                td.when(Scalar(scalarProto)).thenReturn({ toLiteral });
 
-                expect(any(proto).toLiteral()).to.deep.equal({ name: 'foo' });
+                expect(Any(proto).toLiteral()).to.deep.equal({ name: 'foo' });
             });
 
             it('returns a JavaScript array for a Mysqlx.Datatypes.Scalar.Array stub instance', () => {
@@ -223,28 +267,28 @@ describe('Mysqlx.Datatypes.Scalar.Any wrapper', () => {
                 proto.setArray(arrayProto);
 
                 td.when(toLiteral()).thenReturn('foo');
-                td.when(scalar(scalarProto)).thenReturn({ toLiteral });
+                td.when(Scalar(scalarProto)).thenReturn({ toLiteral });
 
-                expect(any(proto).toLiteral()).to.deep.equal(['foo']);
+                expect(Any(proto).toLiteral()).to.deep.equal(['foo']);
             });
         });
 
         context('valueOf()', () => {
-            let wraps;
+            let Wraps;
 
             beforeEach('create fakes', () => {
-                wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-                any = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Any = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Any');
             });
 
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new DatatypesStub.Any();
-                const valueOf = td.function();
+                const expected = 'foo';
 
-                td.when(valueOf()).thenReturn('foo');
-                td.when(wraps(proto)).thenReturn({ valueOf });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(any(proto).valueOf()).to.equal('foo');
+                expect(Any(proto).valueOf()).to.equal(expected);
             });
         });
     });

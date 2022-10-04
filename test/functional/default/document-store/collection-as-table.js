@@ -37,7 +37,7 @@ const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../..');
 const { expect } = require('chai');
 
-describe('finding documents in collections', () => {
+describe('finding documents in collections using CRUD with a table API', () => {
     const baseConfig = { schema: config.schema || 'mysql-connector-nodejs_test' };
 
     let schema, session, collection;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,53 +35,66 @@
 const expect = require('chai').expect;
 const td = require('testdouble');
 
-// subject under test needs to be reloaded with replacement fakes
-let limit = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Limit');
+// subject under test needs to be reloaded with replacement test doubles
+let Limit = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Limit');
 
 describe('Mysqlx.Crud.Limit wrapper', () => {
-    let CrudStub, wraps;
+    let CrudStub;
 
-    beforeEach('create fakes', () => {
+    beforeEach('replace dependencies with test doubles', () => {
         CrudStub = td.replace('../../../../../../lib/Protocol/Stubs/mysqlx_crud_pb');
-        wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
-        limit = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Limit');
+        // reload module with the replacements
+        Limit = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Limit');
     });
 
-    afterEach('reset fakes', () => {
+    afterEach('restore original dependencies', () => {
         td.reset();
     });
 
     context('class methods', () => {
         context('create()', () => {
-            it('returns an empty wrap instance when the count is not defined', () => {
-                td.when(wraps(undefined)).thenReturn({ valueOf: () => 'foo' });
+            let Wraps;
 
-                expect(limit.create().valueOf()).to.equal('foo');
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Limit = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Limit');
+            });
+
+            it('creates an empty Mysqlx.Crud.Limit wrapper when the count is not defined', () => {
+                td.when(Wraps(undefined)).thenReturn({ valueOf: () => 'foo' });
+
+                expect(Limit.create().valueOf()).to.equal('foo');
                 expect(td.explain(CrudStub.Limit.prototype.setRowCount).callCount).to.equal(0);
                 expect(td.explain(CrudStub.Limit.prototype.setOffset).callCount).to.equal(0);
             });
 
-            it('returns a Mysqlx.Crud.Limit wrap instance with the count when the offset is not defined', () => {
+            it('creates a Mysqlx.Crud.Limit wrapper with the count when the offset is not defined', () => {
+                const count = 'foo';
                 const proto = new CrudStub.Limit();
+                const protoValue = 'bar';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'bar' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
 
-                expect(limit.create('foo').valueOf()).to.equal('bar');
+                expect(Limit.create({ count }).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setRowCount).callCount).to.equal(1);
-                expect(td.explain(proto.setRowCount).calls[0].args[0]).to.equal('foo');
+                expect(td.explain(proto.setRowCount).calls[0].args[0]).to.equal(count);
                 expect(td.explain(proto.setOffset).callCount).to.equal(0);
             });
 
-            it('returns a Mysqlx.Crud.Limit wrap instance with both the count and offset', () => {
+            it('creates a Mysqlx.Crud.Limit wrapper instance with both the count and offset', () => {
+                const count = 'foo';
+                const offset = 'bar';
                 const proto = new CrudStub.Limit();
+                const protoValue = 'baz';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'baz' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => protoValue });
 
-                expect(limit.create('foo', 'bar').valueOf()).to.equal('baz');
+                expect(Limit.create({ count, offset }).valueOf()).to.equal(protoValue);
                 expect(td.explain(proto.setRowCount).callCount).to.equal(1);
-                expect(td.explain(proto.setRowCount).calls[0].args[0]).to.equal('foo');
+                expect(td.explain(proto.setRowCount).calls[0].args[0]).to.equal(count);
                 expect(td.explain(proto.setOffset).callCount).to.equal(1);
-                expect(td.explain(proto.setOffset).calls[0].args[0]).to.equal('bar');
+                expect(td.explain(proto.setOffset).calls[0].args[0]).to.equal(offset);
             });
         });
     });
@@ -90,26 +103,37 @@ describe('Mysqlx.Crud.Limit wrapper', () => {
         context('toJSON()', () => {
             it('returns nothing if the underlying protobuf instance is not available', () => {
                 // eslint-disable-next-line no-unused-expressions
-                expect(limit().toJSON()).to.not.exist;
+                expect(Limit().toJSON()).to.not.exist;
             });
 
             it('returns a textual representation of a Mysqlx.Crud.Limit message', () => {
                 const proto = new CrudStub.Limit();
+                const count = 'foo';
+                const offset = 'bar';
 
-                td.when(proto.getRowCount()).thenReturn('foo');
-                td.when(proto.getOffset()).thenReturn('bar');
+                td.when(proto.getRowCount()).thenReturn(count);
+                td.when(proto.getOffset()).thenReturn(offset);
 
-                expect(limit(proto).toJSON()).to.deep.equal({ row_count: 'foo', offset: 'bar' });
+                expect(Limit(proto).toJSON()).to.deep.equal({ offset, row_count: count });
             });
         });
 
         context('valueOf()', () => {
+            let Wraps;
+
+            beforeEach('replace dependencies with test doubles', () => {
+                Wraps = td.replace('../../../../../../lib/Protocol/Wrappers/Traits/Wraps');
+                // reload module with the replacements
+                Limit = require('../../../../../../lib/Protocol/Wrappers/Messages/Crud/Limit');
+            });
+
             it('returns the underlying protobuf stub instance', () => {
                 const proto = new CrudStub.Limit();
+                const expected = 'foo';
 
-                td.when(wraps(proto)).thenReturn({ valueOf: () => 'foo' });
+                td.when(Wraps(proto)).thenReturn({ valueOf: () => expected });
 
-                expect(limit(proto).valueOf()).to.equal('foo');
+                expect(Limit(proto).valueOf()).to.equal(expected);
             });
         });
     });

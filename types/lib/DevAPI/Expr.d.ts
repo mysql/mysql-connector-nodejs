@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -28,45 +28,9 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-'use strict';
-
 /**
- * Ordering mixin.
- * @mixin
- * @private
- * @alias Ordering
- * @param {Object} state - ordering properties
- * @returns {Ordering}
+ * X DevAPI expression instance.
  */
-function Ordering (state) {
-    state = Object.assign({ orderings: [] }, state);
-
-    return {
-        /**
-         * Retrieve the list of columns to order in the result.
-         * @function
-         * @private
-         * @name Ordering#getOrderings
-         * @returns {string[]} The list of ordering expressions.
-         */
-        getOrderings () {
-            return state.orderings;
-        },
-
-        /**
-         * Set the list of columns to order in the result.
-         * @function
-         * @private
-         * @name Ordering#setOrderings
-         * @param {string[]} orderings - list of ordering expressions
-         * @returns {Ordering} The query instance.
-         */
-        setOrderings (orderings) {
-            state.orderings = orderings;
-
-            return this;
-        }
-    };
+export interface Expr {
+    getExpressionString: () => string
 }
-
-module.exports = Ordering;
