@@ -63,7 +63,7 @@
     "test:types": "tsd"
   },
   "dependencies": {
-    "google-protobuf": "3.19.4",
+    "google-protobuf": "3.21.2",
     "parsimmon": "1.18.1"
   },
   "engines": {
@@ -72,12 +72,12 @@
   "devDependencies": {
     "@types/node": "17.0.21",
     "@typescript-eslint/eslint-plugin": "4.33.0",
-    "chai": "4.3.4",
-    "dns2": "1.4.2",
+    "chai": "4.3.6",
+    "dns2": "2.0.5",
     "eslint-config-standard-with-typescript": "21.0.1",
     "eslint-plugin-header": "3.1.0",
     "eslint-plugin-tsdoc": "0.2.14",
-    "mocha": "8.2.1",
+    "mocha": "10.0.0",
     "nyc": "15.1.0",
     "snazzy": "9.0.0",
     "standardx": "7.0.0",

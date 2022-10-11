@@ -90,7 +90,9 @@ describe('connecting to the MySQL server using DNS SRV', () => {
         beforeEach('add fake server to list of servers to be used for DNS resolution', () => {
             // Save the original list of DNS servers to restore after the test.
             originalServers = dns.getServers();
-            dns.setServers([`${fakeServer.address().address}:${fakeServer.address().port}`].concat(originalServers));
+            // Add the fake server endpoint to the list of DNS servers.
+            const { address, port } = fakeServer.addresses().udp;
+            dns.setServers([`${address}:${port}`].concat(originalServers));
         });
 
         afterEach('restore original list of DNS servers', () => {
@@ -133,7 +135,9 @@ describe('connecting to the MySQL server using DNS SRV', () => {
         beforeEach('add fake server to list of servers to be used for DNS resolution', () => {
             // Save the original list of DNS servers to restore after the test.
             originalServers = dns.getServers();
-            dns.setServers([`${fakeServer.address().address}:${fakeServer.address().port}`].concat(originalServers));
+            // Add the fake server endpoint to the list of DNS servers.
+            const { address, port } = fakeServer.addresses().udp;
+            dns.setServers([`${address}:${port}`].concat(originalServers));
         });
 
         afterEach('restore original list of DNS servers', () => {

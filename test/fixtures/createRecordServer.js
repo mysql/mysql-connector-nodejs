@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,7 +35,9 @@ const dns = require('dns2');
 const { Packet } = dns;
 
 module.exports = function ({ host = '127.0.0.1', service, records = [] }) {
-    const dnsServer = dns.createServer((request, send) => {
+    const dnsServer = dns.createServer({ udp: true });
+
+    dnsServer.on('request', (request, send) => {
         const response = Packet.createResponseFromRequest(request);
         const [question] = request.questions;
         const { name } = question;
@@ -58,6 +60,6 @@ module.exports = function ({ host = '127.0.0.1', service, records = [] }) {
         send(response);
     });
 
-    return dnsServer.listen(0, host)
+    return dnsServer.listen({ udp: { address: host } })
         .then(() => dnsServer);
 };
