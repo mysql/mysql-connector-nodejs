@@ -60,10 +60,11 @@ $ npm run test:functional
 If the server is not running on the same machine, is available only via a local UNIX socket, or if it is initialized using other custom configuration details, those can be provided to the test runner using the following environment variables:
 
 * `MYSQLX_HOST` (`'localhost'` by default)
+* `MYSQLX_DEFAULT_SCHEMA` (`'nodejsmysqlxtest'` by default)
 * `MYSQLX_PASSWORD` (empty by default)
 * `MYSQLX_PORT` (`33060` by default)
 * `MYSQLX_SOCKET` (`undefined` by default)
-* `MYSQLX_DEFAULT_SCHEMA` (`'nodejsmysqlxtest'` by default)
+* `MYSQLX_USER` (`root` by default)
 
 For example:
 
@@ -79,6 +80,37 @@ $ npm test
 $ npm run test
 $ npm run test:unit && npm run test:functional
 ```
+
+#### Using a Docker container
+
+Alternatively, for Linux or macOS users, there is a script that builds and runs a Docker container which then executes the test suite. This means no external dependency, apart from a running MySQL server, is needed.
+
+The script uses the environment variables described previously and introduces a few new ones. These are mostly meant to be used for configuring the Docker container itself. They allow to specify the path to a Node.js engine image, the network proxy setup and the URL of the NPM registry to use.
+
+* `BASE_IMAGE` (`container-registry.oracle.com/graalvm/nodejs:latest` by default)
+* `HTTP_PROXY` (value of the environment variable in the host by default)
+* `HTTPS_PROXY` (value of the environment variable in the host by default)
+* `NO_PROXY` (value of the environment variable in the host by default)
+* `NPM_REGISTRY` (`https://registry.npmjs.org/` by default)
+
+There is one additional environment variable called `TEST_PATTERN` which can be used to provide a string or a regular expression that is applied for filtering one or more matching tests to execute.
+
+Ultimately, the script allows an argument which identifies the underlying NPM script that gets executed. So, in theory, any of the available NPM scripts can be executed in the container, but by default, it will execute the `test` script.
+
+```sh
+ # executing the default test script with the default environment (Linux only)
+$ ./test/docker/run.sh
+# executing the unit test suite
+$ ./test/docker/run.sh test:unit
+# executing all TCP-based functional tests whose description matches the given pattern
+$ MYSQLX_HOST='<hostname_or_IP_address>' TEST_PATTERN='using CRUD' ./test/docker/run.sh test:functional
+# executing all functional tests (Linux only)
+$ MYSQLX_SOCKET='/path/to/socket' ./test/docker/run.sh test:functional
+```
+
+Similar to when the tests run on a local environment, the `MYSQLX_HOST` variable is only relevant for the functional tests. On Linux, the variable is optional and the Docker container will run using the "host" network mode whilst tests assume the MySQL server is listening on `localhost`. On macOS, since containers run on a virtual machine, host loopback addresses are not reachable. In that case, the `MYSQLX_HOST` variable is required and should specify the hostname or IP address of the MySQL server.
+
+Due to some [know limitations](https://github.com/docker/for-mac/issues/483) on the macOS Docker architecture, Unix socket tests can only run on Linux. In that case, if the `MYSQLX_SOCKET` variable is explicitely specified, a shared volume between the host and the container will be created as a mount point from the socket file path in the host and an internal container directory specified as a volume, where the socket file path becomes available.
 
 ### Test Coverage
 

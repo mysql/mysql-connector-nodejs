@@ -56,9 +56,8 @@
     "lint": "npm run lint:lib && npm run lint:types",
     "mocha": "mocha --reporter spec --timeout 10000 --recursive",
     "prepack": "node bin/prepack.js",
-    "pretest": "node bin/wait-for.js",
     "test": "tsd && npm run mocha test/unit test/functional/default",
-    "test:functional": "npm run pretest && npm run mocha test/functional/default",
+    "test:functional": "npm run mocha test/functional/default",
     "test:unit": "npm run mocha test/unit",
     "test:types": "tsd"
   },
