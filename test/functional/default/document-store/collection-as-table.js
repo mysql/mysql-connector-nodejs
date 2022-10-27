@@ -90,4 +90,24 @@ describe('finding documents in collections using CRUD with a table API', () => {
                 });
         });
     });
+
+    context('BUG#34728259', () => {
+        const id = '1';
+        const signedBigInt = '-9223372036854775808';
+        const unsignedBigInt = '18446744073709551615';
+
+        beforeEach('populate collection', () => {
+            return session.sql(`INSERT INTO \`${schema.getName()}\`.\`${collection.getName()}\` (doc) VALUES ('{ "_id": "${id}", "signedBigInt": ${signedBigInt}, "unsignedBigInt": ${unsignedBigInt} }')`)
+                .execute();
+        });
+
+        it('returns unsafe numeric field values as strings', () => {
+            return schema.getCollectionAsTable(collection.getName())
+                .select('doc')
+                .execute()
+                .then(res => {
+                    return expect(res.fetchOne()).to.deep.equal([{ _id: id, signedBigInt, unsignedBigInt }]);
+                });
+        });
+    });
 });

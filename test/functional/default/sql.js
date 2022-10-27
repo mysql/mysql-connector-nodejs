@@ -902,13 +902,16 @@ describe('raw SQL', () => {
         });
 
         context('JSON', () => {
+            const signedBigInt = '-9223372036854775808';
+            const unsignedBigInt = '18446744073709551615';
+
             beforeEach('create table', () => {
                 return session.sql('CREATE TABLE test (value JSON)')
                     .execute();
             });
 
-            beforeEach('add fixtures', () => {
-                return session.sql('INSERT INTO test VALUES (\'{"foo":"bar"}\')')
+            beforeEach('populate column', () => {
+                return session.sql(`INSERT INTO test (value) VALUES ('{ "signedBigInt": ${signedBigInt}, "unsignedBigInt": ${unsignedBigInt} }')`)
                     .execute();
             });
 
@@ -916,6 +919,16 @@ describe('raw SQL', () => {
                 return session.sql('SELECT * FROM test')
                     .execute()
                     .then(res => expect(res.getColumns()[0].getType()).to.equal('JSON'));
+            });
+
+            context('BUG#34728259', () => {
+                it('returns unsafe numeric field values as strings', () => {
+                    return session.sql('SELECT value FROM test')
+                        .execute()
+                        .then(res => {
+                            return expect(res.fetchOne()).to.deep.equal([{ signedBigInt, unsignedBigInt }]);
+                        });
+                });
             });
         });
 
@@ -1156,23 +1169,24 @@ describe('raw SQL', () => {
 
     context('BUG#34016587 values encoded as DECIMAL with precision loss', () => {
         beforeEach('create table', () => {
-            // A JavaScript number does not have enough precision to encode
-            // more than 17 corresponding DECIMAL digits in MySQL.
+            // A JavaScript number does not have enough precision to safely
+            // represent a decimal value with more than 16 decimal scale
+            // digits (sometimes even less depending on which digits).
             return session.sql(`CREATE TABLE test (
-                    decimal_1 DECIMAL(18, 1),
-                    decimal_2 DECIMAL(18, 17),
-                    decimal_3 DECIMAL(18, 17),
-                    decimal_4 DECIMAL(18, 1))`)
+                    decimal_1 DECIMAL(17, 1),
+                    decimal_2 DECIMAL(17, 16),
+                    decimal_3 DECIMAL(17, 16),
+                    decimal_4 DECIMAL(17, 1))`)
                 .execute();
         });
 
         beforeEach('add fixtures', () => {
-            return session.sql('INSERT INTO test VALUES (-99999999999999999.9, -9.99999999999999999, 9.99999999999999999, 99999999999999999.9)')
+            return session.sql('INSERT INTO test VALUES (-9999999999999999.9, -9.9999999999999999, 9.9999999999999999, 9999999999999999.9)')
                 .execute();
         });
 
         it('decodes values using a string to avoid precision loss', () => {
-            const expected = [['-99999999999999999.9', '-9.99999999999999999', '9.99999999999999999', '99999999999999999.9']];
+            const expected = [['-9999999999999999.9', '-9.9999999999999999', '9.9999999999999999', '9999999999999999.9']];
 
             return session.sql('select * from test')
                 .execute()

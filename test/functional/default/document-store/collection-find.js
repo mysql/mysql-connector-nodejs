@@ -608,6 +608,25 @@ describe('finding documents in collections using CRUD', () => {
         });
     });
 
+    context('BUG#34728259', () => {
+        const signedBigInt = '-9223372036854775808';
+        const unsignedBigInt = '18446744073709551615';
+
+        beforeEach('populate collection', () => {
+            return session.sql(`INSERT INTO \`${schema.getName()}\`.\`${collection.getName()}\` (doc) VALUES ('{ "_id": "1", "signedBigInt": ${signedBigInt}, "unsignedBigInt": ${unsignedBigInt} }')`)
+                .execute();
+        });
+
+        it('returns unsafe numeric field values as strings', () => {
+            return collection.find()
+                .fields('signedBigInt', 'unsignedBigInt')
+                .execute()
+                .then(res => {
+                    return expect(res.fetchOne()).to.deep.equal({ signedBigInt, unsignedBigInt });
+                });
+        });
+    });
+
     context('when debug mode is enabled', () => {
         beforeEach('populate collection', () => {
             return collection.add({ name: 'foo', count: 2 })
