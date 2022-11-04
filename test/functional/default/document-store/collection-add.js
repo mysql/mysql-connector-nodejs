@@ -293,23 +293,38 @@ describe('adding documents to a collection using CRUD', () => {
     });
 
     // JavaScript can happily store Number.MAX_SAFE_INTEGER + 1 and Number.MAX_SAFE_INTEGER - 1.
-    context('unsafe numbers', () => {
-        it('saves the numbers as strings', () => {
+    context('unsafe numeric values', () => {
+        it('saves unsafe JavaScript numbers as strings', async () => {
             const unsafePositive = Number.MAX_SAFE_INTEGER + 1;
             const unsafeNegative = Number.MIN_SAFE_INTEGER - 1;
             const doc = { unsafePositive, unsafeNegative };
             const want = { unsafePositive: `${unsafePositive}`, unsafeNegative: `${unsafeNegative}` };
 
-            return collection.add(doc)
-                .execute()
-                .then(() => {
-                    return collection.find()
-                        .fields('unsafePositive', 'unsafeNegative')
-                        .execute();
-                })
-                .then(res => {
-                    return expect(res.fetchOne()).to.deep.equal(want);
-                });
+            await collection.add(doc)
+                .execute();
+
+            const res = await collection.find()
+                .fields('unsafePositive', 'unsafeNegative')
+                .execute();
+
+            expect(res.fetchOne()).to.deep.equal(want);
+        });
+
+        it('BUG#34767204 saves JSON field numeric values without loosing precision', async () => {
+            const signedBigInt = '-9223372036854775808';
+            const unsafeDecimal = '9.9999999999999999';
+            const unsignedBigInt = '18446744073709551615';
+            const doc = `{ "signedBigInt": ${signedBigInt}, "unsafeDecimal": ${unsafeDecimal}, "unsignedBigInt": ${unsignedBigInt} }`;
+            const want = { signedBigInt, unsafeDecimal, unsignedBigInt };
+
+            await collection.add(doc)
+                .execute();
+
+            const res = await collection.find()
+                .fields('signedBigInt', 'unsignedBigInt', 'unsafeDecimal')
+                .execute();
+
+            expect(res.fetchOne()).to.deep.equal(want);
         });
     });
 

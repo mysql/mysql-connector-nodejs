@@ -54,8 +54,8 @@ describe('DocumentOrJSON informal type', () => {
 
     context('getValue()', () => {
         it('converts the value to a JavaScript object literal when it is a JSON string', () => {
-            const expected = { name: 'foo' };
-            const jsonString = JSON.stringify(expected);
+            const expected = { name: 'foo', signedBigInt: '-9223372036854775808', unsafeDecimal: '9.9999999999999999', unsignedBigInt: '18446744073709551615' };
+            const jsonString = `{ "name": "${expected.name}", "signedBigInt": ${expected.signedBigInt}, "unsafeDecimal": ${expected.unsafeDecimal}, "unsignedBigInt": ${expected.unsignedBigInt} }`;
 
             expect(DocumentOrJSON(jsonString).getValue()).to.deep.equal(expected);
         });
