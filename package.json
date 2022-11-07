@@ -62,7 +62,7 @@
     "test:types": "tsd"
   },
   "dependencies": {
-    "google-protobuf": "3.21.2",
+    "google-protobuf": "3.19.4",
     "lossless-json": "2.0.1",
     "parsimmon": "1.18.1"
   },
