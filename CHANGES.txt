@@ -8,6 +8,19 @@ Copyright (c) 2016, 2022, Oracle and/or its affiliates.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.32
+=======
+
+- X DevAPI expressions are now encapsulated in a corresponding Expr module
+- The expression parser became stateless and is not re-created every time an expression is used
+- X DevAPI expressions are now parsed at the stage where they are used
+- All protobuf messages are now constructed only at the corresponding adapter
+- Most CRUD statements using expressions are much faster
+- 3rd-party dependencies with new releases compatible to Node.js v14.0.0 have been updated
+- A script to run the test suite in a Docker container has been introduced
+- Unsafe numeric JSON field values are now returned as JavaScript strings
+- Collection.add() no longer loses precision with unsafe numeric JSON field values
+
 v8.0.31
 =======
 
