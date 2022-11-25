@@ -594,12 +594,12 @@ describe('relational miscellaneous tests', () => {
             });
 
             beforeEach('add fixtures', () => {
-                return session.sql('INSERT INTO test VALUES (\'foo,bar\'), (\'foo\'), (\'\')')
+                return session.sql('INSERT INTO test VALUES (\'foo,bar\'), (\'foo\'), (\'\'), (NULL)')
                     .execute();
             });
 
             it('decodes values correctly', () => {
-                const expected = [[['foo', 'bar']], [['foo']], [[]]];
+                const expected = [[['foo', 'bar']], [['foo']], [[]], [null]];
                 const actual = [];
 
                 return schema.getTable('test').select()

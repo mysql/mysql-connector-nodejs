@@ -204,31 +204,19 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
 
             columnProto.setLength(5);
-            columnProto.clearFlags(); // without right-padding
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(binary).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
 
-            // with right-padding but invalid length
+            // with an invalid length
             columnProto.setLength(2);
-            columnProto.setFlags(1);
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(binary).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
-
-            // with right-padding
-            columnProto.setLength(5);
-            columnProto.setFlags(1);
-
-            rowProto.clearFieldList();
-            rowProto.addField(bytes.create(binary).valueOf());
-
-            // remove the additional `0x00` bytes
-            expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()[0].slice(0, -2)).to.deep.equal(binary.slice(0, -1));
         });
 
         it('returns GEOMETRY data values as Node.js buffers', () => {
@@ -243,31 +231,19 @@ describe('Mysqlx.Resultset.Row wrapper', () => {
 
             // without right-padding
             columnProto.setLength(5);
-            columnProto.clearFlags();
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(binary).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
 
-            // with right-padding but invalid length
+            // with an invalid length
             columnProto.setLength(2);
-            columnProto.setFlags(1);
 
             rowProto.clearFieldList();
             rowProto.addField(bytes.create(binary).valueOf());
 
             expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()).to.deep.equal([binary.slice(0, -1)]);
-
-            // with right-padding
-            columnProto.setLength(5);
-            columnProto.setFlags(1);
-
-            rowProto.clearFieldList();
-            rowProto.addField(bytes.create(binary).valueOf());
-
-            // remove the additional `0x00` bytes
-            expect(row(rowProto, { metadata: [columnMetadata(columnProto)] }).toArray()[0].slice(0, -2)).to.deep.equal(binary.slice(0, -1));
         });
 
         it('returns JSON data values as JavaScript objects', () => {
