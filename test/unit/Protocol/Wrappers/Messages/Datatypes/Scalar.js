@@ -59,7 +59,7 @@ describe('Mysqlx.Datatypes.Scalar wrapper', () => {
                 const proto = Scalar.create({ value }).valueOf();
 
                 expect(proto.getType()).to.equal(ScalarStub.Type.V_UINT);
-                expect(proto.getVUnsignedInt()).to.equal(value);
+                expect(proto.getVUnsignedInt()).to.equal(value.toString());
             });
 
             it('creates an appropriately typed Mysqlx.Datatypes.Scalar wrapper for negative numbers', () => {
@@ -67,7 +67,7 @@ describe('Mysqlx.Datatypes.Scalar wrapper', () => {
                 const proto = Scalar.create({ value }).valueOf();
 
                 expect(proto.getType()).to.equal(ScalarStub.Type.V_SINT);
-                expect(proto.getVSignedInt()).to.equal(value);
+                expect(proto.getVSignedInt()).to.equal(value.toString());
             });
 
             it('creates an appropriately typed Mysqlx.Datatypes.Scalar for floating point numbers', () => {
@@ -183,14 +183,14 @@ describe('Mysqlx.Datatypes.Scalar wrapper', () => {
                 const proto = new ScalarStub([ScalarStub.Type.V_SINT]);
                 proto.setVSignedInt(-3);
 
-                expect(Scalar(proto).toJSON()).to.deep.equal({ type: 'V_SINT', v_signed_int: -3 });
+                expect(Scalar(proto).toJSON()).to.deep.equal({ type: 'V_SINT', v_signed_int: -3n });
             });
 
             it('returns a textual representation of a Mysqlx.Datatypes.Scalar.V_UINT stub instance', () => {
                 const proto = new ScalarStub([ScalarStub.Type.V_UINT]);
                 proto.setVUnsignedInt(3);
 
-                expect(Scalar(proto).toJSON()).to.deep.equal({ type: 'V_UINT', v_unsigned_int: 3 });
+                expect(Scalar(proto).toJSON()).to.deep.equal({ type: 'V_UINT', v_unsigned_int: 3n });
             });
 
             it('returns a textual representation of a Mysqlx.Datatypes.Scalar.V_NULL stub instance', () => {
@@ -260,18 +260,18 @@ describe('Mysqlx.Datatypes.Scalar wrapper', () => {
                 Scalar = require('../../../../../../lib/Protocol/Wrappers/Messages/Datatypes/Scalar');
             });
 
-            it('returns a JavaScript number for a Mysqlx.Datatypes.Scalar.V_SINT stub instance', () => {
+            it('returns a JavaScript BigInt for a Mysqlx.Datatypes.Scalar.V_SINT stub instance', () => {
                 const proto = new ScalarStub([ScalarStub.Type.V_SINT]);
                 proto.setVSignedInt(-3);
 
-                expect(Scalar(proto).toLiteral()).to.equal(-3);
+                expect(Scalar(proto).toLiteral()).to.equal(-3n);
             });
 
-            it('returns a JavaScript number for a Mysqlx.Datatypes.Scalar.V_UINT stub instance', () => {
+            it('returns a JavaScript BigInt for a Mysqlx.Datatypes.Scalar.V_UINT stub instance', () => {
                 const proto = new ScalarStub([ScalarStub.Type.V_UINT]);
                 proto.setVUnsignedInt(3);
 
-                expect(Scalar(proto).toLiteral()).to.equal(3);
+                expect(Scalar(proto).toLiteral()).to.equal(3n);
             });
 
             it('returns null for a Mysqlx.Datatypes.Scalar.V_NULL stub instance', () => {

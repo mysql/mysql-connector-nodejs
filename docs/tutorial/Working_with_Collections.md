@@ -384,6 +384,178 @@ mysqlx.getSession('mysqlx://localhost:33060')
     });
 ```
 
+### Unsafe numeric values
+
+It is important to understand the difference in how a numeric values are represented both in a JSON string and the corresponding plain JavaScript object. The JSON specification does not enforce any limitation with regards to the size and precision of a numeric value. Traditionally, all numeric values in a JSON string are converted to a corresponding JavaScript `number` when the string is parsed as a plain JavaScript object (`JSON.parse()`). This means that an integer lower than `Number.MIN_SAFE_INTEGER` or higher than `Number.MAX_SAFE_INTEGER` will lose precision on the type conversion. Additionally, decimal numbers will also lose precision depending on the total number of digits and the size of the fractional part.
+
+Given this limitation, the connector uses a 3rd-party JSON parser that allows to specify the type into which a given numeric value will be converted. In this case, by default, when a numeric value risks loosing precision, it is converted into a JavaScript `string`.
+
+For integer values in particular, an application can customize this behaviour by selecting from one of the following alternatives instead:
+
+- all integers are preseved as a `string`
+- all integers are preserved as a `BigInt`
+- only unsafe integers are preserved as a `BigInt`
+
+Selecting the appropriate strategy for handling unsafe integers in a result set can be done via a corresponding connection option.
+
+Assuming a collection `c` within an existing schema `s` that contains the following document:
+
+```json
+{
+    "safeNegative": -123,
+    "safePositive": 123,
+    "unsafeNegative": -9223372036854775808,
+    "unsafePositive": 18446744073709551615
+}
+```
+
+**Convert all integers in the result set to a JavaScript `string`**
+
+```javascript
+mysqlx.getSession({ integerType: mysqlx.IntegerType.STRING, host: 'localhost', user: 'root', schema: 's' })
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .find('unsafeNegative = :un and unsafePositive = :up')
+            .bind('un', -9223372036854775808n) // BigInt('-9223372036854775808') or '-9223372036854775808'
+            .bind('up', 18446744073709551615n) // BigInt('18446744073709551615') or '18446744073709551615'
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()); // { safeNegative: '-123', safePositive: '123', unsafeNegative: '-9223372036854775808', unsafePositive: '18446744073709551615' }
+    });
+
+mysqlx.getSession('mysqlx://root@localhost/s?integer-type=string')
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .find('unsafeNegative = :un and unsafePositive = :up')
+            .bind('un', -9223372036854775808n) // BigInt('-9223372036854775808') or '-9223372036854775808'
+            .bind('up', 18446744073709551615n) // BigInt('18446744073709551615') or '18446744073709551615'
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()); // { safeNegative: '-123', safePositive: '123', unsafeNegative: '-9223372036854775808', unsafePositive: '18446744073709551615' }
+    });
+```
+
+**Convert only unsafe integers in the result set to a JavaScript `string` (DEFAULT)**
+
+```javascript
+mysqlx.getSession({ integerType: mysqlx.IntegerType.UNSAFE_STRING, host: 'localhost', user: 'root', schema: 's' })
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .find('unsafeNegative = :un and unsafePositive = :up')
+            .bind('un', -9223372036854775808n) // BigInt('-9223372036854775808') or '-9223372036854775808'
+            .bind('up', 18446744073709551615n) // BigInt('18446744073709551615') or '18446744073709551615'
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()); // { safeNegative: -123, safePositive: 123, unsafeNegative: '-9223372036854775808', unsafePositive: '18446744073709551615' }
+    });
+
+mysqlx.getSession('mysqlx://root@localhost/s?integer-type=unsafe_string')
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .find('unsafeNegative = :un and unsafePositive = :up')
+            .bind('un', -9223372036854775808n) // BigInt('-9223372036854775808') or '-9223372036854775808'
+            .bind('up', 18446744073709551615n) // BigInt('18446744073709551615') or '18446744073709551615'
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()); // { safeNegative: -123, safePositive: 123, unsafeNegative: '-9223372036854775808', unsafePositive: '18446744073709551615' }
+    });
+```
+
+**Convert all integers in the result set to a JavaScript `BigInt`**
+
+```javascript
+mysqlx.getSession({ integerType: mysqlx.IntegerType.BIGINT, host: 'localhost', user: 'root', schema: 's' })
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .find('unsafeNegative = :un and unsafePositive = :up')
+            .bind('un', -9223372036854775808n) // BigInt('-9223372036854775808') or '-9223372036854775808'
+            .bind('up', 18446744073709551615n) // BigInt('18446744073709551615') or '18446744073709551615'
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()); // { safeNegative: -123n, safePositive: 123n, unsafeNegative: -9223372036854775808n, unsafePositive: 18446744073709551615n }
+    });
+
+mysqlx.getSession('mysqlx://root@localhost/s?integer-type=bigint')
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .find('unsafeNegative = :un and unsafePositive = :up')
+            .bind('un', -9223372036854775808n) // BigInt('-9223372036854775808') or '-9223372036854775808'
+            .bind('up', 18446744073709551615n) // BigInt('18446744073709551615') or '18446744073709551615'
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()); // { safeNegative: -123n, safePositive: 123n, unsafeNegative: -9223372036854775808n, unsafePositive: 18446744073709551615n }
+    });
+```
+
+**Convert only unsafe integers in the result set to a JavaScript `BigInt`**
+
+```javascript
+mysqlx.getSession({ integerType: mysqlx.IntegerType.UNSAFE_BIGINT, host: 'localhost', user: 'root', schema: 's' })
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .find('unsafeNegative = :un and unsafePositive = :up')
+            .bind('un', -9223372036854775808n) // BigInt('-9223372036854775808') or '-9223372036854775808'
+            .bind('up', 18446744073709551615n) // BigInt('18446744073709551615') or '18446744073709551615'
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()); // { safeNegative: -123, safePositive: 123, unsafeNegative: -9223372036854775808n, unsafePositive: 18446744073709551615n }
+    });
+
+mysqlx.getSession('mysqlx://root@localhost/s?integer-type=unsafe_bigint')
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .find('unsafeNegative = :un and unsafePositive = :up')
+            .bind('un', -9223372036854775808n) // BigInt('-9223372036854775808') or '-9223372036854775808'
+            .bind('up', 18446744073709551615n) // BigInt('18446744073709551615') or '18446744073709551615'
+            .execute();
+    })
+    .then(res => {
+        console.log(res.fetchOne()); // { safeNegative: -123, safePositive: 123, unsafeNegative: -9223372036854775808n, unsafePositive: 18446744073709551615n }
+    });
+```
+
+Statements created and executed by an application that operate on JSON fields containing unsafe numeric values can also be specified with a JavaScript `string` or `BigInt` (if it is an integer, as depicted in the examples above). This is possible not only on placeholder assignments using the `bind()` method, but also on every other method and API used as a CRUD statement building block, like in the following examples:
+
+**Add unsafe integers to a document**
+
+```javascript
+mysqlx.getSession({ user: 'root', host: 'localhost', schema: 's' })
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .add({ unsafePositive: 18446744073709551615n /* or BigInt('18446744073709551615') */ })
+            .execute();
+    });
+```
+
+**Update an unsafe integer in one or more documents**
+
+```javascript
+mysqlx.getSession({ user: 'root', host: 'localhost', schema: 's' })
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .modify('unsafeNegative = :un')
+            .bind('un', -9223372036854775808n) // BigInt('-9223372036854775808')
+            .set('up', 9223372036854775807n) // BigInt('9223372036854775807')
+            .execute();
+    });
+
+mysqlx.getSession({ user: 'root', host: 'localhost', schema: 's' })
+    .then(session => {
+        return session.getDefaultSchema().getCollection('c')
+            .modify('unsafeNegative = :un')
+            .bind('un', -9223372036854775808n) // BigInt('-9223372036854775808')
+            .set('up', 9223372036854775807n) // BigInt('9223372036854775807')
+            .execute();
+    });
+```
+
 ### Collection indexes
 
 Collection indexes are ordinary MySQL indexes on virtual columns that extract data from JSON document. To create an index, both the index name and the index definition are required.

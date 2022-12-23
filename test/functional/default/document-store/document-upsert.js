@@ -84,31 +84,40 @@ describe('upserting single documents in collections using CRUD', () => {
     });
 
     context('when the replacement document does not contain an _id property', () => {
-        it('adds a new document with the provided properties if it does not exist', () => {
-            const expected = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz', age: 23 }];
-            const actual = [];
+        context('and a document with the same id does not exist', () => {
+            it('adds a new document with the given properties', async () => {
+                const unsafeNegative = '-9223372036854775808';
+                const unsafePositive = '18446744073709551615';
+                const want = [{ _id: '1', name: 'foo' }, { _id: '2', name: 'bar' }, { _id: '3', unsafeNegative, unsafePositive }];
 
-            return collection.addOrReplaceOne('3', { name: 'baz', age: 23 })
-                .then(result => {
-                    expect(result.getAffectedItemsCount()).to.equal(1);
+                let res = await collection.addOrReplaceOne('3', { unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) });
 
-                    return collection.find().execute(doc => actual.push(doc));
-                })
-                .then(() => expect(actual).to.deep.equal(expected));
+                expect(res.getAffectedItemsCount()).to.equal(1);
+
+                res = await collection.find().execute();
+
+                const got = res.fetchAll();
+
+                expect(got).to.deep.equal(want);
+            });
         });
 
-        it('replaces any existing document with the given id', () => {
-            const expected = [{ _id: '1', age: 23 }, { _id: '2', name: 'bar' }];
-            const actual = [];
+        context('and a document with the same id already exists', () => {
+            it('replaces the given properties of the document', async () => {
+                const unsafeNegative = '-9223372036854775808';
+                const unsafePositive = '18446744073709551615';
+                const want = [{ _id: '1', unsafePositive, unsafeNegative }, { _id: '2', name: 'bar' }];
 
-            return collection.addOrReplaceOne('1', { age: 23 })
-                .then(result => {
-                    // the existing row is re-created (leading to two different operations)
-                    // see https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
-                    expect(result.getAffectedItemsCount()).to.equal(2);
-                    return collection.find().execute(doc => actual.push(doc));
-                })
-                .then(() => expect(actual).to.deep.equal(expected));
+                let res = await collection.addOrReplaceOne('1', { unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) });
+                // the existing row is re-created (leading to two different operations)
+                // see https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
+                expect(res.getAffectedItemsCount()).to.equal(2);
+
+                res = await collection.find().execute();
+                const got = res.fetchAll();
+
+                expect(got).to.deep.equal(want);
+            });
         });
     });
 

@@ -245,19 +245,21 @@ describe('modifying documents in a collection using CRUD', () => {
         });
 
         context('when the replacement document does not contain a _id property', () => {
-            it('replaces the entire document if it exists', () => {
-                const expected = [{ _id: '1', age: 23 }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
+            it('replaces the entire document if it exists', async () => {
+                const unsafeNegative = '-9223372036854775808';
+                const unsafePositive = '18446744073709551615';
+                const want = [{ _id: '1', unsafeNegative, unsafePositive }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
 
-                return collection.replaceOne('1', { age: 23 })
-                    .then(result => {
-                        expect(result.getAffectedItemsCount()).to.equal(1);
+                let res = await collection.replaceOne('1', { unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) });
 
-                        return collection.find()
-                            .execute();
-                    })
-                    .then(res => {
-                        return expect(res.fetchAll()).to.deep.equal(expected);
-                    });
+                expect(res.getAffectedItemsCount()).to.equal(1);
+
+                res = await collection.find()
+                    .execute();
+
+                const got = res.fetchAll();
+
+                expect(got).to.deep.equal(want);
             });
 
             it('does nothing if the document does not exist', () => {
@@ -277,19 +279,21 @@ describe('modifying documents in a collection using CRUD', () => {
         });
 
         context('when the replacement document contains a matching _id property', () => {
-            it('replaces the entire document if it exists', () => {
-                const expected = [{ _id: '1', age: 23 }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
+            it('replaces the entire document if it exists', async () => {
+                const unsafeNegative = '-9223372036854775808';
+                const unsafePositive = '18446744073709551615';
+                const want = [{ _id: '1', unsafeNegative, unsafePositive }, { _id: '2', name: 'bar' }, { _id: '3', name: 'baz' }];
 
-                return collection.replaceOne('1', { _id: '1', age: 23 })
-                    .then(result => {
-                        expect(result.getAffectedItemsCount()).to.equal(1);
+                let res = await collection.replaceOne('1', { _id: '1', unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) });
 
-                        return collection.find()
-                            .execute();
-                    })
-                    .then(res => {
-                        return expect(res.fetchAll()).to.deep.equal(expected);
-                    });
+                expect(res.getAffectedItemsCount()).to.equal(1);
+
+                res = await collection.find()
+                    .execute();
+
+                const got = res.fetchAll();
+
+                expect(got).to.deep.equal(want);
             });
 
             it('does nothing if the document does not exist', () => {
@@ -627,6 +631,50 @@ describe('modifying documents in a collection using CRUD', () => {
                     .execute()
                     .then(res => expect(res.getAffectedItemsCount()).to.equal(limit));
             });
+        });
+    });
+
+    context('update multiple unsafe numeric values specifided with a JavaScript BigInt', () => {
+        const unsafeNegative = '-9223372036854775808';
+        const unsafePositive = '18446744073709551615';
+
+        beforeEach('add fixtures', () => {
+            return collection.add({ name: 'foo' }, { name: 'bar' }, { name: 'baz' })
+                .execute();
+        });
+
+        it('updates specific values of a document without losing precision', async () => {
+            const want = { unsafeNegative, unsafePositive };
+
+            await collection.modify('name = :name')
+                .bind('name', 'foo')
+                .set('unsafeNegative', BigInt(unsafeNegative))
+                .set('unsafePositive', BigInt(unsafePositive))
+                .execute();
+
+            const res = await collection.find()
+                .bind('name', 'foo')
+                .fields('unsafePositive', 'unsafeNegative')
+                .execute();
+
+            expect(res.fetchOne()).to.deep.equal(want);
+        });
+
+        it('patches a document without losing precision', async () => {
+            const diff = { unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) };
+            const want = { name: 'foo', unsafeNegative, unsafePositive };
+
+            await collection.modify('name = :name')
+                .bind('name', 'foo')
+                .patch(diff)
+                .execute();
+
+            const res = await collection.find()
+                .bind('name', 'foo')
+                .fields('name', 'unsafePositive', 'unsafeNegative')
+                .execute();
+
+            expect(res.fetchOne()).to.deep.equal(want);
         });
     });
 

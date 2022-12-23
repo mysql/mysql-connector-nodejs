@@ -56,19 +56,20 @@ describe('TableInsert', () => {
         it('executes a TableInsert statement and returns a Result instance with the details provided by the server', () => {
             const columns = 'foo';
             const crudInsert = td.function();
-            const connection = { getClient: () => ({ crudInsert }), isIdle: () => false, isOpen: () => true };
-            const details = 'bar';
-            const expected = 'baz';
+            const integerType = 'bar';
+            const connection = { getClient: () => ({ crudInsert }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
+            const details = 'baz';
             const rows = 'qux';
             const schemaName = 'quux';
             const schema = { getName: () => schemaName };
-            const tableName = 'quuz';
+            const tableName = 'quuux';
+            const want = 'quuuux';
 
             td.when(crudInsert({ dataModel, columns, rows, schemaName, tableName })).thenResolve(details);
-            td.when(Result(details)).thenReturn(expected);
+            td.when(Result({ ...details, integerType })).thenReturn(want);
 
             return TableInsert({ columns, connection, rows, schema, tableName }).execute()
-                .then(got => expect(got).to.equal(expected));
+                .then(got => expect(got).to.equal(want));
         });
 
         it('fails to execute the TableInsert statement when the connection is not open', () => {

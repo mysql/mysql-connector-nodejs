@@ -189,27 +189,44 @@ describe('inserting data into a table using CRUD', () => {
     });
 
     // JavaScript can happily store Number.MAX_SAFE_INTEGER + 1 and Number.MAX_SAFE_INTEGER - 1.
-    context('unsafe numbers', () => {
-        beforeEach('add BIGINT columns', () => {
-            return session.sql('ALTER TABLE test ADD COLUMN (unsafePositive BIGINT UNSIGNED, unsafeNegative BIGINT SIGNED)')
+    context('unsafe numeric values for BIGINT columns', () => {
+        beforeEach('add BIGINT columns to the existing table', async () => {
+            await session.sql('ALTER TABLE test ADD COLUMN (unsafePositive BIGINT UNSIGNED, unsafeNegative BIGINT SIGNED)')
                 .execute();
         });
 
-        it('saves the numbers as strings', () => {
+        it('saves values specified with a JavaScript string', async () => {
             const unsafePositive = Number.MAX_SAFE_INTEGER + 1;
             const unsafeNegative = Number.MIN_SAFE_INTEGER - 1;
             const want = [`${unsafePositive}`, `${unsafeNegative}`];
 
-            return table.insert('unsafePositive', 'unsafeNegative')
+            await table.insert('unsafePositive', 'unsafeNegative')
                 .values(unsafePositive, unsafeNegative)
-                .execute()
-                .then(() => {
-                    return table.select('unsafePositive', 'unsafeNegative')
-                        .execute();
-                })
-                .then(res => {
-                    return expect(res.fetchOne()).to.deep.equal(want);
-                });
+                .execute();
+
+            const res = await table.select('unsafePositive', 'unsafeNegative')
+                .execute();
+
+            const got = res.fetchOne();
+
+            expect(got).to.deep.equal(want);
+        });
+
+        it('saves values specified with a JavaScript BigInt', async () => {
+            const unsafePositive = '18446744073709551615';
+            const unsafeNegative = '-9223372036854775808';
+            const want = [`${unsafePositive}`, `${unsafeNegative}`];
+
+            await table.insert('unsafePositive', 'unsafeNegative')
+                .values(BigInt(unsafePositive), BigInt(unsafeNegative))
+                .execute();
+
+            const res = await table.select('unsafePositive', 'unsafeNegative')
+                .execute();
+
+            const got = res.fetchOne();
+
+            expect(got).to.deep.equal(want);
         });
     });
 
@@ -242,6 +259,45 @@ describe('inserting data into a table using CRUD', () => {
                 .values('baz', 50)
                 .execute()
                 .then(res => expect(res.getAffectedItemsCount()).to.equal(3));
+        });
+    });
+
+    context('BUG#34896695 unsafe integer value of AUTO_INCREMENT', () => {
+        beforeEach('add AUTO_INCREMENT column to the table', async () => {
+            await session.sql('ALTER TABLE test ADD COLUMN (id BIGINT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY)')
+                .execute();
+        });
+
+        it('returns the number of records as a JavaScript string', async () => {
+            const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.STRING, schema: schema.getName() };
+            const want = '18446744073709551615';
+
+            const session = await mysqlx.getSession(itConfig);
+            const res = await session.getDefaultSchema().getTable(table.getName()).insert('id', 'name', 'age')
+                .values(BigInt(want), 'foo', 42)
+                .execute();
+
+            const got = res.getAutoIncrementValue();
+
+            await session.close();
+
+            expect(got).to.equal(want);
+        });
+
+        it('returns the number of records as a JavaScript string', async () => {
+            const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.BIGINT, schema: schema.getName() };
+            const want = BigInt('18446744073709551615');
+
+            const session = await mysqlx.getSession(itConfig);
+            const res = await session.getDefaultSchema().getTable(table.getName()).insert('id', 'name', 'age')
+                .values(want, 'foo', 42)
+                .execute();
+
+            const got = res.getAutoIncrementValue();
+
+            await session.close();
+
+            expect(got).to.equal(want);
         });
     });
 

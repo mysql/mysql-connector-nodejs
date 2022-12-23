@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -99,84 +99,69 @@ describe('SqlExecute', () => {
         });
 
         it('returns a SqlResult instance containing the operation details', () => {
-            const expected = { done: true };
-            const state = { ok: true };
-            const getClient = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { getClient, isIdle, isOpen };
-            const query = sqlExecute(connection, 'foo', 'bar', 'baz');
+            const integerType = 'foo';
+            const connection = { getClient: () => ({ sqlStmtExecute }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
+            const details = { ok: true };
+            const query = sqlExecute(connection, 'bar', 'baz', 'qux');
+            const want = { done: true };
 
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(getClient()).thenReturn({ sqlStmtExecute });
-            td.when(result(state)).thenReturn(expected);
-            td.when(sqlStmtExecute(query), { ignoreExtraArgs: true }).thenResolve(state);
+            td.when(result({ ...details, integerType })).thenReturn(want);
+            td.when(sqlStmtExecute(query), { ignoreExtraArgs: true }).thenResolve(details);
 
             return query.execute()
                 .then(actual => {
-                    return expect(actual).to.deep.equal(expected);
+                    return expect(actual).to.deep.equal(want);
                 });
         });
 
         it('calls a result handler provided as an argument', () => {
-            const getClient = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { getClient, isIdle, isOpen };
+            const integerType = 'foo';
+            const connection = { getClient: () => ({ sqlStmtExecute }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
             const query = sqlExecute(connection);
+            const want = 'bar';
+            const context = { toArray: () => want };
 
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(getClient()).thenReturn({ sqlStmtExecute });
-            td.when(sqlStmtExecute(td.matchers.anything(), td.callback('foo')), { ignoreExtraArgs: true }).thenResolve();
+            td.when(sqlStmtExecute(td.matchers.anything(), td.callback(context)), { ignoreExtraArgs: true }).thenResolve();
 
-            return query.execute(actual => {
-                return expect(actual).to.equal('foo');
+            return query.execute(got => {
+                return expect(got).to.equal(want);
             });
         });
 
         it('calls a metadata handler provided as an argument', () => {
-            const getClient = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { getClient, isIdle, isOpen };
+            const integerType = 'foo';
+            const connection = { getClient: () => ({ sqlStmtExecute }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
             const query = sqlExecute(connection);
             const meta = [{ getAlias }];
+            const want = 'bar';
 
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(getClient()).thenReturn({ sqlStmtExecute });
-            td.when(getAlias()).thenReturn('foo');
+            td.when(getAlias()).thenReturn(want);
             td.when(sqlStmtExecute(td.matchers.anything(), td.matchers.anything(), td.callback(meta))).thenResolve();
 
-            return query.execute(td.function(), actual => {
-                expect(actual).to.have.lengthOf(1);
-                expect(actual[0].getColumnLabel()).to.equal('foo');
+            return query.execute(td.function(), got => {
+                expect(got).to.have.lengthOf(1);
+                expect(got[0].getColumnLabel()).to.equal(want);
             });
         });
 
         it('generates a deprecation warning whilst calling handlers provided as an object argument', () => {
-            const getClient = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { getClient, isIdle, isOpen };
+            const integerType = 'foo';
+            const connection = { getClient: () => ({ sqlStmtExecute }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
             const query = sqlExecute(connection);
-            const meta = [{ getAlias }];
+            const metadataContext = [{ getAlias }];
+            const want = 'bar';
+            const dataContext = { toArray: () => want };
 
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(getClient()).thenReturn({ sqlStmtExecute });
-            td.when(getAlias()).thenReturn('bar');
-            td.when(sqlStmtExecute(td.matchers.anything(), td.callback('foo'), td.callback(meta))).thenResolve();
+            td.when(getAlias()).thenReturn(want);
+            td.when(sqlStmtExecute(td.matchers.anything(), td.callback(dataContext), td.callback(metadataContext))).thenResolve();
 
             return query.execute({
-                row (actual) {
-                    expect(actual).to.equal('foo');
+                row (got) {
+                    expect(got).to.equal(want);
                 },
-                meta (actual) {
-                    expect(actual).to.have.lengthOf(1);
-                    expect(actual[0].getColumnLabel()).to.equal('bar');
+                meta (got) {
+                    expect(got).to.have.lengthOf(1);
+                    expect(got[0].getColumnLabel()).to.equal(want);
                 }
             }).then(() => {
                 expect(td.explain(warning).callCount).to.equal(1);
@@ -185,16 +170,10 @@ describe('SqlExecute', () => {
         });
 
         it('freezes the statement after returning a result', () => {
-            const getClient = td.function();
-            const isIdle = td.function();
-            const isOpen = td.function();
-            const connection = { getClient, isIdle, isOpen };
+            const connection = { getClient: () => ({ sqlStmtExecute }), getIntegerType: () => {}, isIdle: () => false, isOpen: () => true };
             const statement = sqlExecute(connection);
             const freeze = td.replace(statement, 'freeze');
 
-            td.when(isOpen()).thenReturn(true);
-            td.when(isIdle()).thenReturn(false);
-            td.when(getClient()).thenReturn({ sqlStmtExecute });
             td.when(sqlStmtExecute(statement), { ignoreExtraArgs: true }).thenResolve();
 
             return statement.execute()

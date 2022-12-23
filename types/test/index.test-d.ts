@@ -54,6 +54,10 @@ async function test (): Promise<void> {
     expectType<Session>(await mysqlx.getSession({ user: 'foo', tls: { crl: 'bar' } }));
     expectType<Session>(await mysqlx.getSession({ user: 'foo', tls: { crl: readFileSync('bar') } }));
     expectType<Session>(await mysqlx.getSession({ user: 'foo', tls: { crl: [readFileSync('bar'), readFileSync('baz')] } }));
+    expectType<Session>(await mysqlx.getSession({ user: 'foo', integerType: mysqlx.IntegerType.BIGINT }));
+    expectType<Session>(await mysqlx.getSession({ user: 'foo', integerType: mysqlx.IntegerType.STRING }));
+    expectType<Session>(await mysqlx.getSession({ user: 'foo', integerType: mysqlx.IntegerType.UNSAFE_BIGINT }));
+    expectType<Session>(await mysqlx.getSession({ user: 'foo', integerType: mysqlx.IntegerType.UNSAFE_STRING }));
 
     // getClient()
     expectType<Client>(mysqlx.getClient('foo'));

@@ -45,6 +45,7 @@ import { checkServerIdentity } from 'tls';
  *     socket?: string
  *   }]
  *   host?: string
+ *   integerType?: string
  *   password?: string
  *   port?: number
  *   resolveSrv?: boolean
@@ -92,6 +93,11 @@ export interface Options {
      * @defaultValue `'localhost'`
      */
     host?: string
+    /**
+     * The conversion mode for downstream integer values.
+     * @defaultValue `'unsafe_string'`
+     */
+    integerType?: string
     /**
      * The MySQL account password.
      * @defaultValue `''` (empty string)

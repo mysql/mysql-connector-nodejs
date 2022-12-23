@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -141,11 +141,9 @@ describe('SqlResultHandler inbound handler', () => {
                 handler._currentResultsetMetadata = ['bar'];
 
                 const setColumnMetadata = td.function();
-                const toArray = td.function();
 
                 td.when(row.deserialize('foo')).thenReturn({ setColumnMetadata });
-                td.when(setColumnMetadata(['bar'])).thenReturn({ toArray });
-                td.when(toArray()).thenReturn(['qux']);
+                td.when(setColumnMetadata(['bar'])).thenReturn(['qux']);
 
                 handler[row.MESSAGE_ID]('foo');
 
@@ -161,11 +159,9 @@ describe('SqlResultHandler inbound handler', () => {
                 handler._currentResultsetMetadata = ['bar'];
 
                 const setColumnMetadata = td.function();
-                const toArray = td.function();
 
                 td.when(row.deserialize('foo')).thenReturn({ setColumnMetadata });
-                td.when(setColumnMetadata(['bar'])).thenReturn({ toArray });
-                td.when(toArray()).thenReturn(['qux']);
+                td.when(setColumnMetadata(['bar'])).thenReturn(['qux']);
 
                 handler[row.MESSAGE_ID]('foo');
 
@@ -183,12 +179,10 @@ describe('SqlResultHandler inbound handler', () => {
                 handler._currentResultsetMetadata = ['baz'];
 
                 const setColumnMetadata = td.function();
-                const toArray = td.function();
 
                 td.when(row.deserialize('foo')).thenReturn({ setColumnMetadata });
                 td.when(row.deserialize('bar')).thenReturn({ setColumnMetadata });
-                td.when(setColumnMetadata(['baz'])).thenReturn({ toArray });
-                td.when(toArray()).thenReturn(['qux']);
+                td.when(setColumnMetadata(['baz'])).thenReturn(['qux']);
 
                 handler[row.MESSAGE_ID]('foo');
                 handler[row.MESSAGE_ID]('bar');

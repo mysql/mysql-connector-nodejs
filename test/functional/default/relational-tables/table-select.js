@@ -450,6 +450,225 @@ describe('selecting rows from a table using CRUD', () => {
         });
     });
 
+    context('integer values in a result set', () => {
+        const safeNegative = Number.MIN_SAFE_INTEGER + 1;
+        const safePositive = Number.MAX_SAFE_INTEGER - 1;
+        const unsafeNegative = '-9223372036854775808';
+        const unsafePositive = '18446744073709551615';
+
+        beforeEach('add relevant columns to the existing table', () => {
+            return session.sql(`ALTER TABLE \`${schema.getName()}\`.\`${table.getName()}\`
+                ADD COLUMN safeNegative BIGINT,
+                ADD COLUMN safePositive BIGINT UNSIGNED,
+                ADD COLUMN unsafeNegative BIGINT,
+                ADD COLUMN unsafePositive BIGINT UNSIGNED`)
+                .execute();
+        });
+
+        beforeEach('populate the table', async () => {
+            return table.insert('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                .values(safeNegative, safePositive, BigInt(unsafeNegative), BigInt(unsafePositive))
+                .execute();
+        });
+
+        context('consumed using a pull-based cursor', () => {
+            it('can always be decoded as a JavaScript string', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(`mysqlx://${itConfig.user}:${itConfig.password}@${itConfig.host}:${itConfig.port}/${itConfig.schema}?integer-type=${itConfig.integerType}`);
+                const want = [`${safeNegative}`, `${safePositive}`, unsafeNegative, unsafePositive];
+
+                const res = await session.getDefaultSchema().getTable(table.getName())
+                    .select('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can always be decoded as a JavaScript BigInt', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(`mysqlx://${itConfig.user}:${itConfig.password}@${itConfig.host}:${itConfig.port}/${itConfig.schema}?integer-type=${itConfig.integerType}`);
+                const want = [BigInt(safeNegative), BigInt(safePositive), BigInt(unsafeNegative), BigInt(unsafePositive)];
+
+                const res = await session.getDefaultSchema().getTable(table.getName())
+                    .select('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript string only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(`mysqlx://${itConfig.user}:${itConfig.password}@${itConfig.host}:${itConfig.port}/${itConfig.schema}?integer-type=${itConfig.integerType}`);
+                const want = [safeNegative, safePositive, unsafeNegative, unsafePositive];
+
+                const res = await session.getDefaultSchema().getTable(table.getName())
+                    .select('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript BigInt only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(`mysqlx://${itConfig.user}:${itConfig.password}@${itConfig.host}:${itConfig.port}/${itConfig.schema}?integer-type=${itConfig.integerType}`);
+                const want = [safeNegative, safePositive, BigInt(unsafeNegative), BigInt(unsafePositive)];
+
+                const res = await session.getDefaultSchema().getTable(table.getName())
+                    .select('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('are decoded by default as a JavaScript string when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, schema: schema.getName() };
+                const session = await mysqlx.getSession(`mysqlx://${itConfig.user}:${itConfig.password}@${itConfig.host}:${itConfig.port}/${itConfig.schema}?integer-type=${itConfig.integerType}`);
+                const want = [safeNegative, safePositive, unsafeNegative, unsafePositive];
+
+                const res = await session.getDefaultSchema().getTable(table.getName())
+                    .select('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+        });
+
+        context('consumed with a push-based cursor', () => {
+            it('can always be decoded as a JavaScript string', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [[`${safeNegative}`, `${safePositive}`, unsafeNegative, unsafePositive]];
+                const got = [];
+
+                await session.getDefaultSchema().getTable(table.getName())
+                    .select('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute(row => got.push(row));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can always be decoded as a JavaScript BigInt', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [[BigInt(safeNegative), BigInt(safePositive), BigInt(unsafeNegative), BigInt(unsafePositive)]];
+                const got = [];
+
+                await session.getDefaultSchema().getTable(table.getName())
+                    .select('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute(row => got.push(row));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript string only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [[safeNegative, safePositive, unsafeNegative, unsafePositive]];
+                const got = [];
+
+                await session.getDefaultSchema().getTable(table.getName())
+                    .select('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute(row => got.push(row));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript BigInt only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [[safeNegative, safePositive, BigInt(unsafeNegative), BigInt(unsafePositive)]];
+                const got = [];
+
+                await session.getDefaultSchema().getTable(table.getName())
+                    .select('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute(row => got.push(row));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('are decoded by default as a JavaScript string when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [[safeNegative, safePositive, unsafeNegative, unsafePositive]];
+                const got = [];
+
+                await session.getDefaultSchema().getTable(table.getName())
+                    .select('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute(row => got.push(row));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+        });
+    });
+
+    context('unsafe number of affected items', () => {
+        it('returns the number of records as a JavaScript string', async () => {
+            const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.STRING, schema: schema.getName() };
+            const rows = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
+            const want = rows.length.toString();
+
+            const session = await mysqlx.getSession(itConfig);
+            const res = await session.getDefaultSchema().getTable(table.getName()).insert('name', 'age')
+                .values(rows[0].name, rows[0].age)
+                .values(rows[1].name, rows[1].age)
+                .execute();
+
+            const got = res.getAffectedItemsCount();
+
+            await session.close();
+
+            expect(got).to.equal(want);
+        });
+
+        it('returns the number of records as a JavaScript BigInt', async () => {
+            const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.BIGINT, schema: schema.getName() };
+            const rows = [{ name: 'foo', age: 23 }, { name: 'bar', age: 42 }];
+            const want = BigInt(rows.length);
+
+            const session = await mysqlx.getSession(itConfig);
+            const res = await session.getDefaultSchema().getTable(table.getName()).insert('name', 'age')
+                .values(rows[0].name, rows[0].age)
+                .values(rows[1].name, rows[1].age)
+                .execute();
+
+            const got = res.getAffectedItemsCount();
+
+            await session.close();
+
+            expect(got).to.equal(want);
+        });
+    });
+
     context('when debug mode is enabled', () => {
         beforeEach('populate table', () => {
             return table.insert(['id', 'name', 'age'])

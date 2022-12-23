@@ -331,7 +331,7 @@ describe('finding documents in collections using CRUD', () => {
         });
     });
 
-    context('with limit', () => {
+    context('with limit and/or offset', () => {
         beforeEach('add fixtures', () => {
             return collection
                 .add({ _id: 1, name: 'foo' })
@@ -342,7 +342,7 @@ describe('finding documents in collections using CRUD', () => {
                 .execute();
         });
 
-        it('returns a given number of documents', () => {
+        it('returns a given number of documents specified with a JavaScript number', () => {
             const expected = [{ _id: 1, name: 'foo' }, { _id: 2, name: 'bar' }, { _id: 3, name: 'baz' }];
             const actual = [];
 
@@ -353,7 +353,29 @@ describe('finding documents in collections using CRUD', () => {
                 .then(() => expect(actual).to.deep.equal(expected));
         });
 
-        it('returns the documents after a given offset', () => {
+        it('returns a given number of documents specified with a JavaScript string', () => {
+            const expected = [{ _id: 1, name: 'foo' }, { _id: 2, name: 'bar' }, { _id: 3, name: 'baz' }];
+            const actual = [];
+
+            return collection
+                .find()
+                .limit('3')
+                .execute(doc => actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('returns a given number of documents specified with a JavaScript BigInt', () => {
+            const expected = [{ _id: 1, name: 'foo' }, { _id: 2, name: 'bar' }, { _id: 3, name: 'baz' }];
+            const actual = [];
+
+            return collection
+                .find()
+                .limit(3n)
+                .execute(doc => actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('returns the documents after a given offset specified with a JavaScript number', () => {
             const expected = [{ _id: 3, name: 'baz' }, { _id: 4, name: 'qux' }];
             const actual = [];
 
@@ -361,6 +383,30 @@ describe('finding documents in collections using CRUD', () => {
                 .find()
                 .limit(2)
                 .offset(2)
+                .execute(doc => actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('returns the documents after a given offset specified with a JavaScript string', () => {
+            const expected = [{ _id: 3, name: 'baz' }, { _id: 4, name: 'qux' }];
+            const actual = [];
+
+            return collection
+                .find()
+                .limit(2)
+                .offset('2')
+                .execute(doc => actual.push(doc))
+                .then(() => expect(actual).to.deep.equal(expected));
+        });
+
+        it('returns the documents after a given offset specified with a JavaScript BigInt', () => {
+            const expected = [{ _id: 3, name: 'baz' }, { _id: 4, name: 'qux' }];
+            const actual = [];
+
+            return collection
+                .find()
+                .limit(2)
+                .offset(2n)
                 .execute(doc => actual.push(doc))
                 .then(() => expect(actual).to.deep.equal(expected));
         });
@@ -627,6 +673,213 @@ describe('finding documents in collections using CRUD', () => {
         });
     });
 
+    context('upstream numeric values specified with a JavaScript BigInt', () => {
+        const unsafeNegative = '-9223372036854775808';
+        const unsafePositive = '18446744073709551615';
+
+        beforeEach('populate the collection', async () => {
+            await collection.add({ unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) })
+                .execute();
+        });
+
+        context('in the statements created by the application', () => {
+            it('do not lose precision in filtering criteria placeholder assignments', async () => {
+                const want = { unsafeNegative, unsafePositive };
+
+                const res = await collection.find('unsafeNegative = :negative AND unsafePositive = :positive')
+                    .bind('negative', BigInt(unsafeNegative))
+                    .bind('positive', BigInt(unsafePositive))
+                    .fields('unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                expect(got).to.deep.equal(want);
+            });
+        });
+    });
+
+    context('integer values in a result set', () => {
+        const safeNegative = Number.MIN_SAFE_INTEGER + 1;
+        const safePositive = Number.MAX_SAFE_INTEGER - 1;
+        const unsafeNegative = '-9223372036854775808';
+        const unsafePositive = '18446744073709551615';
+
+        beforeEach('populate the collection', async () => {
+            await collection.add({ safeNegative, safePositive, unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) })
+                .execute();
+        });
+
+        context('consumed using a pull-based cursor', () => {
+            it('can always be decoded as a JavaScript string', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = { safeNegative: `${safeNegative}`, safePositive: `${safePositive}`, unsafeNegative, unsafePositive };
+
+                const res = await session.getDefaultSchema().getCollection(collection.getName())
+                    .find()
+                    .fields('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can always be decoded as a JavaScript BigInt', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = { safeNegative: BigInt(safeNegative), safePositive: BigInt(safePositive), unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) };
+
+                const res = await session.getDefaultSchema().getCollection(collection.getName())
+                    .find()
+                    .fields('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript string only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = { safeNegative, safePositive, unsafeNegative: `${unsafeNegative}`, unsafePositive: `${unsafePositive}` };
+
+                const res = await session.getDefaultSchema().getCollection(collection.getName())
+                    .find()
+                    .fields('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript BigInt only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = { safeNegative, safePositive, unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) };
+
+                const res = await session.getDefaultSchema().getCollection(collection.getName())
+                    .find()
+                    .fields('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('are decoded by default as a JavaScript string when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = { safeNegative, safePositive, unsafeNegative: `${unsafeNegative}`, unsafePositive: `${unsafePositive}` };
+
+                const res = await session.getDefaultSchema().getCollection(collection.getName())
+                    .find()
+                    .fields('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+        });
+
+        context('consumed using a push-based cursor', () => {
+            it('can always be decoded as a JavaScript string', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(`mysqlx://${itConfig.user}:${itConfig.password}@${itConfig.host}:${itConfig.port}/${itConfig.schema}?integer-type=${itConfig.integerType}`);
+                const want = [{ safeNegative: `${safeNegative}`, safePositive: `${safePositive}`, unsafeNegative, unsafePositive }];
+                const got = [];
+
+                await session.getDefaultSchema().getCollection(collection.getName())
+                    .find()
+                    .fields('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute(doc => got.push(doc));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can always be decoded as a JavaScript BigInt', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(`mysqlx://${itConfig.user}:${itConfig.password}@${itConfig.host}:${itConfig.port}/${itConfig.schema}?integer-type=${itConfig.integerType}`);
+                const want = [{ safeNegative: BigInt(safeNegative), safePositive: BigInt(safePositive), unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) }];
+                const got = [];
+
+                await session.getDefaultSchema().getCollection(collection.getName())
+                    .find()
+                    .fields('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute(doc => got.push(doc));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript string only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(`mysqlx://${itConfig.user}:${itConfig.password}@${itConfig.host}:${itConfig.port}/${itConfig.schema}?integer-type=${itConfig.integerType}`);
+                const want = [{ safeNegative, safePositive, unsafeNegative: `${unsafeNegative}`, unsafePositive: `${unsafePositive}` }];
+                const got = [];
+
+                await session.getDefaultSchema().getCollection(collection.getName())
+                    .find()
+                    .fields('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute(doc => got.push(doc));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript BigInt only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(`mysqlx://${itConfig.user}:${itConfig.password}@${itConfig.host}:${itConfig.port}/${itConfig.schema}?integer-type=${itConfig.integerType}`);
+                const want = [{ safeNegative, safePositive, unsafeNegative: BigInt(unsafeNegative), unsafePositive: BigInt(unsafePositive) }];
+                const got = [];
+
+                await session.getDefaultSchema().getCollection(collection.getName())
+                    .find()
+                    .fields('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute(doc => got.push(doc));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('are decoded by default as a JavaScript string when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, schema: schema.getName() };
+                const session = await mysqlx.getSession(`mysqlx://${itConfig.user}:${itConfig.password}@${itConfig.host}:${itConfig.port}/${itConfig.schema}?integer-type=${itConfig.integerType}`);
+                const want = [{ safeNegative, safePositive, unsafeNegative: `${unsafeNegative}`, unsafePositive: `${unsafePositive}` }];
+                const got = [];
+
+                await session.getDefaultSchema().getCollection(collection.getName())
+                    .find()
+                    .fields('safeNegative', 'safePositive', 'unsafeNegative', 'unsafePositive')
+                    .execute(doc => got.push(doc));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+        });
+    });
+
     context('when debug mode is enabled', () => {
         beforeEach('populate collection', () => {
             return collection.add({ name: 'foo', count: 2 })
@@ -794,7 +1047,7 @@ describe('finding documents in collections using CRUD', () => {
                 });
         });
 
-        it('logs the correct limit parameters', () => {
+        it('logs limit parameters specified with a JavaScript number', () => {
             const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'document-store', 'find-with-limit.js');
 
             return fixtures.collectLogs('protocol:outbound:Mysqlx.Crud.Find', script, [schema.getName(), collection.getName(), 1, 1])

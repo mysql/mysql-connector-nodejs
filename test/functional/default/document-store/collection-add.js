@@ -294,37 +294,73 @@ describe('adding documents to a collection using CRUD', () => {
 
     // JavaScript can happily store Number.MAX_SAFE_INTEGER + 1 and Number.MAX_SAFE_INTEGER - 1.
     context('unsafe numeric values', () => {
-        it('saves unsafe JavaScript numbers as strings', async () => {
-            const unsafePositive = Number.MAX_SAFE_INTEGER + 1;
-            const unsafeNegative = Number.MIN_SAFE_INTEGER - 1;
-            const doc = { unsafePositive, unsafeNegative };
-            const want = { unsafePositive: `${unsafePositive}`, unsafeNegative: `${unsafeNegative}` };
+        context('specified using a JavaScript string', () => {
+            it('saves values of plain JavaScript object fields without losing precision', async () => {
+                const unsafePositive = Number.MAX_SAFE_INTEGER + 1;
+                const unsafeNegative = Number.MIN_SAFE_INTEGER - 1;
+                const doc = { unsafePositive, unsafeNegative };
+                const want = { unsafePositive: `${unsafePositive}`, unsafeNegative: `${unsafeNegative}` };
 
-            await collection.add(doc)
-                .execute();
+                await collection.add(doc)
+                    .execute();
 
-            const res = await collection.find()
-                .fields('unsafePositive', 'unsafeNegative')
-                .execute();
+                const res = await collection.find()
+                    .fields('unsafePositive', 'unsafeNegative')
+                    .execute();
 
-            expect(res.fetchOne()).to.deep.equal(want);
+                expect(res.fetchOne()).to.deep.equal(want);
+            });
+
+            it('BUG#34767204 saves values of JSON string fields without losing precision', async () => {
+                const signedBigInt = '-9223372036854775808';
+                const unsafeDecimal = '9.9999999999999999';
+                const unsignedBigInt = '18446744073709551615';
+                const doc = `{ "signedBigInt": ${signedBigInt}, "unsafeDecimal": ${unsafeDecimal}, "unsignedBigInt": ${unsignedBigInt} }`;
+                const want = { signedBigInt, unsafeDecimal, unsignedBigInt };
+
+                await collection.add(doc)
+                    .execute();
+
+                const res = await collection.find()
+                    .fields('signedBigInt', 'unsignedBigInt', 'unsafeDecimal')
+                    .execute();
+
+                expect(res.fetchOne()).to.deep.equal(want);
+            });
         });
 
-        it('BUG#34767204 saves JSON field numeric values without loosing precision', async () => {
-            const signedBigInt = '-9223372036854775808';
-            const unsafeDecimal = '9.9999999999999999';
-            const unsignedBigInt = '18446744073709551615';
-            const doc = `{ "signedBigInt": ${signedBigInt}, "unsafeDecimal": ${unsafeDecimal}, "unsignedBigInt": ${unsignedBigInt} }`;
-            const want = { signedBigInt, unsafeDecimal, unsignedBigInt };
+        context('specified using a JavaScript BigInt', () => {
+            it('saves values of plain JavaScript object fields without losing precision', async () => {
+                const unsafeNegative = BigInt('-9223372036854775808');
+                const unsafePositive = BigInt('18446744073709551615');
+                const doc = { unsafePositive, unsafeNegative };
+                const want = { unsafePositive: `${unsafePositive}`, unsafeNegative: `${unsafeNegative}` };
 
-            await collection.add(doc)
-                .execute();
+                await collection.add(doc)
+                    .execute();
 
-            const res = await collection.find()
-                .fields('signedBigInt', 'unsignedBigInt', 'unsafeDecimal')
-                .execute();
+                const res = await collection.find()
+                    .fields('unsafePositive', 'unsafeNegative')
+                    .execute();
 
-            expect(res.fetchOne()).to.deep.equal(want);
+                expect(res.fetchOne()).to.deep.equal(want);
+            });
+
+            it('saves values of JSON string fields without losing precision', async () => {
+                const unsafeNegative = BigInt('-9223372036854775808');
+                const unsafePositive = BigInt('18446744073709551615');
+                const doc = `{ "unsafePositive": ${unsafePositive}, "unsafeNegative": ${unsafeNegative} }`;
+                const want = { unsafePositive: `${unsafePositive}`, unsafeNegative: `${unsafeNegative}` };
+
+                await collection.add(doc)
+                    .execute();
+
+                const res = await collection.find()
+                    .fields('unsafePositive', 'unsafeNegative')
+                    .execute();
+
+                expect(res.fetchOne()).to.deep.equal(want);
+            });
         });
     });
 
@@ -357,6 +393,40 @@ describe('adding documents to a collection using CRUD', () => {
             return collection.add(documents)
                 .execute()
                 .then(res => expect(res.getAffectedItemsCount()).to.equal(expected));
+        });
+    });
+
+    context('unsafe number of affected items', () => {
+        it('returns the number of documents as a JavaScript string', async () => {
+            const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.STRING, schema: schema.getName() };
+            const documents = [{ name: 'foo' }, { name: 'bar' }, { name: 'baz' }];
+            const want = documents.length.toString();
+
+            const session = await mysqlx.getSession(itConfig);
+            const res = await session.getDefaultSchema().getCollection(collection.getName()).add(documents)
+                .execute();
+
+            const got = res.getAffectedItemsCount();
+
+            await session.close();
+
+            expect(got).to.equal(want);
+        });
+
+        it('returns the number of documents as a JavaScript BigInt', async () => {
+            const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.BIGINT, schema: schema.getName() };
+            const documents = [{ name: 'foo' }, { name: 'bar' }, { name: 'baz' }];
+            const want = BigInt(documents.length);
+
+            const session = await mysqlx.getSession(itConfig);
+            const res = await session.getDefaultSchema().getCollection(collection.getName()).add(documents)
+                .execute();
+
+            const got = res.getAffectedItemsCount();
+
+            await session.close();
+
+            expect(got).to.equal(want);
         });
     });
 

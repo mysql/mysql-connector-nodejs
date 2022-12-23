@@ -116,37 +116,39 @@ describe('CollectionAdd statement', () => {
 
         it('executes a CollectionAdd statement and returns a Result instance with the details provided by the server', () => {
             const crudInsert = td.function();
-            const connection = { getClient: () => ({ crudInsert }), isIdle: () => false, isOpen: () => true };
-            const expected = 'bar';
-            const rows = 'baz';
-            const schemaName = 'qux';
+            const integerType = 'foo';
+            const connection = { getClient: () => ({ crudInsert }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
+            const rows = 'bar';
+            const schemaName = 'baz';
             const schema = { getName: () => schemaName };
-            const tableName = 'quux';
-            const details = 'quuz';
+            const tableName = 'qux';
+            const details = 'quux';
+            const want = 'quuux';
 
             td.when(crudInsert({ dataModel, rows, schemaName, tableName, upsert: false })).thenResolve(details);
-            td.when(Result(details)).thenReturn(expected);
+            td.when(Result({ ...details, integerType })).thenReturn(want);
 
             return CollectionAdd({ connection, rows, schema, tableName }).execute()
-                .then(got => expect(got).to.equal(expected));
+                .then(got => expect(got).to.equal(want));
         });
 
         it('executes a CollectionAdd statement in upsert mode and returns a Result instance with the details provided by the server', () => {
             const crudInsert = td.function();
-            const connection = { getClient: () => ({ crudInsert }), isIdle: () => false, isOpen: () => true };
-            const expected = 'bar';
-            const rows = 'baz';
-            const schemaName = 'qux';
+            const integerType = 'foo';
+            const connection = { getClient: () => ({ crudInsert }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
+            const rows = 'bar';
+            const schemaName = 'ba<';
             const schema = { getName: () => schemaName };
-            const tableName = 'quux';
-            const details = 'quuz';
+            const tableName = 'qux';
+            const details = 'quux';
             const upsert = true;
+            const want = 'quuux';
 
             td.when(crudInsert({ dataModel, rows, schemaName, tableName, upsert })).thenResolve(details);
-            td.when(Result(details)).thenReturn(expected);
+            td.when(Result({ ...details, integerType })).thenReturn(want);
 
             return CollectionAdd({ connection, rows, schema, tableName, upsert }).execute()
-                .then(got => expect(got).to.equal(expected));
+                .then(got => expect(got).to.equal(want));
         });
 
         it('does not execute the CollectionAdd statement when the list of rows to insert is empty', () => {

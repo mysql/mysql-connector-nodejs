@@ -1217,6 +1217,304 @@ describe('raw SQL', () => {
         });
     });
 
+    context('upstream unsafe integer values', () => {
+        const unsafePositive = '18446744073709551615';
+        const unsafeNegative = '-9223372036854775808';
+
+        context('to be saved in a column', () => {
+            beforeEach('create a table', async () => {
+                await session.sql('CREATE TABLE test (unsafePositive BIGINT UNSIGNED, unsafeNegative BIGINT SIGNED)')
+                    .execute();
+            });
+
+            context('specified with a JavaScript string', () => {
+                it('saves values interpolated in the SQL string without losing precision', async () => {
+                    const want = [`${unsafePositive}`, `${unsafeNegative}`];
+
+                    await session.sql(`INSERT INTO test (unsafePositive, unsafeNegative) VALUES (${unsafePositive}, ${unsafeNegative})`)
+                        .execute();
+
+                    const res = await session.sql('SELECT unsafePositive, unsafeNegative FROM test')
+                        .execute();
+
+                    expect(res.fetchOne()).to.deep.equal(want);
+                });
+
+                it('saves values provided as an ordinal placeholder assignment without losing precision', async () => {
+                    const want = [`${unsafePositive}`, `${unsafeNegative}`];
+
+                    await session.sql('INSERT INTO test (unsafePositive, unsafeNegative) VALUES (?, ?)')
+                        .bind(unsafePositive, unsafeNegative)
+                        .execute();
+
+                    const res = await session.sql('SELECT unsafePositive, unsafeNegative FROM test')
+                        .execute();
+
+                    expect(res.fetchOne()).to.deep.equal(want);
+                });
+            });
+
+            context('specified with a JavaScript BigInt', () => {
+                it('saves values interpolated in the SQL string without losing precision', async () => {
+                    const want = [`${unsafePositive}`, `${unsafeNegative}`];
+
+                    await session.sql(`INSERT INTO test (unsafePositive, unsafeNegative) VALUES (${BigInt(unsafePositive)}, ${BigInt(unsafeNegative)})`)
+                        .execute();
+
+                    const res = await session.sql('SELECT unsafePositive, unsafeNegative FROM test')
+                        .execute();
+
+                    expect(res.fetchOne()).to.deep.equal(want);
+                });
+
+                it('saves values provided as an ordinal placeholder assignment without losing precision', async () => {
+                    const want = [`${unsafePositive}`, `${unsafeNegative}`];
+
+                    await session.sql('INSERT INTO test (unsafePositive, unsafeNegative) VALUES (?, ?)')
+                        .bind(BigInt(unsafePositive), BigInt(unsafeNegative))
+                        .execute();
+
+                    const res = await session.sql('SELECT unsafePositive, unsafeNegative FROM test')
+                        .execute();
+
+                    expect(res.fetchOne()).to.deep.equal(want);
+                });
+            });
+        });
+
+        context('to be saved in a document field', () => {
+            beforeEach('create a table', async () => {
+                await session.sql('CREATE TABLE test (doc JSON)')
+                    .execute();
+            });
+
+            context('specified with a JavaScript string', () => {
+                it('saves values interpolated in the SQL string without losing precision', async () => {
+                    const doc = `{ "unsafePositive": ${unsafePositive}, "unsafeNegative": ${unsafeNegative} }`;
+                    const want = [{ unsafePositive, unsafeNegative }];
+
+                    await session.sql(`INSERT INTO test (doc) VALUES ('${doc}')`)
+                        .execute();
+
+                    const res = await session.sql('SELECT doc FROM test')
+                        .execute();
+
+                    expect(res.fetchOne()).to.deep.equal(want);
+                });
+
+                it('saves values provided as an ordinal placeholder assignment without losing precision', async () => {
+                    const doc = `{ "unsafePositive": ${unsafePositive}, "unsafeNegative": ${unsafeNegative} }`;
+                    const want = [{ unsafePositive, unsafeNegative }];
+
+                    await session.sql('INSERT INTO test (doc) VALUES (?)')
+                        .bind(doc)
+                        .execute();
+
+                    const res = await session.sql('SELECT doc FROM test')
+                        .execute();
+
+                    expect(res.fetchOne()).to.deep.equal(want);
+                });
+            });
+
+            context('specified with a JavaScript BigInt', () => {
+                it('saves values interpolated in the SQL string without losing precision', async () => {
+                    const doc = `{ "unsafePositive": ${BigInt(unsafePositive)}, "unsafeNegative": ${BigInt(unsafeNegative)} }`;
+                    const want = [{ unsafePositive, unsafeNegative }];
+
+                    await session.sql(`INSERT INTO test (doc) VALUES ('${doc}')`)
+                        .execute();
+
+                    const res = await session.sql('SELECT doc FROM test')
+                        .execute();
+
+                    expect(res.fetchOne()).to.deep.equal(want);
+                });
+
+                it('saves values provided as an ordinal placeholder assignment without losing precision', async () => {
+                    const doc = `{ "unsafePositive": ${BigInt(unsafePositive)}, "unsafeNegative": ${BigInt(unsafeNegative)} }`;
+                    const want = [{ unsafePositive, unsafeNegative }];
+
+                    await session.sql('INSERT INTO test (doc) VALUES (?)')
+                        .bind(doc)
+                        .execute();
+
+                    const res = await session.sql('SELECT doc FROM test')
+                        .execute();
+
+                    expect(res.fetchOne()).to.deep.equal(want);
+                });
+            });
+        });
+    });
+
+    context('in a result set', () => {
+        const safeNegative = Number.MIN_SAFE_INTEGER + 1;
+        const safePositive = Number.MAX_SAFE_INTEGER - 1;
+        const unsafeNegative = '-9223372036854775808';
+        const unsafePositive = '18446744073709551615';
+
+        beforeEach('create a table', async () => {
+            await session.sql('CREATE TABLE test (safePositive BIGINT UNSIGNED, safeNegative BIGINT, unsafePositive BIGINT UNSIGNED, unsafeNegative BIGINT)')
+                .execute();
+        });
+
+        beforeEach('populate the table', async () => {
+            await session.sql('INSERT INTO test (safeNegative, safePositive, unsafeNegative, unsafePositive) VALUES (?, ?, ?, ?)')
+                .bind(safeNegative, safePositive, unsafeNegative, unsafePositive)
+                .execute();
+        });
+
+        context('consumed using a pull-based cursor', () => {
+            it('can always be decoded as a JavaScript string', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [`${safeNegative}`, `${safePositive}`, unsafeNegative, unsafePositive];
+
+                const res = await session.sql('SELECT safeNegative, safePositive, unsafeNegative, unsafePositive FROM test')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can always be decoded as a JavaScript BigInt', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [BigInt(safeNegative), BigInt(safePositive), BigInt(unsafeNegative), BigInt(unsafePositive)];
+
+                const res = await session.sql('SELECT safeNegative, safePositive, unsafeNegative, unsafePositive FROM test')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript string only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [safeNegative, safePositive, unsafeNegative, unsafePositive];
+
+                const res = await session.sql('SELECT safeNegative, safePositive, unsafeNegative, unsafePositive FROM test')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript BigInt only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [safeNegative, safePositive, BigInt(unsafeNegative), BigInt(unsafePositive)];
+
+                const res = await session.sql('SELECT safeNegative, safePositive, unsafeNegative, unsafePositive FROM test')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('are decoded by default as a JavaScript string when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [safeNegative, safePositive, unsafeNegative, unsafePositive];
+
+                const res = await session.sql('SELECT safeNegative, safePositive, unsafeNegative, unsafePositive FROM test')
+                    .execute();
+
+                const got = res.fetchOne();
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+        });
+
+        context('consumed using a pull-based cursor', () => {
+            it('can always be decoded as a JavaScript string', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [[`${safeNegative}`, `${safePositive}`, unsafeNegative, unsafePositive]];
+                const got = [];
+
+                await session.sql('SELECT safeNegative, safePositive, unsafeNegative, unsafePositive FROM test')
+                    .execute(row => got.push(row));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can always be decoded as a JavaScript BigInt', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [[BigInt(safeNegative), BigInt(safePositive), BigInt(unsafeNegative), BigInt(unsafePositive)]];
+                const got = [];
+
+                await session.sql('SELECT safeNegative, safePositive, unsafeNegative, unsafePositive FROM test')
+                    .execute(row => got.push(row));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript string only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_STRING, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [[safeNegative, safePositive, unsafeNegative, unsafePositive]];
+                const got = [];
+
+                await session.sql('SELECT safeNegative, safePositive, unsafeNegative, unsafePositive FROM test')
+                    .execute(row => got.push(row));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('can be decoded as a JavaScript BigInt only when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, integerType: mysqlx.IntegerType.UNSAFE_BIGINT, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [[safeNegative, safePositive, BigInt(unsafeNegative), BigInt(unsafePositive)]];
+                const got = [];
+
+                await session.sql('SELECT safeNegative, safePositive, unsafeNegative, unsafePositive FROM test')
+                    .execute(row => got.push(row));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+
+            it('are decoded by default as a JavaScript string when they lose precision', async () => {
+                const itConfig = { ...config, ...baseConfig, schema: schema.getName() };
+                const session = await mysqlx.getSession(itConfig);
+                const want = [[safeNegative, safePositive, unsafeNegative, unsafePositive]];
+                const got = [];
+
+                await session.sql('SELECT safeNegative, safePositive, unsafeNegative, unsafePositive FROM test')
+                    .execute(row => got.push(row));
+
+                await session.close();
+
+                expect(got).to.deep.equal(want);
+            });
+        });
+    });
+
     context('when debug mode is enabled', () => {
         const script = path.join(__dirname, '..', '..', 'fixtures', 'scripts', 'sql-statement.js');
         const statement = `SELECT name AS col FROM \`${baseConfig.schema}\`.test`;

@@ -87,10 +87,11 @@ describe('CollectionFind', () => {
         it('executes a CollectionFind statement and returns a DocResult instance with the details provided by the server', () => {
             const context = 'foo';
             const crudFind = td.function();
-            const connection = { getClient: () => ({ crudFind }), isIdle: () => false, isOpen: () => true };
-            const details = 'bar';
+            const integerType = 'bar';
+            const connection = { getClient: () => ({ crudFind }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
+            const details = { baz: 'qux' };
             const execute = td.function();
-            const expected = 'baz';
+            const want = 'quux';
 
             td.when(Preparing({ connection })).thenReturn({ execute });
 
@@ -98,36 +99,38 @@ describe('CollectionFind', () => {
 
             td.when(crudFind(statement, undefined)).thenReturn(context);
             td.when(execute(td.matchers.argThat(fn => fn() === context), undefined)).thenResolve(details);
-            td.when(Result(details)).thenReturn(expected);
+            td.when(Result({ ...details, integerType })).thenReturn(want);
 
             return statement.execute()
-                .then(got => expect(got).to.equal(expected));
+                .then(got => expect(got).to.equal(want));
         });
 
         it('executes a CollectionFind statement with a given cursor and returns a DocResult instance with the details provided by the server', () => {
             const crudFind = td.function();
-            const connection = { getClient: () => ({ crudFind }), isIdle: () => false, isOpen: () => true };
+            const integerType = 'foo';
+            const connection = { getClient: () => ({ crudFind }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
             const dataCursor = td.function();
-            const details = 'foo';
+            const details = { bar: 'baz' };
             const execute = td.function();
-            const expected = 'bar';
-            const row = ['baz'];
-            const statementContext = 'qux';
-            const cursorContext = 'quux';
+            const value = 'qux';
+            const row = { toArray: () => [value] };
+            const statementContext = 'quuux';
+            const cursorContext = 'quuuux';
             const cursorContextMatcher = td.matchers.argThat(fn => fn(row) === cursorContext);
             const statementContextMatcher = td.matchers.argThat(fn => fn() === statementContext);
+            const want = 'quux';
 
             td.when(Preparing({ connection })).thenReturn({ execute });
 
             const statement = CollectionFind({ connection });
 
-            td.when(dataCursor(row[0])).thenReturn(cursorContext);
+            td.when(dataCursor(value)).thenReturn(cursorContext);
             td.when(crudFind(statement, cursorContextMatcher)).thenReturn(statementContext);
             td.when(execute(statementContextMatcher, cursorContextMatcher)).thenResolve(details);
-            td.when(Result(details)).thenReturn(expected);
+            td.when(Result({ ...details, integerType })).thenReturn(want);
 
             return statement.execute(dataCursor)
-                .then(got => expect(got).to.equal(expected));
+                .then(got => expect(got).to.equal(want));
         });
 
         it('fails to execute the CollectionFind statement when the connection is not open', () => {

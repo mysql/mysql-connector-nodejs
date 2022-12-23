@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,6 +32,7 @@
 
 /* eslint-env node, mocha */
 
+const IntegerType = require('../../../lib/Protocol/Wrappers/ScalarValues/int64').Type;
 const expect = require('chai').expect;
 const rowResult = require('../../../lib/DevAPI/RowResult');
 const td = require('testdouble');
@@ -60,23 +61,25 @@ describe('RowResult', () => {
         it('returns an array containing the data counterpart of each item in the result set', () => {
             const row = { toArray };
             const rows = ['foo', 'bar'];
+            const integerType = 'baz';
 
-            td.when(toArray()).thenReturn(rows[1]);
-            td.when(toArray(), { times: 1 }).thenReturn(rows[0]);
+            td.when(toArray({ integerType })).thenReturn(rows[1]);
+            td.when(toArray({ integerType }), { times: 1 }).thenReturn(rows[0]);
 
-            expect(rowResult({ results: [[row, row]] }).fetchAll()).to.deep.equal(rows);
+            expect(rowResult({ results: [[row, row]], integerType }).fetchAll()).to.deep.equal(rows);
         });
 
         it('is aware that fetchOne() might have been used before', () => {
             const row = { toArray };
             const rows = ['foo', 'bar'];
+            const integerType = 'baz';
 
-            td.when(toArray()).thenReturn(rows[1]);
-            td.when(toArray(), { times: 1 }).thenReturn(rows[0]);
+            td.when(toArray({ integerType })).thenReturn(rows[1]);
+            td.when(toArray({ integerType }), { times: 1 }).thenReturn(rows[0]);
 
             const results = [[null, null, row, row]];
 
-            expect(rowResult({ results }).fetchAll()).to.deep.equal(rows);
+            expect(rowResult({ results, integerType }).fetchAll()).to.deep.equal(rows);
         });
     });
 
@@ -95,10 +98,11 @@ describe('RowResult', () => {
         it('returns the next available item in the result set', () => {
             const row = { toArray };
             const rows = [['foo']];
+            const integerType = 'bar';
 
-            td.when(toArray()).thenReturn(rows[0]);
+            td.when(toArray({ integerType })).thenReturn(rows[0]);
 
-            expect(rowResult({ results: [[row]] }).fetchOne()).to.equal(rows[0]);
+            expect(rowResult({ results: [[row]], integerType }).fetchOne()).to.equal(rows[0]);
         });
 
         it('deallocates the memory when a result set item has been consumed', () => {
@@ -131,8 +135,38 @@ describe('RowResult', () => {
     });
 
     context('getAffectedItemsCount()', () => {
-        it('returns the same result as getAffectedRowsCount()', () => {
-            expect(rowResult({ rowsAffected: 3 }).getAffectedItemsCount()).to.equal(3);
+        context('when the number of affected items by the statement is below Number.MAX_SAFE_INTEGER', () => {
+            it('returns the value as a JavaScript number by default', () => {
+                expect(rowResult({ rowsAffected: 3n }).getAffectedItemsCount()).to.equal(3);
+            });
+
+            it('can return the value as a JavaScript string', () => {
+                expect(rowResult({ rowsAffected: 3n, integerType: IntegerType.STRING }).getAffectedItemsCount()).to.equal('3');
+            });
+
+            it('can return the value as a JavaScript BigInt', () => {
+                expect(rowResult({ rowsAffected: 3n, integerType: IntegerType.BIGINT }).getAffectedItemsCount()).to.equal(3n);
+            });
+
+            it('ignores a specific return type for unsafe integers', () => {
+                expect(rowResult({ rowsAffected: 3n, integerType: IntegerType.UNSAFE_BIGINT }).getAffectedItemsCount()).to.equal(3);
+                expect(rowResult({ rowsAffected: 3n, integerType: IntegerType.UNSAFE_STRING }).getAffectedItemsCount()).to.equal(3);
+            });
+        });
+
+        context('when the number of affected items by the statement is above Number.MAX_SAFE_INTEGER', () => {
+            it('returns the value as a JavaScript string by default', () => {
+                expect(rowResult({ rowsAffected: 18446744073709551615n }).getAffectedItemsCount()).to.equal('18446744073709551615');
+            });
+
+            it('returns the value as a JavaScript string if explicitly specified', () => {
+                expect(rowResult({ rowsAffected: 18446744073709551615n, integerType: IntegerType.UNSAFE_STRING }).getAffectedItemsCount()).to.equal('18446744073709551615');
+            });
+
+            it('can return the value as a JavaScript BigInt', () => {
+                expect(rowResult({ rowsAffected: 18446744073709551615n, integerType: IntegerType.BIGINT }).getAffectedItemsCount()).to.equal(18446744073709551615n);
+                expect(rowResult({ rowsAffected: 18446744073709551615n, integerType: IntegerType.UNSAFE_BIGINT }).getAffectedItemsCount()).to.equal(18446744073709551615n);
+            });
         });
     });
 
@@ -205,14 +239,15 @@ describe('RowResult', () => {
         });
 
         it('moves the cursor to the next available result set', () => {
-            const res = rowResult({ results: [[{ toArray: fstCall }], [{ toArray: sndCall }]] });
+            const integerType = 'foo';
+            const res = rowResult({ results: [[{ toArray: fstCall }], [{ toArray: sndCall }]], integerType });
 
-            td.when(fstCall()).thenReturn(['foo']);
-            td.when(sndCall()).thenReturn(['bar']);
+            td.when(fstCall({ integerType })).thenReturn(['bar']);
+            td.when(sndCall({ integerType })).thenReturn(['baz']);
 
             // eslint-disable-next-line no-unused-expressions
             expect(res.nextResult()).to.be.true;
-            expect(res.fetchOne()).to.deep.equal(['bar']);
+            expect(res.fetchOne()).to.deep.equal(['baz']);
         });
     });
 });

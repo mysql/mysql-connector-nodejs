@@ -41,6 +41,7 @@ const plainAuth = require('./lib/Authentication/PlainAuth');
 const query = require('./lib/DevAPI/Query');
 const sha256MemoryAuth = require('./lib/Authentication/SHA256MemoryAuth');
 const schema = require('./lib/DevAPI/Schema');
+const connection = require('./lib/DevAPI/Connection');
 
 /**
  * @module mysqlx
@@ -204,3 +205,15 @@ exports.LockContention = locking.LockContention;
 exports.Schema = {
     ValidationLevel: schema.ValidationLevel
 };
+
+/**
+ * Conversion mode for downstream integer values.
+ * @const
+ * @type {module:Connection~IntegerType}
+ * @example
+ * mysqlx.IntegerType.BIGINT
+ * mysqlx.IntegerType.STRING
+ * mysqlx.IntegerType.UNSAFE_BIGINT
+ * mysqlx.IntegerType.UNSAFE_STRING
+ */
+exports.IntegerType = connection.IntegerType;

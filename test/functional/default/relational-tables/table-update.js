@@ -297,6 +297,50 @@ describe('updating rows in a table using CRUD', () => {
         });
     });
 
+    context('unsafe numeric values', () => {
+        const unsafeNegative = '-9223372036854775808';
+        const unsafePositive = '18446744073709551615';
+
+        beforeEach('add BIGINT columns to the existing table', () => {
+            return session.sql('ALTER TABLE test ADD COLUMN (unsafePositive BIGINT UNSIGNED, unsafeNegative BIGINT SIGNED)')
+                .execute();
+        });
+
+        it('updates values specified with a JavaScript string', async () => {
+            const want = [unsafeNegative, unsafePositive];
+
+            await table.update()
+                .where('true')
+                .set('unsafeNegative', unsafeNegative)
+                .set('unsafePositive', unsafePositive)
+                .execute();
+
+            const res = await table.select('unsafeNegative', 'unsafePositive')
+                .execute();
+
+            const got = res.fetchOne();
+
+            expect(got).to.deep.equal(want);
+        });
+
+        it('updates values specified with a JavaScript BigInt', async () => {
+            const want = [unsafeNegative, unsafePositive];
+
+            await table.update()
+                .where('true')
+                .set('unsafeNegative', BigInt(unsafeNegative))
+                .set('unsafePositive', BigInt(unsafePositive))
+                .execute();
+
+            const res = await table.select('unsafeNegative', 'unsafePositive')
+                .execute();
+
+            const got = res.fetchOne();
+
+            expect(got).to.deep.equal(want);
+        });
+    });
+
     context('when debug mode is enabled', () => {
         const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'relational-tables', 'update.js');
 

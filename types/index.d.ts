@@ -112,6 +112,16 @@ export {
 };
 
 /**
+ * Conversion mode to handle downstream integer values.
+ */
+export const enum IntegerType {
+    BIGINT = 'bigint',
+    STRING = 'string',
+    UNSAFE_BIGINT = 'unsafe_bigint',
+    UNSAFE_STRING = 'unsafe_string'
+}
+
+/**
  * Parser mode selector.
  */
 export const enum Mode {

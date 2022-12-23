@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -37,10 +37,10 @@ const config = JSON.parse(process.env.MYSQLX_CLIENT_CONFIG);
 // required arguments
 const schema = process.argv[2];
 const collection = process.argv[3];
-// limit should be a number
-const limit = parseInt(process.argv[4], 10);
-// offset should be a number
-const offset = parseInt(process.argv[5], 10);
+// limit should be an integer
+const limit = BigInt(process.argv[4]);
+// offset should be an integer
+const offset = BigInt(process.argv[5]);
 
 const baseConfig = Object.assign({}, config, { schema });
 

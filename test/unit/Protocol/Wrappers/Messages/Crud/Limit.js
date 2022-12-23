@@ -108,13 +108,11 @@ describe('Mysqlx.Crud.Limit wrapper', () => {
 
             it('returns a textual representation of a Mysqlx.Crud.Limit message', () => {
                 const proto = new CrudStub.Limit();
-                const count = 'foo';
-                const offset = 'bar';
 
-                td.when(proto.getRowCount()).thenReturn(count);
-                td.when(proto.getOffset()).thenReturn(offset);
+                td.when(proto.getRowCount()).thenReturn(3);
+                td.when(proto.getOffset()).thenReturn(3);
 
-                expect(Limit(proto).toJSON()).to.deep.equal({ offset, row_count: count });
+                expect(Limit(proto).toJSON()).to.deep.equal({ offset: 3n, row_count: 3n });
             });
         });
 

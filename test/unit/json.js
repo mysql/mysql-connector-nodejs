@@ -36,19 +36,169 @@ const expect = require('chai').expect;
 const MyJSON = require('../../lib/json');
 
 describe('JSON', () => {
+    const safeInt = 1234;
+    const safeDecimal = 1.234;
     const signedBigInt = '-9223372036854775808';
     const unsignedBigInt = '18446744073709551615';
     const unsafeDecimal = '9.9999999999999999';
-    const json = `{ "a": "foo", "b": true, "c": false, "d": null, "e": 1234, "f": 1.234, "g": ${signedBigInt}, "h": ${unsignedBigInt}, "i": ${unsafeDecimal} }`;
 
     context('parse()', () => {
-        it('returns the same output as the native JSON.parse() when the "unsafeNumberAsString" option is not enabled (default)', () => {
-            expect(MyJSON(json).parse()).to.deep.equal(JSON.parse(json));
+        const json = `{ "a": "foo", "b": true, "c": false, "d": null, "e": ${safeInt}, "f": ${safeDecimal}, "g": ${signedBigInt}, "h": ${unsignedBigInt}, "i": ${unsafeDecimal} }`;
+
+        it('returns the same output as the native JSON.parse() by omission', () => {
+            expect(MyJSON().parse(json)).to.deep.equal(JSON.parse(json));
         });
 
-        it('returns unsafe values as strings when the "unsafeNumberAsString" option is enabled', () => {
-            const expected = { a: 'foo', b: true, c: false, d: null, e: 1234, f: 1.234, g: signedBigInt, h: unsignedBigInt, i: unsafeDecimal };
-            expect(MyJSON(json).parse({ unsafeNumberAsString: true })).to.deep.equal(expected);
+        context('when the "unsafeNumberAsString" option is enabled', () => {
+            context('and no other option is enabled', () => {
+                it('returns unsafe numbers as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: safeInt, f: safeDecimal, g: signedBigInt, h: unsignedBigInt, i: unsafeDecimal };
+                    const got = MyJSON({ unsafeNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "unsafeNumberAsBigInt" option is enabled', () => {
+                it('returns unsafe integers as a BigInt and unsafe decimals as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: safeInt, f: safeDecimal, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: unsafeDecimal };
+                    const got = MyJSON({ unsafeIntegerAsBigInt: true, unsafeNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "anyIntegerAsBigInt" option is enabled', () => {
+                it('returns all integers as a BigInt and unsafe decimals as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: BigInt(safeInt), f: safeDecimal, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: unsafeDecimal };
+                    const got = MyJSON({ anyIntegerAsBigInt: true, unsafeNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "anyNumberAsString" option is enabled', () => {
+                it('returns all all numbers as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: `${safeInt}`, f: `${safeDecimal}`, g: signedBigInt, h: unsignedBigInt, i: unsafeDecimal };
+                    const got = MyJSON({ anyNumberAsString: true, unsafeNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+        });
+
+        context('when the "anyNumberAsString" option is enabled', () => {
+            context('and no other option is enabled', () => {
+                it('returns all all numbers as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: `${safeInt}`, f: `${safeDecimal}`, g: signedBigInt, h: unsignedBigInt, i: unsafeDecimal };
+                    const got = MyJSON({ anyNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "unsafeNumberAsBigInt" option is enabled', () => {
+                it('returns unsafe integers as a BigInt and all other numbers as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: `${safeInt}`, f: `${safeDecimal}`, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: unsafeDecimal };
+                    const got = MyJSON({ unsafeIntegerAsBigInt: true, anyNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "anyNumberAsBigInt" option is enabled', () => {
+                it('returns all integers as a BigInt and all decimals as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: BigInt(safeInt), f: `${safeDecimal}`, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: unsafeDecimal };
+                    const got = MyJSON({ anyIntegerAsBigInt: true, anyNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "unsafeNumberAsString" option is enabled', () => {
+                it('returns all all numbers as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: `${safeInt}`, f: `${safeDecimal}`, g: signedBigInt, h: unsignedBigInt, i: unsafeDecimal };
+                    const got = MyJSON({ anyNumberAsString: true, unsafeNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+        });
+
+        context('when the "unsafeIntegerAsBigInt" option is enabled', () => {
+            context('and no other option is enabled', () => {
+                it('returns unsafe integers as a BigInt', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: safeInt, f: safeDecimal, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: parseFloat(unsafeDecimal) };
+                    const got = MyJSON({ unsafeIntegerAsBigInt: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "anyIntegerAsBigInt" option is enabled', () => {
+                it('returns all integers as a BigInt', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: BigInt(safeInt), f: safeDecimal, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: parseFloat(unsafeDecimal) };
+                    const got = MyJSON({ anyIntegerAsBigInt: true, unsafeIntegerAsBigInt: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "unsafeNumberAsString" option is enabled', () => {
+                it('returns unsafe integers as a BigInt and unsafe decimals as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: safeInt, f: safeDecimal, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: unsafeDecimal };
+                    const got = MyJSON({ unsafeIntegerAsBigInt: true, unsafeNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "anyNumberAsString" option is enabled', () => {
+                it('returns unsafe integers as a BigInt and all other numbers as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: `${safeInt}`, f: `${safeDecimal}`, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: unsafeDecimal };
+                    const got = MyJSON({ unsafeIntegerAsBigInt: true, anyNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+        });
+
+        context('when the "anyIntegerAsBigInt" option is enabled', () => {
+            context('and no other option is enabled', () => {
+                it('returns integers as a BigInt', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: BigInt(safeInt), f: safeDecimal, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: parseFloat(unsafeDecimal) };
+                    const got = MyJSON({ anyIntegerAsBigInt: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "unsafeIntegerAsBigInt" option is enabled', () => {
+                it('returns all integers as a BigInt', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: BigInt(safeInt), f: safeDecimal, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: parseFloat(unsafeDecimal) };
+                    const got = MyJSON({ anyIntegerAsBigInt: true, unsafeIntegerAsBigInt: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "unsafeNumberAsString" option is enabled', () => {
+                it('returns integers as a BigInt and unsafe decimals as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: BigInt(safeInt), f: safeDecimal, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: unsafeDecimal };
+                    const got = MyJSON({ anyIntegerAsBigInt: true, unsafeNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
+
+            context('and the "anyNumberAsString" option is enabled', () => {
+                it('returns integers as a BigInt and all other numbers as a string', () => {
+                    const want = { a: 'foo', b: true, c: false, d: null, e: BigInt(safeInt), f: `${safeDecimal}`, g: BigInt(signedBigInt), h: BigInt(unsignedBigInt), i: unsafeDecimal };
+                    const got = MyJSON({ anyIntegerAsBigInt: true, anyNumberAsString: true }).parse(json);
+
+                    expect(got).to.deep.equal(want);
+                });
+            });
         });
     });
 });

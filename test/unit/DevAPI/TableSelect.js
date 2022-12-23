@@ -88,10 +88,11 @@ describe('TableSelect', () => {
         it('executes a TableSelect statement and returns a RowResult instance with the details provided by the server', () => {
             const context = 'foo';
             const crudFind = td.function();
-            const connection = { getClient: () => ({ crudFind }), isIdle: () => false, isOpen: () => true };
-            const details = 'bar';
+            const integerType = 'bar';
+            const connection = { getClient: () => ({ crudFind }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
+            const details = { baz: 'qux' };
             const execute = td.function();
-            const expected = 'baz';
+            const want = 'quux';
 
             td.when(Preparing({ connection })).thenReturn({ execute });
 
@@ -99,54 +100,66 @@ describe('TableSelect', () => {
 
             td.when(crudFind(statement, undefined, undefined)).thenReturn(context);
             td.when(execute(td.matchers.argThat(fn => fn() === context), undefined, undefined)).thenResolve(details);
-            td.when(Result(details)).thenReturn(expected);
+            td.when(Result({ ...details, integerType })).thenReturn(want);
 
             return statement.execute()
-                .then(got => expect(got).to.equal(expected));
+                .then(got => expect(got).to.equal(want));
         });
 
         it('executes a TableSelect statement with a given cursor and returns a RowResult instance with the details provided by the server', () => {
             const crudFind = td.function();
-            const connection = { getClient: () => ({ crudFind }), isIdle: () => false, isOpen: () => true };
+            const integerType = 'foo';
+            const connection = { getClient: () => ({ crudFind }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
             const dataCursor = td.function();
-            const details = 'foo';
+            const details = { bar: 'baz' };
             const execute = td.function();
-            const expected = 'bar';
-            const statementContext = 'baz';
-            const contextMatcher = td.matchers.argThat(fn => fn() === statementContext);
+            const values = ['quux'];
+            const row = { toArray: () => values };
+            const statementContext = 'quuux';
+            const cursorContext = 'quuuux';
+            const cursorContextMatcher = td.matchers.argThat(fn => fn(row) === cursorContext);
+            const statementContextMatcher = td.matchers.argThat(fn => fn() === statementContext);
+            const want = 'quuuuux';
 
             td.when(Preparing({ connection })).thenReturn({ execute });
 
             const statement = TableSelect({ connection });
 
-            td.when(crudFind(statement, dataCursor), { ignoreExtraArgs: true }).thenReturn(statementContext);
-            td.when(execute(contextMatcher, dataCursor), { ignoreExtraArgs: true }).thenResolve(details);
-            td.when(Result(details)).thenReturn(expected);
+            td.when(dataCursor(values)).thenReturn(cursorContext);
+            td.when(crudFind(statement, cursorContextMatcher), { ignoreExtraArgs: true }).thenReturn(statementContext);
+            td.when(execute(statementContextMatcher, cursorContextMatcher), { ignoreExtraArgs: true }).thenResolve(details);
+            td.when(Result({ ...details, integerType })).thenReturn(want);
 
             return statement.execute(dataCursor)
-                .then(got => expect(got).to.equal(expected));
+                .then(got => expect(got).to.equal(want));
         });
 
         it('executes a TableSelect statement with a given metadata cursor and returns a RowResult instance with the details provided by the server', () => {
             const crudFind = td.function();
             const columnWrapper = 'foo';
-            const connection = { getClient: () => ({ crudFind }), isIdle: () => false, isOpen: () => true };
+            const integerType = 'bar';
+            const connection = { getClient: () => ({ crudFind }), getIntegerType: () => integerType, isIdle: () => false, isOpen: () => true };
             const dataCursor = td.function();
-            const details = 'bar';
+            const details = 'baz';
             const execute = td.function();
-            const expected = 'baz';
             const metadataCursor = td.function();
-            const statementContext = 'qux';
-            const contextMatcher = td.matchers.argThat(fn => fn() === statementContext);
+            const values = ['quux'];
+            const row = { toArray: () => values };
+            const statementContext = 'quuux';
+            const cursorContext = 'quuuux';
+            const cursorContextMatcher = td.matchers.argThat(fn => fn(row) === cursorContext);
+            const statementContextMatcher = td.matchers.argThat(fn => fn() === statementContext);
+            const expected = 'quux';
 
             td.when(Preparing({ connection })).thenReturn({ execute });
 
             const statement = TableSelect({ connection });
 
+            td.when(dataCursor(values)).thenReturn(cursorContext);
             td.when(ColumnWrapper(metadataCursor)).thenReturn(columnWrapper);
-            td.when(crudFind(statement, dataCursor, columnWrapper)).thenReturn(statementContext);
-            td.when(execute(contextMatcher, dataCursor, columnWrapper)).thenResolve(details);
-            td.when(Result(details)).thenReturn(expected);
+            td.when(crudFind(statement, cursorContextMatcher, columnWrapper)).thenReturn(statementContext);
+            td.when(execute(statementContextMatcher, cursorContextMatcher, columnWrapper)).thenResolve(details);
+            td.when(Result({ ...details, integerType })).thenReturn(expected);
 
             return statement.execute(dataCursor, metadataCursor)
                 .then(got => expect(got).to.equal(expected));

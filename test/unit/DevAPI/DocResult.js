@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -58,11 +58,12 @@ describe('DocResult', () => {
         it('returns an array containing all items in the result set', () => {
             const row = { toArray };
             const docs = [{ name: 'foo' }, { name: 'bar' }];
+            const integerType = 'baz';
 
-            td.when(toArray()).thenReturn([docs[1]]);
-            td.when(toArray(), { times: 1 }).thenReturn([docs[0]]);
+            td.when(toArray({ integerType })).thenReturn([docs[1]]);
+            td.when(toArray({ integerType }), { times: 1 }).thenReturn([docs[0]]);
 
-            expect(docResult({ results: [[row, row]] }).fetchAll()).to.deep.equal(docs);
+            expect(docResult({ results: [[row, row]], integerType }).fetchAll()).to.deep.equal(docs);
         });
     });
 
@@ -79,10 +80,11 @@ describe('DocResult', () => {
         it('returns the next available item in the result set', () => {
             const row = { toArray };
             const docs = [{ name: 'foo' }];
+            const integerType = 'bar';
 
-            td.when(toArray()).thenReturn(docs);
+            td.when(toArray({ integerType })).thenReturn(docs);
 
-            expect(docResult({ results: [[row]] }).fetchOne()).to.deep.equal(docs[0]);
+            expect(docResult({ results: [[row]], integerType }).fetchOne()).to.deep.equal(docs[0]);
         });
     });
 
@@ -106,13 +108,14 @@ describe('DocResult', () => {
         it('returns the raw list of result set items', () => {
             const row = { toArray };
             const docs = [{ name: 'foo' }];
+            const integerType = 'bar';
 
             // eslint-disable-next-line no-unused-expressions
-            expect(docResult({ results: [] }).toArray()).to.be.an('array').and.be.empty;
+            expect(docResult({ results: [], integerType }).toArray()).to.be.an('array').and.be.empty;
 
-            td.when(toArray()).thenReturn(docs);
+            td.when(toArray({ integerType })).thenReturn(docs);
 
-            expect(docResult({ results: [[row]] }).toArray()).to.deep.equal(docs);
+            expect(docResult({ results: [[row]], integerType }).toArray()).to.deep.equal(docs);
         });
     });
 });
