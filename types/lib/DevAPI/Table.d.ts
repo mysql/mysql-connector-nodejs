@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -29,6 +29,7 @@
  */
 
 import { TableFields } from './Filtering';
+import { ProjectedSearchExprStrList } from './Projecting';
 import Schema from './Schema';
 import TableDelete from './TableDelete';
 import TableInsert from './TableInsert';
@@ -77,7 +78,7 @@ interface Table {
      * Creates a statement to select rows from the table.
      * @returns A fluent statement instance.
      */
-    select: () => TableSelect
+    select: (projectedSearchExprStr?: ProjectedSearchExprStrList, ...projectedSearchExprStrList: ProjectedSearchExprStrList[]) => TableSelect
     /**
      * Creates a statement to update rows in the table.
      * @returns A fluent statement instance.

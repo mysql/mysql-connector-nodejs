@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -70,6 +70,18 @@ async function test (): Promise<void> {
 
     // select()
     expectType<TableSelect>(table.select());
+    // using string arguments
+    expectType<TableSelect>(table.select('foo'));
+    expectType<TableSelect>(table.select('foo as bar'));
+    expectType<TableSelect>(table.select('foo', 'bar'));
+    expectType<TableSelect>(table.select(['foo']));
+    expectType<TableSelect>(table.select(['foo', 'bar']));
+    // using Expr arguments
+    expectType<TableSelect>(table.select(mysqlx.expr('foo')));
+    expectType<TableSelect>(table.select(mysqlx.expr('foo as bar')));
+    expectType<TableSelect>(table.select(mysqlx.expr('foo'), mysqlx.expr('bar')));
+    expectType<TableSelect>(table.select([mysqlx.expr('foo')]));
+    expectType<TableSelect>(table.select([mysqlx.expr('foo'), mysqlx.expr('bar')]));
 
     // update()
     expectType<TableUpdate>(table.update());
