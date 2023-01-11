@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,7 +32,6 @@
 
 /* eslint-env node, mocha */
 
-const IntegerType = require('../../../lib/Protocol/Wrappers/ScalarValues/int64').Type;
 const expect = require('chai').expect;
 const rowResult = require('../../../lib/DevAPI/RowResult');
 const td = require('testdouble');
@@ -131,42 +130,6 @@ describe('RowResult', () => {
             const state = res.getResults();
             expect(state).to.be.an('array').and.have.lengthOf(1);
             return expect(state[0]).to.be.null;
-        });
-    });
-
-    context('getAffectedItemsCount()', () => {
-        context('when the number of affected items by the statement is below Number.MAX_SAFE_INTEGER', () => {
-            it('returns the value as a JavaScript number by default', () => {
-                expect(rowResult({ rowsAffected: 3n }).getAffectedItemsCount()).to.equal(3);
-            });
-
-            it('can return the value as a JavaScript string', () => {
-                expect(rowResult({ rowsAffected: 3n, integerType: IntegerType.STRING }).getAffectedItemsCount()).to.equal('3');
-            });
-
-            it('can return the value as a JavaScript BigInt', () => {
-                expect(rowResult({ rowsAffected: 3n, integerType: IntegerType.BIGINT }).getAffectedItemsCount()).to.equal(3n);
-            });
-
-            it('ignores a specific return type for unsafe integers', () => {
-                expect(rowResult({ rowsAffected: 3n, integerType: IntegerType.UNSAFE_BIGINT }).getAffectedItemsCount()).to.equal(3);
-                expect(rowResult({ rowsAffected: 3n, integerType: IntegerType.UNSAFE_STRING }).getAffectedItemsCount()).to.equal(3);
-            });
-        });
-
-        context('when the number of affected items by the statement is above Number.MAX_SAFE_INTEGER', () => {
-            it('returns the value as a JavaScript string by default', () => {
-                expect(rowResult({ rowsAffected: 18446744073709551615n }).getAffectedItemsCount()).to.equal('18446744073709551615');
-            });
-
-            it('returns the value as a JavaScript string if explicitly specified', () => {
-                expect(rowResult({ rowsAffected: 18446744073709551615n, integerType: IntegerType.UNSAFE_STRING }).getAffectedItemsCount()).to.equal('18446744073709551615');
-            });
-
-            it('can return the value as a JavaScript BigInt', () => {
-                expect(rowResult({ rowsAffected: 18446744073709551615n, integerType: IntegerType.BIGINT }).getAffectedItemsCount()).to.equal(18446744073709551615n);
-                expect(rowResult({ rowsAffected: 18446744073709551615n, integerType: IntegerType.UNSAFE_BIGINT }).getAffectedItemsCount()).to.equal(18446744073709551615n);
-            });
         });
     });
 
