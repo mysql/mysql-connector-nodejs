@@ -1,0 +1,6 @@
+{
+    "schema": "dns",
+    "table": "services",
+    "host": "mysql",
+    "user": "root"
+}

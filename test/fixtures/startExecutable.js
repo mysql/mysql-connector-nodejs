@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -33,15 +33,15 @@
 const http = require('http');
 const path = require('path');
 
-// POST http://v1.24/exec/<executable-id>/start
+// POST http://v1.41/exec/<executable-id>/start
 module.exports = function (id, waitFor) {
     waitFor = waitFor || 2000;
 
     return new Promise((resolve, reject) => {
         const options = {
             method: 'POST',
-            path: `/v1.24/exec/${id}/start`,
-            socketPath: path.join('/tmp', 'docker.sock')
+            path: `/v1.41/exec/${id}/start`,
+            socketPath: path.join('/var', 'run', 'docker.sock')
         };
 
         const request = http.request(options);

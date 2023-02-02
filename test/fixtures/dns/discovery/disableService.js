@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,40 +30,17 @@
 
 'use strict';
 
-const http = require('http');
+const config = require('./config.json');
+const mysqlx = require('../../../../');
 
-// PUT http://consul:8500/v1/agent/service/register/
-module.exports = function (definition) {
-    return new Promise((resolve, reject) => {
-        const options = {
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            host: 'consul',
-            method: 'PUT',
-            path: '/v1/agent/service/register',
-            port: 8500
-        };
+module.exports = async (address) => {
+    const session = await mysqlx.getSession({ user: config.user, host: config.host });
+    const services = session.getSchema(config.schema).getCollection(config.table);
 
-        const request = http.request(options);
+    await services.modify('target = :address')
+        .bind('address', address)
+        .unset('enabled')
+        .execute();
 
-        request.on('response', response => {
-            response.setEncoding('utf8');
-
-            // the response does not have any content, so the 'data'
-            // handler should be a noop
-            response.on('data', () => {});
-
-            response.on('end', () => {
-                if (response.statusCode === 200) {
-                    return resolve();
-                }
-
-                reject(new Error('Unable to register service.'));
-            });
-        });
-
-        request.write(JSON.stringify(definition));
-        request.end();
-    });
+    await session.close();
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -38,7 +38,7 @@ const user = process.argv[2];
 const password = process.argv[3];
 const auth = process.argv[4];
 
-const baseConfig = Object.assign({}, config, { auth, password, schema: undefined, user });
+const baseConfig = { ...config, auth, password, schema: undefined, tls: { enabled: true }, user };
 
 mysqlx.getSession(baseConfig)
     .then(session => {

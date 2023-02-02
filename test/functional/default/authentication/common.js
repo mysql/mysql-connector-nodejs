@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -80,6 +80,118 @@ describe('common authentication tests', () => {
                 .then(() => {
                     return process.emitWarning('No more warnings.', 'NoWarning');
                 });
+        });
+    });
+
+    context('when debug mode is enabled', () => {
+        const user = 'user';
+        const password = 'password';
+        const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'auth.js');
+
+        afterEach('delete the user created for a given test', async () => {
+            await fixtures.dropUser({ user });
+        });
+
+        after('delete any dangling user created for tests that have been skipped', async () => {
+            await fixtures.dropUser({ user });
+        });
+
+        context('and no authentication mechanism is selected', () => {
+            beforeEach('create user with caching_sha2_password plugin', async () => {
+                await fixtures.createUser({ password, user });
+            });
+
+            it('writes the correct authentication parameters to the log', async () => {
+                const proc = await fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateStart', script, [user, password]);
+
+                expect(proc.logs).to.have.lengthOf(1);
+                expect(proc.logs[0]).to.contain.keys('mech_name', 'auth_data');
+                expect(proc.logs[0].mech_name).to.equal('PLAIN');
+                expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
+                expect(proc.logs[0].auth_data.data).to.be.an('array');
+                expect(Buffer.from(proc.logs[0].auth_data.data).toString()).to.have.string(user);
+            });
+        });
+
+        context('and the PLAIN authentication mechanism is selected', () => {
+            const auth = 'PLAIN';
+
+            beforeEach('create user with caching_sha2_password plugin', async () => {
+                await fixtures.createUser({ password, user });
+            });
+
+            it('writes the correct authentication parameters to the log', async () => {
+                const proc = await fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateStart', script, [user, password, auth]);
+
+                expect(proc.logs).to.have.lengthOf(1);
+                expect(proc.logs[0]).to.contain.keys('mech_name', 'auth_data');
+                expect(proc.logs[0].mech_name).to.equal(auth);
+                expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
+                expect(proc.logs[0].auth_data.data).to.be.an('array');
+                expect(Buffer.from(proc.logs[0].auth_data.data).toString()).to.have.string(user);
+            });
+        });
+
+        context('and the MYSQL41 authentication mechanism is selected', () => {
+            const auth = 'MYSQL41';
+
+            beforeEach('create user with mysql_native_password plugin', async () => {
+                await fixtures.createUser({ password, plugin: 'mysql_native_password', user });
+            });
+
+            it('writes the correct authentication parameters to the log', async () => {
+                let proc = await fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateStart', script, [user, password, auth]);
+
+                expect(proc.logs).to.have.lengthOf(1);
+                expect(proc.logs[0]).to.contain.keys('mech_name', 'auth_data');
+                expect(proc.logs[0].mech_name).to.equal(auth);
+                expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
+                // eslint-disable-next-line no-unused-expressions
+                expect(proc.logs[0].auth_data.data).to.be.an('array').and.be.empty;
+
+                proc = await fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateContinue', script, [user, password, auth]);
+
+                expect(proc.logs).to.have.lengthOf(1);
+                expect(proc.logs[0]).to.contain.keys('auth_data');
+                expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
+                expect(proc.logs[0].auth_data.data).to.be.an('array');
+                expect(Buffer.from(proc.logs[0].auth_data.data).toString()).to.have.string(user);
+            });
+        });
+
+        context('and the SHA256_MEMORY authentication mechanism is selected', () => {
+            const auth = 'SHA256_MEMORY';
+
+            beforeEach('create user with caching_sha2_password plugin', async () => {
+                await fixtures.createUser({ password, user });
+            });
+
+            beforeEach('save the password in the server authentication cache', () => {
+                return fixtures.savePasswordInAuthenticationCache({ password, user });
+            });
+
+            afterEach('invalidate the server authentication cache', () => {
+                return fixtures.resetAuthenticationCache();
+            });
+
+            it('writes the correct authentication parameters to the log', async () => {
+                let proc = await fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateStart', script, [user, password, auth]);
+
+                expect(proc.logs).to.have.lengthOf(1);
+                expect(proc.logs[0]).to.contain.keys('mech_name', 'auth_data');
+                expect(proc.logs[0].mech_name).to.equal(auth);
+                expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
+                // eslint-disable-next-line no-unused-expressions
+                expect(proc.logs[0].auth_data.data).to.be.an('array').and.be.empty;
+
+                proc = await fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateContinue', script, [user, password, auth]);
+
+                expect(proc.logs).to.have.lengthOf(1);
+                expect(proc.logs[0]).to.contain.keys('auth_data');
+                expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
+                expect(proc.logs[0].auth_data.data).to.be.an('array');
+                expect(Buffer.from(proc.logs[0].auth_data.data).toString()).to.have.string(user);
+            });
         });
     });
 });

@@ -1,0 +1,371 @@
+# Copyright (c) 2023, Oracle and/or its affiliates.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2.0, as
+# published by the Free Software Foundation.
+#
+# This program is also distributed with certain software (including
+# but not limited to OpenSSL) that is licensed under separate terms,
+# as designated in a particular file or component or in included license
+# documentation.  The authors of MySQL hereby grant you an
+# additional permission to link the program and your derivative works
+# with the separately licensed software that they have included with
+# MySQL.
+#
+# Without limiting anything contained in the foregoing, this file,
+# which is part of MySQL Connector/Node.js, is also subject to the
+# Universal FOSS Exception, version 1.0, a copy of which can be found at
+# http://oss.oracle.com/licenses/universal-foss-exception.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License, version 2.0, for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+
+services:
+  nodejs-base:
+    build:
+      # Default values for build args are already specified in the Dockerfile.
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-container-registry.oracle.com/graalvm/nodejs:latest}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org/}
+      context: .
+      # Since the context differs from the project directory, we need to
+      # specify the formal path of the Dockerfile, which is passed to compose
+      # in the $DOCKERFILE environment variable.
+      dockerfile: ${DOCKERFILE:-Dockerfile}
+    # Docker compose will only start services with the "enabled" profile,
+    # however, services that are not meant to start should also have a profile
+    # otherwise Docker compose will start them. In this case, the profile
+    # will also be inherited by child containers, so it is a good idea to use a
+    # profile name that is global in nature and scope.
+    profiles:
+      - all
+
+  mysql-connector-nodejs:
+    container_name: mysql-connector-nodejs_tests
+    depends_on:
+      dns-proxy:
+        condition: service_healthy
+    dns:
+      - 172.16.238.100
+    environment:
+      # The "shared" volume is mounted under "/tmp" (see below).
+      MYSQLX_SOCKET: /tmp/mysqlx.sock
+      # If the test script does not provide the account credentials, by
+      # omission, a MySQL "root" account without a password should be used.
+      MYSQLX_USER: ${MYSQLX_USER:-root}
+      MYSQLX_PASSWORD: ${MYSQLX_PASSWORD:-}
+    extends: nodejs-base
+    # The image version is always passed to compose via the test script in the
+    # $MYSQL_VERSION environment variable.
+    image: mysql-connector-nodejs:${MYSQL_VERSION}
+    networks:
+      # The "shared" network contains all the services specified by this
+      # docker compose setup.
+      - shared
+    volumes:
+      # The "shared" volume contains the MySQL X Protocol Unix socket file
+      # (mysqlx.sock) created by the "mysql" service.
+      - shared:/tmp
+      # The docker Unix socket avaiable at "/var/run/docker.sock" on
+      # Linux, Docker Desktop and Rancher Desktop hosts must be shared with
+      # the container in order to enable orchestration of other containers
+      # via the Docker API. The volume should be in "read-only" mode,
+      # otherwise it will not work.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Coverage reports are created in the container and can be shared
+      # with the host system via an appropriate bind mount.
+      - ./coverage:/mysql-connector-nodejs/coverage
+    profiles:
+      - enabled
+
+  # Runs a Node.js script that implements a custom DNS server which loads
+  # a list of service endpoints that match nodes in a MySQL cluster composed
+  # by three mysql-cluster-* instances (one primary and two replicas).
+  dns-proxy:
+    command: node test/fixtures/dns/proxy.js
+    container_name: mysql-connector-nodejs_dns-proxy
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mysql-5.7:
+        condition: service_healthy
+      mysql-5.7-sha256-password:
+        condition: service_healthy
+      mysql-8.0.3:
+        condition: service_healthy
+      mysql-8.0.3-sha256-password:
+        condition: service_healthy
+      mysql-8.0.15:
+        condition: service_healthy
+      mysql-single-connection:
+        condition: service_healthy
+      mysql-single-x-plugin-connection:
+        condition: service_healthy
+      mysql-cluster-primary:
+        condition: service_healthy
+      mysql-cluster-first-replica:
+        condition: service_healthy
+      mysql-cluster-second-replica:
+        condition: service_healthy
+      mysql-root-signed-cert:
+        condition: service_healthy
+      mysql-leaf-signed-cert:
+        condition: service_healthy
+      mysql-wrong-cert-identity:
+        condition: service_healthy
+      mysql-tls-disabled:
+        condition: service_healthy
+      mysql-without-tlsv1_3:
+        condition: service_healthy
+    extends:
+      service: nodejs-base
+    # As an healthcheck we can ensure that Node.js is available.
+    healthcheck:
+      test: ["CMD", "node", "-v"]
+      # There is no reason for the container to not be immediately available.
+      interval: 1s
+      # The command should be quick to execute.
+      timeout: 5s
+      # No additional retries should need to be performed.
+      retries: 1
+    networks:
+      shared:
+        ipv4_address: 172.16.238.100
+        ipv6_address: 2001:3984:3989::100
+    profiles:
+      - enabled
+
+  # Defines the common configuration options between all the existing MySQL
+  # instance containers.
+  mysql-base:
+    environment:
+      # For convenience, the "root" user account should be able to connect
+      # from a different container without using a password.
+      MYSQL_ALLOW_EMPTY_PASSWORD: true
+      MYSQL_ROOT_HOST: '%'
+      # An additional MySQL user account is created using the values of
+      # "MYSQLX_USER" and "MYSQLX_PASSWORD". This allows to replicate user
+      # accounts from a MySQL instance running on the host or outside the
+      # Docker container network.
+      MYSQL_USER: ${MYSQLX_USER:-tests}
+      MYSQL_PASSWORD: ${MYSQLX_PASSWORD:-tests}
+    healthcheck:
+      # Increase the number of retries just to be sure (default=3).
+      # A good metric for the number of retries, while keeping the same
+      # interval between each retry, is probably the number of services.
+      retries: 16
+    # The docker image can be customized using the $MYSQL_IMAGE environment
+    # variable, which, by default, is not defined.
+    # The image version is always passed to compose via the test script in the
+    # $MYSQL_VERSION environment variable.
+    image: ${MYSQL_IMAGE:-mysql/mysql-server}:${MYSQL_VERSION}
+    # In order to prevent this service from starting, it uses a profile that
+    # is ignored by the Docker compose call. See "base" service for more
+    # details.
+    profiles:
+      - all
+
+  mysql:
+    container_name: mysql-connector-nodejs_mysql
+    extends: mysql-base
+    networks:
+      shared:
+        aliases:
+          - mysql.docker.internal
+        ipv4_address: 172.16.238.101
+        ipv6_address: 2001:3984:3989::101
+    profiles:
+      - enabled
+    volumes:
+      # By default, "mysqld" creates the MySQL X Protocol Unix socket file at
+      # "/var/run/mysqld/mysqlx.sock", so, we should mount that path in a
+      # volume shared between all the containers ("shared").
+      - shared:/var/run/mysqld
+
+  mysql-5.7:
+    # MySQL 5.7 still requires the X Plugin to be manually installed.
+    command: --plugin-load="mysqlx=mysqlx.so" --mysqlx-socket=/var/run/mysqld/mysql-5.7.sock
+    container_name: mysql-connector-nodejs_mysql-5.7
+    extends: mysql
+    image: ${MYSQL_IMAGE}:5.7
+    networks:
+      shared:
+        ipv4_address: 172.16.238.102
+        ipv6_address: 2001:3984:3989::102
+
+  mysql-5.7-sha256-password:
+    # MySQL 5.7 still requires the X Plugin to be manually installed.
+    command: --default-authentication-plugin=sha256_password --plugin-load="mysqlx=mysqlx.so" --mysqlx-socket=/var/run/mysqld/mysql-5.7-sha256-password.sock
+    container_name: mysql-connector-nodejs_mysql-5.7-sha256-password
+    extends: mysql-5.7
+    networks:
+      shared:
+        ipv4_address: 172.16.238.103
+        ipv6_address: 2001:3984:3989::103
+
+  mysql-8.0.3:
+    # MySQL pre-GA 8.x server versions still require the X Plugin to be
+    # manually installed.
+    command: --plugin-load="mysqlx=mysqlx.so" --mysqlx-socket=/var/run/mysqld/mysql-8.0.3.sock
+    container_name: mysql-connector-nodejs_mysql-8.0.3
+    extends: mysql
+    image: ${MYSQL_IMAGE}:8.0.3
+    networks:
+      shared:
+        ipv4_address: 172.16.238.104
+        ipv6_address: 2001:3984:3989::104
+
+  mysql-8.0.3-sha256-password:
+    # MySQL 8.0.3 still requires the X Plugin to be manually installed.
+    # Due to some limitation in the Docker image, the server instance does not
+    # create the initial user accounts with the default authentication plugin
+    # (in this case, sha256_password), so tests should manually create a
+    # suitable user account beforehand.
+    command: --default-authentication-plugin=sha256_password --plugin-load="mysqlx=mysqlx.so" --mysqlx-socket=/var/run/mysqld/mysql-8.0.3-sha256-password.sock
+    container_name: mysql-connector-nodejs_mysql-8.0.3-sha256-password
+    extends: mysql-8.0.3
+    networks:
+      shared:
+        ipv4_address: 172.16.238.105
+        ipv6_address: 2001:3984:3989::105
+
+  mysql-8.0.15:
+    # MySQL pre-GA 8.x server versions still require the X Plugin to be
+    # manually installed.
+    command: --default-authentication-plugin=sha256_password --plugin-load="mysqlx=mysqlx.so" --mysqlx-socket=/var/run/mysqld/mysql-8.0.15.sock
+    container_name: mysql-connector-nodejs_mysql-8.0.15
+    extends: mysql
+    image: ${MYSQL_IMAGE}:8.0.15
+    networks:
+      shared:
+        ipv4_address: 172.16.238.106
+        ipv6_address: 2001:3984:3989::106
+
+  # MySQL server instance that allows only one connection.
+  mysql-single-connection:
+    command: --max-connections=1
+    container_name: mysql-connector-nodejs_mysql-single-connection
+    extends: mysql
+    networks:
+      shared:
+        ipv4_address: 172.16.238.107
+        ipv6_address: 2001:3984:3989::107
+
+  # MySQL server instance that allows only one X Plugin connection.
+  mysql-single-x-plugin-connection:
+    command: --mysqlx-max-connections=1
+    container_name: mysql-connector-nodejs_mysql-single-x-plugin-connection
+    extends: mysql
+    networks:
+      shared:
+        ipv4_address: 172.16.238.108
+        ipv6_address: 2001:3984:3989::108
+
+  # Primary MySQL instance in a cluster containing two additional replicas.
+  # Used for multi-host and DNS SRV tests.
+  mysql-cluster-primary:
+    container_name: mysql-connector-nodejs_mysql-cluster-primary
+    extends: mysql
+    networks:
+      shared:
+        ipv4_address: 172.16.238.109
+        ipv6_address: 2001:3984:3989::109
+
+  # One replica of a MySQL server in a cluster containing two additional
+  # instances.
+  # Used for multi-host and DNS SRV tests.
+  mysql-cluster-first-replica:
+    container_name: mysql-connector-nodejs_mysql-cluster-first-replica
+    extends: mysql
+    networks:
+      shared:
+        ipv4_address: 172.16.238.110
+        ipv6_address: 2001:3984:3989::110
+
+  # Another replica of a MySQL server in a cluster containing two additional
+  # instances.
+  # Used for multi-host and DNS SRV tests.
+  mysql-cluster-second-replica:
+    container_name: mysql-connector-nodejs_mysql-cluster-second-replica
+    extends: mysql
+    networks:
+      shared:
+        ipv4_address: 172.16.238.111
+        ipv6_address: 2001:3984:3989::111
+
+  # MySQL server instance using a TLS certificate (CN=mysql-root-signed-cert)
+  # signed by test/fixtures/tls/client/root/ca.pem
+  mysql-root-signed-cert:
+    command: --mysqlx-ssl-cert=/tls/cert.pem --mysqlx-ssl-key=/tls/key.pem
+    container_name: mysql-connector-nodejs_mysql-root-signed-cert
+    extends: mysql
+    networks:
+      shared:
+        ipv4_address: 172.16.238.112
+        ipv6_address: 2001:3984:3989::112
+    volumes:
+      - ./test/fixtures/tls/server/root:/tls:ro
+
+  # MySQL server instance using a TLS certificate (CN=mysql-leaf-signed-cert)
+  # signed by test/fixtures/tls/client/leaf/ca.pem
+  mysql-leaf-signed-cert:
+    command: --mysqlx-ssl-cert=/tls/cert.pem --mysqlx-ssl-key=/tls/key.pem
+    container_name: mysql-connector-nodejs_mysql-leaf-signed-cert
+    extends: mysql
+    networks:
+      shared:
+        ipv4_address: 172.16.238.113
+        ipv6_address: 2001:3984:3989::113
+    volumes:
+      - ./test/fixtures/tls/server/leaf:/tls:ro
+
+  # MySQL server instance using a TLS certificate signed by
+  # test/fixtures/tls/client/root/ca.pem but with the wrong identity, wherein
+  # CN=mysql-leaf-signed-cert is not equal to the container hostname
+  # "mysql-wrong-cert-identity".
+  mysql-wrong-cert-identity:
+    container_name: mysql-connector-nodejs_mysql-wrong-cert-identity
+    extends: mysql-root-signed-cert
+    networks:
+      shared:
+        ipv4_address: 172.16.238.114
+        ipv6_address: 2001:3984:3989::114
+
+  # MySQL server instance without TLS support.
+  mysql-tls-disabled:
+    command: --skip-ssl --mysqlx-socket=/var/run/mysqld/mysql-tls-disabled.sock
+    container_name: mysql-connector-nodejs_mysql-tls-disabled
+    extends: mysql
+    networks:
+      shared:
+        ipv4_address: 172.16.238.115
+        ipv6_address: 2001:3984:3989::115
+
+  # MySQL server instance without TLS v1.3.
+  mysql-without-tlsv1_3:
+    command: --tls-version="TLSv1.2"
+    container_name: mysql-connector-nodejs_mysql-without-tlsv1_3
+    extends: mysql
+    networks:
+      shared:
+        ipv4_address: 172.16.238.116
+        ipv6_address: 2001:3984:3989::116
+
+volumes:
+  shared:
+
+networks:
+  shared:
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 172.16.238.0/24
+          gateway: 172.16.238.1
+        - subnet: 2001:3984:3989::/64
+          gateway: 2001:3984:3989::1

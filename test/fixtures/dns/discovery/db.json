@@ -1,0 +1,16 @@
+[{
+    "priority": 1,
+    "weight": 20,
+    "target": "172.16.238.109",
+    "port": 33060
+}, {
+    "priority": 1,
+    "weight": 5,
+    "target": "172.16.238.111",
+    "port": 33060
+}, {
+    "priority": 5,
+    "weight": 10,
+    "target": "172.16.238.110",
+    "port": 33060
+}]

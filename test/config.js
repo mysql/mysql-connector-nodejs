@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,7 +35,6 @@ module.exports = {
     password: process.env.MYSQLX_PASSWORD || '',
     port: parseInt(process.env.MYSQLX_PORT, 10) || 33060,
     schema: process.env.MYSQLX_DEFAULT_SCHEMA,
-    socket: process.env.MYSQLX_SOCKET,
     tls: { enabled: process.env.MYSQLX_TLS !== 'false' },
     user: process.env.MYSQLX_USER || 'root'
 };

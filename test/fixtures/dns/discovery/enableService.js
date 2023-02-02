@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,7 +30,17 @@
 
 'use strict';
 
-module.exports = function (services) {
-    return Array.from(services)
-        .sort((a, b) => a.weights.passing < b.weights.passing);
+const config = require('./config.json');
+const mysqlx = require('../../../../');
+
+module.exports = async (address) => {
+    const session = await mysqlx.getSession({ user: config.user, host: config.host });
+    const services = session.getSchema(config.schema).getCollection(config.table);
+
+    await services.modify('target = :address')
+        .bind('address', address)
+        .set('enabled', true)
+        .execute();
+
+    await session.close();
 };

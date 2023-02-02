@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+ * Copyright (c) 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,22 +30,16 @@
 
 'use strict';
 
-const config = require('../config');
-const mysqlx = require('../..');
+const config = require('./config.json');
+const mysqlx = require('../../../../');
 
-module.exports = async ({ connectionConfig, host = '%', password = config.password, plugin = 'caching_sha2_password', user = config.user } = {}) => {
-    // Usually, other database users are created by "root". In order to ensure
-    // "root" is able to authenticate regardless of the connection type (TCP
-    // or Unix socket), it is OK to always enable TLS.
-    const fixtureConfig = { ...config, ...connectionConfig, tls: { enabled: true } };
+module.exports = async () => {
+    const session = await mysqlx.getSession({ user: config.user, host: config.host });
+    const services = session.getSchema(config.schema).getCollection(config.table);
 
-    let session;
+    await services.modify('true')
+        .set('enabled', true)
+        .execute();
 
-    try {
-        session = await mysqlx.getSession(fixtureConfig);
-        await session.sql(`CREATE USER IF NOT EXISTS '${user}'@'${host}' IDENTIFIED WITH ${plugin} BY '${password}'`)
-            .execute();
-    } finally {
-        await session?.close();
-    }
+    await session.close();
 };

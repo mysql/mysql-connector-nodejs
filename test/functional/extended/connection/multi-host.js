@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -203,7 +203,7 @@ describe('connecting with a list of MySQL servers', () => {
     });
 
     context('when some endpoints in the list are not available', () => {
-        const multihostConfig = { endpoints: [{ host: 'mysql-primary', priority: 99 }, { host: 'mysql-secondary1', priority: 98 }, { host: 'mysql-secondary2', priority: 97 }] };
+        const multihostConfig = { endpoints: [{ host: 'mysql-cluster-primary', priority: 99 }, { host: 'mysql-cluster-first-replica', priority: 98 }, { host: 'mysql-cluster-second-replica', priority: 97 }] };
 
         const waitForServerToBecomeAvailable = 8000; // (ms)
         const waitForServerToBecomeUnavailable = 2000; // (ms)
@@ -227,27 +227,27 @@ describe('connecting with a list of MySQL servers', () => {
 
                     return mysqlx.getSession(failoverConfig)
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-primary');
+                            expect(session.inspect().host).to.equal('mysql-cluster-primary');
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable);
+                            return fixtures.killServer('mysql-cluster-primary', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return mysqlx.getSession(failoverConfig);
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-secondary1');
+                            expect(session.inspect().host).to.equal('mysql-cluster-first-replica');
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.killServer('mysql-secondary1', waitForServerToBecomeUnavailable);
+                            return fixtures.killServer('mysql-cluster-first-replica', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return mysqlx.getSession(failoverConfig);
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-secondary2');
+                            expect(session.inspect().host).to.equal('mysql-cluster-second-replica');
                             return session.close();
                         });
                 });
@@ -258,22 +258,22 @@ describe('connecting with a list of MySQL servers', () => {
                     // Waits for one server to be killed and one to be restarted.
                     this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForServerToBecomeUnavailable + waitForServerToBecomeAvailable);
 
-                    return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable)
+                    return fixtures.killServer('mysql-cluster-primary', waitForServerToBecomeUnavailable)
                         .then(() => {
                             return mysqlx.getSession(failoverConfig);
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-secondary1');
+                            expect(session.inspect().host).to.equal('mysql-cluster-first-replica');
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.restartServer('mysql-primary', waitForServerToBecomeAvailable);
+                            return fixtures.restartServer('mysql-cluster-primary', waitForServerToBecomeAvailable);
                         })
                         .then(() => {
                             return mysqlx.getSession(failoverConfig);
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-primary');
+                            expect(session.inspect().host).to.equal('mysql-cluster-primary');
                             return session.close();
                         });
                 });
@@ -300,27 +300,27 @@ describe('connecting with a list of MySQL servers', () => {
 
                     return pool.getSession()
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-primary');
+                            expect(session.inspect().host).to.equal('mysql-cluster-primary');
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable);
+                            return fixtures.killServer('mysql-cluster-primary', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return pool.getSession();
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-secondary1');
+                            expect(session.inspect().host).to.equal('mysql-cluster-first-replica');
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.killServer('mysql-secondary1', waitForServerToBecomeUnavailable);
+                            return fixtures.killServer('mysql-cluster-first-replica', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return pool.getSession();
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-secondary2');
+                            expect(session.inspect().host).to.equal('mysql-cluster-second-replica');
                             return session.close();
                         });
                 });
@@ -333,32 +333,32 @@ describe('connecting with a list of MySQL servers', () => {
 
                     return pool.getSession()
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-primary');
+                            expect(session.inspect().host).to.equal('mysql-cluster-primary');
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable);
+                            return fixtures.killServer('mysql-cluster-primary', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return pool.getSession();
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-secondary1');
+                            expect(session.inspect().host).to.equal('mysql-cluster-first-replica');
                             return session.close();
                         })
                         .then(() => {
                             // We do not wait for the endpoint to become
                             // active, so it will should not be picked again.
-                            return fixtures.restartServer('mysql-primary', waitForServerToBecomeAvailable);
+                            return fixtures.restartServer('mysql-cluster-primary', waitForServerToBecomeAvailable);
                         })
                         .then(() => {
-                            return fixtures.killServer('mysql-secondary1', waitForServerToBecomeUnavailable);
+                            return fixtures.killServer('mysql-cluster-first-replica', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return pool.getSession();
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-secondary2');
+                            expect(session.inspect().host).to.equal('mysql-cluster-second-replica');
                             return session.close();
                         });
                 });
@@ -371,17 +371,17 @@ describe('connecting with a list of MySQL servers', () => {
 
                     return pool.getSession()
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-primary');
+                            expect(session.inspect().host).to.equal('mysql-cluster-primary');
                             return session.close();
                         })
                         .then(() => {
-                            return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable);
+                            return fixtures.killServer('mysql-cluster-primary', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return pool.getSession();
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-secondary1');
+                            expect(session.inspect().host).to.equal('mysql-cluster-first-replica');
                             return session.close();
                         })
                         .then(() => {
@@ -389,16 +389,16 @@ describe('connecting with a list of MySQL servers', () => {
                             // container starts, we need to wait for an
                             // additional fixed number of seconds defined by
                             // the connection to retry it.
-                            return fixtures.restartServer('mysql-primary', waitForServerToBecomeActive);
+                            return fixtures.restartServer('mysql-cluster-primary', waitForServerToBecomeActive);
                         })
                         .then(() => {
-                            return fixtures.killServer('mysql-secondary1', waitForServerToBecomeUnavailable);
+                            return fixtures.killServer('mysql-cluster-first-replica', waitForServerToBecomeUnavailable);
                         })
                         .then(() => {
                             return pool.getSession();
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-primary');
+                            expect(session.inspect().host).to.equal('mysql-cluster-primary');
                             return session.close();
                         });
                 });
@@ -409,12 +409,12 @@ describe('connecting with a list of MySQL servers', () => {
                     // Waits for one server to be killed and one to be active.
                     this.timeout(this.timeout() * failoverConfig.endpoints.length + waitForServerToBecomeUnavailable + waitForServerToBecomeActive);
 
-                    return fixtures.killServer('mysql-primary', waitForServerToBecomeUnavailable)
+                    return fixtures.killServer('mysql-cluster-primary', waitForServerToBecomeUnavailable)
                         .then(() => {
                             return pool.getSession();
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-secondary1');
+                            expect(session.inspect().host).to.equal('mysql-cluster-first-replica');
                             return session.close();
                         })
                         .then(() => {
@@ -422,13 +422,13 @@ describe('connecting with a list of MySQL servers', () => {
                             // container starts, we need to wait for an
                             // additional fixed number of seconds defined by
                             // the connection to retry it.
-                            return fixtures.restartServer('mysql-primary', waitForServerToBecomeActive);
+                            return fixtures.restartServer('mysql-cluster-primary', waitForServerToBecomeActive);
                         })
                         .then(() => {
                             return pool.getSession();
                         })
                         .then(session => {
-                            expect(session.inspect().host).to.equal('mysql-secondary1');
+                            expect(session.inspect().host).to.equal('mysql-cluster-first-replica');
                             return session.close();
                         });
                 });
@@ -437,7 +437,7 @@ describe('connecting with a list of MySQL servers', () => {
     });
 
     context('when the endpoint used by the current connection becomes unvailable', () => {
-        const multihostConfig = { endpoints: [{ host: 'mysql-primary' }, { host: 'mysql-secondary1' }] };
+        const multihostConfig = { endpoints: [{ host: 'mysql-cluster-primary' }, { host: 'mysql-cluster-first-replica' }] };
 
         context('using a connection pool', () => {
             let pool;
@@ -474,7 +474,7 @@ describe('connecting with a list of MySQL servers', () => {
     });
 
     context('when no endpoint is available', () => {
-        const multihostConfig = { endpoints: [{ host: 'mysql-primary', priority: 100 }, { host: 'mysql-secondary1', priority: 90 }] };
+        const multihostConfig = { endpoints: [{ host: 'mysql-cluster-primary', priority: 100 }, { host: 'mysql-cluster-first-replica', priority: 90 }] };
 
         const waitForServerToChangeState = 5000; // (ms)
         const waitForServerToBecomeActive = 20000 + 1000; // (ms) must exceed the value defined by MULTIHOST_RETRY on lib/DevAPI/Session.js

@@ -47,6 +47,8 @@
   "scripts": {
     "coverage": "nyc npm run test",
     "coverage:functional": "nyc npm run test:functional",
+    "coverage:functional:all": "nyc npm run test:functional:all",
+    "coverage:functional:extended": "nyc npm run test:functional:extended",
     "coverage:summary": "nyc report --reporter=text-summary",
     "coverage:unit": "nyc npm run test:unit",
     "fix:lib": "standardx --fix",
@@ -54,10 +56,13 @@
     "lint:lib": "standardx --verbose | snazzy",
     "lint:types": "eslint -c types/.eslintrc.js .",
     "lint": "npm run lint:lib && npm run lint:types",
-    "mocha": "mocha --reporter spec --timeout 10000 --recursive",
+    "mocha": "mocha --reporter spec --timeout 30000 --recursive",
     "prepack": "node bin/prepack.js",
     "test": "tsd && npm run mocha test/unit test/functional/default",
+    "test:all": "tsd && npm run mocha test/unit test/functional",
     "test:functional": "npm run mocha test/functional/default",
+    "test:functional:all": "npm mocha test/functional",
+    "test:functional:extended": "npm run mocha test/functional/extended",
     "test:unit": "npm run mocha test/unit",
     "test:types": "tsd"
   },

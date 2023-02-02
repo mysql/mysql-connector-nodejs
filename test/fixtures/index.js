@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -37,7 +37,6 @@ module.exports = {
     createSession: require('./createSession'),
     createSchema: require('./createSchema'),
     createUser: require('./createUser'),
-    deregisterService: require('./deregisterService'),
     destroyServerSocket: require('./destroyServerSocket'),
     dropSchema: require('./dropSchema'),
     dropUser: require('./dropUser'),
@@ -48,14 +47,11 @@ module.exports = {
     getPreparedStatements: require('./getPreparedStatements'),
     grantPrivileges: require('./grantPrivileges'),
     killServer: require('./killServer'),
-    registerService: require('./registerService'),
     restartServer: require('./restartServer'),
     resetAuthenticationCache: require('./resetAuthenticationCache'),
-    revokePrivileges: require('./revokePrivileges'),
     savePasswordInAuthenticationCache: require('./savePasswordInAuthenticationCache'),
     setPromiseTimeout: require('./setPromiseTimeout'),
     setServerGlobalVariable: require('./setServerGlobalVariable'),
-    sortServicesByWeight: require('./sortServicesByWeight'),
     startExecutable: require('./startExecutable'),
     stopServer: require('./stopServer')
 };

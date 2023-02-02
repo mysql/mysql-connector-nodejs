@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -40,7 +40,7 @@ describe('connecting with specific TLS versions', () => {
     context('when TLSv1.3 is enabled in the server', () => {
         // container as defined in docker-compose.yml
         // server supports TLSv1.2 and TLSv1.3
-        const baseConfig = { host: 'mysql-default', schema: 'performance_schema', socket: undefined };
+        const baseConfig = { host: 'mysql', schema: 'performance_schema', socket: undefined };
 
         context('and is supported by the client', () => {
             it('picks TLSv1.3 by default', function () {

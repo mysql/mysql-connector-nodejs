@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -38,110 +38,83 @@ const mysqlx = require('../../../../');
 const os = require('os');
 
 describe('connecting to the MySQL server using a Unix socket', () => {
-    const baseConfig = { host: undefined, port: undefined, schema: undefined };
+    const baseConfig = { host: undefined, port: undefined, socket: process.env.MYSQLX_SOCKET, schema: undefined };
 
-    context('when the socket path points to an existing local socket', () => {
-        it('succeeds using a configuration object', function () {
-            const socketConfig = Object.assign({}, config, baseConfig);
+    before('skip tests on Windows or when the socket path is not defined', function () {
+        const socketConfig = { ...config, ...baseConfig };
 
-            if (!socketConfig.socket || os.platform() === 'win32') {
-                return this.skip();
-            }
+        if (socketConfig.socket && os.platform() !== 'win32') {
+            return;
+        }
 
-            const expected = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
+        return this.skip();
+    });
 
-            return mysqlx.getSession(socketConfig)
-                .then(session => {
-                    expect(session.inspect()).to.deep.include(expected);
-                    return session.close();
-                });
+    context('with a connection configuration object', () => {
+        it('connects via the socket file available at the specified path', async () => {
+            const socketConfig = { ...config, ...baseConfig };
+            const want = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
+
+            const session = await mysqlx.getSession(socketConfig);
+            expect(session.inspect()).to.deep.include(want);
+
+            await session?.close();
         });
 
-        it('succeeds using the custom notation for the socket path in the URI', function () {
-            const socketConfig = Object.assign({}, config, baseConfig);
+        it('ignores TLS configuration options when connecting via a socket file', async () => {
+            const socketConfig = { ...config, ...baseConfig, tls: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem' } };
+            const want = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
 
-            if (!socketConfig.socket || os.platform() === 'win32') {
-                return this.skip();
-            }
+            const session = await mysqlx.getSession(socketConfig);
+            expect(session.inspect()).to.deep.include(want);
 
+            await session?.close();
+        });
+    });
+
+    context('with a connection string', () => {
+        it('connects via the socket file available at the specified path using custom notation', async () => {
+            const socketConfig = { ...config, ...baseConfig };
             const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@(${socketConfig.socket})`;
-            const expected = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
+            const want = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
 
-            return mysqlx.getSession(uri)
-                .then(session => {
-                    expect(session.inspect()).to.deep.include(expected);
-                    return session.close();
-                });
+            const session = await mysqlx.getSession(uri);
+            expect(session.inspect()).to.deep.include(want);
+
+            await session?.close();
         });
 
-        it('succeeds using the percent encoded notation for the socket path in the URI', function () {
-            const socketConfig = Object.assign({}, config, baseConfig);
-
-            if (!socketConfig.socket || os.platform() === 'win32') {
-                return this.skip();
-            }
-
+        it('connects via the socket file available at the specified path using percent encoding notation', async () => {
+            const socketConfig = { ...config, ...baseConfig };
             const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@${encodeURIComponent(socketConfig.socket)}`;
-            const expected = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
+            const want = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
 
-            return mysqlx.getSession(uri)
-                .then(session => {
-                    expect(session.inspect()).to.deep.include(expected);
-                    return session.close();
-                });
+            const session = await mysqlx.getSession(uri);
+            expect(session.inspect()).to.deep.include(want);
+
+            await session?.close();
         });
 
-        it('ignores tls options provided with a configuration file', function () {
-            const socketConfig = Object.assign({}, config, baseConfig, { tls: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem' } });
-
-            if (!socketConfig.socket || os.platform() === 'win32') {
-                return this.skip();
-            }
-
-            const expected = { host: undefined, port: undefined, schema: undefined, socket: socketConfig.socket, tls: false };
-
-            return mysqlx.getSession(socketConfig)
-                .then(session => {
-                    expect(session.inspect()).to.deep.include(expected);
-
-                    return session.close();
-                });
-        });
-
-        it('ignores tls options provided using custom notation in a URI', function () {
-            const socketConfig = Object.assign({}, config, baseConfig, { tls: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem' } });
-
-            if (!socketConfig.socket || os.platform() === 'win32') {
-                return this.skip();
-            }
-
+        it('ignores custom notation TLS configuration options when connecting via a socket file', async () => {
+            const socketConfig = { ...config, ...baseConfig, tls: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem' } };
             const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@(${socketConfig.socket})?ssl-mode=REQUIRED&ssl-ca=(${socketConfig.tls.ca})?ssl-crl=(${socketConfig.tls.ca})`;
-            const expected = { host: undefined, port: undefined, schema: undefined, socket: config.socket, tls: false };
+            const want = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
 
-            return mysqlx.getSession(uri)
-                .then(session => {
-                    expect(session.inspect()).to.deep.include(expected);
+            const session = await mysqlx.getSession(uri);
+            expect(session.inspect()).to.deep.include(want);
 
-                    return session.close();
-                });
+            await session?.close();
         });
 
-        it('ignores tls options provided using percent encoded notation in a URI', function () {
-            const socketConfig = Object.assign({}, config, baseConfig, { tls: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem' } });
-
-            if (!socketConfig.socket || os.platform() === 'win32') {
-                return this.skip();
-            }
-
+        it('ignores percent encoding notation TLS configuration options when connecting via a socket file', async () => {
+            const socketConfig = { ...config, ...baseConfig, tls: { ca: '/path/to/ca.pem', crl: '/path/to/crl.pem' } };
             const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@(${socketConfig.socket})?ssl-mode=REQUIRED&ssl-ca=${encodeURIComponent(socketConfig.tls.ca)}?ssl-crl=${encodeURIComponent(socketConfig.tls.ca)}`;
-            const expected = { host: undefined, port: undefined, schema: undefined, socket: config.socket, tls: false };
+            const want = { host: undefined, port: undefined, socket: socketConfig.socket, tls: false };
 
-            return mysqlx.getSession(uri)
-                .then(session => {
-                    expect(session.inspect()).to.deep.include(expected);
+            const session = await mysqlx.getSession(uri);
+            expect(session.inspect()).to.deep.include(want);
 
-                    return session.close();
-                });
+            await session?.close();
         });
     });
 });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -39,721 +39,947 @@ const expect = require('chai').expect;
 const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../../');
 const os = require('os');
-const path = require('path');
 
 describe('mysql_native_password authentication plugin', () => {
     const user = 'user';
     const password = 'password';
     const plugin = 'mysql_native_password';
 
-    beforeEach('create user with mysql_native_password plugin', () => {
-        return fixtures.createUser({ user, plugin, password });
-    });
+    context('connecting over TCP', () => {
+        const connectionConfig = { socket: undefined, tls: { enabled: false } };
 
-    beforeEach('invalidate the server authentication cache', () => {
-        return fixtures.resetAuthenticationCache();
-    });
+        beforeEach('create user with mysql_native_password plugin', () => {
+            return fixtures.createUser({ connectionConfig, password, plugin, user });
+        });
 
-    afterEach('delete the user created for a given test', () => {
-        return fixtures.dropUser({ user });
-    });
+        beforeEach('invalidate the server authentication cache', () => {
+            return fixtures.resetAuthenticationCache({ connectionConfig });
+        });
 
-    after('delete any dangling user created for tests that have been skipped', () => {
-        return fixtures.dropUser({ user });
-    });
+        afterEach('delete the user created for a given test', () => {
+            return fixtures.dropUser({ connectionConfig, user });
+        });
 
-    context('connecting without an authentication mechanism', () => {
-        context('over TCP and TLS', () => {
-            const tlsConfig = { socket: undefined, tls: { enabled: true } };
+        after('delete any dangling user created for tests that have been skipped', () => {
+            return fixtures.dropUser({ connectionConfig, user });
+        });
 
-            it('succeeds with a configuration object', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { password, user });
+        // irrelevant if the password is saved (or not) in the server cache
+        context('when no authentication mechanism is selected', () => {
+            context('using a connection configuration object', () => {
+                it('connects with the right password using the MYSQL41 authentication mechanism', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password, user };
 
-                return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal('PLAIN');
-                        return session.close();
-                    });
-            });
+                    const session = await mysqlx.getSession(authConfig);
+                    expect(session.inspect().auth).to.equal('MYSQL41');
 
-            it('succeeds with a URI', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { password, user });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}`;
+                    await session?.close();
+                });
 
-                return mysqlx.getSession(uri)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal('PLAIN');
-                        return session.close();
-                    });
-            });
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
 
-            it('fails when a wrong password is provided using a configuration object', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
+                    let session;
 
-                return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
+                    try {
+                        session = await mysqlx.getSession(authConfig);
+                        expect.fail();
+                    } catch (err) {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
+                        expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_AUTH_MORE_INFO);
+                    } finally {
+                        await session?.close();
+                    }
+                });
             });
 
-            it('fails when a wrong password is provided using a URI', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}`;
+            context('using a connection string', () => {
+                it('connects with the right password using the MYSQL41 authentication mechanism', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password, user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED`;
 
-                return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => {
+                    const session = await mysqlx.getSession(uri);
+                    expect(session.inspect().auth).to.equal('MYSQL41');
+
+                    await session?.close();
+                });
+
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED`;
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(uri);
+                        expect.fail();
+                    } catch (err) {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
+                        expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_AUTH_MORE_INFO);
+                    } finally {
+                        await session?.close();
+                    }
+                });
             });
         });
 
-        context('over regular TCP', () => {
-            const tcpConfig = { socket: undefined, tls: { enabled: false } };
-
-            it('succeeds with a configuration object', () => {
-                const authConfig = Object.assign({}, config, tcpConfig, { password, user });
-
-                return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal('MYSQL41');
-                        return session.close();
-                    });
-            });
-
-            it('succeeds with a URI', () => {
-                const authConfig = Object.assign({}, config, tcpConfig, { password, user });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED`;
-
-                return mysqlx.getSession(uri)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal('MYSQL41');
-                        return session.close();
-                    });
-            });
-
-            it('fails when a wrong password is provided using a configuration object', () => {
-                const authConfig = Object.assign({}, config, tcpConfig, { user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-
-                return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-
-            it('fails when a wrong password is provided using a URI', () => {
-                const authConfig = Object.assign({}, config, tcpConfig, { user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}`;
-
-                return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-        });
-
-        context('over a Unix socket', () => {
-            const socketConfig = { host: undefined, port: undefined, tls: { enabled: false } };
-
-            it('succeeds with a configuration object', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { password, user });
-
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal('PLAIN');
-                        return session.close();
-                    });
-            });
-
-            it('succeeds with a URI', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { password, user });
-
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED`;
-
-                return mysqlx.getSession(uri)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal('PLAIN');
-                        return session.close();
-                    });
-            });
-
-            it('fails when a wrong password is provided using a configuration object', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-
-            it('fails when a wrong password is provided using a URI', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})`;
-
-                return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-        });
-    });
-
-    context('connecting with the MYSQL41 authentication mechanism', () => {
-        const auth = 'MYSQL41';
-
-        context('over TCP and TLS', () => {
-            const tlsConfig = { socket: undefined, tls: { enabled: true } };
-
-            it('succeeds with a configuration object', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { auth, password, user });
-
-                return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
-                    });
-            });
-
-            it('succeeds with a URI', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { auth, password, user });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
-
-                return mysqlx.getSession(uri)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
-                    });
-            });
-
-            it('fails when a wrong password is provided using a configuration object', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { auth, user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-
-                return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-
-            it('fails when a wrong password is provided using a URI', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { auth, user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
-
-                return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-        });
-
-        context('over regular TCP', () => {
-            const tcpConfig = { socket: undefined, tls: { enabled: false } };
-
-            it('succeeds with a configuration object', () => {
-                const authConfig = Object.assign({}, config, tcpConfig, { auth, password, user });
-
-                return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
-                    });
-            });
-
-            it('succeeds with a URI', () => {
-                const authConfig = Object.assign({}, config, tcpConfig, { auth, password, user });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
-
-                return mysqlx.getSession(uri)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
-                    });
-            });
-
-            it('fails when a wrong password is provided using a configuration object', () => {
-                const authConfig = Object.assign({}, config, tcpConfig, { auth, user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-
-                return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-
-            it('fails when a wrong password is provided using a URI', () => {
-                const authConfig = Object.assign({}, config, tcpConfig, { auth, user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
-
-                return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-        });
-
-        context('over a UNIX socket', () => {
-            const socketConfig = { host: undefined, port: undefined, tls: { enabled: false } };
-
-            it('succeeds with a configuration object', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { auth, password, user });
-
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
-                    });
-            });
-
-            it('succeeds with a URI', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { auth, password, user });
-
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
-
-                return mysqlx.getSession(uri)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
-                    });
-            });
-
-            it('fails when a wrong password is provided using a configuration object', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { auth, user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-
-            it('fails when a wrong password is provided using a URI', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { auth, user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
-
-                return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-        });
-
-        context('when debug mode is enabled', () => {
-            const script = path.join(__dirname, '..', '..', '..', 'fixtures', 'scripts', 'connection', 'auth.js');
-
-            it('logs the appropriate authentication mechanism', () => {
-                return fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateStart', script, [user, password, auth])
-                    .then(proc => {
-                        expect(proc.logs).to.have.lengthOf(1);
-                        expect(proc.logs[0]).to.contain.keys('mech_name', 'auth_data');
-                        expect(proc.logs[0].mech_name).to.equal(auth);
-                        expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
-                    });
-            });
-
-            it('logs the appropriate authentication data', () => {
-                return fixtures.collectLogs('protocol:outbound:Mysqlx.Session.AuthenticateContinue', script, [user, password, auth])
-                    .then(proc => {
-                        expect(proc.logs).to.have.lengthOf(1);
-                        expect(proc.logs[0]).to.contain.keys('auth_data');
-                        expect(proc.logs[0].auth_data).to.contain.keys('type', 'data');
-                        expect(Buffer.from(proc.logs[0].auth_data.data).toString()).to.have.string(user);
-                    });
-            });
-        });
-    });
-
-    context('connecting with the PLAIN authentication mechanism', () => {
-        const auth = 'PLAIN';
-
-        context('over TCP and TLS', () => {
-            const tlsConfig = { socket: undefined, tls: { enabled: true } };
-
-            it('succeeds with a configuration object', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { auth, password, user });
-
-                return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
-                    });
-            });
-
-            it('succeeds with a URI', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { auth, password, user });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
-
-                return mysqlx.getSession(uri)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
-                    });
-            });
-
-            it('fails when a wrong password is provided using a configuration object', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { auth, user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-
-                return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-
-            it('fails when a wrong password is provided using a URI', () => {
-                const authConfig = Object.assign({}, config, tlsConfig, { auth, user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
-
-                return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => {
-                        expect(err.info).to.include.keys('code');
-                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
-            });
-        });
-
-        context('over regular TCP', () => {
-            const tcpConfig = { socket: undefined, tls: { enabled: false } };
-
-            it('fails with a configuration object', () => {
-                const authConfig = Object.assign({}, config, tcpConfig, { auth, password, user });
-
-                return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
+        // irrelevant if the password is saved (or not) in the server cache
+        context('when the PLAIN authentication mechanism is selected', () => {
+            const auth = 'PLAIN';
+
+            context('using a connection configuration object', () => {
+                it('always fails to connect', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(authConfig);
+                        expect.fail();
+                    } catch (err) {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(errors.ER_NOT_SUPPORTED_AUTH_MODE);
-                    });
+                    } finally {
+                        await session?.close();
+                    }
+                });
             });
 
-            it('fails with a URI', () => {
-                const authConfig = Object.assign({}, config, tcpConfig, { auth, password, user });
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+            context('using a connection string', () => {
+                it('always fails to connect', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
 
-                return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => {
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(uri);
+                        expect.fail();
+                    } catch (err) {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(errors.ER_NOT_SUPPORTED_AUTH_MODE);
-                    });
+                    } finally {
+                        await session?.close();
+                    }
+                });
             });
         });
 
-        context('over a UNIX socket', () => {
-            const socketConfig = { host: undefined, port: undefined, tls: { enabled: false } };
+        // irrelevant if the password is saved (or not) in the server cache
+        context('when the MYSQL41 authentication mechanism is selected', () => {
+            const auth = 'MYSQL41';
 
-            it('succeeds with a configuration object', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { auth, password, user });
+            context('using a connection configuration object', () => {
+                it('connects with the right password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
 
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
+                    const session = await mysqlx.getSession(authConfig);
+                    expect(session.inspect().auth).to.equal(auth);
 
-                return mysqlx.getSession(authConfig)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
-                    });
-            });
+                    await session?.close();
+                });
 
-            it('succeeds with a URI', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { auth, password, user });
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
 
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
+                    let session;
 
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
-
-                return mysqlx.getSession(uri)
-                    .then(session => {
-                        expect(session.inspect().auth).to.equal(auth);
-                        return session.close();
-                    });
-            });
-
-            it('fails when a wrong password is provided using a configuration object', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { auth, user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
-
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return mysqlx.getSession(authConfig)
-                    .then(() => expect.fail())
-                    .catch(err => {
+                    try {
+                        session = await mysqlx.getSession(authConfig);
+                        expect.fail();
+                    } catch (err) {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                    });
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
+                });
             });
 
-            it('fails when a wrong password is provided using a URI', function () {
-                const authConfig = Object.assign({}, config, socketConfig, { auth, user, password: password.concat(crypto.randomBytes(4).toString('hex')) });
+            context('using a connection string', () => {
+                it('connects with the right password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
 
-                if (!authConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
+                    const session = await mysqlx.getSession(uri);
+                    expect(session.inspect().auth).to.equal(auth);
 
-                const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+                    await session?.close();
+                });
 
-                return mysqlx.getSession(uri)
-                    .then(() => expect.fail())
-                    .catch(err => {
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(uri);
+                        expect.fail();
+                    } catch (err) {
                         expect(err.info).to.include.keys('code');
                         expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
+                });
+            });
+        });
+
+        context('when the SHA256_MEMORY authentication mechanism is selected', () => {
+            const auth = 'SHA256_MEMORY';
+
+            context('and the server authentication cache does not contain the password', () => {
+                context('using a connection configuration object', () => {
+                    it('always fails to connect', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(authConfig);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
                     });
+                });
+
+                context('using a connection string', () => {
+                    it('always fails to connect', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+                        const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(uri);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
+                    });
+                });
+            });
+
+            context('and the server authentication cache already contains the password', () => {
+                beforeEach('ensure the password is stored in the server authentication cache', async () => {
+                    await fixtures.savePasswordInAuthenticationCache({ connectionConfig, password, user });
+                });
+
+                context('using a connection configuration object', () => {
+                    it('connects with the right password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+
+                        const session = await mysqlx.getSession(authConfig);
+                        expect(session.inspect().auth).to.equal(auth);
+
+                        await session?.close();
+                    });
+
+                    it('fails to connect with the wrong password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(authConfig);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
+                    });
+                });
+
+                context('using a connection string', () => {
+                    it('connects with the right password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+                        const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+
+                        const session = await mysqlx.getSession(uri);
+                        expect(session.inspect().auth).to.equal(auth);
+
+                        await session?.close();
+                    });
+
+                    it('fails to connect with the wrong password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                        const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(uri);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
+                    });
+                });
             });
         });
     });
 
-    context('connecting with the SHA256_MEMORY authentication mechanism', () => {
-        const auth = 'SHA256_MEMORY';
+    context('connecting over TCP and TLS', () => {
+        const connectionConfig = { socket: undefined, tls: { enabled: true } };
 
-        context('without a password in the server authentication cache', () => {
-            context('over TCP and TLS', () => {
-                const tlsConfig = { socket: undefined, tls: { enabled: true } };
+        beforeEach('create user with mysql_native_password plugin', () => {
+            return fixtures.createUser({ connectionConfig, password, plugin, user });
+        });
 
-                it('fails with a configuration object', () => {
-                    const authConfig = Object.assign({}, config, tlsConfig, { auth, password, user });
+        beforeEach('invalidate the server authentication cache', () => {
+            return fixtures.resetAuthenticationCache({ connectionConfig });
+        });
 
-                    return mysqlx.getSession(authConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                        });
+        afterEach('delete the user created for a given test', () => {
+            return fixtures.dropUser({ connectionConfig, user });
+        });
+
+        after('delete any dangling user created for tests that have been skipped', () => {
+            return fixtures.dropUser({ connectionConfig, user });
+        });
+
+        // irrelevant if the password is saved (or not) in the server cache
+        context('when no authentication mechanism is selected', () => {
+            context('using a connection configuration object', () => {
+                it('connects with the right password using the PLAIN authentication mechanism', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password, user };
+
+                    const session = await mysqlx.getSession(authConfig);
+                    expect(session.inspect().auth).to.equal('PLAIN');
+
+                    await session?.close();
                 });
 
-                it('fails with a URI', () => {
-                    const authConfig = Object.assign({}, config, tlsConfig, { auth, password, user });
-                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
 
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                        });
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(authConfig);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
                 });
             });
 
-            context('over regular TCP', () => {
-                const tcpConfig = { socket: undefined, tls: { enabled: false } };
+            context('using a connection string', () => {
+                it('connects with the right password using the PLAIN authentication mechanism', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password, user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}`;
 
-                it('fails with a configuration object', () => {
-                    const authConfig = Object.assign({}, config, tcpConfig, { auth, password, user });
+                    const session = await mysqlx.getSession(uri);
+                    expect(session.inspect().auth).to.equal('PLAIN');
 
-                    return mysqlx.getSession(authConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                        });
+                    await session?.close();
                 });
 
-                it('fails with a URI', () => {
-                    const authConfig = Object.assign({}, config, tcpConfig, { auth, password, user });
-                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}`;
 
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                        });
-                });
-            });
+                    let session;
 
-            context('over a UNIX socket', () => {
-                const socketConfig = { host: undefined, port: undefined, tls: { enabled: false } };
-
-                it('fails with a configuration object', function () {
-                    const authConfig = Object.assign({}, config, socketConfig, { auth, password, user });
-
-                    if (!authConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
+                    try {
+                        session = await mysqlx.getSession(uri);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
                     }
-
-                    return mysqlx.getSession(authConfig)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                        });
-                });
-
-                it('fails with a URI', function () {
-                    const authConfig = Object.assign({}, config, socketConfig, { auth, password, user });
-
-                    if (!authConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(() => expect.fail())
-                        .catch(err => {
-                            expect(err.info).to.include.keys('code');
-                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
-                        });
                 });
             });
         });
 
-        context('with the password in the server authentication cache', () => {
-            context('over TCP and TLS', () => {
-                const tlsConfig = { socket: undefined, tls: { enabled: true } };
+        // irrelevant if the password is saved (or not) in the server cache
+        context('when the PLAIN authentication mechanism is selected', () => {
+            const auth = 'PLAIN';
 
-                beforeEach('save the password in the server authentication cache', () => {
-                    return fixtures.savePasswordInAuthenticationCache({ user, password });
+            context('using a connection configuration object', () => {
+                it('connects with the right password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
+
+                    const session = await mysqlx.getSession(authConfig);
+                    expect(session.inspect().auth).to.equal(auth);
+
+                    await session?.close();
                 });
 
-                it('succeeds with a configuration object', () => {
-                    const authConfig = Object.assign({}, config, tlsConfig, { auth, password, user });
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
 
-                    return mysqlx.getSession(authConfig)
-                        .then(session => {
-                            expect(session.inspect().auth).to.equal(auth);
-                            return session.close();
-                        });
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(authConfig);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
                 });
+            });
 
-                it('succeeds with a URI', () => {
-                    const authConfig = Object.assign({}, config, tlsConfig, { auth, password, user });
+            context('using a connection string', () => {
+                it('connects with the right password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
                     const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
 
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.inspect().auth).to.equal(auth);
-                            return session.close();
-                        });
+                    const session = await mysqlx.getSession(uri);
+                    expect(session.inspect().auth).to.equal(auth);
+
+                    await session?.close();
+                });
+
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(uri);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
+                });
+            });
+        });
+
+        // irrelevant if the password is saved (or not) in the server cache
+        context('when the MYSQL41 authentication mechanism is selected', () => {
+            const auth = 'MYSQL41';
+
+            context('using a connection configuration object', () => {
+                it('connects with the right password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
+
+                    const session = await mysqlx.getSession(authConfig);
+                    expect(session.inspect().auth).to.equal(auth);
+
+                    await session?.close();
+                });
+
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(authConfig);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
                 });
             });
 
-            context('over regular TCP', () => {
-                const tcpConfig = { socket: undefined, tls: { enabled: false } };
+            context('using a connection string', () => {
+                it('connects with the right password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
 
-                beforeEach('save the password in the server authentication cache', () => {
-                    return fixtures.savePasswordInAuthenticationCache({ user, password });
+                    const session = await mysqlx.getSession(uri);
+                    expect(session.inspect().auth).to.equal(auth);
+
+                    await session?.close();
                 });
 
-                it('succeeds with a configuration object', () => {
-                    const authConfig = Object.assign({}, config, tcpConfig, { auth, password, user });
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
 
-                    return mysqlx.getSession(authConfig)
-                        .then(session => {
-                            expect(session.inspect().auth).to.equal(auth);
-                            return session.close();
-                        });
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(uri);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
+                });
+            });
+        });
+
+        context('when the SHA256_MEMORY authentication mechanism is selected', () => {
+            const auth = 'SHA256_MEMORY';
+
+            context('and the server authentication cache does not contain the password', () => {
+                context('using a connection configuration object', () => {
+                    it('always fails to connect', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(authConfig);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
+                    });
                 });
 
-                it('succeeds with a URI', () => {
-                    const authConfig = Object.assign({}, config, tcpConfig, { auth, password, user });
-                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+                context('using a connection string', () => {
+                    it('always fails to connect', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+                        const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
 
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.inspect().auth).to.equal(auth);
-                            return session.close();
-                        });
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(uri);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
+                    });
                 });
             });
 
-            context('over a UNIX socket', () => {
-                const socketConfig = { host: undefined, port: undefined, tls: { enabled: false } };
-
-                beforeEach('save the password in the server authentication cache', function () {
-                    if (!config.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return fixtures.savePasswordInAuthenticationCache({ user, password });
+            context('and the server authentication cache already contains the password', () => {
+                beforeEach('ensure the password is stored in the server authentication cache', async () => {
+                    await fixtures.savePasswordInAuthenticationCache({ connectionConfig, password, user });
                 });
 
-                it('succeeds with a configuration object', function () {
-                    const authConfig = Object.assign({}, config, socketConfig, { auth, password, user });
+                context('using a connection configuration object', () => {
+                    it('connects with the right password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
 
-                    if (!authConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
+                        const session = await mysqlx.getSession(authConfig);
+                        expect(session.inspect().auth).to.equal(auth);
 
-                    return mysqlx.getSession(authConfig)
-                        .then(session => {
-                            expect(session.inspect().auth).to.equal(auth);
-                            return session.close();
-                        });
+                        await session?.close();
+                    });
+
+                    it('fails to connect with the wrong password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(authConfig);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
+                    });
                 });
 
-                it('succeeds with a URI', function () {
-                    const authConfig = Object.assign({}, config, socketConfig, { auth, password, user });
+                context('using a connection string', () => {
+                    it('connects with the right password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+                        const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
 
-                    if (!authConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
+                        const session = await mysqlx.getSession(uri);
+                        expect(session.inspect().auth).to.equal(auth);
+
+                        await session?.close();
+                    });
+                });
+
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@${authConfig.host}:${authConfig.port}?auth=${authConfig.auth}`;
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(uri);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                    } finally {
+                        await session?.close();
                     }
+                });
+            });
+        });
+    });
 
+    context('connecting over a local Unix socket', () => {
+        const connectionConfig = { host: undefined, port: undefined, socket: process.env.MYSQLX_SOCKET, tls: { enabled: false } };
+
+        beforeEach('skip tests on Windows or when the socket path is not defined', function () {
+            const authConfig = { ...config, ...connectionConfig };
+
+            if (authConfig.socket && os.platform() !== 'win32') {
+                return;
+            }
+
+            return this.skip();
+        });
+
+        beforeEach('create user with mysql_native_password plugin', () => {
+            return fixtures.createUser({ connectionConfig, password, plugin, user });
+        });
+
+        beforeEach('invalidate the server authentication cache', () => {
+            return fixtures.resetAuthenticationCache({ connectionConfig });
+        });
+
+        afterEach('delete the user created for a given test', function () {
+            const authConfig = { ...config, ...connectionConfig };
+
+            if (!authConfig.socket || os.platform() === 'win32') {
+                // afterEach() is not "skipped" and needs to be explicitely
+                // skipped.
+                return this.skip();
+            }
+
+            return fixtures.dropUser({ connectionConfig, user });
+        });
+
+        after('delete any dangling user created for tests that have been skipped', () => {
+            const authConfig = { ...config, ...connectionConfig };
+
+            if (!authConfig.socket || os.platform() === 'win32') {
+                // afterEach is not "skipped" and cannot also be explicitely
+                // skipped, so, if there is no Unix socket, it is not possible
+                // to connect to the server to delete the user.
+                return;
+            }
+
+            return fixtures.dropUser({ connectionConfig, user });
+        });
+
+        // irrelevant if the password is saved (or not) in the server cache
+        context('when no authentication mechanism is selected', () => {
+            context('using a connection configuration object', () => {
+                it('connects with the right password using the PLAIN authentication mechanism', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password, user };
+
+                    const session = await mysqlx.getSession(authConfig);
+                    expect(session.inspect().auth).to.equal('PLAIN');
+
+                    await session?.close();
+                });
+
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(authConfig);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
+                });
+            });
+
+            context('using a connection string', () => {
+                it('connects with the right password using the PLAIN authentication mechanism', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password, user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED`;
+
+                    const session = await mysqlx.getSession(uri);
+                    expect(session.inspect().auth).to.equal('PLAIN');
+
+                    await session?.close();
+                });
+
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED`;
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(uri);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
+                });
+            });
+        });
+
+        // irrelevant if the password is saved (or not) in the server cache
+        context('when the PLAIN authentication mechanism is selected', () => {
+            const auth = 'PLAIN';
+
+            context('using a connection configuration object', () => {
+                it('connects with the right password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
+
+                    const session = await mysqlx.getSession(authConfig);
+                    expect(session.inspect().auth).to.equal(auth);
+
+                    await session?.close();
+                });
+
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(authConfig);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                    } finally {
+                        await session?.close();
+                    }
+                });
+            });
+
+            context('using a connection string', () => {
+                it('connects with the right password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
                     const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
 
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            expect(session.inspect().auth).to.equal(auth);
-                            return session.close();
-                        });
+                    const session = await mysqlx.getSession(uri);
+                    expect(session.inspect().auth).to.equal(auth);
+
+                    await session?.close();
+                });
+
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(uri);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                    } finally {
+                        await session?.close();
+                    }
+                });
+            });
+        });
+
+        // irrelevant if the password is saved (or not) in the server cache
+        context('when the MYSQL41 authentication mechanism is selected', () => {
+            const auth = 'MYSQL41';
+
+            context('using a connection configuration object', () => {
+                it('connects with the right password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
+
+                    const session = await mysqlx.getSession(authConfig);
+                    expect(session.inspect().auth).to.equal(auth);
+
+                    await session?.close();
+                });
+
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(authConfig);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
+                });
+            });
+
+            context('using a connection string', () => {
+                it('connects with the right password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password, user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+
+                    const session = await mysqlx.getSession(uri);
+                    expect(session.inspect().auth).to.equal(auth);
+
+                    await session?.close();
+                });
+
+                it('fails to connect with the wrong password', async () => {
+                    const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                    const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+
+                    let session;
+
+                    try {
+                        session = await mysqlx.getSession(uri);
+                        expect.fail();
+                    } catch (err) {
+                        expect(err.info).to.include.keys('code');
+                        expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        expect(err.message).to.match(/Access denied for user/);
+                    } finally {
+                        await session?.close();
+                    }
+                });
+            });
+        });
+
+        context('when the SHA256_MEMORY authentication mechanism is selected', () => {
+            const auth = 'SHA256_MEMORY';
+
+            context('and the server authentication cache does not contain the password', () => {
+                context('using a connection configuration object', () => {
+                    it('always fails to connect', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(authConfig);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
+                    });
+                });
+
+                context('using a connection string', () => {
+                    it('always fails to connect', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+                        const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(uri);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
+                    });
+                });
+            });
+
+            context('and the server authentication cache already contains the password', () => {
+                beforeEach('ensure the password is stored in the server authentication cache', async () => {
+                    await fixtures.savePasswordInAuthenticationCache({ connectionConfig, password, user });
+                });
+
+                context('using a connection configuration object', () => {
+                    it('connects with the right password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+
+                        const session = await mysqlx.getSession(authConfig);
+                        expect(session.inspect().auth).to.equal(auth);
+
+                        await session?.close();
+                    });
+
+                    it('fails to connect with the wrong password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(authConfig);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
+                    });
+                });
+
+                context('using a connection string', () => {
+                    it('connects with the right password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password, user };
+                        const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+
+                        const session = await mysqlx.getSession(uri);
+                        expect(session.inspect().auth).to.equal(auth);
+
+                        await session?.close();
+                    });
+
+                    it('fails to connect with the wrong password', async () => {
+                        const authConfig = { ...config, ...connectionConfig, auth, password: password.concat(crypto.randomBytes(4).toString('hex')), user };
+                        const uri = `mysqlx://${authConfig.user}:${authConfig.password}@(${authConfig.socket})?ssl-mode=DISABLED&auth=${authConfig.auth}`;
+
+                        let session;
+
+                        try {
+                            session = await mysqlx.getSession(uri);
+                            expect.fail();
+                        } catch (err) {
+                            expect(err.info).to.include.keys('code');
+                            expect(err.info.code).to.equal(errors.ER_ACCESS_DENIED_ERROR);
+                        } finally {
+                            await session?.close();
+                        }
+                    });
                 });
             });
         });

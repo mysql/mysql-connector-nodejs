@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,36 +30,39 @@
 
 'use strict';
 
-const http = require('http');
+const DNS = require('dns2');
+const dns = require('dns').promises;
+const loadServices = require('./discovery/loadServices');
+const getActiveServices = require('./discovery/getActiveServices');
 
-// PUT http://consul:8500/v1/agent/service/deregister/my-service-id
-module.exports = function (id) {
-    return new Promise((resolve, reject) => {
-        const options = {
-            host: 'consul',
-            method: 'PUT',
-            path: `/v1/agent/service/deregister/${id}`,
-            port: 8500
-        };
+const { Packet } = DNS;
 
-        const request = http.request(options);
+const dnsClient = new DNS({ nameServers: dns.getServers() });
+const dnsServer = DNS.createServer({ udp: true });
 
-        request.on('response', response => {
-            response.setEncoding('utf8');
+dnsServer.on('request', async (request, send) => {
+    const response = Packet.createResponseFromRequest(request);
+    const [question] = request.questions;
+    const { type, name } = question;
 
-            // the response does not have any content, so the 'data'
-            // handler should be a noop
-            response.on('data', () => {});
+    let answers = [];
 
-            response.on('end', () => {
-                if (response.statusCode === 200) {
-                    return resolve();
-                }
+    if (type !== Packet.TYPE.SRV || name !== '_mysqlx._tcp.example.com') {
+        // We forward the DNS query to the embedded Docker DNS server.
+        const rrtype = Object.keys(Packet.TYPE).find(k => Packet.TYPE[k] === type);
+        const authoritativeResponse = await dnsClient.resolve(name, rrtype);
+        answers = authoritativeResponse.answers;
+    } else {
+        const records = await getActiveServices();
+        answers = records.map(record => ({ ...record, class: Packet.CLASS.IN, type }));
+    }
 
-                reject(new Error(`Unable to deregister service ${id}`));
-            });
-        });
+    response.answers = answers;
 
-        request.end();
+    send(response);
+});
+
+dnsServer.listen({ udp: { port: 53 } })
+    .then(async () => {
+        await loadServices();
     });
-};

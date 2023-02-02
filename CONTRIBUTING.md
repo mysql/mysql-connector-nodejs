@@ -81,15 +81,19 @@ $ npm run test
 $ npm run test:unit && npm run test:functional
 ```
 
-#### Using a Docker container
+#### Using Docker
 
-Alternatively, for Linux or macOS users, there is a script that builds and runs a Docker container which then executes the test suite. This means no external dependency, apart from a running MySQL server, is needed.
+Alternatively, for Linux or macOS users, there is a script that builds and launches a group of Docker containers as an environment where the automated test suite can execute without any additional dependency (apart from a Docker-based container engine).
 
-The script uses the environment variables described previously and introduces a few new ones. These are mostly meant to be used for configuring the Docker container itself. They allow to specify the path to a Node.js engine image, the network proxy setup and the URL of the NPM registry to use.
+There are three different set of containers. One, built on top of a Node.js Docker image, is responsible to execute the test suite and contains the source tree and all the required 3rd-party dependencies. Another one launches a small DNS proxy with service discovery capabilities that allows to test among other things, DNS SRV connections in a dynamic network. The DNS proxy is also responsible for linking an additional set of multiple containers running MySQL server instances using different versions and/or configuration options. These allow to run specific tests against older versions to check for regressions, ensure compatibility between authentication mechanisms and deprecated server-side authentication plugins, setup TLS certificate chains between client and server, and test multi-host capabilities and connection failover, end-to-end.
+
+The script uses the environment variables described previously and introduces a few new ones. These are mostly meant to be used for configuring the Docker containers. They allow to specify the base Node.js and MySQL Docker images, the network proxy setup, and the URL of the NPM registry to use.
 
 * `BASE_IMAGE` (`container-registry.oracle.com/graalvm/nodejs:latest` by default)
 * `HTTP_PROXY` (value of the environment variable in the host by default)
 * `HTTPS_PROXY` (value of the environment variable in the host by default)
+* `MYSQL_IMAGE` (`mysql/mysql-server` by default)
+* `MYSQL_VERSION` (`latest` by default)
 * `NO_PROXY` (value of the environment variable in the host by default)
 * `NPM_REGISTRY` (`https://registry.npmjs.org/` by default)
 
@@ -98,7 +102,7 @@ There is one additional environment variable called `TEST_PATTERN` which can be 
 Ultimately, the script allows an argument which identifies the underlying NPM script that gets executed. So, in theory, any of the available NPM scripts can be executed in the container, but by default, it will execute the `test` script.
 
 ```sh
- # executing the default test script with the default environment (Linux only)
+ # executing the default test script with the default environment
 $ ./test/docker/run.sh
 # executing the unit test suite
 $ ./test/docker/run.sh test:unit
@@ -108,7 +112,18 @@ $ MYSQLX_HOST='<hostname_or_IP_address>' TEST_PATTERN='using CRUD' ./test/docker
 $ MYSQLX_SOCKET='/path/to/socket' ./test/docker/run.sh test:functional
 ```
 
-Similar to when the tests run on a local environment, the `MYSQLX_HOST` variable is only relevant for the functional tests. On Linux, the variable is optional and the Docker container will run using the "host" network mode whilst tests assume the MySQL server is listening on `localhost`. On macOS, since containers run on a virtual machine, host loopback addresses are not reachable. In that case, the `MYSQLX_HOST` variable is required and should specify the hostname or IP address of the MySQL server.
+Users are still able to run the default functional test suite using their own MySQL server instance. Similar to when the tests run on a local environment, the `MYSQLX_HOST` variable is only relevant for the functional tests. The variable is optional and the tests running in the Docker container assume the MySQL server is listening on the host machine and is reachable via `host.docker.internal`. If the MySQL server instance is not running in the host machine, the `MYSQLX_HOST` variable can specify the appropriate hostname or IP address. There is a fallback server instance running in one of the Docker containers which is reachable via `mysql.docker.internal`.
+
+```sh
+# executing the extended functional tests in the Docker environment
+$ ./test/docker/run.sh test:functional:extended
+# executing the default functional tests in the Docker environment
+$ MYSQLX_HOST='mysql.docker.internal' ./test/docker/run.sh test:functional
+# executing the default functional tests with a local MySQL server instance and the extended tests in the Docker environment
+$ ./test/docker/run.sh test:functional:all
+# executing all tests in the Docker environment
+$ MYSQLX_HOST='mysql.docker.internal' ./test/docker/run.sh test:all
+```
 
 Due to some [know limitations](https://github.com/docker/for-mac/issues/483) on the macOS Docker architecture, Unix socket tests can only run on Linux. In that case, if the `MYSQLX_SOCKET` variable is explicitely specified, a shared volume between the host and the container will be created as a mount point from the socket file path in the host and an internal container directory specified as a volume, where the socket file path becomes available.
 
@@ -130,6 +145,23 @@ $ npm run coverage:functional
 As a formal rule, a patch should not lead to a decrease of the overall code coverage below 75%. The scripts will result in an error if that happens. The unwritten rule says that the patch should not lead to any decrease at all of the overall code coverage.
 
 Besides looking at the content generated via the standard output of your command line, you can also check the report available at `coverage/index.html` using a web browser.
+
+Code coverage reports can also be generated in the Docker environment using the same set of NPM scripts.
+
+```sh
+# generate code coverage reports using the default test suite
+$ ./test/docker/run.sh coverage
+# generate code coverage reports using the unit test suite
+$ ./test/docker/run.sh coverage:unit
+# generate code coverage reports using the default functional test suite
+$ ./test/docker/run.sh coverage:functional
+# generate code coverage reports using the extended functional test suite
+$ ./test/docker/run.sh coverage:functional:extended
+# generate code coverage reports using the full test suite
+$ ./test/docker/run.sh coverage:functional:all
+```
+
+A `coverage` folder will be created in the project root directory containing the artifacts generated by the container, which are copied using a bind mount. If the folder already exists, the contents will be replaced.
 
 ### Code Style and Convention
 

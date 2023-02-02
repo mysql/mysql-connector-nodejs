@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Oracle and/or its affiliates.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -34,57 +34,72 @@ input_test_script=$1
 test_script=${input_test_script:-test}
 basedir=$(dirname $0)
 
-# The BASE_IMAGE, HTTPS_PROXY, HTTP_PROXY, NO_PROXY and NPM_REGISTRY
-# environment variables are used as build arguments. Unless they are
-# explicitly specified, the script will use their system-wide values.
-# It should be possible to run script from anywhere in the file system. So,
-# the absolute Dockerfile and context paths should be specified.
-docker build \
-    --build-arg BASE_IMAGE \
-    --build-arg HTTP_PROXY \
-    --build-arg HTTPS_PROXY \
-    --build-arg NO_PROXY \
-    --build-arg NPM_REGISTRY \
-    --tag $image:$version \
-    --file $basedir/Dockerfile \
-    $basedir/../../
-
-# If MYSQLX_HOST is empty, "localhost" should be used by default.
-# The variable needs to be re-assigned in order to determine if it contains a
-# loopback address (implicitly or explicitly).
-if [ -z "$MYSQLX_HOST" ]
+# If MYSQLX_HOST is empty, it is assumed a MySQL server instance is available
+# in the host machine. On the other hand, the same should be the case if
+# MYSQLX_HOST is equal to "localhost" or "127.0.0.1" (loopback addresses).
+# On Linux this works fine, but on VM-based Docker implementations on macOS
+# and Windows, this is not the case. As a standard, these VM-based Docker
+# implementations use "host.docker.internal" as a symbolic address for the
+# host machine. On Linux, we can create that link manually using the
+# "extra_hosts" definition (see docker-compose.Linux.yml).
+if [ -z "$MYSQLX_HOST" ] || [ "$MYSQLX_HOST" == "localhost" ] || [ "$MYSQLX_HOST" == "127.0.0.1" ]
 then
-    MYSQLX_HOST="localhost"
+    MYSQLX_HOST="host.docker.internal"
 fi
 
-# If MYSQLX_HOST is a loopback address, a new flag is created. This flag
-# allows to determine the network mode in which the Docker container will
-# run. The container should run in "host" mode if MYSQLX_HOST is a loopback
-# address and should run in "bridge" mode (default) if MYSQLX_HOST is
-# a different host name or IP address.
-if [ "$MYSQLX_HOST" == "localhost" ] || [ "$MYSQLX_HOST" == "127.0.0.1" ]
-then
-    MYSQL_LOCALHOST=$MYSQLX_HOST
-fi
+# Given what has been described, and to avoid a bunch of conditionals in
+# this script, there should be a different compose file for Linux and macOS
+# (Windows is currently not supported). On Unix systems, an easy way to
+# distinguish between platforms is by using the native "uname" command. In
+# this case, the command will either yield "Linux" or "Darwin".
+DOCKER_PLATFORM=$(uname)
 
-# If MYSQLX_SOCKET is not empty, the corresponding path to the Unix socket
-# file should be shared with the container using a Docker volume.
-# Additionally, the variable should be assigned the appropriate absolute
-# file path from the container standpoint.
-# If MYSQL_LOCALHOST is not empty, the container should run using the "host"
-# network mode. If it is empty, the container should run using the "bridge"
-# network mode, which is what happens by default.
-docker run \
+# The platform specific compose files should be merged with a base global
+# compose file that contains the common configuration setup.
+# The Dockerfile path needs to passed as an environment variable to
+# compose because the script is not running in the project directory.
+# In case the $MYSQL_VERSION environment variable is not defined, it should
+# contain a default value (using the $version variable from this script).
+# Some service definitions only exist to aggregate common functionality
+# used by multiple services. These are abstract in nature, and they should
+# not be created. Concrete services use the "enabled" profile.
+DOCKERFILE=$basedir/Dockerfile MYSQL_VERSION=$version docker compose \
+    --profile enabled \
+    --file $basedir/docker-compose.yml \
+    --file $basedir/docker-compose.$DOCKER_PLATFORM.yml \
+    --project-directory $basedir/../../ \
+    up \
+    -d \
+    --build
+
+# The platform-specific compose files are only needed in the build stage
+# because they inherit existing services in the main compose file.
+# In the run stage, compose only needs to know which services are being used,
+# not how they were created.
+# Any Unix socket is copied to the container, at this stage, using a bind
+# mount, so, we need to load an additional compose file that specifies the
+# bind mount, only when the socket path is provided.
+docker compose \
+    --profile enabled \
+    --file $basedir/docker-compose.yml \
+    ${MYSQLX_SOCKET:+ --file $basedir/docker-compose.local.yml} \
+    --project-directory $basedir/../../ \
+    run \
     --rm \
     --interactive \
-    --tty \
-    ${MYSQL_LOCALHOST:+ --network host} \
-    ${MYSQLX_SOCKET:+ --volume $MYSQLX_SOCKET:/shared/mysqlx.sock} \
-    --env MYSQLX_HOST \
+    --env MYSQLX_HOST=$MYSQLX_HOST \
     --env MYSQLX_PASSWORD \
-    --env MYSQLX_PORT \
-    ${MYSQLX_SOCKET:+ --env MYSQLX_SOCKET=/shared/mysqlx.sock} \
+    --env MYSQLX_SOCKET \
     --env MYSQLX_USER \
     --env TEST_PATTERN \
-    $image:$version \
+    mysql-connector-nodejs \
     npm run $test_script -- -- --grep "$TEST_PATTERN"
+
+# After the run stage is done, the containers, volumes and networks used
+# should be stopped and removed in order to avoid dangling resources.
+docker compose \
+    --profile all \
+    --file $basedir/docker-compose.yml \
+    --project-directory $basedir/../../ \
+    down \
+    --volumes

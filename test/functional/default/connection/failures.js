@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -1178,76 +1178,69 @@ describe('connection failures', () => {
         });
 
         context('created with a Unix socket', () => {
-            const socketConfig = { host: undefined, port: undefined, tls: { enabled: false } };
+            const socketConfig = { host: undefined, port: undefined, socket: process.env.MYSQLX_SOCKET, tls: { enabled: false } };
 
-            beforeEach('restrict the server connection timeout', function () {
-                const droppedConnectionConfig = Object.assign({}, config, baseConfig, socketConfig);
+            beforeEach('restrict the server connection timeout', async function () {
+                const droppedConnectionConfig = { ...config, ...baseConfig, ...socketConfig };
 
                 if (!droppedConnectionConfig.socket || os.platform() === 'win32') {
                     return this.skip();
                 }
 
-                return fixtures.setServerGlobalVariable('mysqlx_wait_timeout', testTimeout, droppedConnectionConfig);
+                await fixtures.setServerGlobalVariable('mysqlx_wait_timeout', testTimeout, droppedConnectionConfig);
             });
 
-            afterEach('reset the server connection timeout', function () {
-                const droppedConnectionConfig = Object.assign({}, config, baseConfig, socketConfig);
+            afterEach('reset the server connection timeout', async function () {
+                const droppedConnectionConfig = { ...config, ...baseConfig, ...socketConfig };
 
                 if (!droppedConnectionConfig.socket || os.platform() === 'win32') {
+                    // afterEach() is not "skipped" and needs to be explicitely
+                    // skipped.
                     return this.skip();
                 }
 
-                return fixtures.setServerGlobalVariable('mysqlx_wait_timeout', originalTimeout, droppedConnectionConfig);
+                await fixtures.setServerGlobalVariable('mysqlx_wait_timeout', originalTimeout, droppedConnectionConfig);
             });
 
-            it('makes the session unusable for subsequent operations', function () {
-                const droppedConnectionConfig = Object.assign({}, config, baseConfig, socketConfig);
+            it('makes the session unusable for subsequent operations', async () => {
+                const droppedConnectionConfig = { ...config, ...baseConfig, ...socketConfig };
 
-                if (!droppedConnectionConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
+                let session;
+
+                try {
+                    session = await mysqlx.getSession(droppedConnectionConfig);
+                    await new Promise(resolve => setTimeout(resolve, waitTimeout));
+                    await session.sql('SELECT 1').execute();
+                    expect.fail();
+                } catch (err) {
+                    expect(err.message).to.equal(errors.MESSAGES.ER_IO_READ_ERROR);
+                } finally {
+                    await session?.close();
                 }
-
-                return mysqlx.getSession(droppedConnectionConfig)
-                    .then(session => {
-                        return new Promise(resolve => setTimeout(resolve, waitTimeout))
-                            .then(() => session.sql('SELECT 1').execute());
-                    })
-                    .then(() => {
-                        return expect.fail();
-                    })
-                    .catch(err => {
-                        return expect(err.message).to.equal(errors.MESSAGES.ER_IO_READ_ERROR);
-                    });
             });
 
-            it('logs the server message sent when the connection is killed', function () {
-                const droppedConnectionConfig = Object.assign({}, config, baseConfig, socketConfig);
+            it('logs the server message sent when the connection is killed', async () => {
+                const droppedConnectionConfig = { ...config, ...baseConfig, ...socketConfig };
 
-                if (!droppedConnectionConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return fixtures.collectLogs('protocol:inbound:Mysqlx.Notice.Frame', script, [waitTimeout], { config: droppedConnectionConfig })
-                    .then(proc => {
-                        // it should contain other notices
-                        expect(proc.logs).to.be.an('array').and.have.length.above(0);
-                        // but the session kill notice should be the last in the list
-                        const readErrorNotice = proc.logs[proc.logs.length - 1];
-                        expect(readErrorNotice).to.contain.keys('type', 'scope', 'payload');
-                        expect(readErrorNotice.type).to.equal('WARNING');
-                        expect(readErrorNotice.scope).to.equal('GLOBAL');
-                        expect(readErrorNotice.payload).to.contain.keys('level', 'code', 'msg');
-                        expect(readErrorNotice.payload.level).to.equal('ERROR');
-                        expect(readErrorNotice.payload.code).to.equal(1810);
-                        expect(readErrorNotice.payload.msg).to.equal('IO Read error: read_timeout exceeded');
-                    });
+                const proc = await fixtures.collectLogs('protocol:inbound:Mysqlx.Notice.Frame', script, [waitTimeout], { config: droppedConnectionConfig });
+                // it should contain other notices
+                expect(proc.logs).to.be.an('array').and.have.length.above(0);
+                // but the session kill notice should be the last in the list
+                const readErrorNotice = proc.logs[proc.logs.length - 1];
+                expect(readErrorNotice).to.contain.keys('type', 'scope', 'payload');
+                expect(readErrorNotice.type).to.equal('WARNING');
+                expect(readErrorNotice.scope).to.equal('GLOBAL');
+                expect(readErrorNotice.payload).to.contain.keys('level', 'code', 'msg');
+                expect(readErrorNotice.payload.level).to.equal('ERROR');
+                expect(readErrorNotice.payload.code).to.equal(1810);
+                expect(readErrorNotice.payload.msg).to.equal('IO Read error: read_timeout exceeded');
             });
 
             context('on a connection pool', () => {
                 let pool;
 
                 beforeEach('create pool', () => {
-                    const droppedConnectionConfig = Object.assign({}, config, baseConfig, socketConfig);
+                    const droppedConnectionConfig = { ...config, ...baseConfig, ...socketConfig };
 
                     pool = mysqlx.getClient(droppedConnectionConfig, { pooling: { maxSize: 2, maxIdleTime: waitTimeout * 2 } });
                 });
@@ -1256,23 +1249,14 @@ describe('connection failures', () => {
                     return pool.close();
                 });
 
-                it('releases the connection even if maxIdleTime is not exceeded', () => {
-                    return Promise.all([pool.getSession(), pool.getSession()])
-                        .then(() => {
-                            // wait for a bit more than the value of mysqlx_wait_timeout
-                            return new Promise(resolve => setTimeout(resolve, waitTimeout + 100));
-                        })
-                        .then(() => {
-                            // by this point, the connections should have been released
-                            return pool.getSession();
-                        })
-                        .then(session => {
-                            return session.sql('select 1')
-                                .execute();
-                        })
-                        .then(res => {
-                            expect(res.fetchOne()).to.deep.equal([1]);
-                        });
+                it('releases the connection even if maxIdleTime is not exceeded', async () => {
+                    await Promise.all([pool.getSession(), pool.getSession()]);
+                    // wait for a bit more than the value of mysqlx_wait_timeout
+                    await new Promise(resolve => setTimeout(resolve, waitTimeout + 100));
+                    // by this point, the connections should have been released
+                    const session = await pool.getSession();
+                    const got = await session.sql('SELECT 1').execute();
+                    expect(got.fetchOne()).to.deep.equal([1]);
                 });
             });
         });

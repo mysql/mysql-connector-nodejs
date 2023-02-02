@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -36,12 +36,13 @@ const config = require('../../../../config');
 const errors = require('../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../../..');
+const os = require('os');
 const path = require('path');
 
 describe('sha256_password authentication plugin on MySQL 8.0.15', () => {
-    // server container (defined in docker.compose.yml)
-    const baseConfig = { host: 'mysql-8.0.15-with-sha256-password-authentication-plugin', schema: undefined, socket: undefined };
-    const socket = path.join(__dirname, '..', '..', '..', '..', 'fixtures', 'tmp', `${baseConfig.host}.sock`);
+    // mysql-8.0.15 service defined in $root/test/docker/docker.compose.yml
+    const baseConfig = { host: 'mysql-8.0.15', schema: undefined };
+    const socket = path.join(os.tmpdir(), `${baseConfig.host}.sock`);
 
     // With the PLAIN and MYSQL41 authentication mechanisms, or without an
     // authentication mechanism, the behavior is the same for all MySQL 8.0

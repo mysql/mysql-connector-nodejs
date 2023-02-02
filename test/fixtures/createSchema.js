@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,18 +30,19 @@
 
 'use strict';
 
-const baseConfig = require('../config');
+const config = require('../config');
 const mysqlx = require('../..');
 
-module.exports = function ({ schema = baseConfig.schema || 'mysql-connector-nodejs_test' } = {}, config = baseConfig) {
-    return mysqlx.getSession(config)
-        .then(session => {
-            return session.dropSchema(schema)
-                .then(() => {
-                    return session.createSchema(schema);
-                })
-                .then(() => {
-                    return session.close();
-                });
-        });
+module.exports = async (schema = config.schema || 'mysql-connector-nodejs_test', connectionConfig = {}) => {
+    const fixtureConfig = { ...config, ...connectionConfig };
+
+    let session;
+
+    try {
+        session = await mysqlx.getSession(fixtureConfig);
+        await session.dropSchema(schema);
+        await session.createSchema(schema);
+    } finally {
+        await session?.close();
+    }
 };

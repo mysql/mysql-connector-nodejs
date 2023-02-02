@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -35,169 +35,145 @@
 const config = require('../../../config');
 const errors = require('../../../../lib/constants/errors');
 const expect = require('chai').expect;
+const fixtures = require('../../../fixtures');
 const mysqlx = require('../../../..');
 const os = require('os');
+const path = require('path');
 
 describe('connecting to a server without support for TLS', () => {
     // container as defined in docker-compose.yml
-    const baseConfig = { host: 'mysql-with-ssl-disabled', schema: undefined };
+    const baseConfig = { host: 'mysql-tls-disabled', schema: undefined };
+    const socket = path.join(os.tmpdir(), `${baseConfig.host}.sock`);
 
     context('with a connection configuration object', () => {
-        const tcpConfig = Object.assign({}, config, baseConfig, { socket: undefined });
+        it('fails when TLS is implicitly enabled in the client', async () => {
+            const tcpConfig = { ...config, ...baseConfig, socket: undefined };
 
-        it('fails when TLS is implicitly enabled in the client', () => {
-            return mysqlx.getSession(tcpConfig)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SERVER_TLS);
-                });
+            let session;
+
+            try {
+                session = await mysqlx.getSession(tcpConfig);
+                expect.fail();
+            } catch (err) {
+                expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SERVER_TLS);
+            } finally {
+                await session?.close();
+            }
         });
 
-        it('fails when TLS is explicitly enabled in the client', () => {
-            const tlsConfig = Object.assign({}, tcpConfig, { tls: { enabled: true } });
+        it('fails when TLS is explicitly enabled in the client', async () => {
+            const tlsConfig = { ...config, ...baseConfig, socket: undefined, tls: { enabled: true } };
 
-            return mysqlx.getSession(tlsConfig)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SERVER_TLS);
-                });
+            let session;
+
+            try {
+                session = await mysqlx.getSession(tlsConfig);
+                expect.fail();
+            } catch (err) {
+                expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SERVER_TLS);
+            } finally {
+                await session?.close();
+            }
         });
 
-        // The following tests only run on Unix platforms because they
-        // require an initial connection via Unix socket to save the
-        // password in the authentication cache. This is the only alternative
-        // because the server does not support TLS.
-        // In the end, TLS is never supposed to be used with a Unix Socket.
         context('when TLS is disabled in the client', () => {
-            beforeEach('save password in the server cache', function () {
-                const socketConfig = Object.assign({}, config, baseConfig);
+            // The password must be stored in the server authentication cache
+            // beforehand, and it is not possible to use the PLAIN
+            // authentication mechanism on top of TLS because the sever does
+            // not support TLS. So, saving the password in the server
+            // authentication cache is possible using a Unix socket.
+            beforeEach('ensure the password is stored in the server authentication cache', async () => {
+                const connectionConfig = { ...config, ...baseConfig, socket };
 
-                if (!socketConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                return mysqlx.getSession(socketConfig)
-                    .then(session => {
-                        return session.close();
-                    });
+                await fixtures.savePasswordInAuthenticationCache({ connectionConfig });
             });
 
             context('in the absence of additional TLS-related options', () => {
-                it('succeeds without TLS', function () {
-                    const tlsConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false } });
+                it('succeeds without TLS', async () => {
+                    const tcpConfig = { ...config, ...baseConfig, socket, tls: { enabled: false } };
 
-                    if (!tlsConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(tlsConfig)
-                        .then(session => {
-                            return session.close();
-                        });
+                    const session = await mysqlx.getSession(tcpConfig);
+                    expect(session.inspect()).to.have.property('tls', false);
+                    await session?.close();
                 });
             });
 
             context('in the presence of additional TLS-related options', () => {
-                it('succeeds without TLS', function () {
-                    const tlsConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false, ca: '/any/path/to/ca.pem' } });
+                it('succeeds without TLS', async () => {
+                    const tcpConfig = { ...config, ...baseConfig, socket, tls: { enabled: false, ca: '/any/path/to/ca.pem' } };
 
-                    if (!tlsConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    return mysqlx.getSession(tlsConfig)
-                        .then(session => {
-                            return session.close();
-                        });
+                    const session = await mysqlx.getSession(tcpConfig);
+                    expect(session.inspect()).to.have.property('tls', false);
+                    await session?.close();
                 });
             });
         });
     });
 
     context('with a connection string', () => {
-        const tcpConfig = Object.assign({}, config, baseConfig, { socket: undefined });
-
-        it('fails when TLS is implicitly enabled in the client', () => {
+        it('fails when TLS is implicitly enabled in the client', async () => {
+            const tcpConfig = { ...config, ...baseConfig, socket: undefined };
             const uri = `mysqlx://${tcpConfig.user}:${tcpConfig.password}@${tcpConfig.host}:${tcpConfig.port}`;
 
-            return mysqlx.getSession(uri)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SERVER_TLS);
-                });
+            let session;
+
+            try {
+                session = await mysqlx.getSession(uri);
+                expect.fail();
+            } catch (err) {
+                expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SERVER_TLS);
+            } finally {
+                await session?.close();
+            }
         });
 
-        it('fails when TLS is explicitly enabled in the client', () => {
-            const tlsConfig = Object.assign({}, config, tcpConfig, { tls: { enabled: true } });
+        it('fails when TLS is explicitly enabled in the client', async () => {
+            const tlsConfig = { ...config, ...baseConfig, tls: { enabled: true } };
             const uri = `mysqlx://${tlsConfig.user}:${tlsConfig.password}@${tlsConfig.host}:${tlsConfig.port}?ssl-mode=REQUIRED`;
 
-            return mysqlx.getSession(uri)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SERVER_TLS);
-                });
+            let session;
+
+            try {
+                session = await mysqlx.getSession(uri);
+                expect.fail();
+            } catch (err) {
+                expect(err.message).to.equal(errors.MESSAGES.ER_DEVAPI_NO_SERVER_TLS);
+            } finally {
+                await session?.close();
+            }
         });
 
-        // The following tests only run on Unix platforms because they
-        // require an initial connection via Unix socket to save the
-        // password in the authentication cache. This is the only alternative
-        // because the server does not support TLS.
-        // In the end, TLS is never supposed to be used with a Unix Socket.
         context('when TLS is disabled in the client', () => {
-            beforeEach('save password in the server cache', function () {
-                const socketConfig = Object.assign({}, config, baseConfig);
+            // The password must be stored in the server authentication cache
+            // beforehand, and it is not possible to use the PLAIN
+            // authentication mechanism on top of TLS because the sever does
+            // not support TLS. So, saving the password in the server
+            // authentication cache is possible using a Unix socket.
+            beforeEach('ensure the password is stored in the server authentication cache', async () => {
+                const connectionConfig = { ...config, ...baseConfig, socket };
 
-                if (!socketConfig.socket || os.platform() === 'win32') {
-                    return this.skip();
-                }
-
-                const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@(${socketConfig.socket})`;
-
-                return mysqlx.getSession(uri)
-                    .then(session => {
-                        return session.close();
-                    });
+                await fixtures.savePasswordInAuthenticationCache({ connectionConfig });
             });
 
             context('in the absence of additional TLS-related options', () => {
-                it('succeeds when TLS is disabled in the client', function () {
-                    const tlsConfig = Object.assign({}, config, baseConfig, { tls: { enabled: false } });
+                it('succeeds when TLS is disabled in the client', async () => {
+                    const socketConfig = { ...config, ...baseConfig, socket, tls: { enabled: false } };
+                    const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@(${socketConfig.socket})?ssl-mode=DISABLED`;
 
-                    if (!tlsConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    const uri = `mysqlx://${tlsConfig.user}:${tlsConfig.password}@(${tlsConfig.socket})?ssl-mode=DISABLED`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            return session.close();
-                        });
+                    const session = await mysqlx.getSession(uri);
+                    expect(session.inspect()).to.have.property('tls', false);
+                    await session?.close();
                 });
             });
 
             context('in the presence of additional TLS-related options', () => {
-                it('succeeds when TLS is disabled in the client', () => {
-                    const tlsConfig = Object.assign({}, config, baseConfig, { tls: { ca: '/any/path/to/ca.pem', enabled: false } });
+                it('succeeds when TLS is disabled in the client', async () => {
+                    const socketConfig = { ...config, ...baseConfig, socket, tls: { ca: '/any/path/to/ca.pem', enabled: false } };
+                    const uri = `mysqlx://${socketConfig.user}:${socketConfig.password}@(${socketConfig.socket})?ssl-mode=DISABLED&ssl-ca=${socketConfig.tls.ca}`;
 
-                    if (!tlsConfig.socket || os.platform() === 'win32') {
-                        return this.skip();
-                    }
-
-                    const uri = `mysqlx://${tlsConfig.user}:${tlsConfig.password}@(${tlsConfig.socket})?ssl-mode=DISABLED&ssl-ca=${tlsConfig.tls.ca}`;
-
-                    return mysqlx.getSession(uri)
-                        .then(session => {
-                            return session.close();
-                        });
+                    const session = await mysqlx.getSession(uri);
+                    expect(session.inspect()).to.have.property('tls', false);
+                    await session?.close();
                 });
             });
         });

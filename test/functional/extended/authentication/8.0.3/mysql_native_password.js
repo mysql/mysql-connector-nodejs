@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -36,154 +36,159 @@ const config = require('../../../../config');
 const errors = require('../../../../../lib/constants/errors');
 const expect = require('chai').expect;
 const mysqlx = require('../../../../..');
+const os = require('os');
 const path = require('path');
 const util = require('util');
 
 describe('mysql_native_password authentication plugin on MySQL 8.0.3', () => {
-    // server container (defined in docker.compose.yml)
+    // mysql-8.0.3 service defined in $root/test/docker/docker.compose.yml
     const baseConfig = { host: 'mysql-8.0.3', schema: undefined };
-    const socket = path.join(__dirname, '..', '..', '..', '..', 'fixtures', 'tmp', `${baseConfig.host}.sock`);
+    const socket = path.join(os.tmpdir(), `${baseConfig.host}.sock`);
 
     context('connecting without an authentication mechanism', () => {
-        it('succeeds over TCP with TLS using PLAIN', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { socket: undefined, tls: { enabled: true } });
+        it('succeeds over TCP with TLS using PLAIN', async () => {
+            const authConfig = { ...config, ...baseConfig, socket: undefined, tls: { enabled: true } };
 
-            return mysqlx.getSession(authConfig)
-                .then(session => {
-                    expect(session.inspect().auth).to.equal('PLAIN');
-                    return session.close();
-                });
+            const session = await mysqlx.getSession(authConfig);
+            expect(session.inspect().auth).to.equal('PLAIN');
+
+            await session?.close();
         });
 
-        it('succeeds over regular TCP using MYSQL41', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { socket: undefined, tls: { enabled: false } });
+        it('succeeds over regular TCP using MYSQL41', async () => {
+            const authConfig = { ...config, ...baseConfig, socket: undefined, tls: { enabled: false } };
 
-            return mysqlx.getSession(authConfig)
-                .then(session => {
-                    expect(session.inspect().auth).to.equal('MYSQL41');
-                    return session.close();
-                });
+            const session = await mysqlx.getSession(authConfig);
+            expect(session.inspect().auth).to.equal('MYSQL41');
+
+            await session?.close();
         });
 
-        it('succeeds over a Unix socket using PLAIN', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { socket, tls: { enabled: false } });
+        it('succeeds over a Unix socket using PLAIN', async () => {
+            const authConfig = { ...config, ...baseConfig, socket, tls: { enabled: false } };
 
-            return mysqlx.getSession(authConfig)
-                .then(session => {
-                    expect(session.inspect().auth).to.equal('PLAIN');
-                    return session.close();
-                });
+            const session = await mysqlx.getSession(authConfig);
+            expect(session.inspect().auth).to.equal('PLAIN');
+
+            await session?.close();
         });
     });
 
     context('connecting with the MYSQL41 authentication mechanism', () => {
         const auth = 'MYSQL41';
 
-        it('succeeds over TCP with TLS', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: true } });
+        it('succeeds over TCP with TLS', async () => {
+            const authConfig = { ...config, ...baseConfig, auth, socket: undefined, tls: { enabled: true } };
 
-            return mysqlx.getSession(authConfig)
-                .then(session => {
-                    expect(session.inspect().auth).to.equal(auth);
-                    return session.close();
-                });
+            const session = await mysqlx.getSession(authConfig);
+            expect(session.inspect().auth).to.equal(auth);
+
+            await session?.close();
         });
 
-        it('succeeds over regular TCP', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: false } });
+        it('succeeds over regular TCP', async () => {
+            const authConfig = { ...config, ...baseConfig, auth, socket: undefined, tls: { enabled: false } };
 
-            return mysqlx.getSession(authConfig)
-                .then(session => {
-                    expect(session.inspect().auth).to.equal(auth);
-                    return session.close();
-                });
+            const session = await mysqlx.getSession(authConfig);
+            expect(session.inspect().auth).to.equal(auth);
+
+            await session?.close();
         });
 
-        it('succeeds over a Unix socket', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket, tls: { enabled: false } });
+        it('succeeds over a Unix socket', async () => {
+            const authConfig = { ...config, ...baseConfig, auth, socket, tls: { enabled: false } };
 
-            return mysqlx.getSession(authConfig)
-                .then(session => {
-                    expect(session.inspect().auth).to.equal(auth);
-                    return session.close();
-                });
+            const session = await mysqlx.getSession(authConfig);
+            expect(session.inspect().auth).to.equal(auth);
+
+            await session?.close();
         });
     });
 
     context('connecting with the PLAIN authentication mechanism', () => {
         const auth = 'PLAIN';
 
-        it('succeeds over TCP with TLS', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: true } });
+        it('succeeds over TCP with TLS', async () => {
+            const authConfig = { ...config, ...baseConfig, auth, socket: undefined, tls: { enabled: true } };
 
-            return mysqlx.getSession(authConfig)
-                .then(session => {
-                    expect(session.inspect().auth).to.equal(auth);
-                    return session.close();
-                });
+            const session = await mysqlx.getSession(authConfig);
+            expect(session.inspect().auth).to.equal(auth);
+
+            await session?.close();
         });
 
-        it('fails over regular TCP', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: false } });
+        it('fails over regular TCP', async () => {
+            const authConfig = { ...config, ...baseConfig, auth, socket: undefined, tls: { enabled: false } };
 
-            return mysqlx.getSession(authConfig)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    expect(err.info).to.include.keys('code');
-                    return expect(err.info.code).to.equal(errors.ER_NOT_SUPPORTED_AUTH_MODE);
-                });
+            let session;
+
+            try {
+                session = await mysqlx.getSession(authConfig);
+                expect.fail();
+            } catch (err) {
+                expect(err.info).to.include.keys('code');
+                expect(err.info.code).to.equal(errors.ER_NOT_SUPPORTED_AUTH_MODE);
+            } finally {
+                await session?.close();
+            }
         });
 
-        it('succeeds over a Unix socket', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket, tls: { enabled: false } });
+        it('succeeds over a Unix socket', async () => {
+            const authConfig = { ...config, ...baseConfig, auth, socket, tls: { enabled: false } };
 
-            return mysqlx.getSession(authConfig)
-                .then(session => {
-                    expect(session.inspect().auth).to.equal(auth);
-                    return session.close();
-                });
+            const session = await mysqlx.getSession(authConfig);
+            expect(session.inspect().auth).to.equal(auth);
+
+            await session?.close();
         });
     });
 
     context('connecting with the SHA256_MEMORY authentication mechanism', () => {
         const auth = 'SHA256_MEMORY';
 
-        it('fails over TCP with TLS', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: true } });
+        it('fails over TCP with TLS', async () => {
+            const authConfig = { ...config, ...baseConfig, auth, socket: undefined, tls: { enabled: true } };
 
-            return mysqlx.getSession(authConfig)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY'));
-                });
+            let session;
+
+            try {
+                session = await mysqlx.getSession(authConfig);
+                expect.fail();
+            } catch (err) {
+                expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY'));
+            } finally {
+                await session?.close();
+            }
         });
 
-        it('fails over regular TCP', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket: undefined, tls: { enabled: false } });
+        it('fails over regular TCP', async () => {
+            const authConfig = { ...config, ...baseConfig, auth, socket: undefined, tls: { enabled: false } };
 
-            return mysqlx.getSession(authConfig)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY'));
-                });
+            let session;
+
+            try {
+                session = await mysqlx.getSession(authConfig);
+                expect.fail();
+            } catch (err) {
+                expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY'));
+            } finally {
+                await session?.close();
+            }
         });
 
-        it('fails over a Unix socket', () => {
-            const authConfig = Object.assign({}, config, baseConfig, { auth, socket, tls: { enabled: false } });
+        it('fails over a Unix socket', async () => {
+            const authConfig = { ...config, ...baseConfig, auth, socket, tls: { enabled: false } };
 
-            return mysqlx.getSession(authConfig)
-                .then(() => {
-                    return expect.fail();
-                })
-                .catch(err => {
-                    return expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY'));
-                });
+            let session;
+
+            try {
+                session = await mysqlx.getSession(authConfig);
+                expect.fail();
+            } catch (err) {
+                expect(err.message).to.equal(util.format(errors.MESSAGES.ER_DEVAPI_AUTH_UNSUPPORTED_SERVER, 'SHA256_MEMORY'));
+            } finally {
+                await session?.close();
+            }
         });
     });
 });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -33,13 +33,16 @@
 const config = require('../config');
 const mysqlx = require('../..');
 
-module.exports = function ({ schema = config.schema || '*', table = '*', user = config.user, host = '%' } = {}) {
-    return mysqlx.getSession(config)
-        .then(session => {
-            return session.sql(`GRANT ALL ON ${schema}.${table} TO '${user}'@'${host}'`)
-                .execute()
-                .then(() => {
-                    return session.close();
-                });
-        });
+module.exports = async ({ connectionConfig, schema = config.schema || '*', table = '*', user = config.user, host = '%' } = {}) => {
+    const fixtureConfig = { ...config, ...connectionConfig };
+
+    let session;
+
+    try {
+        session = await mysqlx.getSession(fixtureConfig);
+        await session.sql(`GRANT ALL ON ${schema}.${table} TO '${user}'@'${host}'`)
+            .execute();
+    } finally {
+        await session?.close();
+    }
 };

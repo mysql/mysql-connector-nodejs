@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -30,16 +30,19 @@
 
 'use strict';
 
-const config = require('../config');
-const mysqlx = require('../../');
+const config = require('./config.json');
+const mysqlx = require('../../../../');
 
-module.exports = function ({ schema = config.schema || '*', table = '*', user = config.user, host = '%' } = {}) {
-    return mysqlx.getSession(config)
-        .then(session => {
-            return session.sql(`REVOKE ALL ON ${schema}.${table} FROM '${user}'@'${host}'`)
-                .execute()
-                .then(() => {
-                    return session.close();
-                });
-        });
+module.exports = async () => {
+    const session = await mysqlx.getSession({ user: config.user, host: config.host });
+    const services = session.getSchema(config.schema).getCollection(config.table);
+    const it = await services.find('enabled = :status')
+        .bind('status', true)
+        .execute();
+
+    const instances = it.fetchAll();
+
+    await session.close();
+
+    return instances;
 };
