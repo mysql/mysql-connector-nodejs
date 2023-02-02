@@ -50,9 +50,6 @@ async function test (): Promise<void> {
     // fetchOne()
     expectType<Scalar[]>(result.fetchOne());
 
-    // getAutoIncrementValue()
-    expectType<number>(result.getAutoIncrementValue());
-
     // getColumns()
     expectType<Column[]>(result.getColumns());
 
