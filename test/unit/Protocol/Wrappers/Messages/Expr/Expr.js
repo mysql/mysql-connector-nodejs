@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -45,8 +45,31 @@ describe('Mysqlx.Expr.Expr wrapper', () => {
         td.reset();
     });
 
-    // TODO(Rui): although they will not increase code coverage, we should
-    // write some unit tests for the Expr.create() method.
+    context('class methods', () => {
+        // TODO(Rui): although they will not increase code coverage, we should
+        // write some more unit tests for the Expr.create() method.
+        context('create()', () => {
+            it('returns an empty expression for an unknown literal type', () => {
+                const unknown = () => {};
+                const expr = Expr.create({ isLiteral: true, value: unknown });
+
+                expect(expr.valueOf).to.be.a('function');
+                // eslint-disable-next-line no-unused-expressions
+                expect(expr.valueOf()).to.not.exist;
+            });
+
+            it('ignores fields of unknown types in a plain JavaScript object', () => {
+                const unknown = () => {};
+                const expr = Expr.create({ isLiteral: true, value: { field: unknown } });
+
+                expect(expr.valueOf).to.be.a('function');
+                expect(expr.valueOf().getType).to.be.a('function');
+                expect(expr.valueOf().getType()).to.equal(ExprStub.Expr.Type.OBJECT);
+                // eslint-disable-next-line no-unused-expressions
+                expect(expr.valueOf().getObject().getFldList()).to.be.an('array').and.be.empty;
+            });
+        });
+    });
 
     context('instance methods', () => {
         context('getType()', () => {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -47,7 +47,19 @@ describe('Mysqlx.Datatypes.Scalar wrapper', () => {
     context('class methods', () => {
         context('create()', () => {
             it('creates an empty wrapper for undefined values', () => {
-                return expect(Scalar.create().valueOf()).to.not.exist;
+                const scalar = Scalar.create();
+
+                expect(scalar.valueOf).to.be.a('function');
+                // eslint-disable-next-line no-unused-expressions
+                expect(scalar.valueOf()).to.not.exist;
+            });
+
+            it('creates an empty wrapper for unknown types', () => {
+                const scalar = Scalar.create(() => {});
+
+                expect(scalar.valueOf).to.be.a('function');
+                // eslint-disable-next-line no-unused-expressions
+                expect(scalar.valueOf()).to.not.exist;
             });
 
             it('creates an appropriately typed Mysqlx.Datatypes.Scalar for the "null" value', () => {

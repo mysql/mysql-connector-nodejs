@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -28,7 +28,6 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-import { Any } from '../Protocol/Datatypes';
 import Result from './Result';
 
 /**
@@ -36,7 +35,7 @@ import Result from './Result';
  * As defined by the [DocumentOrJSON](https://dev.mysql.com/doc/x-devapi-userguide/en/crud-ebnf-other-definitions.html#crud-ebnf-documentorjson)
  * EBNF definition.
  */
-export type DocumentOrJSON = { [key: string]: Any } | string;
+export type DocumentOrJSON = object | string;
 
 /**
  * One ore more DocumentOrJSON instances.

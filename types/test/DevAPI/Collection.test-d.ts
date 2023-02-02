@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -72,6 +72,20 @@ async function test (): Promise<void> {
     expectType<CollectionAdd>(collection.add({ name: 'foo' }).add({ name: 'bar' }));
     expectType<CollectionAdd>(collection.add({ name: 'foo' }, { name: 'bar' }).add({ name: 'baz' }));
     expectType<CollectionAdd>(collection.add([{ name: 'foo' }, { name: 'bar' }]).add([{ name: 'baz' }]));
+
+    // add() using JavaScript class instances
+    class Doc {
+        private readonly _name: string;
+
+        constructor (name: string) {
+            this._name = name;
+        }
+    }
+
+    expectType<CollectionAdd>(collection.add(new Doc('foo')));
+    expectType<CollectionAdd>(collection.add(new Doc('foo'), new Doc('bar')));
+    expectType<CollectionAdd>(collection.add([new Doc('foo'), new Doc('bar')]));
+    expectType<CollectionAdd>(collection.add([new Doc('foo'), new Doc('bar')], [new Doc('baz')]));
 
     // addOrReplaceOne()
     expectType<Result>(await collection.addOrReplaceOne('1', { name: 'foo' }));
