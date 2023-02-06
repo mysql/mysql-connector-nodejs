@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -41,7 +41,7 @@ async function test (): Promise<void> {
     // obtain a dummy collection
     const collection = schema.getCollection('foo');
     // create a dummy statement
-    const statement = await collection.find();
+    const statement = collection.find();
 
     // bind()
     expectType<CollectionFind>(statement.bind('name', 'foo'));
@@ -52,6 +52,7 @@ async function test (): Promise<void> {
     expectType<CollectionFind>(statement.bind('name', new Date()));
     expectType<CollectionFind>(statement.bind('name', null));
     expectType<CollectionFind>(statement.bind('name', Buffer.from('foo')));
+    expectType<CollectionFind>(statement.bind('name', BigInt('18446744073709551615')));
     expectType<CollectionFind>(statement.bind({ name: 'foo' }));
     expectType<CollectionFind>(statement.bind({ name: 1 }));
     expectType<CollectionFind>(statement.bind({ name: 2.2 }));
@@ -60,6 +61,7 @@ async function test (): Promise<void> {
     expectType<CollectionFind>(statement.bind({ name: new Date() }));
     expectType<CollectionFind>(statement.bind({ name: null }));
     expectType<CollectionFind>(statement.bind({ name: Buffer.from('foo') }));
+    expectType<CollectionFind>(statement.bind({ name: BigInt('18446744073709551615') }));
 
     // execute()
     expectType<DocResult>(await statement.execute());
@@ -90,6 +92,7 @@ async function test (): Promise<void> {
 
     // limit()
     expectType<CollectionFind>(statement.limit(3));
+    expectType<CollectionFind>(statement.limit(BigInt('18446744073709551615')));
 
     // lockExclusive()
     expectType<CollectionFind>(statement.lockExclusive());
@@ -105,6 +108,7 @@ async function test (): Promise<void> {
 
     // offset()
     expectType<CollectionFind>(statement.offset(3));
+    expectType<CollectionFind>(statement.offset(BigInt('18446744073709551615')));
 
     // sort()
     expectType<CollectionFind>(statement.sort('foo ASC'));

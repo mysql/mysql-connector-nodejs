@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -52,6 +52,7 @@ async function test (): Promise<void> {
     expectType<TableSelect>(statement.bind('name', new Date()));
     expectType<TableSelect>(statement.bind('name', null));
     expectType<TableSelect>(statement.bind('name', Buffer.from('foo')));
+    expectType<TableSelect>(statement.bind('name', BigInt('18446744073709551615')));
     expectType<TableSelect>(statement.bind({ name: 'foo' }));
     expectType<TableSelect>(statement.bind({ name: 1 }));
     expectType<TableSelect>(statement.bind({ name: 2.2 }));
@@ -60,6 +61,7 @@ async function test (): Promise<void> {
     expectType<TableSelect>(statement.bind({ name: new Date() }));
     expectType<TableSelect>(statement.bind({ name: null }));
     expectType<TableSelect>(statement.bind({ name: Buffer.from('foo') }));
+    expectType<TableSelect>(statement.bind({ name: BigInt('18446744073709551615') }));
 
     // execute()
     expectType<RowResult>(await statement.execute());
@@ -80,6 +82,7 @@ async function test (): Promise<void> {
 
     // limit()
     expectType<TableSelect>(statement.limit(3));
+    expectType<TableSelect>(statement.limit(BigInt('18446744073709551615')));
 
     // lockExclusive()
     expectType<TableSelect>(statement.lockExclusive());
@@ -109,6 +112,7 @@ async function test (): Promise<void> {
 
     // offset()
     expectType<TableSelect>(statement.offset(3));
+    expectType<TableSelect>(statement.offset(BigInt('18446744073709551615')));
 
     // where()
     expectType<TableSelect>(statement.where('foo'));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -41,7 +41,7 @@ async function test (): Promise<void> {
     // obtain a dummy collection
     const collection = schema.getCollection('foo');
     // create a dummy statement
-    const statement = await collection.remove('foo');
+    const statement = collection.remove('foo');
 
     // bind()
     expectType<CollectionRemove>(statement.bind('name', 'foo'));
@@ -52,6 +52,7 @@ async function test (): Promise<void> {
     expectType<CollectionRemove>(statement.bind('name', new Date()));
     expectType<CollectionRemove>(statement.bind('name', null));
     expectType<CollectionRemove>(statement.bind('name', Buffer.from('foo')));
+    expectType<CollectionRemove>(statement.bind('name', BigInt('18446744073709551615')));
     expectType<CollectionRemove>(statement.bind({ name: 'foo' }));
     expectType<CollectionRemove>(statement.bind({ name: 1 }));
     expectType<CollectionRemove>(statement.bind({ name: 2.2 }));
@@ -60,6 +61,7 @@ async function test (): Promise<void> {
     expectType<CollectionRemove>(statement.bind({ name: new Date() }));
     expectType<CollectionRemove>(statement.bind({ name: null }));
     expectType<CollectionRemove>(statement.bind({ name: Buffer.from('foo') }));
+    expectType<CollectionRemove>(statement.bind({ name: BigInt('18446744073709551615') }));
 
     // execute()
     expectType<Result>(await statement.execute());

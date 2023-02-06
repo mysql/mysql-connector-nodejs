@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -52,6 +52,7 @@ async function test (): Promise<void> {
     expectType<TableDelete>(statement.bind('name', new Date()));
     expectType<TableDelete>(statement.bind('name', null));
     expectType<TableDelete>(statement.bind('name', Buffer.from('foo')));
+    expectType<TableDelete>(statement.bind('name', BigInt('18446744073709551615')));
     expectType<TableDelete>(statement.bind({ name: 'foo' }));
     expectType<TableDelete>(statement.bind({ name: 1 }));
     expectType<TableDelete>(statement.bind({ name: 2.2 }));
@@ -60,12 +61,14 @@ async function test (): Promise<void> {
     expectType<TableDelete>(statement.bind({ name: new Date() }));
     expectType<TableDelete>(statement.bind({ name: null }));
     expectType<TableDelete>(statement.bind({ name: Buffer.from('foo') }));
+    expectType<TableDelete>(statement.bind({ name: BigInt('18446744073709551615') }));
 
     // execute()
     expectType<Result>(await statement.execute());
 
     // limit()
     expectType<TableDelete>(statement.limit(3));
+    expectType<TableDelete>(statement.limit(BigInt('18446744073709551615')));
 
     // orderBy()
     expectType<TableDelete>(statement.orderBy('foo ASC'));

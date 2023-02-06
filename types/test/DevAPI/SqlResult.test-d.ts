@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -33,6 +33,7 @@ import * as mysqlx from '../../';
 import { Warning } from '../../lib/DevAPI/BaseResult';
 import Column from '../../lib/DevAPI/Column';
 import { Scalar } from '../../lib/Protocol/Datatypes';
+import { int64 } from '../../lib/Protocol/ScalarValues';
 
 async function test (): Promise<void> {
     // create a dummy session
@@ -52,10 +53,10 @@ async function test (): Promise<void> {
     expectType<boolean>(result.nextResult());
 
     // getAffectedItemsCount()
-    expectType<number>(result.getAffectedItemsCount());
+    expectType<int64>(result.getAffectedItemsCount());
 
     // getAutoIncrementValue()
-    expectType<number>(result.getAutoIncrementValue());
+    expectType<int64>(result.getAutoIncrementValue());
 
     // getColumns()
     expectType<Column[]>(result.getColumns());

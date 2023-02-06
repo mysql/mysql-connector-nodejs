@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+ * Copyright (c) 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -28,17 +28,4 @@
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-interface Limiting<ReturnType> {
-    /**
-     * Sets a limit for the total number of items in the result set.
-     * @remarks
-     * The JavaScript version allows to provide an offset as the second
-     * argument, but that flavour is deprecated and this type declaration
-     * will not support it in order to prevent user bad practices.
-     * @param items - The maximum number of items in the result set.
-     * @returns The current statement instance itself.
-     */
-    limit: (items: number | bigint) => ReturnType
-}
-
-export default Limiting;
+export type int64 = bigint | number | string;

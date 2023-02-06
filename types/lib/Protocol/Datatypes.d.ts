@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -32,7 +32,7 @@
  * Supported JavaScript types for the X Protocol `Mysqlx.Datatypes.Scalar`
  * protobuf message.
  */
-export type Scalar = number | string | boolean | Date | Buffer | null;
+export type Scalar = Buffer | Date | bigint | boolean | null | number | string;
 
 /**
  * Supported JavaScript types for the X Protocol `Mysqlx.Datatypes.Any`

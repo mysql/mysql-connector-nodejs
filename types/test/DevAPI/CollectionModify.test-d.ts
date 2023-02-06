@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -41,7 +41,7 @@ async function test (): Promise<void> {
     // obtain a dummy collection
     const collection = schema.getCollection('foo');
     // create a dummy statement
-    const statement = await collection.modify('true');
+    const statement = collection.modify('true');
 
     // arrayAppend()
     expectType<CollectionModify>(statement.arrayAppend('foo', 'bar'));
@@ -52,6 +52,7 @@ async function test (): Promise<void> {
     expectType<CollectionModify>(statement.arrayAppend('foo', new Date()));
     expectType<CollectionModify>(statement.arrayAppend('foo', Buffer.from('bar')));
     expectType<CollectionModify>(statement.arrayAppend('foo', mysqlx.expr('bar')));
+    expectType<CollectionModify>(statement.arrayAppend('foo', BigInt('18446744073709551615')));
 
     // arrayInsert()
     expectType<CollectionModify>(statement.arrayInsert('foo', 'bar'));
@@ -62,6 +63,7 @@ async function test (): Promise<void> {
     expectType<CollectionModify>(statement.arrayInsert('foo', new Date()));
     expectType<CollectionModify>(statement.arrayInsert('foo', Buffer.from('bar')));
     expectType<CollectionModify>(statement.arrayInsert('foo', mysqlx.expr('bar')));
+    expectType<CollectionModify>(statement.arrayInsert('foo', BigInt('18446744073709551615')));
 
     // bind()
     expectType<CollectionModify>(statement.bind('name', 'foo'));
@@ -72,6 +74,7 @@ async function test (): Promise<void> {
     expectType<CollectionModify>(statement.bind('name', new Date()));
     expectType<CollectionModify>(statement.bind('name', null));
     expectType<CollectionModify>(statement.bind('name', Buffer.from('foo')));
+    expectType<CollectionModify>(statement.bind('name', BigInt('18446744073709551615')));
     expectType<CollectionModify>(statement.bind({ name: 'foo' }));
     expectType<CollectionModify>(statement.bind({ name: 1 }));
     expectType<CollectionModify>(statement.bind({ name: 2.2 }));
@@ -80,16 +83,19 @@ async function test (): Promise<void> {
     expectType<CollectionModify>(statement.bind({ name: new Date() }));
     expectType<CollectionModify>(statement.bind({ name: null }));
     expectType<CollectionModify>(statement.bind({ name: Buffer.from('foo') }));
+    expectType<CollectionModify>(statement.bind({ name: BigInt('18446744073709551615') }));
 
     // execute()
     expectType<Result>(await statement.execute());
 
     // limit()
     expectType<CollectionModify>(statement.limit(3));
+    expectType<CollectionModify>(statement.limit(BigInt('18446744073709551615')));
 
     // patch()
     expectType<CollectionModify>(statement.patch({ name: 'foo' }));
     expectType<CollectionModify>(statement.patch({ name: null }));
+    expectType<CollectionModify>(statement.patch({ name: BigInt('18446744073709551615') }));
     expectType<CollectionModify>(statement.patch({ child: { name: 'foo' } }));
     expectType<CollectionModify>(statement.patch({ children: [{ name: 'foo' }] }));
     expectType<CollectionModify>(statement.patch('{ "name": "foo" }'));
@@ -106,6 +112,7 @@ async function test (): Promise<void> {
     expectType<CollectionModify>(statement.set('foo', new Date()));
     expectType<CollectionModify>(statement.set('foo', Buffer.from('bar')));
     expectType<CollectionModify>(statement.set('foo', mysqlx.expr('bar')));
+    expectType<CollectionModify>(statement.set('foo', BigInt('18446744073709551615')));
 
     // sort()
     expectType<CollectionModify>(statement.sort('foo ASC'));

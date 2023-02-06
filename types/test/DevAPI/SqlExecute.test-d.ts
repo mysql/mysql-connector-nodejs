@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -48,6 +48,7 @@ async function test (): Promise<void> {
     expectType<SqlExecute>(statement.bind(new Date()));
     expectType<SqlExecute>(statement.bind(null));
     expectType<SqlExecute>(statement.bind(Buffer.from('foo')));
+    expectType<SqlExecute>(statement.bind(BigInt('18446744073709551615')));
     expectType<SqlExecute>(statement.bind('foo', 'bar'));
     expectType<SqlExecute>(statement.bind(1, 2));
     expectType<SqlExecute>(statement.bind(2.2, 3.3));
@@ -55,6 +56,7 @@ async function test (): Promise<void> {
     expectType<SqlExecute>(statement.bind(new Date(), new Date()));
     expectType<SqlExecute>(statement.bind(null, null));
     expectType<SqlExecute>(statement.bind(Buffer.from('foo'), Buffer.from('bar')));
+    expectType<SqlExecute>(statement.bind(BigInt('18446744073709551615'), BigInt('-9223372036854775809')));
     expectType<SqlExecute>(statement.bind(['foo', 'bar']));
     expectType<SqlExecute>(statement.bind([1, 2]));
     expectType<SqlExecute>(statement.bind([2.2, 3.3]));
@@ -62,6 +64,7 @@ async function test (): Promise<void> {
     expectType<SqlExecute>(statement.bind([new Date(), new Date()]));
     expectType<SqlExecute>(statement.bind([null, null]));
     expectType<SqlExecute>(statement.bind([Buffer.from('foo'), Buffer.from('bar')]));
+    expectType<SqlExecute>(statement.bind([BigInt('18446744073709551615'), BigInt('-9223372036854775809')]));
     expectType<SqlExecute>(statement.bind('foo').bind('bar'));
     expectType<SqlExecute>(statement.bind(1).bind(2));
     expectType<SqlExecute>(statement.bind(2.2).bind(3.3));
@@ -70,6 +73,7 @@ async function test (): Promise<void> {
     expectType<SqlExecute>(statement.bind(null).bind(null));
     expectType<SqlExecute>(statement.bind(Buffer.from('foo')).bind(Buffer.from('bar')));
     expectType<SqlExecute>(statement.bind('foo').bind(['bar', 'baz']));
+    expectType<SqlExecute>(statement.bind(BigInt('18446744073709551615')).bind(BigInt('-9223372036854775809')));
 
     // execute()
     expectType<SqlResult>(await statement.execute());

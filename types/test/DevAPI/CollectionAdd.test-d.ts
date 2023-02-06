@@ -70,6 +70,7 @@ async function test (): Promise<void> {
     expectType<CollectionAdd>(statement.add({ name: 'foo' }).add({ name: 'bar' }));
     expectType<CollectionAdd>(statement.add({ name: 'foo' }, { name: 'bar' }).add({ name: 'baz' }));
     expectType<CollectionAdd>(statement.add([{ name: 'foo' }, { name: 'bar' }]).add([{ name: 'baz' }]));
+    expectType<CollectionAdd>(statement.add({ bigInt: BigInt('18446744073709551615') }));
 
     // add() using JavaScript class instances
     class Doc {

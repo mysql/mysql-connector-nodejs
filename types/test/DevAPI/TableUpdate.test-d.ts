@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -52,6 +52,7 @@ async function test (): Promise<void> {
     expectType<TableUpdate>(statement.bind('name', new Date()));
     expectType<TableUpdate>(statement.bind('name', null));
     expectType<TableUpdate>(statement.bind('name', Buffer.from('foo')));
+    expectType<TableUpdate>(statement.bind('name', BigInt('18446744073709551615')));
     expectType<TableUpdate>(statement.bind({ name: 'foo' }));
     expectType<TableUpdate>(statement.bind({ name: 1 }));
     expectType<TableUpdate>(statement.bind({ name: 2.2 }));
@@ -60,12 +61,14 @@ async function test (): Promise<void> {
     expectType<TableUpdate>(statement.bind({ name: new Date() }));
     expectType<TableUpdate>(statement.bind({ name: null }));
     expectType<TableUpdate>(statement.bind({ name: Buffer.from('foo') }));
+    expectType<TableUpdate>(statement.bind({ name: BigInt('18446744073709551615') }));
 
     // execute()
     expectType<Result>(await statement.execute());
 
     // limit()
     expectType<TableUpdate>(statement.limit(3));
+    expectType<TableUpdate>(statement.limit(BigInt('18446744073709551615')));
 
     // orderBy()
     expectType<TableUpdate>(statement.orderBy('foo ASC'));
@@ -90,6 +93,7 @@ async function test (): Promise<void> {
     expectType<TableUpdate>(statement.set('foo', new Date()));
     expectType<TableUpdate>(statement.set('foo', Buffer.from('bar')));
     expectType<TableUpdate>(statement.set('foo', mysqlx.expr('bar')));
+    expectType<TableUpdate>(statement.set('foo', BigInt('18446744073709551615')));
 
     // where()
     expectType<TableUpdate>(statement.where('foo'));
