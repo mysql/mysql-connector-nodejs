@@ -3,10 +3,21 @@ MySQL Connector/Node.JS 8.0 - Release Notes & Changes
 =====================================================
 
 MySQL Connector/Node.JS
-Copyright (c) 2016, 2022, Oracle and/or its affiliates.
+Copyright (c) 2016, 2023, Oracle and/or its affiliates.
 
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
+
+v8.0.33
+=======
+
+- The JavaScript BigInt type can now be used to send unsafe integer values to the server
+- Applications can now choose the JavaScript type (string or BigInt) to use when consuming integer values
+- Using TypeScript, the "Table.select()" method now accepts arguments in the form of column names
+- The full test suite can now run entirely in a Docker environment
+- In TypeScript, the "getAutoIncrementValue()" in the result instance returned by "Table.select()" has been removed
+- Using TypeScript, the "Collection.add()" method now accepts any type of object
+- Some 3rd-party packages used as "devDependencies" have been updated
 
 v8.0.32
 =======
