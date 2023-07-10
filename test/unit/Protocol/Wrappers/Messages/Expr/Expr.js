@@ -68,6 +68,19 @@ describe('Mysqlx.Expr.Expr wrapper', () => {
                 // eslint-disable-next-line no-unused-expressions
                 expect(expr.valueOf().getObject().getFldList()).to.be.an('array').and.be.empty;
             });
+
+            it('returns an opaque strings for an interval unit', () => {
+                const unit = 'foo';
+                const expr = Expr.create({ isLiteral: false, value: { type: 'intervalUnit', value: unit } });
+
+                expect(expr.valueOf).to.be.a('function');
+                expect(expr.valueOf().getType).to.be.a('function');
+                expect(expr.valueOf().getType()).to.equal(ExprStub.Expr.Type.LITERAL);
+                expect(expr.valueOf().getLiteral().getType).to.be.a('function');
+                expect(expr.valueOf().getLiteral().getType()).to.equal(ScalarStub.Type.V_OCTETS);
+                expect(expr.valueOf().getLiteral().getVOctets().getValue).to.be.a('function');
+                expect(expr.valueOf().getLiteral().getVOctets().getValue()).to.deep.equal(Buffer.from(unit));
+            });
         });
     });
 

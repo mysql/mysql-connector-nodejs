@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -815,6 +815,44 @@ describe('relational miscellaneous tests', () => {
                 .then(res => {
                     return expect(res).to.be.true;
                 });
+        });
+    });
+
+    context('date and time manipulation', () => {
+        context('BUG#35690736 date unit encoding', () => {
+            beforeEach('create table', async () => {
+                await session.sql(`CREATE TABLE test (
+                        name VARCHAR(3),
+                        createdAt DATE)`)
+                    .execute();
+            });
+
+            beforeEach('add fixtures', async () => {
+                await session.sql("INSERT INTO test (name, createdAt) values ('foo', CURDATE())")
+                    .execute();
+                await session.sql("INSERT INTO test (name, createdAt) values ('bar', DATE_ADD(CURDATE(), INTERVAL 3 DAY))")
+                    .execute();
+            });
+
+            it('retrieves the appropriate data within a given temporal range', async () => {
+                const diff = 3;
+                const now = new Date();
+                const then = new Date();
+                then.setUTCDate(now.getUTCDate() + diff);
+                then.setUTCHours(0);
+                then.setUTCMinutes(0);
+                then.setUTCSeconds(0);
+                then.setUTCMilliseconds(0);
+                const want = [['bar', then]];
+
+                const res = await schema.getTable('test')
+                    .select()
+                    .where(`createdAt > CURDATE() + INTERVAL ${diff - 1} DAY`)
+                    .execute();
+                const got = res.fetchAll();
+
+                expect(got).to.deep.equal(want);
+            });
         });
     });
 });

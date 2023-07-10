@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -52,7 +52,7 @@ const assertDateIntervalExpr = (expr, { datetimeFunction, interval, unit }) => {
                 type: 'literal',
                 value: interval
             }, {
-                type: 'literal',
+                type: 'intervalUnit',
                 value: unit
             }]
         }
@@ -76,7 +76,7 @@ const assertTimeIntervalExpr = (expr, { datetimeFunction, interval, unit }) => {
                 type: 'literal',
                 value: interval
             }, {
-                type: 'literal',
+                type: 'intervalUnit',
                 value: unit
             }]
         }
@@ -233,7 +233,7 @@ describe('ExprParser', () => {
                                 type: 'literal',
                                 value: 2
                             }, {
-                                type: 'literal',
+                                type: 'intervalUnit',
                                 value: 'MONTH'
                             }]
                         }
@@ -241,7 +241,7 @@ describe('ExprParser', () => {
                         type: 'literal',
                         value: 25
                     }, {
-                        type: 'literal',
+                        type: 'intervalUnit',
                         value: 'SECOND'
                     }]
                 }
