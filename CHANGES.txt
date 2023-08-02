@@ -8,6 +8,11 @@ Copyright (c) 2016, 2023, Oracle and/or its affiliates.
 Full release notes:
  http://dev.mysql.com/doc/relnotes/connector-nodejs/en/
 
+v8.0.35
+=======
+
+- Rows can now be inserted in a table using CRUD with an X DevAPI expression
+
 v8.0.33
 =======
 

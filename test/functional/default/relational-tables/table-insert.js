@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -388,6 +388,32 @@ describe('inserting data into a table using CRUD', () => {
                 .then(res => {
                     expect(res.getAutoIncrementValue()).to.equal(6);
                 });
+        });
+    });
+
+    context('BUG#35666605', () => {
+        beforeEach('create table', async () => {
+            await session.sql('CREATE TABLE geo_t (id INT AUTO_INCREMENT NOT NULL PRIMARY KEY, geo GEOMETRY)')
+                .execute();
+        });
+
+        beforeEach('load table', () => {
+            table = schema.getTable('geo_t');
+        });
+
+        it('allows to insert values encoded as X DevAPI expressions', async () => {
+            const want = { type: 'Point', coordinates: [102, 0] };
+
+            await table.insert('geo')
+                .values(mysqlx.expr(`ST_GeomFromGeoJSON('${JSON.stringify(want)}')`))
+                .execute();
+
+            const res = await table.select('ST_AsGeoJSON(geo)')
+                .execute();
+
+            const got = res.fetchOne()[0];
+
+            expect(got).to.deep.equal(want);
         });
     });
 
