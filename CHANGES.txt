@@ -13,6 +13,7 @@ v8.0.35
 
 - Rows can now be inserted in a table using CRUD with an X DevAPI expression
 - Date and time operators are now allowed in X DevAPI expressions
+- All unsafe decimal values are now being returned as a raw string
 
 v8.0.33
 =======

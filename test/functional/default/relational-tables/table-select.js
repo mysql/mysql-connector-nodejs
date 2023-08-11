@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2.0, as
@@ -666,6 +666,30 @@ describe('selecting rows from a table using CRUD', () => {
             await session.close();
 
             expect(got).to.equal(want);
+        });
+    });
+
+    context('BUG#35707417', () => {
+        beforeEach('add relevant columns to the existing table', () => {
+            return session.sql(`ALTER TABLE \`${schema.getName()}\`.\`${table.getName()}\`
+                ADD COLUMN de1 DECIMAL(18, 17),
+                ADD COLUMN de2 DECIMAL(18, 13)`)
+                .execute();
+        });
+
+        beforeEach('populate the table', async () => {
+            return table.insert('de1', 'de2')
+                .values('1.23456789012345678', '12345.6789012345678')
+                .execute();
+        });
+
+        it('does not loose precision when retrieving values from fixed-point decimal columns', async () => {
+            const want = ['1.23456789012345678', '12345.6789012345678'];
+            const res = await table.select('de1', 'de2')
+                .execute();
+
+            const got = res.fetchOne();
+            expect(got).to.deep.equal(want);
         });
     });
 
